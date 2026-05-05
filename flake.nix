@@ -15,6 +15,14 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # niri-flake pins its own nixpkgs for the niri package — no follows.
+    niri-flake.url = "github:sodiboo/niri-flake";
+
+    stylix = {
+      url = "github:nix-community/stylix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs:

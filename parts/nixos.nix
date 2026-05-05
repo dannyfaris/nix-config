@@ -8,9 +8,12 @@
     modules = [
       inputs.home-manager.nixosModules.home-manager
       inputs.sops-nix.nixosModules.sops
+      inputs.niri-flake.nixosModules.niri
+      inputs.stylix.nixosModules.stylix
       ../hosts/nixos-vm
       ../modules/system
       ../modules/home
+      ../modules/desktop
     ];
   };
 }
