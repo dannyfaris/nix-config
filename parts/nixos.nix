@@ -6,7 +6,10 @@
   flake.nixosConfigurations.nixos-vm = inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs; };
     modules = [
-      # Placeholder: host and shared modules will be added during decomposition.
+      inputs.home-manager.nixosModules.home-manager
+      ../hosts/nixos-vm
+      ../modules/system
+      ../modules/home
     ];
   };
 }
