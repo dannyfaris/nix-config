@@ -1,5 +1,5 @@
 # Shared system-tier NixOS modules.
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   # Public key from the Mac dev machine. Sole SSH credential for dbf.
@@ -55,6 +55,14 @@ in
     };
   };
 
+  # --- Secrets (sops-nix)
+  sops.defaultSopsFile = ../../secrets/secrets.yaml;
+  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+
+  sops.secrets.dbf-password = {
+    neededForUsers = true;
+  };
+
   # --- Users: fully declarative
   # mutableUsers = false makes this the sole source of truth for user state.
   users.mutableUsers = false;
@@ -63,8 +71,7 @@ in
     description = "Daniel";
     extraGroups = [ "wheel" "networkmanager" ];
 
-    # TODO: switch to hashedPasswordFile via sops-nix (see TODO.md tier 2).
-    hashedPassword = "REDACTED_HASH";
+    hashedPasswordFile = config.sops.secrets.dbf-password.path;
 
     openssh.authorizedKeys.keys = [ macSshKey ];
   };

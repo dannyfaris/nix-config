@@ -83,12 +83,8 @@ in
     description = "Daniel";
     extraGroups = [ "wheel" "networkmanager" ];
 
-    # SHA-512 hash, committed to the repo. Salted and slow to reverse —
-    # acceptable for a private repo during bootstrap, NOT acceptable
-    # long-term.
-    # TODO (after flake conversion): switch to hashedPasswordFile via
-    # sops-nix or agenix. See header item #2.
-    hashedPassword = "REDACTED_HASH";
+    # Password hash now managed by sops-nix (see modules/system/default.nix).
+    hashedPassword = "REDACTED — see secrets/secrets.yaml";
 
     openssh.authorizedKeys.keys = [ macSshKey ];
   };
