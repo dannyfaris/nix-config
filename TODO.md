@@ -13,11 +13,12 @@ earlier ones landing cleanly.
 - [x] Verify equivalence (SSH, user, claude-code, `nix flake check`)
 - [x] Trim bootstrap header (repo-level narrative now lives in CLAUDE.md)
 
-## Tier 2 — Secrets management
+## Tier 2 — Secrets management (DONE)
 
-- [ ] Integrate sops-nix
-- [ ] Replace inline `hashedPassword` with `hashedPasswordFile`
-- [ ] Audit for any other plaintext secrets
+- [x] Integrate sops-nix
+- [x] Replace inline `hashedPassword` with `hashedPasswordFile`
+- [x] Audit for any other plaintext secrets (only secret was the password hash)
+- [x] Scrub plaintext hash from git history (`git-filter-repo`)
 
 ## Tier 3 — Desktop environment (Niri + waybar + Stylix)
 
