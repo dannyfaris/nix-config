@@ -1,50 +1,6 @@
-# ============================================================================
-# nixos-vm — bootstrap configuration
-# ============================================================================
-# Host:        UTM VM on Apple Silicon (aarch64-linux, Apple Virtualization)
-# Purpose:     Refining an evergreen NixOS setup (Niri + waybar) before
-#              migrating to a standalone x86_64 desktop.
-# Structure:   Single-file bootstrap. Planned conversion to a flake with
-#              hosts/<hostname> + modules/{system,desktop,home}/ layout.
-#              Modules should stay architecture-agnostic so the desktop
-#              migration is a new host directory, not a rewrite.
-#
-# Philosophy:  Tight-from-the-start. Prefer explicit > implicit, declarative
-#              > imperative, whitelist > blanket. The following stances are
-#              deliberate — do not relax without an explicit conversation:
-#                - users.mutableUsers = false
-#                - SSH: key-only, no passwords, no root
-#                - allowUnfreePredicate (whitelist, not blanket)
-#                - command-not-found disabled (incompatible with flakes)
-#
-# Documentation note:
-# This file is intentionally over-documented for the bootstrap phase. In a
-# single-file bootstrap, this file is the only context an agent (or future
-# you) has — hence the long header, the philosophy block, and the
-# resolution-aware TODOs.
-#
-# Once the flake conversion lands and a CLAUDE.md exists at the repo root,
-# this header (purpose, structure, philosophy, open-work list, break-glass)
-# migrates there. What stays inline are the one-line rationales on
-# individual settings that would otherwise look weird out of context —
-# e.g. warn-dirty, mutableUsers, command-not-found. Repo-level concerns
-# leave the file; line-level rationale stays.
-#
-# Open work, in intended resolution order:
-#   1. Flake conversion + home-manager + CLAUDE.md
-#        → relocates user-tier packages out of environment.systemPackages
-#        → splits this file into hosts/nixos-vm + reusable modules
-#        → migrates this header narrative into CLAUDE.md, leaves only
-#          line-level rationale inline
-#   2. Secrets management (sops-nix or agenix)
-#        → replaces inline hashedPassword with hashedPasswordFile
-#   3. Desktop environment modules (Niri, waybar, fuzzel, etc.)
-#        → entirely new; lives in modules/desktop/
-#
-# Break-glass: if SSH wedges or keys go wrong, the UTM console window
-# accepts the user password directly. Log in there and `sudo nixos-rebuild
-# switch` after fixing the config. Always keep the UTM window reachable.
-# ============================================================================
+# nixos-vm — bootstrap configuration (SUPERSEDED)
+# This file is kept as a reference. The active config is now flake-based.
+# See CLAUDE.md for repo-level documentation and TODO.md for the roadmap.
 
 { config, lib, pkgs, ... }:
 

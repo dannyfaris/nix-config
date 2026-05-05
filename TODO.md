@@ -3,7 +3,7 @@
 Prioritised roadmap. Items are resolved in order; later tiers depend on
 earlier ones landing cleanly.
 
-## Tier 1 — Flake conversion + home-manager (CURRENT)
+## Tier 1 — Flake conversion + home-manager (DONE)
 
 - [x] Draft CLAUDE.md + TODO.md
 - [x] Scaffold flake skeleton (flake-parts, inputs wired, `nix flake show` passes)
@@ -11,7 +11,7 @@ earlier ones landing cleanly.
 - [x] Decompose bootstrap config into modules
 - [x] `sudo nixos-rebuild switch --flake .#nixos-vm` succeeds
 - [x] Verify equivalence (SSH, user, claude-code, `nix flake check`)
-- [ ] Trim bootstrap header (repo-level narrative now lives in CLAUDE.md)
+- [x] Trim bootstrap header (repo-level narrative now lives in CLAUDE.md)
 
 ## Tier 2 — Secrets management
 
