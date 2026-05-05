@@ -6,11 +6,11 @@ earlier ones landing cleanly.
 ## Tier 1 — Flake conversion + home-manager (CURRENT)
 
 - [x] Draft CLAUDE.md + TODO.md
-- [ ] Scaffold flake skeleton (flake-parts, inputs wired, `nix flake show` passes)
-- [ ] Scaffold module layout (hosts/, modules/system/, modules/home/)
-- [ ] Decompose bootstrap config into modules
-- [ ] `sudo nixos-rebuild switch --flake .#nixos-vm` succeeds
-- [ ] Verify equivalence (SSH, user, claude-code, `nix flake check`)
+- [x] Scaffold flake skeleton (flake-parts, inputs wired, `nix flake show` passes)
+- [x] Scaffold module layout (hosts/, modules/system/, modules/home/)
+- [x] Decompose bootstrap config into modules
+- [x] `sudo nixos-rebuild switch --flake .#nixos-vm` succeeds
+- [x] Verify equivalence (SSH, user, claude-code, `nix flake check`)
 - [ ] Trim bootstrap header (repo-level narrative now lives in CLAUDE.md)
 
 ## Tier 2 — Secrets management
