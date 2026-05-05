@@ -13,6 +13,7 @@
     # Packages managed per-user (relocated from environment.systemPackages).
     home.packages = with pkgs; [
       claude-code
+      gh
     ];
 
     # Let home-manager manage itself within the NixOS module integration.
