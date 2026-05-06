@@ -12,5 +12,6 @@
     ./sops.nix
     ./users.nix
     ./packages.nix
+    ./mosh.nix
   ];
 }
