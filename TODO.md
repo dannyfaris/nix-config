@@ -30,20 +30,20 @@ is later re-introduced on x86_64.
 
 See [docs/](./docs/) for design rationale.
 
-### Slice 1 — Rollback the desktop commit
+### Slice 1 — Rollback the desktop commit (DONE)
 
 - [x] Local rebuild from rolled-back tree succeeds (`nix build` clean)
 - [x] Tag `tier3-desktop-deferred` at the rolled-back commit (preserves desktop work)
 - [x] `git push --force-with-lease` to remote
 - [x] Push the tag to remote
 
-### Slice 2 — Documentation foundation
+### Slice 2 — Documentation foundation (DONE)
 
-- [ ] `docs/README.md`, `docs/philosophy.md`, `docs/taxonomy.md` created
-- [ ] 12 ADRs created in `docs/decisions/`
-- [ ] `CLAUDE.md` updated with `docs/` pointer + tier renumbering reference
-- [ ] `TODO.md` transformed (this file)
-- [ ] AI memory files updated to point to `docs/`
+- [x] `docs/README.md`, `docs/philosophy.md`, `docs/taxonomy.md` created
+- [x] 12 ADRs created in `docs/decisions/`
+- [x] `CLAUDE.md` updated with `docs/` pointer + tier renumbering reference
+- [x] `TODO.md` transformed (this file)
+- [x] AI memory files updated to point to `docs/`
 
 ### Slice 3a — Decompose modules/system/ (refactor only)
 
