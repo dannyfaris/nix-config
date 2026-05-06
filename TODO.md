@@ -63,14 +63,14 @@ See [docs/](./docs/) for design rationale.
       `cursor-cli` (codex and gemini-cli are free; see
       `agent_clis_implementation_notes.md`)
 
-### Slice 4 — modules/home/ taxonomy scaffold + migrate existing
+### Slice 4 — modules/home/ taxonomy scaffold + migrate existing (DONE)
 
-- [ ] Rewrite `modules/home/default.nix` as wrapper with `home-manager.users.dbf.imports`
-- [ ] Add `home-manager.backupFileExtension = "hm-bak"` and `news.display = "silent"`
-- [ ] Create stub files: `shell, prompt, direnv, multiplexer, editor, ssh, cli-utils, nix-tooling`
-- [ ] Migrate `claude-code` package to `agent-clis.nix`
-- [ ] Migrate `gh` package to `git.nix`
-- [ ] Build verifies; behaviour unchanged from pre-restructure
+- [x] Rewrite `modules/home/default.nix` as wrapper with `home-manager.users.dbf.imports`
+- [x] Add `home-manager.backupFileExtension = "hm-bak"` and `news.display = "silent"`
+- [x] Create stub files: `shell, prompt, direnv, multiplexer, editor, ssh, cli-utils, nix-tooling`
+- [x] Migrate `claude-code` package to `agent-clis.nix`
+- [x] Migrate `gh` package to `git.nix`
+- [x] Build verifies; closure diff empty at package level (only home-manager metadata changed)
 
 ### Slice 5a — Terminal foundation
 
