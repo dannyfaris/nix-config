@@ -54,12 +54,12 @@ See [docs/](./docs/) for design rationale.
 - [x] Build verifies byte-identical system closure (stronger than
       `nix store diff-closures` — same store path before and after)
 
-### Slice 3b — System-side support for headless tier
+### Slice 3b — System-side support for headless tier (DONE)
 
-- [ ] `modules/system/users.nix`: add `users.users.dbf.shell = pkgs.fish` and
+- [x] `modules/system/users.nix`: add `users.users.dbf.shell = pkgs.fish` and
       `programs.fish.enable = true` (system-side gate; see ADR-001)
-- [ ] `modules/system/mosh.nix` created with `programs.mosh.enable = true`
-- [ ] `modules/system/nix.nix`: extend `allowUnfreePredicate` to include
+- [x] `modules/system/mosh.nix` created with `programs.mosh.enable = true`
+- [x] `modules/system/nix.nix`: extend `allowUnfreePredicate` to include
       `cursor-cli` (codex and gemini-cli are free; see
       `agent_clis_implementation_notes.md`)
 
