@@ -1,7 +1,8 @@
-# TODO
+# nix-config Roadmap
 
-Prioritised roadmap. Items are resolved in order; later tiers depend on
-earlier ones landing cleanly.
+Prioritised roadmap and progress tracker. See [docs/](./docs/) for design
+rationale (philosophy, taxonomy, and 12 ADRs); this file tracks *what's
+happening when*.
 
 ## Tier 1 — Flake conversion + home-manager (DONE)
 
@@ -20,14 +21,118 @@ earlier ones landing cleanly.
 - [x] Audit for any other plaintext secrets (only secret was the password hash)
 - [x] Scrub plaintext hash from git history (`git-filter-repo`)
 
-## Tier 3 — Desktop environment (Niri + waybar + Stylix)
+## Tier 3 — Headless Dev (in progress)
 
-- [ ] Niri window manager module (ref: sodiboo/system for niri-flake idioms)
-- [ ] Waybar status bar
-- [ ] Stylix theming (ref: eduardofuncao/nixferatu for Niri+Stylix end-to-end)
-- [ ] Fuzzel launcher
+A comprehensive terminal tooling layer: fish + starship + direnv + zellij +
+helix + git/gh/glab + ssh + modern CLI utils + nix tooling + four agent
+CLIs. Standalone-useful and carries forward unchanged when the desktop tier
+is later re-introduced on x86_64.
 
-## Tier 4 — Multi-host
+See [docs/](./docs/) for design rationale.
 
-- [ ] x86_64 desktop host (ref: ryan4yin/nix-config for per-host file shape)
+### Slice 1 — Rollback the desktop commit
+
+- [x] Local rebuild from rolled-back tree succeeds (`nix build` clean)
+- [x] Tag `tier3-desktop-deferred` at the rolled-back commit (preserves desktop work)
+- [x] `git push --force-with-lease` to remote
+- [x] Push the tag to remote
+
+### Slice 2 — Documentation foundation
+
+- [ ] `docs/README.md`, `docs/philosophy.md`, `docs/taxonomy.md` created
+- [ ] 12 ADRs created in `docs/decisions/`
+- [ ] `CLAUDE.md` updated with `docs/` pointer + tier renumbering reference
+- [ ] `TODO.md` transformed (this file)
+- [ ] AI memory files updated to point to `docs/`
+
+### Slice 3a — Decompose modules/system/ (refactor only)
+
+- [ ] Extract `boot.nix`, `networking.nix`, `locale.nix`, `nix.nix`,
+      `ssh.nix`, `sops.nix`, `users.nix`, `packages.nix` from existing
+      `default.nix`
+- [ ] `default.nix` becomes imports-only
+- [ ] `nix store diff-closures` shows no behaviour-relevant change
+
+### Slice 3b — System-side support for headless tier
+
+- [ ] `modules/system/users.nix`: add `users.users.dbf.shell = pkgs.fish` and
+      `programs.fish.enable = true` (system-side gate; see ADR-001)
+- [ ] `modules/system/mosh.nix` created with `programs.mosh.enable = true`
+- [ ] `modules/system/nix.nix`: extend `allowUnfreePredicate` to include
+      `cursor-cli` (codex and gemini-cli are free; see
+      `agent_clis_implementation_notes.md`)
+
+### Slice 4 — modules/home/ taxonomy scaffold + migrate existing
+
+- [ ] Rewrite `modules/home/default.nix` as wrapper with `home-manager.users.dbf.imports`
+- [ ] Add `home-manager.backupFileExtension = "hm-bak"` and `news.display = "silent"`
+- [ ] Create stub files: `shell, prompt, direnv, multiplexer, editor, ssh, cli-utils, nix-tooling`
+- [ ] Migrate `claude-code` package to `agent-clis.nix`
+- [ ] Migrate `gh` package to `git.nix`
+- [ ] Build verifies; behaviour unchanged from pre-restructure
+
+### Slice 5a — Terminal foundation
+
+- [ ] `shell.nix`: `programs.fish.enable` + sparse abbreviation set
+- [ ] `prompt.nix`: `programs.starship.enable` + minimal config (see ADR-002)
+- [ ] `direnv.nix`: `programs.direnv.enable` + `programs.direnv.nix-direnv.enable`
+- [ ] `multiplexer.nix`: `programs.zellij.enable`
+
+### Slice 5b — Editor
+
+- [ ] `editor.nix`: `programs.helix.enable` + settings (theme, line-number,
+      bufferline, lsp, `clipboard-provider = "termcode"`)
+- [ ] Helix nix language entry: nixd LSP, nixfmt formatter via `lib.getExe`,
+      `auto-format = true`
+
+### Slice 5c — Version control + SSH
+
+- [ ] `git.nix`: `programs.git` with dual identity (personal default; work
+      via `gitdir:~/work/`), `programs.gh` with `git_protocol = "https"`
+      and `gitCredentialHelper.enable`, glab as package
+- [ ] `ssh.nix`: `programs.ssh.enable = true` with explanatory comment
+
+### Slice 5d — Tooling collections
+
+- [ ] `cli-utils.nix`: `programs.X.enable` for fzf, bat, eza, zoxide,
+      lazygit, yazi; `home.packages` for ripgrep, fd, htop, dust
+- [ ] `nix-tooling.nix`: `home.packages` with nh, nix-output-monitor, nixd,
+      nixfmt, statix, deadnix
+
+### Slice 5e — Agent CLIs
+
+- [ ] `agent-clis.nix`: `home.packages` with claude-code, codex, gemini-cli,
+      cursor-cli (no sops integration — all four use OAuth; see ADR-008)
+
+### Slice 6 — End-to-end verification
+
+- [ ] `nix flake check` clean
+- [ ] `sudo nixos-rebuild switch` clean
+- [ ] Smoke tests pass (fish login, starship prompt with nix-shell indicator,
+      direnv activation, zellij detach/reattach, helix with nixd, dual git
+      identity, gh auth/clone produces HTTPS, glab auth, mosh, OSC52 paste,
+      all four agent CLIs invoke)
+
+## Tier 4 — Desktop environment (deferred)
+
+Niri + waybar + Stylix + fuzzel + ghostty + mako. Configuration was
+completed in commit `9dc80b2` and rolled back; preserved at git tag
+`tier3-desktop-deferred` for recovery. To be re-introduced on x86_64
+hardware (Tier 5).
+
+The original tier work touched: niri-flake + stylix flake inputs;
+`modules/desktop/` (5 files); greetd block in `hosts/nixos-vm/default.nix`.
+
+The deferral is hardware-driven, not design-driven: niri requires
+`EGL_EXT_device_drm`, which UTM's Apple Virtualization Framework GPU does
+not expose.
+
+## Tier 5 — x86_64 desktop migration
+
+- [ ] Provision x86_64 host
+- [ ] Add `hosts/<desktop>/` (mirror of `hosts/nixos-vm/` shape)
+- [ ] Re-introduce desktop modules from `tier3-desktop-deferred` tag
+- [ ] Enable `services.greetd` on the desktop host
+- [ ] Verify niri renders on real GPU
 - [ ] Factor any remaining host-specific bits out of shared modules
+- [ ] Reference: ryan4yin/nix-config for multi-host flake-parts patterns

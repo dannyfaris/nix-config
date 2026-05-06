@@ -6,6 +6,14 @@ Evergreen NixOS configuration. Currently running on a UTM VM (aarch64-linux,
 Apple Virtualization) as a refinement environment before migrating to a
 standalone x86_64 desktop.
 
+## Reference documentation
+
+`docs/` is the canonical record of the *why* behind every decision in this
+repo: operating philosophy, naming taxonomy, and 12 light-format ADRs (one
+per major decision). Start with [docs/README.md](./docs/README.md). This
+CLAUDE.md is the AI/contributor entry point; `docs/` is the deeper
+companion.
+
 ## Structure
 
 ```
@@ -59,8 +67,12 @@ nix flake show
   command for system + home).
 - **flake-parts** for flake organisation.
 - One inline comment per non-obvious setting explaining "why", not "what".
-- Secrets stay plaintext during bootstrap. sops-nix migration is the next-tier TODO.
-- Do not scaffold Niri/Stylix yet. Leave hooks where they'll plug in.
+- Module file naming follows the "most-communicative term" rule. See
+  [docs/taxonomy.md](./docs/taxonomy.md).
+- Tier 4 (desktop env: niri/stylix/etc.) is deferred until x86_64 hardware.
+  The earlier attempt is preserved at git tag `tier3-desktop-deferred` for
+  recovery. Do not re-scaffold the desktop modules on the VM — niri cannot
+  render under UTM's Apple Virtualization Framework (no `EGL_EXT_device_drm`).
 
 ## Open work
 
