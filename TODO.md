@@ -45,13 +45,14 @@ See [docs/](./docs/) for design rationale.
 - [x] `TODO.md` transformed (this file)
 - [x] AI memory files updated to point to `docs/`
 
-### Slice 3a — Decompose modules/system/ (refactor only)
+### Slice 3a — Decompose modules/system/ (refactor only) (DONE)
 
-- [ ] Extract `boot.nix`, `networking.nix`, `locale.nix`, `nix.nix`,
+- [x] Extract `boot.nix`, `networking.nix`, `locale.nix`, `nix.nix`,
       `ssh.nix`, `sops.nix`, `users.nix`, `packages.nix` from existing
       `default.nix`
-- [ ] `default.nix` becomes imports-only
-- [ ] `nix store diff-closures` shows no behaviour-relevant change
+- [x] `default.nix` becomes imports-only
+- [x] Build verifies byte-identical system closure (stronger than
+      `nix store diff-closures` — same store path before and after)
 
 ### Slice 3b — System-side support for headless tier
 
