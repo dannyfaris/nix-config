@@ -111,26 +111,43 @@ the headless dev stack.
 Configured in `modules/home/editor.nix`:
 
 ```nix
-programs.helix = {
-  enable = true;
+let
+  flakePath = "/home/dbf/nix-config";
+  hostName = "nixos-vm";
+in {
+  programs.helix = {
+    enable = true;
 
-  settings = {
-    theme = "<chosen at first use>";
-    editor = {
-      line-number = "relative";
-      bufferline = "multiple";
-      lsp.display-messages = true;
-      clipboard-provider = "termcode";   # OSC52 — see ADR-011
+    settings = {
+      theme = "<chosen at first use>";
+      editor = {
+        line-number = "relative";
+        bufferline = "multiple";
+        lsp.display-messages = true;
+        clipboard-provider = "termcode";   # OSC52 — see ADR-011
+      };
     };
-  };
 
-  languages.language = [{
-    name = "nix";
-    auto-format = true;
-    formatter.command = "${lib.getExe pkgs.nixfmt}";
-    language-servers = [ "nixd" ];
-  }];
-};
+    # Tell nixd how to evaluate this flake's option schema. Without this,
+    # nixd does only syntax-level analysis; with it, hovers on option
+    # attributes (users.users.dbf.shell, programs.git.settings.user.name,
+    # etc.) show their type and description.
+    languages.language-server.nixd = {
+      command = "nixd";
+      config.nixd.options = {
+        nixos.expr = ''(builtins.getFlake "${flakePath}").nixosConfigurations.${hostName}.options'';
+        home-manager.expr = ''(builtins.getFlake "${flakePath}").nixosConfigurations.${hostName}.options.home-manager.users.type.getSubOptions []'';
+      };
+    };
+
+    languages.language = [{
+      name = "nix";
+      auto-format = true;
+      formatter.command = "${lib.getExe pkgs.nixfmt}";
+      language-servers = [ "nixd" ];
+    }];
+  };
+}
 ```
 
 Notes:
@@ -141,6 +158,11 @@ Notes:
   surviving any future binary-rename in nixpkgs.
 - `nixd` LSP and `nixfmt` formatter are installed by `modules/home/nix-tooling.nix`
   (ADR-007); helix invokes them through PATH.
+- The nixd `options.{nixos,home-manager}.expr` strings are passed through
+  to nixd verbatim; nixd evaluates them at hover-time. The flake path
+  (`/home/dbf/nix-config`) and host name (`nixos-vm`) are hardcoded
+  via the `let` bindings — when this repo moves (Tier 5 x86_64 host with
+  a different path or hostname), update both `flakePath` and `hostName`.
 - LSPs for non-nix languages live in per-project `flake.nix` devShells, not
   in home-manager — direnv (ADR-003) makes them available when entering a
   project directory.

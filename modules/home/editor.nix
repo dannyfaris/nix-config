@@ -7,10 +7,16 @@
 #   - nixd is invoked by name and resolved against PATH at runtime.
 #
 # Both binaries are installed by modules/home/nix-tooling.nix (Slice 5d).
-# Until that slice lands, format-on-save still works (nixfmt is embedded
-# by store path), but LSP attach for nix files fails silently (nixd is
-# not on PATH yet).
-{ lib, pkgs, ... }: {
+{ lib, pkgs, ... }:
+let
+  # nixd options-expr targets. Hardcoded for the current host — when the
+  # repo moves (Tier 5 x86_64 host: different path or hostname), update
+  # both values. Substituted into the nixd config below as plain strings;
+  # nixd evaluates them at hover-time, not at nix-eval-time.
+  flakePath = "/home/dbf/nix-config";
+  hostName = "nixos-vm";
+in
+{
   programs.helix = {
     enable = true;
 
@@ -29,7 +35,27 @@
       };
     };
 
-    # programs.helix.languages.language is a LIST of attrsets (one per
+    # nixd language-server configuration. Without this, nixd can only do
+    # syntax-level analysis; with it, hovers and completions over
+    # NixOS/home-manager option attributes (users.users.dbf.shell,
+    # programs.git.settings.user.name, etc.) show their type and
+    # description. The `options` expressions tell nixd how to evaluate
+    # this flake's option schema at hover-time.
+    languages.language-server.nixd = {
+      command = "nixd";
+      config.nixd.options = {
+        nixos = {
+          expr = ''(builtins.getFlake "${flakePath}").nixosConfigurations.${hostName}.options'';
+        };
+        # home-manager options live inside a submodule;
+        # .type.getSubOptions [] unwraps them so nixd sees the option tree.
+        home-manager = {
+          expr = ''(builtins.getFlake "${flakePath}").nixosConfigurations.${hostName}.options.home-manager.users.type.getSubOptions []'';
+        };
+      };
+    };
+
+    # programs.helix.languages.language is a LIST of attribute sets (one per
     # language), not a single attrset.
     languages.language = [{
       name = "nix";
