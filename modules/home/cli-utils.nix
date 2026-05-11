@@ -18,6 +18,12 @@
 # to script execution. Other tools (bat, fd, rg, dust, etc.) are NOT
 # aliased to cat/find/grep/du/ps because they have meaningful behavioural
 # differences that would surprise script logic if aliased into.
+#
+# Tool-vs-runtime split (see lazydocker in ADR-006): TUI clients live in
+# home-manager and are available everywhere; the actual runtime tools they
+# talk to live per-project in flake.nix devShells (e.g. the docker CLI
+# itself), or per-host as a system service (e.g. the docker daemon — when
+# we have a first project that needs one).
 { pkgs, ... }: {
   programs = {
     fzf.enable = true;
@@ -25,6 +31,7 @@
     eza.enable = true;
     zoxide.enable = true;
     lazygit.enable = true;
+    lazydocker.enable = true;
     yazi = {
       enable = true;
       # Adopt the new default (was "yy" pre-stateVersion-26.05). The

@@ -18,8 +18,8 @@ to install by default in home-manager.
 
 ## Decision
 
-Ten tools are installed at the home-manager level, available everywhere on
-this user's account:
+Eleven tools are installed at the home-manager level, available everywhere
+on this user's account:
 
 - **ripgrep** (`rg`) — replaces `grep`
 - **fd** — replaces `find`
@@ -28,6 +28,7 @@ this user's account:
 - **eza** — replaces `ls`
 - **zoxide** — partial replacement for `cd` (fuzzy-jump-by-name)
 - **lazygit** — TUI git client
+- **lazydocker** — TUI docker client (see "Tool-vs-runtime split" below)
 - **yazi** — TUI file manager
 - **htop** — process / system monitor
 - **dust** — replaces `du` with visual disk usage tree
@@ -66,6 +67,9 @@ The ten locked-in tools each earn their place by daily use:
 - **lazygit** is the TUI git client; given helix has no built-in git
   plugin (ADR-005), running lazygit in a separate zellij pane is the
   canonical pattern.
+- **lazydocker** is the TUI docker client — same archetype as lazygit,
+  same author. See "Tool-vs-runtime split" below for why the TUI is in
+  home-manager but the docker CLI/daemon aren't.
 - **yazi** is the visual file manager. It earned its place specifically
   by serving job-of-file-manipulation that helix's file picker can't:
   exploring unfamiliar directories, batch operations with visual
@@ -83,6 +87,30 @@ useful but only sometimes; and adding tools pre-emptively contradicts the
 The skipped tier is recorded with rationale specifically so the
 decisions don't get reflexively reversed. Each entry there has a reason
 or a migration trigger documented.
+
+### Tool-vs-runtime split (lazydocker)
+
+lazydocker is in home-manager but **docker itself is not**. The split:
+
+- **lazydocker (TUI client)** — universal, in home-manager. Same archetype
+  as lazygit: it's a UI over whatever's available, with no runtime of its
+  own.
+- **docker CLI** — per-project. Each project that needs docker declares
+  the CLI version it wants in its own `flake.nix` `devShells.default`,
+  picked up via direnv on `cd` (ADR-003). This avoids global docker
+  version churn and lets different projects pin different versions.
+- **docker daemon** — a deployment decision, not a per-project one. The
+  daemon is a host service running as root; it can't be in a user's
+  per-project env. When the first project that needs docker arrives,
+  decide where the daemon lives — most likely the user's Mac (Docker
+  Desktop / OrbStack), accessed from the VM via `DOCKER_HOST=ssh://…` or
+  `tcp://…` set in the project's `.envrc`. Alternatives are
+  `virtualisation.docker.enable` on the VM itself, or rootless podman.
+
+This split means lazydocker can sit ready in home-manager today without
+any docker daemon configured anywhere. The first time a project needs
+docker, only that project's `flake.nix` / `.envrc` changes — the global
+config stays put.
 
 ## Consequences
 
