@@ -220,6 +220,13 @@ Notes:
   Rationale § "What about glab?"). Authentication still runs interactively
   via `glab auth login` (token-paste flow); the token persists in
   `~/.config/glab-cli/hosts.yml`.
+- **Project directory convention** — `~/work/` for employer/GitLab work,
+  `~/personal/` as the conventional sibling for personal repos. Both
+  directories are ensured declaratively via
+  `home.activation.ensureProjectDirs` (idempotent `mkdir -p` during
+  activation; existing contents untouched). The gitdir-include condition
+  is `gitdir:~/work/` only — `~/personal/` doesn't need a gitdir
+  condition because it inherits the personal default identity.
 - The `gh repo clone` test in Slice 6 verification is the canary: it must
   produce an `https://...` URL, not `git@github.com:...`. If it does the
   latter, `git_protocol = "https"` isn't applied — investigate before

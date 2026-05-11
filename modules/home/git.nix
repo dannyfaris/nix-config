@@ -64,4 +64,14 @@
   # run (token persisted to ~/.config/glab-cli/, not in nix). The git
   # credential helper for gitlab.com is wired above (declarative).
   home.packages = [ pkgs.glab ];
+
+  # Project directory convention: ~/work/ for employer/GitLab work,
+  # ~/personal/ for everything else. The gitdir-include above keys off
+  # ~/work/; ~/personal/ is the conventional sibling for personal repos.
+  # Both directories are ensured on activation — mkdir -p is idempotent
+  # so existing contents are untouched. Removing the convention later
+  # leaves the directories on disk (we don't auto-remove user data).
+  home.activation.ensureProjectDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/work" "$HOME/personal"
+  '';
 }
