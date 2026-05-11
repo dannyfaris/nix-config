@@ -72,12 +72,12 @@ See [docs/](./docs/) for design rationale.
 - [x] Migrate `gh` package to `git.nix`
 - [x] Build verifies; closure diff empty at package level (only home-manager metadata changed)
 
-### Slice 5a — Terminal foundation
+### Slice 5a — Terminal foundation (DONE)
 
-- [ ] `shell.nix`: `programs.fish.enable` + sparse abbreviation set
-- [ ] `prompt.nix`: `programs.starship.enable` + minimal config (see ADR-002)
-- [ ] `direnv.nix`: `programs.direnv.enable` + `programs.direnv.nix-direnv.enable`
-- [ ] `multiplexer.nix`: `programs.zellij.enable`
+- [x] `shell.nix`: `programs.fish.enable` + sparse abbreviation set
+- [x] `prompt.nix`: `programs.starship.enable` + minimal config (see ADR-002)
+- [x] `direnv.nix`: `programs.direnv.enable` + `programs.direnv.nix-direnv.enable`
+- [x] `multiplexer.nix`: `programs.zellij.enable`
 
 ### Slice 5b — Editor
 
