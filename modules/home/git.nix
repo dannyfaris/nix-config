@@ -13,18 +13,22 @@
   programs.git = {
     enable = true;
 
-    userName = "Daniel Faris";
-    userEmail = "daniel@faris.co.nz";   # personal default
+    # Personal default identity. The work email is applied automatically
+    # under ~/work/ via the gitdir-include below.
+    settings = {
+      user = {
+        name = "Daniel Faris";
+        email = "daniel@faris.co.nz";
+      };
+
+      init.defaultBranch = "main";
+      pull.rebase = true;
+    };
 
     includes = [{
       condition = "gitdir:~/work/";
       contents.user.email = "daniel.faris@gotaxi.co.nz";
     }];
-
-    extraConfig = {
-      init.defaultBranch = "main";
-      pull.rebase = true;
-    };
   };
 
   programs.gh = {

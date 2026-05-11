@@ -122,18 +122,23 @@ Configured in `modules/home/git.nix`:
 { pkgs, ... }: {
   programs.git = {
     enable = true;
-    userName = "Daniel Faris";
-    userEmail = "daniel@faris.co.nz";   # personal default
+
+    # Personal default identity. The work email is applied automatically
+    # under ~/work/ via the gitdir-include below.
+    settings = {
+      user = {
+        name = "Daniel Faris";
+        email = "daniel@faris.co.nz";
+      };
+
+      init.defaultBranch = "main";
+      pull.rebase = true;
+    };
 
     includes = [{
       condition = "gitdir:~/work/";
       contents.user.email = "daniel.faris@gotaxi.co.nz";
     }];
-
-    extraConfig = {
-      init.defaultBranch = "main";
-      pull.rebase = true;
-    };
   };
 
   programs.gh = {
@@ -145,6 +150,14 @@ Configured in `modules/home/git.nix`:
   home.packages = [ pkgs.glab ];
 }
 ```
+
+Note on the `settings` shape: current home-manager prefers
+`programs.git.settings.user.{name,email}` and
+`programs.git.settings.<key>` over the older `programs.git.userName`,
+`programs.git.userEmail`, and `programs.git.extraConfig`. The older
+attribute paths still work via backward-compatibility aliases but emit
+`trace:` deprecation warnings during eval; the `settings.*` shape used
+above avoids those.
 
 Notes:
 
