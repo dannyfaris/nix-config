@@ -10,5 +10,12 @@
 # passphrase + ssh-agent, and add matchBlocks here. Agent forwarding from
 # the Mac stays explicitly OFF (standard security best practice).
 _: {
-  programs.ssh.enable = true;
+  programs.ssh = {
+    enable = true;
+    # Opt out of home-manager's deprecated "default match-block contents"
+    # behaviour. Upstream is removing the implicit defaults; this silences
+    # the trace warning and makes the stance explicit. We don't depend on
+    # any of those defaults (no matchBlocks declared; no SSH keys yet).
+    enableDefaultConfig = false;
+  };
 }

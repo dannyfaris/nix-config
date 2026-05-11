@@ -80,10 +80,12 @@ Configured in `modules/home/ssh.nix`:
 {
   programs.ssh = {
     enable = true;
-    # Defaults only. No matchBlocks, no identity files.
-    # Why: git auth uses HTTPS+token (ADR-009), so SSH keys aren't needed
-    # for git. No other concrete SSH-out workflow exists yet. Generate keys
-    # and add host-specific config when a real need arises (ADR-010).
+    # Opt out of home-manager's deprecated "default match-block contents"
+    # behaviour. Upstream is removing the implicit defaults; explicit
+    # opt-out silences the trace warning and makes the stance clear.
+    # We don't depend on any of those defaults (no matchBlocks declared;
+    # no SSH keys yet).
+    enableDefaultConfig = false;
   };
 }
 ```

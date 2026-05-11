@@ -89,8 +89,16 @@ or a migration trigger documented.
 - ✓ Daily-use friction drops noticeably across search, navigation, viewing,
   git, and disk management.
 - ✓ Each tool is small and self-contained; failure modes are localised.
-- ✓ Originals (`ls`, `cat`, `find`, `grep`, `du`, `ps`, `df`, `cd`) remain
-  callable — scripts and muscle memory unaffected.
+- ✓ Originals (`cat`, `find`, `grep`, `du`, `ps`, `df`, `cd`) remain
+  callable as their classic selves — scripts unaffected (shell aliases
+  don't apply to script execution anyway), interactive muscle memory
+  preserved.
+- ⚠ `ls`, `ll`, `la`, `lla`, `lt` are aliased to eza variants by
+  `programs.eza`'s default fish integration. This is an accepted
+  carve-out: eza is a strict-superset interactive replacement for ls
+  (colour, git status, modern formatting; defaults still alphabetical /
+  one-per-line). The original `ls` is still callable via
+  `command ls` / `\ls` / `/run/current-system/sw/bin/ls` if ever needed.
 - ✗ Ten new tools to be aware of. Mitigated by each being a near-drop-in
   for a familiar command.
 - ⚠ Migration trigger: multi-machine setup → reconsider atuin for
@@ -121,7 +129,14 @@ integrations cleanly, e.g. fzf's Ctrl-R history binding); plain
 }
 ```
 
-**Do not alias originals.** `ls`, `cat`, `find`, `grep`, `du` stay
-themselves. Instead, use the new names directly (`eza`, `bat`, `fd`,
-`rg`, `dust`) or define short additional aliases for common patterns
-(e.g. `l = "eza -l --git"`).
+**Aliasing carve-out for eza.** `programs.eza.enableFishIntegration`
+defaults to `true` and ships these aliases automatically:
+`ls = eza`, `ll = eza -l`, `la = eza -a`, `lla = eza -la`, `lt = eza --tree`.
+We keep them — see Consequences for the rationale.
+
+**Do not alias other originals.** `cat`, `find`, `grep`, `du`, `ps`,
+`df` stay themselves. Use the new names directly (`bat`, `fd`, `rg`,
+`dust`, `htop`) — they have meaningful behavioural differences that
+would surprise script logic if aliased. Define short *additional*
+aliases for common patterns if you want them (e.g. inside a project's
+fish abbrs), but never replace the original command's behaviour.

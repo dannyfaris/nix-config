@@ -10,8 +10,14 @@
 # themselves enabled in this user's home-manager config — fish is enabled
 # in modules/home/shell.nix, so all integrations bind there.
 #
-# Do NOT alias originals (ls, cat, find, grep) — keep them callable for
-# muscle memory and script compatibility.
+# Aliasing carve-out: programs.eza's default fish integration aliases
+# `ls`, `ll`, `la`, `lla`, and `lt` to eza variants. This is accepted —
+# eza is a strict-superset interactive replacement for ls (colour, git
+# status, modern formatting; defaults still alphabetical / one-per-line).
+# Scripts continue to use coreutils' ls because shell aliases don't apply
+# to script execution. Other tools (bat, fd, rg, dust, etc.) are NOT
+# aliased to cat/find/grep/du/ps because they have meaningful behavioural
+# differences that would surprise script logic if aliased into.
 { pkgs, ... }: {
   programs = {
     fzf.enable = true;
@@ -19,7 +25,13 @@
     eza.enable = true;
     zoxide.enable = true;
     lazygit.enable = true;
-    yazi.enable = true;
+    yazi = {
+      enable = true;
+      # Adopt the new default (was "yy" pre-stateVersion-26.05). The
+      # wrapper spawns yazi and cd's the parent shell to whatever
+      # directory yazi finished in on exit.
+      shellWrapperName = "y";
+    };
   };
 
   home.packages = with pkgs; [
