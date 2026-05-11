@@ -4,7 +4,7 @@
 # Settings declared inline as a nix attrset (programs.starship.settings)
 # rather than in a separate starship.toml file. Fish hook auto-wired by
 # programs.starship.enable.
-{ ... }: {
+_: {
   programs.starship = {
     enable = true;
 

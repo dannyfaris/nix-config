@@ -4,7 +4,7 @@
 # System-side fish enable + login-shell change live in
 # modules/system/users.nix (load-bearing — the system-side enable is the
 # /etc/shells gate). This file owns the user-side rc, abbreviations, etc.
-{ ... }: {
+_: {
   programs.fish = {
     enable = true;
 

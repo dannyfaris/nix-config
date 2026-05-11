@@ -6,6 +6,6 @@
 # needed here. Mosh (modules/system/mosh.nix) handles network-blip
 # resilience; zellij handles cross-reboot persistence — they're
 # complementary.
-{ ... }: {
+_: {
   programs.zellij.enable = true;
 }

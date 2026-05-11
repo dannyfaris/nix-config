@@ -9,6 +9,6 @@
 # cloud servers), generate fresh ed25519 keys on this box, use a
 # passphrase + ssh-agent, and add matchBlocks here. Agent forwarding from
 # the Mac stays explicitly OFF (standard security best practice).
-{ ... }: {
+_: {
   programs.ssh.enable = true;
 }
