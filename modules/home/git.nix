@@ -13,11 +13,15 @@
   programs.git = {
     enable = true;
 
-    # Personal default identity. The work email is applied automatically
-    # under ~/work/ via the gitdir-include below.
+    # Personal default identity matches the user's GitHub handle
+    # (dannyfaris) — GitHub attribution is email-based, not name-based,
+    # so the name is purely cosmetic on commit logs. Under ~/work/ the
+    # gitdir-include below overrides BOTH name and email to the work
+    # identity ("Daniel Faris" / GotaXi email) so commits to the work
+    # GitLab show the user's real name (employer convention).
     settings = {
       user = {
-        name = "Daniel Faris";
+        name = "dannyfaris";
         email = "daniel@faris.co.nz";
       };
 
@@ -27,7 +31,10 @@
 
     includes = [{
       condition = "gitdir:~/work/";
-      contents.user.email = "daniel.faris@gotaxi.co.nz";
+      contents.user = {
+        name = "Daniel Faris";
+        email = "daniel.faris@gotaxi.co.nz";
+      };
     }];
   };
 

@@ -7,9 +7,18 @@
 
 The user works on two distinct git ecosystems from this dev box:
 
-- **Personal**, on GitHub, under `daniel@faris.co.nz`.
-- **Work**, on GitLab.com, under `daniel.faris@gotaxi.co.nz` (employer:
-  GotaXi). Approved by employer policy to operate from this personal box.
+- **Personal**, on GitHub, as `dannyfaris <daniel@faris.co.nz>`.
+- **Work**, on GitLab.com, as `Daniel Faris <daniel.faris@gotaxi.co.nz>`
+  (employer: GotaXi). Approved by employer policy to operate from this
+  personal box.
+
+Note the asymmetry in the **name** convention: personal commits use the
+user's GitHub handle (`dannyfaris`) for visual consistency with their
+GitHub profile; work commits use the user's real name (`Daniel Faris`) per
+typical employer / GitLab conventions. Either convention is valid —
+GitHub attribution is email-based, so the name is purely cosmetic on
+commit logs. The two emails are what actually route each commit to the
+right account.
 
 The setup needs to:
 
@@ -23,9 +32,11 @@ The setup needs to:
 
 **Dual identity** via git's `includeIf` directive:
 
-- Personal is the default identity, applied everywhere.
+- Personal is the default identity, applied everywhere:
+  `name = "dannyfaris"`, `email = "daniel@faris.co.nz"`.
 - Work identity is applied automatically inside `~/work/` via a
-  `gitdir:~/work/` conditional include.
+  `gitdir:~/work/` conditional include, overriding **both** name and
+  email: `name = "Daniel Faris"`, `email = "daniel.faris@gotaxi.co.nz"`.
 
 **Auth is HTTPS + token-based**, with `gh` and `glab` registered as git
 credential helpers — *not* SSH-key-based.
@@ -113,6 +124,14 @@ runs once interactively after the first install; tokens persist in
   symmetrical setup would still apply: HTTPS for github.com, SSH for
   gitlab.workco.com via a host-aliased SSH config — at which point ADR-010
   also revises.
+- ⚠ Precedence trap on systems migrating from a pre-nix git setup: git
+  reads `~/.config/git/config` (XDG, where home-manager writes) *first*,
+  then `~/.gitconfig` (legacy) *after*, with later values overriding
+  earlier ones. A stray `~/.gitconfig` silently overrides nix-managed
+  values, including the gitdir conditional include. Verify the legacy
+  file does not exist before declaring the identity setup correct. On
+  the current host this manifested as `user.name` resolving to a stale
+  legacy value and the work-email override not applying inside `~/work/`.
 
 ## Implementation
 
@@ -123,11 +142,15 @@ Configured in `modules/home/git.nix`:
   programs.git = {
     enable = true;
 
-    # Personal default identity. The work email is applied automatically
-    # under ~/work/ via the gitdir-include below.
+    # Personal default identity matches the user's GitHub handle
+    # (dannyfaris) — GitHub attribution is email-based, not name-based,
+    # so the name is purely cosmetic on commit logs. Under ~/work/ the
+    # gitdir-include below overrides BOTH name and email to the work
+    # identity ("Daniel Faris" / GotaXi email) so commits to the work
+    # GitLab show the user's real name (employer convention).
     settings = {
       user = {
-        name = "Daniel Faris";
+        name = "dannyfaris";
         email = "daniel@faris.co.nz";
       };
 
@@ -137,7 +160,10 @@ Configured in `modules/home/git.nix`:
 
     includes = [{
       condition = "gitdir:~/work/";
-      contents.user.email = "daniel.faris@gotaxi.co.nz";
+      contents.user = {
+        name = "Daniel Faris";
+        email = "daniel.faris@gotaxi.co.nz";
+      };
     }];
   };
 
