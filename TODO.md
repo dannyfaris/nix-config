@@ -79,11 +79,11 @@ See [docs/](./docs/) for design rationale.
 - [x] `direnv.nix`: `programs.direnv.enable` + `programs.direnv.nix-direnv.enable`
 - [x] `multiplexer.nix`: `programs.zellij.enable`
 
-### Slice 5b — Editor
+### Slice 5b — Editor (DONE)
 
-- [ ] `editor.nix`: `programs.helix.enable` + settings (theme, line-number,
+- [x] `editor.nix`: `programs.helix.enable` + settings (theme, line-number,
       bufferline, lsp, `clipboard-provider = "termcode"`)
-- [ ] Helix nix language entry: nixd LSP, nixfmt formatter via `lib.getExe`,
+- [x] Helix nix language entry: nixd LSP, nixfmt formatter via `lib.getExe`,
       `auto-format = true`
 
 ### Slice 5c — Version control + SSH
