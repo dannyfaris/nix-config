@@ -8,8 +8,9 @@
 # converts wall-of-text builds into a tree view. statix and deadnix lint
 # nix code (run interactively or via editor integration).
 #
-# pkgs.nixfmt is the RFC-style formatter (1.2.0+); pkgs.nixfmt-rfc-style
-# is now a deprecated alias for the same package.
+# pkgs.nixfmt is the RFC-style formatter (1.2.0+). Don't swap with:
+#   - pkgs.nixfmt-classic — separate package, pre-RFC Serokell style.
+#   - pkgs.nixfmt-rfc-style — deprecated alias, emits warnings.
 { pkgs, ... }: {
   home.packages = with pkgs; [
     nh

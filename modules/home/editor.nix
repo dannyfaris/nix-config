@@ -34,8 +34,9 @@
     languages.language = [{
       name = "nix";
       auto-format = true;
-      # pkgs.nixfmt is the RFC-style formatter (the old pkgs.nixfmt-classic
-      # uses a different style — do not swap).
+      # pkgs.nixfmt is the RFC-style formatter. Don't swap with:
+      #   - pkgs.nixfmt-classic — separate package, pre-RFC Serokell style.
+      #   - pkgs.nixfmt-rfc-style — deprecated alias, emits warnings.
       formatter.command = "${lib.getExe pkgs.nixfmt}";
       language-servers = [ "nixd" ];
     }];
