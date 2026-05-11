@@ -102,6 +102,11 @@ Notes:
   aliases to `pkgs.nixfmt`.
 - Helix's nix language config (in `editor.nix`) calls these by absolute
   path via `lib.getExe pkgs.nixfmt` to survive any future binary rename.
+- **`NH_FLAKE` is set via `home.sessionVariables`** in the same module so
+  `nh os switch` works from any cwd (not just from inside the repo with
+  `.` passed explicitly). Hardcoded to `/home/dbf/nix-config`; needs
+  updating alongside `editor.nix`'s `flakePath` when the repo moves
+  (Tier 5).
 - Recommended baseline pass: run `statix check` and `deadnix` on the
   repo once after this slice lands; clean up any flags; then leave them
   as continuous on-edit linters.

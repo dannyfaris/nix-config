@@ -51,14 +51,19 @@ the config. Always keep the UTM window reachable.
 ## Build & deploy
 
 ```bash
-# Rebuild and switch (from repo root on the VM):
-sudo nixos-rebuild switch --flake .#nixos-vm
+# Rebuild and switch — canonical command, runs anywhere thanks to NH_FLAKE
+# (set in modules/home/nix-tooling.nix). nh wraps nixos-rebuild with
+# integrated nom tree-view progress and a generation diff at the end.
+nh os switch
+
+# Cheap build verification without activation:
+nix build .#nixosConfigurations.nixos-vm.config.system.build.toplevel --no-link
 
 # Check flake validity:
 nix flake check
 
-# Show flake outputs:
-nix flake show
+# Break-glass (if nh is broken / unavailable):
+sudo nixos-rebuild switch --flake .#nixos-vm
 ```
 
 ## Conventions

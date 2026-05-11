@@ -20,4 +20,14 @@
     statix
     deadnix
   ];
+
+  # Tell nh where this user's flake lives, so `nh os switch` (and the home/
+  # debug subcommands) work from anywhere — not just from inside the repo
+  # with `.` passed explicitly. NH_FLAKE applies to all `nh` subcommands;
+  # NH_OS_FLAKE would scope to just `nh os`.
+  #
+  # Hardcoded path: when the repo moves (Tier 5 x86_64 host with a
+  # different path), update this alongside the flakePath binding in
+  # modules/home/editor.nix.
+  home.sessionVariables.NH_FLAKE = "/home/dbf/nix-config";
 }
