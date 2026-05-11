@@ -24,7 +24,9 @@ sops-nix integration is needed for these tools.
 - **Claude Code** — `claude login` (existing pattern, unchanged).
 - **Codex** — "Sign in with ChatGPT" via `codex` first-run, OAuth.
 - **Gemini CLI** — "Sign in with Google" via `gemini` first-run, OAuth.
-- **Cursor CLI** — login flow via the `cursor` binary.
+- **Cursor CLI** — login flow via the `cursor-agent` binary (note: the
+  nixpkgs `cursor-cli` package installs the binary as `cursor-agent`,
+  not `cursor`).
 
 Cursor CLI is the only unfree package; it's added to the
 `allowUnfreePredicate` whitelist in `modules/system/nix.nix`. Codex and
