@@ -100,7 +100,14 @@ git auth path doesn't use SSH.
 - ✗ mosh client must be installed on the Mac separately (not in scope of
   this nix config). User runs `brew install mosh` once.
 - ✗ OSC52 in iTerm2 needs an explicit toggle ("Allow programs to access
-  clipboard"). If the user is using Ghostty (likely), this is a non-issue.
+  clipboard"). **Ghostty has a similar gate**: `clipboard-write` defaults
+  to `ask`, which prompts on every paste from a terminal app. Set
+  `clipboard-write = allow` in Ghostty's config to make OSC52 silently
+  work. Surfaced during Tier 3 verification — paste-from-helix didn't
+  populate the Mac clipboard, but the nix-config side was correct
+  (helix `clipboard-provider = "termcode"`, zellij default pass-through,
+  mosh OSC52-aware). The Mac-side fix was deferred to Tier 5 — see
+  `TODO.md` Tier 5 checklist.
 - ⚠ Migration trigger: a Mac terminal emulator without OSC52 support
   would break the clipboard bridge. Modern alternatives all support it;
   unlikely to be an issue.
