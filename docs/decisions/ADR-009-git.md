@@ -101,10 +101,22 @@ section.
 
 ### What about glab?
 
-glab handles the GitLab side, also via credential-helper integration after
-`glab auth login`. It works identically to gh from git's perspective. Auth
-runs once interactively after the first install; tokens persist in
-`~/.config/glab-cli/`.
+glab handles the GitLab side, also via credential-helper integration. There
+is **no `programs.glab.gitCredentialHelper` equivalent** to gh's home-manager
+module, so the credential helper for gitlab.com must be wired manually
+inside `programs.git.settings.credential."https://gitlab.com".helper`.
+
+Why this matters: `glab auth login` writes its own glab config (in
+`~/.config/glab-cli/`) and *then* tries to write a git credential helper
+entry to `~/.config/git/config`. But under home-manager, that path is a
+read-only symlink into the nix store. Without a pre-declared helper, glab
+fails at startup with `could not lock config file ... Read-only file
+system` — before it even prompts for the token.
+
+With the helper declaratively in place, `git config` short-circuits when
+glab tries to write the same value, and `glab auth login` completes
+normally. Token persists in `~/.config/glab-cli/hosts.yml` after the
+interactive flow (same compromise as gh — not declarative, but stable).
 
 ## Consequences
 
@@ -138,7 +150,7 @@ runs once interactively after the first install; tokens persist in
 Configured in `modules/home/git.nix`:
 
 ```nix
-{ pkgs, ... }: {
+{ lib, pkgs, ... }: {
   programs.git = {
     enable = true;
 
@@ -156,6 +168,15 @@ Configured in `modules/home/git.nix`:
 
       init.defaultBranch = "main";
       pull.rebase = true;
+
+      # glab as git credential helper for gitlab.com — wired declaratively
+      # because there's no programs.glab.gitCredentialHelper equivalent
+      # to gh's. Without this, glab auth login fails trying to write the
+      # read-only nix-managed git config.
+      credential."https://gitlab.com".helper = [
+        ""
+        "${lib.getExe pkgs.glab} auth git-credential"
+      ];
     };
 
     includes = [{
@@ -193,9 +214,12 @@ Notes:
   personal nor GitLab work requires it. If signing becomes a requirement,
   add `signingKey` and `commit.gpgsign = true` per identity (or use SSH
   signing).
-- glab is a `home.packages` entry only; there's no `programs.glab`
-  module. Authentication runs interactively once via `glab auth login` and
-  persists.
+- glab is a `home.packages` entry; there's no `programs.glab` module, so
+  the credential helper for gitlab.com is wired manually in
+  `programs.git.settings.credential."https://gitlab.com".helper` (see
+  Rationale § "What about glab?"). Authentication still runs interactively
+  via `glab auth login` (token-paste flow); the token persists in
+  `~/.config/glab-cli/hosts.yml`.
 - The `gh repo clone` test in Slice 6 verification is the canary: it must
   produce an `https://...` URL, not `git@github.com:...`. If it does the
   latter, `git_protocol = "https"` isn't applied — investigate before

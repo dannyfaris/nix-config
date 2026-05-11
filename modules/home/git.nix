@@ -9,7 +9,7 @@
 # Auth model: HTTPS + token via gh/glab credential helpers. Not SSH —
 # explicitly chosen to avoid passphrase friction in agent-CLI workflows
 # (see ADR-009 § "Why HTTPS over SSH").
-{ pkgs, ... }: {
+{ lib, pkgs, ... }: {
   programs.git = {
     enable = true;
 
@@ -27,6 +27,18 @@
 
       init.defaultBranch = "main";
       pull.rebase = true;
+
+      # glab as git credential helper for gitlab.com — wired declaratively
+      # here because home-manager has no `programs.glab.gitCredentialHelper`
+      # equivalent to `programs.gh`'s. Without this entry `glab auth login`
+      # fails at startup trying to write to the read-only nix-managed git
+      # config. With it, git already knows about the helper and glab's
+      # write becomes a no-op. The two-element list (empty string then
+      # command) is git's idiom for "reset any prior helper, then use this".
+      credential."https://gitlab.com".helper = [
+        ""
+        "${lib.getExe pkgs.glab} auth git-credential"
+      ];
     };
 
     includes = [{
@@ -49,7 +61,7 @@
   };
 
   # glab — GitLab CLI. Auth via `glab auth login` interactively on first
-  # run (token persisted to ~/.config/glab-cli/, not in nix). Same
-  # compromise as gh.
+  # run (token persisted to ~/.config/glab-cli/, not in nix). The git
+  # credential helper for gitlab.com is wired above (declarative).
   home.packages = [ pkgs.glab ];
 }
