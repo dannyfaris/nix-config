@@ -86,12 +86,12 @@ See [docs/](./docs/) for design rationale.
 - [x] Helix nix language entry: nixd LSP, nixfmt formatter via `lib.getExe`,
       `auto-format = true`
 
-### Slice 5c — Version control + SSH
+### Slice 5c — Version control + SSH (DONE)
 
-- [ ] `git.nix`: `programs.git` with dual identity (personal default; work
+- [x] `git.nix`: `programs.git` with dual identity (personal default; work
       via `gitdir:~/work/`), `programs.gh` with `git_protocol = "https"`
       and `gitCredentialHelper.enable`, glab as package
-- [ ] `ssh.nix`: `programs.ssh.enable = true` with explanatory comment
+- [x] `ssh.nix`: `programs.ssh.enable = true` with explanatory comment
 
 ### Slice 5d — Tooling collections
 
