@@ -23,26 +23,18 @@
   networking.hostName = "mercury";
 
   # Match the NixOS release the chosen AMI is built from. Set with
-  # lib.mkDefault so the amazon-image module wins if it pins a value
-  # (some nixpkgs revisions set this from the image's build manifest);
-  # otherwise this 25.11 default applies. The operator updates this to
-  # match the chosen AMI if it ships a different release.
+  # lib.mkDefault as defensive convention (matches what
+  # nixos-generate-config emits for hardware files); at the pinned
+  # nixpkgs revision, neither amazon-image.nix nor ec2-data.nix sets
+  # system.stateVersion, so the 25.11 default applies. Operator
+  # updates this to match the AMI's NixOS release if it differs.
   system.stateVersion = lib.mkDefault "25.11";
 
-  # PRE-FLIGHT REQUIRED for aarch64 (Graviton) instances. Older
-  # amazon-image.nix revisions exposed an `ec2.efi` option that had to
-  # be true on arm64 for UEFI boot; newer revisions handle this
-  # automatically (auto-detected from hostPlatform). Before first
-  # launch, grep the pinned nixpkgs:
-  #
-  #   nix eval --raw nixpkgs#path -- pkgs/nixos/modules/virtualisation/amazon-image.nix
-  #
-  # If `ec2.efi` is still an exposed option there, uncomment the line
-  # below. If it's been removed, leave it commented — amazon-image
-  # handles UEFI on its own. A misnamed option will fail eval; a
-  # missing-but-required setting will fail at boot.
-  #
-  # ec2.efi = true;
+  # ec2.efi is auto-set by amazon-options.nix from
+  # pkgs.stdenv.hostPlatform.isAarch64 (verified against the pinned
+  # nixpkgs revision in flake.lock). On Graviton it defaults to true,
+  # which is what we want. The option is also marked `internal = true`
+  # — not for user override. Don't set it here.
 
   _module.args.hostContext = {
     hostName  = "mercury";

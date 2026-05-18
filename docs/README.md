@@ -38,6 +38,12 @@ truth, eliminating drift between AI memory and in-repo reference.
   Consequences / Implementation. See
   [decisions/README.md](./decisions/README.md) for the index and conventions.
 
+- **[runbooks/](./runbooks/)** — operational procedures: ordered, copy-
+  pasteable steps for tasks that aren't (and shouldn't be) declarative.
+  Currently:
+  [headless-bootstrap-aws.md](./runbooks/headless-bootstrap-aws.md) —
+  bringing up a new headless host on AWS from clean AMI to `nh os switch`.
+
 ## Reading order
 
 If you're new to this repo:

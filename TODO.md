@@ -207,11 +207,10 @@ Operational, on the operator's machine + AWS console:
       match the chosen AMI's NixOS release, update it before the first
       switch (note: now wrapped in `lib.mkDefault`, so an amazon-image
       pin would win automatically)
-- [ ] Pre-flight `ec2.efi` on the pinned nixpkgs revision (`nix eval
-      --raw nixpkgs#path -- pkgs/nixos/modules/virtualisation/amazon-image.nix`).
-      If the option still exists, uncomment `ec2.efi = true;` in
-      `hosts/mercury/default.nix` before first launch — required on
-      Graviton/arm64 for UEFI boot
+- [x] Pre-flight `ec2.efi` — confirmed against pinned nixpkgs that
+      `amazon-options.nix` declares the option as `internal` and
+      defaults it to `pkgs.stdenv.hostPlatform.isAarch64`, so Graviton
+      auto-gets `ec2.efi = true`. No host-file setting required
 
 ## Bus-factor — sops decryption identity for the operator
 
