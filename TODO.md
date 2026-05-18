@@ -205,7 +205,43 @@ Operational, on the operator's machine + AWS console:
       user.email` is the work email, etc.)
 - [ ] If `system.stateVersion` in `hosts/mercury/default.nix` doesn't
       match the chosen AMI's NixOS release, update it before the first
-      switch
+      switch (note: now wrapped in `lib.mkDefault`, so an amazon-image
+      pin would win automatically)
+- [ ] Pre-flight `ec2.efi` on the pinned nixpkgs revision (`nix eval
+      --raw nixpkgs#path -- pkgs/nixos/modules/virtualisation/amazon-image.nix`).
+      If the option still exists, uncomment `ec2.efi = true;` in
+      `hosts/mercury/default.nix` before first launch — required on
+      Graviton/arm64 for UEFI boot
+
+## Bus-factor — sops decryption identity for the operator
+
+ADR-018 commits to sops-nix on headless hosts. `sops updatekeys`
+(needed when adding a new host's recipient) requires running on a
+machine that holds an existing decryption identity for
+`secrets/secrets.yaml`. Today the only such identity is the UTM VM's
+host SSH private key — which lives only on the VM itself.
+
+This means a second operator with repo + AWS access but no VM access
+cannot add a new headless host. For the primary user it's a minor
+papercut (run sops on the VM via SSH); for true bus-factor it's a
+gap.
+
+Options to close it (decide later, when adding a second operator or
+when the VM goes away):
+
+- [ ] Add a personal age recipient derived from the operator's laptop
+      SSH key to `.sops.yaml`. Future onboarding then runs from the
+      laptop regardless of host state. Cost: laptop key compromise
+      becomes a recipient-revocation event for every encrypted file.
+- [ ] Store the VM's host private key as a 1Password secure note,
+      importable on demand. Cost: an out-of-band copy of a host
+      identity that should ideally not leave the host.
+- [ ] Move to 1Password service-account tokens per ADR-018's "future
+      direction", which sidesteps the question entirely. Cost: the
+      whole secrets mechanism shifts.
+
+None are urgent. Captured here so the question doesn't get
+re-discovered on the next host-add.
 
 ## Tier 4 — Desktop environment (deferred)
 

@@ -105,22 +105,67 @@ git commit -m "sops: add mercury recipient"
 git push
 ```
 
-**Trap:** this re-encryption must run on the operator's machine, which
-has access to the existing decryption identity (the UTM VM's host key,
-copied or accessible somehow — see project setup). Running it on Mercury
-won't work; Mercury doesn't have a decryptor identity until after its
-first rebuild.
+**Trap (and a real bus-factor gap):** this re-encryption must run on a
+machine that holds an existing decryption identity for
+`secrets/secrets.yaml`. Today that means an existing recipient's age
+identity (e.g. the UTM VM's host private key in
+`/etc/ssh/ssh_host_ed25519_key`) needs to be present on whichever
+machine you run `sops updatekeys` from.
+
+The current setup does not document how an operator other than the
+primary user obtains that identity — there is no "project setup" doc,
+no 1Password vault item, no agenix anchor key. If you ARE the primary
+user, the practical answers are: (a) run `sops updatekeys` directly on
+the VM via SSH; (b) keep a copy of the VM's host private key offline in
+1Password and import it temporarily when needed; or (c) add yourself as
+a personal age recipient (derived from your laptop's SSH key) the
+first time, so future onboarding doesn't depend on any host's key.
+
+Closing this gap properly is tracked in TODO.md under
+"Bus-factor — sops decryption identity for the operator". Mercury can be
+onboarded today via option (a), running the sops commands on the VM
+itself.
+
+Running `sops updatekeys` on Mercury won't work — Mercury doesn't have
+a decryptor identity until after its first rebuild, and getting one
+requires the very operation we're trying to do.
 
 ## Phase 3 — First rebuild on Mercury
 
 SSH in as the AMI's default user. Verify `dbf` does not yet exist on the
 instance (`grep dbf /etc/passwd` returns nothing). The clone goes into a
-temporary location because `dbf`'s home directory doesn't exist yet:
+temporary location because `dbf`'s home directory doesn't exist yet.
+nixos.github.io/amis images ship flakes-enabled with no `nixos` channel,
+so `nix shell nixpkgs#git` is the right way to get git (not the legacy
+`nix-env -iA nixos.git`, which fails on these images):
 
 ```bash
-sudo nix-env -iA nixos.git   # if git isn't on the AMI by default
-sudo git clone https://github.com/dannyfaris/nix-config.git /root/nix-config
-sudo nixos-rebuild switch --flake /root/nix-config#mercury
+sudo -i
+nix shell nixpkgs#git -c git clone \
+  https://github.com/dannyfaris/nix-config.git /root/nix-config
+cd /root/nix-config
+```
+
+**Verify sops decryption before the switch.** This is the
+load-bearing pre-flight: if Mercury's current `/etc/ssh/ssh_host_ed25519_key`
+doesn't match the pubkey the operator harvested in Phase 2 (e.g. because
+cloud-init regenerated host keys between then and now), the post-switch
+`dbf` will end up with an empty hashedPasswordFile and `sudo` will be
+broken. Fail fast here:
+
+```bash
+nix shell nixpkgs#sops -c sops -d secrets/secrets.yaml > /dev/null && \
+  echo "sops decryption OK"
+```
+
+If this fails, do NOT proceed with the switch. Re-harvest the host key
+from the operator's machine, re-run `sops updatekeys`, push, `git pull`
+on Mercury, and re-try.
+
+Then activate:
+
+```bash
+nixos-rebuild switch --flake /root/nix-config#mercury
 ```
 
 The first switch will:
@@ -129,7 +174,8 @@ The first switch will:
 - Apply `users.mutableUsers = false`, which removes the AMI's default
   cloud-init-provisioned user.
 - Decrypt `dbf`'s hashedPasswordFile via sops, using the host's SSH key
-  as the age identity.
+  as the age identity (the same one whose pubkey was harvested in
+  Phase 2 — pre-flighted just above).
 - Set up SSH key-only inbound auth for `dbf` with the Mac SSH key from
   `modules/core/nixos/users.nix`.
 
@@ -194,11 +240,15 @@ After the first successful switch:
 
 ## Security group rules
 
-NixOS-side, the firewall is enabled (`networking.firewall.enable = true`
-from `modules/core/nixos/networking-networkmanager.nix` on the VM; the
-amazon-image module enables the firewall by default for Mercury).
-`services.openssh.openFirewall = true` opens TCP 22.
-`programs.mosh.enable = true` opens UDP 60000–61000.
+NixOS-side, the firewall is enabled by
+`modules/core/nixos/firewall.nix`, which the `headless` role imports —
+so every headless host (VM and Mercury alike) has the perimeter on
+regardless of network stack. Note that `amazon-image.nix` does NOT
+enable the NixOS firewall by default; it leaves perimeter to the AWS
+Security Group. The role-level enable is what closes that gap.
+
+With the firewall enabled, `services.openssh.openFirewall = true` opens
+TCP 22 and `programs.mosh.enable = true` opens UDP 60000–61000.
 
 AWS Security Group must mirror this:
 
