@@ -158,8 +158,10 @@ interactive flow (same compromise as gh — not declarative, but stable).
 > no longer the live shape.
 
 Originally configured in `modules/home/git.nix` (single file, the
-combined behaviour now distributed across `home/core/nixos/git.nix` +
-`git-identity-dual.nix` + `gh.nix` on the dual-identity UTM VM):
+combined behaviour now distributed across `home/core/nixos/git.nix`
+plus the per-host identity and forge-CLI pieces selected via
+`hostContext.extraHomeModules` — `git-identity-dual.nix` + `gh.nix`
+on the dual-identity UTM VM, `git-identity-work.nix` on Mercury):
 
 ```nix
 { lib, pkgs, ... }: {

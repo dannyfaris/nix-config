@@ -35,12 +35,19 @@
     linger = true;
   };
 
-  # docker-compose v2. The docker CLI itself is added to
-  # environment.systemPackages by the rootless module automatically
-  # (`environment.systemPackages = [ cfg.package ];` in the upstream
-  # module — verified at the pinned nixpkgs revision). Adding
-  # docker-compose here makes both `docker-compose` (standalone) and
-  # `docker compose` (subcommand, via cli-plugins auto-discovery in
-  # /run/current-system/sw/libexec/docker/cli-plugins/) available.
+  # docker-compose v2 standalone binary. The `docker compose`
+  # subcommand form already works without this — at the pinned nixpkgs
+  # revision pkgs.docker is built with composeSupport = true and the
+  # docker binary is wrapped with DOCKER_CLI_PLUGIN_DIRS pointing at
+  # the bundled compose's own cli-plugins directory. So `docker compose
+  # …` resolves through the wrapper, not via NixOS profile-merging
+  # under /run/current-system/sw/libexec/.
+  #
+  # Adding pkgs.docker-compose here gives the standalone `docker-compose`
+  # binary on PATH alongside the subcommand form, for scripts and
+  # tooling that invoke the hyphenated name directly. One version
+  # caveat: pkgs.docker-compose and the compose plugin bundled into
+  # pkgs.docker can drift; `docker compose version` and
+  # `docker-compose --version` may report different numbers.
   environment.systemPackages = [ pkgs.docker-compose ];
 }

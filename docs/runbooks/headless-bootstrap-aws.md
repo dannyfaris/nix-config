@@ -244,8 +244,11 @@ After the first successful switch:
   - `docker run --rm hello-world` succeeds as `dbf` with no sudo and
     no `DOCKER_HOST` override (the rootless module sets the env var).
   - `docker compose version` and `docker-compose --version` both
-    respond — the subcommand form works via cli-plugins
-    auto-discovery, the standalone is `pkgs.docker-compose`.
+    respond — `docker compose` (subcommand) comes from `pkgs.docker`
+    itself via the `DOCKER_CLI_PLUGIN_DIRS` wrapper baked into the
+    derivation; `docker-compose` (standalone) comes from
+    `pkgs.docker-compose`. Version numbers may differ between the two;
+    that's expected.
   - After a full reboot and SSH back in: `systemctl --user status
     docker` still shows the daemon running before login (lingering
     is enabled).
