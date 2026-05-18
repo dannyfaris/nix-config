@@ -17,6 +17,7 @@
     ../modules/core/nixos/locale.nix
     ../modules/core/nixos/nix-daemon.nix
     ../modules/core/nixos/sshd.nix
+    ../modules/core/nixos/firewall.nix
     ../modules/core/nixos/sops.nix
     ../modules/core/nixos/users.nix
     ../modules/core/nixos/system-packages.nix

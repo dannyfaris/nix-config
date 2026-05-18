@@ -11,6 +11,10 @@
 { inputs }:
 { hostname, system, role }:
 
+# `system` is passed twice: once to nixosSystem (here) and once via
+# `nixpkgs.hostPlatform` in the host's hardware.nix. The two must agree.
+# A future refactor could pin them from one source, but at the current
+# host count the small duplication is cheaper than the indirection.
 inputs.nixpkgs.lib.nixosSystem {
   inherit system;
   specialArgs = { inherit inputs; };
