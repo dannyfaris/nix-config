@@ -144,6 +144,69 @@ Emergent improvements that landed during this slice (visible in git log):
   work; legacy `~/.gitconfig` cleanup; precedence-trap warning in
   ADR-009)
 
+## Multi-host expansion — Mercury (DONE in code; operational steps remain)
+
+First instance of the `headless` role beyond the UTM VM: a work-only dev
+box on AWS EC2 (Graviton, aarch64). The forcing function for the PRD §5
+role/host refactor — both hosts now adopt `roles/headless.nix` from a
+shared module tree under `modules/core/nixos/` + `home/core/nixos/`.
+
+Code (all on branch `claude/headless-dev-config-v7cUS`):
+
+- [x] Pre-publication cleanup: strip work email from the SSH-key comment
+      in `modules/core/nixos/users.nix` (was the last identifying string
+      in the working tree)
+- [x] PRD §5 structural refactor — `roles/`, `hosts/`, `lib/mk-host.nix`,
+      `modules/core/nixos/`, `home/core/nixos/`; both hosts share
+      `roles/headless.nix`
+- [x] Per-host parametrisation via `_module.args.hostContext`
+      (`hostName`, `flakePath`, `extraHomeModules`) forwarded into HM
+      submodules via `extraSpecialArgs`. Editor's nixd options and
+      nix-tooling's NH_FLAKE now read from `hostContext` — closes the
+      "Hardcoded paths/hostnames to update" carryover from Tier 3
+- [x] Work-only divergence via import splits: `git.nix` (base) +
+      `git-identity-dual.nix` (VM) + `git-identity-work.nix` (Mercury)
+      + `gh.nix` (VM only). No host-keyed `mkIf`
+- [x] `hosts/mercury/default.nix` adopts the role; imports
+      amazon-image module; declares its hostContext including the
+      work-identity import
+- [x] `hosts/mercury/hardware.nix` placeholder (sets hostPlatform; real
+      version regenerated on first boot — see below)
+- [x] ADR-017 (AWS AMI bootstrap), ADR-018 (sops continues on
+      headless), ADR-019 (hostContext parametrisation), ADR-020
+      (import-split convention)
+- [x] `docs/runbooks/headless-bootstrap-aws.md`
+- [x] PRD §12 deferrals 1 (headless bootstrap path) and 2 (headless
+      secrets) marked resolved
+
+Operational, on the operator's machine + AWS console:
+
+- [ ] Make the GitHub repo public (Settings → General → Danger Zone)
+- [ ] Verify byte-identical VM closure across PR1's commits
+      (`nix build .#nixosConfigurations.nixos-vm.config.system.build.toplevel`
+      after commit `2967a61` should equal the same build after commit
+      `b5fadaf` and the subsequent module-split commit)
+- [ ] `nh os switch` on the VM and smoke-test fish, helix (with nixd),
+      direnv, mosh
+- [ ] Pick + launch the latest unstable-aligned aarch64 NixOS AMI from
+      https://nixos.github.io/amis/
+- [ ] Configure AWS Security Group for the instance — TCP 22 and
+      UDP 60000–61000 from your dev-machine IPs only (see runbook)
+- [ ] Run the sops recipient onboarding step (ssh-keyscan →
+      ssh-to-age → update `.sops.yaml` → `sops updatekeys` → push) per
+      the runbook
+- [ ] Clone the repo to `/root/nix-config` on Mercury and run the first
+      `nixos-rebuild switch --flake /root/nix-config#mercury`
+- [ ] Move the clone to `/home/dbf/nix-config` and `chown` to `dbf`
+- [ ] Replace `hosts/mercury/hardware.nix` with the output of
+      `nixos-generate-config --show-hardware-config` and commit
+- [ ] Verify per the runbook's Verification section (work-only:
+      `which gh` empty, no `~/personal/`, default `git config
+      user.email` is the work email, etc.)
+- [ ] If `system.stateVersion` in `hosts/mercury/default.nix` doesn't
+      match the chosen AMI's NixOS release, update it before the first
+      switch
+
 ## Tier 4 — Desktop environment (deferred)
 
 Niri + waybar + Stylix + fuzzel + ghostty + mako. Configuration was
@@ -170,16 +233,17 @@ not expose.
 - [ ] Factor any remaining host-specific bits out of shared modules
 - [ ] Reference: ryan4yin/nix-config for multi-host flake-parts patterns
 
-### Hardcoded paths/hostnames to update (Tier 3 leftovers)
+### Hardcoded paths/hostnames to update (Tier 3 leftovers — DONE)
 
-These were deliberately hardcoded with the expectation of a Tier 5 update.
-All have inline comments at the source pointing here.
+Resolved as part of the Multi-host expansion slice via the
+`_module.args.hostContext` mechanism (ADR-019). Both files now read
+`flakePath`/`hostName` from `hostContext` rather than hardcoding the
+strings inline.
 
-- [ ] `modules/home/editor.nix` — `flakePath` (currently `/home/dbf/nix-config`)
-      and `hostName` (currently `nixos-vm`) in the `let` binding feeding
-      nixd's `options.{nixos,home-manager}.expr`
-- [ ] `modules/home/nix-tooling.nix` — `home.sessionVariables.NH_FLAKE`
-      (currently `/home/dbf/nix-config`)
+- [x] `home/core/nixos/editor.nix` — `flakePath` and `hostName` now
+      come from `hostContext`, set per-host in `hosts/<host>/default.nix`
+- [x] `home/core/nixos/nix-tooling.nix` — `NH_FLAKE` now reads
+      `hostContext.flakePath`
 
 ### Tier-3 deferrals to revisit
 

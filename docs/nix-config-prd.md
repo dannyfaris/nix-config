@@ -637,9 +637,9 @@ For `macos-workstation` and `linux-workstation` roles, this test holds today. Fo
 
 Design decisions that have been deliberately deferred. Decisions resolved during PRD drafting are documented in the relevant section above and not duplicated here.
 
-**Bootstrap path for `headless` instances.** Options include `nixos-anywhere` (paired with `disko` for declarative disk layout), vendor-provided NixOS images, or other approaches. To be evaluated when the first headless instance is required, informed by the specific vendor and use case at that time. The disk-layout approach is coupled to this decision.
+**Bootstrap path for `headless` instances.** *Resolved (2026-05-18) for AWS by [ADR-017](./decisions/ADR-017-headless-bootstrap-aws-ami.md):* official NixOS AMI from https://nixos.github.io/amis/ + the `amazon-image.nix` module from nixpkgs. `nixos-anywhere` + `disko` is the assumed fallback for providers without a NixOS image but is not yet committed; that's a per-provider decision to record when the first non-AWS headless host is provisioned.
 
-**Runtime secrets on `headless` instances.** Per §2.2, current scope doesn't require runtime secrets on headless hosts. When the first headless workload requires secrets, the mechanism (1Password service-account tokens with a bootstrap-provisioned token, `sops-nix` re-introduced for the headless role only, or another option) is to be chosen at that point and recorded as an ADR.
+**Runtime secrets on `headless` instances.** *Resolved (2026-05-18) by [ADR-018](./decisions/ADR-018-headless-secrets-sops.md):* continue with `sops-nix`, identical to the UTM VM. The host's cloud-init-generated ed25519 SSH key is the decryption identity. 1Password `op` on headless is deferred again until a real headless workload requires it (the trigger is described in ADR-018's Consequences).
 
 **Continuous integration.** Deferred per §9.5. May be added once cross-platform coverage becomes valuable.
 

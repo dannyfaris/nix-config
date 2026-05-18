@@ -59,6 +59,10 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [014](./ADR-014-independent-roles.md) | Role composition | independent, not inherited | Each role imports modules directly; no shared parents |
 | [015](./ADR-015-tier-as-directory.md) | Stability tier | encoded as directory | `core/` vs `experimental/` in the path |
 | [016](./ADR-016-host-identity.md) | Host identity | stable per physical machine | Hardware change = new host; software role change = no rename |
+| [017](./ADR-017-headless-bootstrap-aws-ami.md) | Headless bootstrap (AWS) | NixOS AMI + amazon-image module | Resolves PRD §12 deferral; no nixos-anywhere/disko on EC2 |
+| [018](./ADR-018-headless-secrets-sops.md) | Headless secrets | sops-nix | Resolves PRD §12 deferral; same pattern as the VM, 1Password `op` deferred again |
+| [019](./ADR-019-host-parametrisation.md) | Per-host parametrisation | `_module.args.hostContext` + `extraSpecialArgs` | Per-host values reach home-manager modules via the function-arg forwarder |
+| [020](./ADR-020-role-overlap-via-import-splits.md) | Work-vs-personal divergences | import splits, not host-keyed `mkIf` | One file = one configuration; choice expressed by which modules a host imports |
 
 ## Conventions
 
