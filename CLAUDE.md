@@ -9,9 +9,9 @@ standalone x86_64 desktop.
 ## Reference documentation
 
 `docs/` is the canonical record of the *why* behind every decision in this
-repo: operating philosophy, naming taxonomy, and 12 light-format ADRs (one
-per major decision). Start with [docs/README.md](./docs/README.md). This
-CLAUDE.md is the AI/contributor entry point; `docs/` is the deeper
+repo: operating philosophy, naming taxonomy, and a series of light-format
+ADRs (one per major decision). Start with [docs/README.md](./docs/README.md).
+This CLAUDE.md is the AI/contributor entry point; `docs/` is the deeper
 companion.
 
 ## Structure

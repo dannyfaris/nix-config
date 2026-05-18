@@ -19,6 +19,11 @@ truth, eliminating drift between AI memory and in-repo reference.
 
 ## Contents
 
+- **[nix-config-prd.md](./nix-config-prd.md)** — the design document for the
+  multi-host rebuild: roles, module organisation, stability tiers, the
+  cross-platform contract, structural invariants, and bootstrap. The
+  canonical specification of *what we're building and why*.
+
 - **[philosophy.md](./philosophy.md)** — the operating principles that shape
   every decision in this repo (tight from the start, declarative > imperative,
   whitelist > blanket, no premature abstraction, etc.) and the *why* behind
@@ -39,10 +44,13 @@ If you're new to this repo:
 
 1. Start with the project-level [CLAUDE.md](../CLAUDE.md) for the top-level
    context, current state, and operational stances.
-2. Read [philosophy.md](./philosophy.md) — the operating principles will help
+2. Read [nix-config-prd.md](./nix-config-prd.md) for the design of the
+   multi-host configuration — what each role is, how modules are organised,
+   what the structural rules are.
+3. Read [philosophy.md](./philosophy.md) — the operating principles will help
    you predict why subsequent choices were made.
-3. Skim [taxonomy.md](./taxonomy.md) so the module structure makes sense.
-4. Dip into [decisions/](./decisions/) for any specific tool or design choice
+4. Skim [taxonomy.md](./taxonomy.md) so the module structure makes sense.
+5. Dip into [decisions/](./decisions/) for any specific tool or design choice
    you're curious about.
 
 ## Conventions

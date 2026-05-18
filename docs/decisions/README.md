@@ -55,6 +55,10 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [010](./ADR-010-ssh.md) | SSH | defaults only | Outbound key generation deferred (HTTPS git removes the need) |
 | [011](./ADR-011-remote-dev-qol.md) | Remote-dev QoL | mosh + OSC52 | Session resilience; cross-machine clipboard |
 | [012](./ADR-012-taxonomy.md) | Module taxonomy | Most-communicative term | The naming rule itself, as a meta-decision |
+| [013](./ADR-013-composition-framework.md) | Composition framework | flake-parts + role-explicit imports | Roles list modules explicitly; no auto-discovery |
+| [014](./ADR-014-independent-roles.md) | Role composition | independent, not inherited | Each role imports modules directly; no shared parents |
+| [015](./ADR-015-tier-as-directory.md) | Stability tier | encoded as directory | `core/` vs `experimental/` in the path |
+| [016](./ADR-016-host-identity.md) | Host identity | stable per physical machine | Hardware change = new host; software role change = no rename |
 
 ## Conventions
 
