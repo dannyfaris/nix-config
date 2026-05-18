@@ -9,7 +9,7 @@
 # in ADR-008 (sops.secrets file at /run/secrets/<name>, sourced by fish
 # shellInit) is the documented fallback.
 #
-# Unfree: cursor-cli is whitelisted in modules/system/nix.nix's
+# Unfree: cursor-cli is whitelisted in modules/core/nixos/nix-daemon.nix's
 # allowUnfreePredicate (alongside claude-code). codex and gemini-cli are
 # Apache-licensed.
 { pkgs, ... }: {

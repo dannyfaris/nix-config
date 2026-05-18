@@ -19,13 +19,18 @@ companion.
 ```
 flake.nix              # flake-parts entry point
 parts/                 # flake-parts modules (nixosConfigurations, etc.)
-hosts/nixos-vm/        # host-specific: hardware, hostname, stateVersion
-modules/system/        # shared NixOS modules (nix settings, SSH, users, etc.)
-modules/home/          # home-manager modules (user packages, dotfiles)
+lib/mk-host.nix        # host constructor — thin wrapper over lib.nixosSystem
+roles/                 # named compositions; one file per role (PRD §3, §5.3)
+hosts/<hostname>/      # host instance: hardware, hostname, stateVersion, _module.args
+modules/core/nixos/    # stable NixOS modules (nix settings, SSH, users, etc.)
+home/core/nixos/       # stable home-manager modules (user packages, dotfiles)
 ```
 
-Modules stay architecture-agnostic. A new host (e.g. the future x86_64
-desktop) is a new directory under `hosts/`, not a rewrite.
+A new host is a new directory under `hosts/` that adopts a role from
+`roles/`, not a rewrite. Per-host values (e.g. flake path, hostname for
+nixd) flow from each host's `_module.args.hostContext` into home-manager
+modules via the wiring in `modules/core/nixos/home-manager.nix`; see
+ADR-019.
 
 ## Philosophy
 
@@ -52,8 +57,9 @@ the config. Always keep the UTM window reachable.
 
 ```bash
 # Rebuild and switch — canonical command, runs anywhere thanks to NH_FLAKE
-# (set in modules/home/nix-tooling.nix). nh wraps nixos-rebuild with
-# integrated nom tree-view progress and a generation diff at the end.
+# (set in home/core/nixos/nix-tooling.nix from hostContext.flakePath).
+# nh wraps nixos-rebuild with integrated nom tree-view progress and a
+# generation diff at the end.
 nh os switch
 
 # Cheap build verification without activation:

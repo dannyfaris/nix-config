@@ -6,15 +6,14 @@
 #     the closure). format-on-save works regardless of PATH.
 #   - nixd is invoked by name and resolved against PATH at runtime.
 #
-# Both binaries are installed by modules/home/nix-tooling.nix (Slice 5d).
-{ lib, pkgs, ... }:
+# Both binaries are installed by home/core/nixos/nix-tooling.nix.
+#
+# Parametrisation: `hostContext.{flakePath,hostName}` come from each host's
+# `_module.args.hostContext` via the HM extraSpecialArgs forwarder in
+# modules/core/nixos/home-manager.nix. See ADR-019.
+{ lib, pkgs, hostContext, ... }:
 let
-  # nixd options-expr targets. Hardcoded for the current host — when the
-  # repo moves (Tier 5 x86_64 host: different path or hostname), update
-  # both values. Substituted into the nixd config below as plain strings;
-  # nixd evaluates them at hover-time, not at nix-eval-time.
-  flakePath = "/home/dbf/nix-config";
-  hostName = "nixos-vm";
+  inherit (hostContext) flakePath hostName;
 in
 {
   programs.helix = {

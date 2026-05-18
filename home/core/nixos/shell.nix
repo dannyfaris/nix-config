@@ -2,7 +2,7 @@
 # See docs/decisions/ADR-001-shell.md for rationale.
 #
 # System-side fish enable + login-shell change live in
-# modules/system/users.nix (load-bearing — the system-side enable is the
+# modules/core/nixos/users.nix (load-bearing — the system-side enable is the
 # /etc/shells gate). This file owns the user-side rc, abbreviations, etc.
 _: {
   programs.fish = {

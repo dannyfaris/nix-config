@@ -11,7 +11,11 @@
 # pkgs.nixfmt is the RFC-style formatter (1.2.0+). Don't swap with:
 #   - pkgs.nixfmt-classic — separate package, pre-RFC Serokell style.
 #   - pkgs.nixfmt-rfc-style — deprecated alias, emits warnings.
-{ pkgs, ... }: {
+#
+# Parametrisation: `hostContext.flakePath` comes from each host's
+# `_module.args.hostContext` via the HM extraSpecialArgs forwarder in
+# modules/core/nixos/home-manager.nix. See ADR-019.
+{ pkgs, hostContext, ... }: {
   home.packages = with pkgs; [
     nh
     nix-output-monitor
@@ -25,9 +29,5 @@
   # debug subcommands) work from anywhere — not just from inside the repo
   # with `.` passed explicitly. NH_FLAKE applies to all `nh` subcommands;
   # NH_OS_FLAKE would scope to just `nh os`.
-  #
-  # Hardcoded path: when the repo moves (Tier 5 x86_64 host with a
-  # different path), update this alongside the flakePath binding in
-  # modules/home/editor.nix.
-  home.sessionVariables.NH_FLAKE = "/home/dbf/nix-config";
+  home.sessionVariables.NH_FLAKE = hostContext.flakePath;
 }

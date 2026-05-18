@@ -8,7 +8,7 @@
 #
 # Note: the programs.X modules wire integrations only into shells that are
 # themselves enabled in this user's home-manager config — fish is enabled
-# in modules/home/shell.nix, so all integrations bind there.
+# in home/core/nixos/shell.nix, so all integrations bind there.
 #
 # Aliasing carve-out: programs.eza's default fish integration aliases
 # `ls`, `ll`, `la`, `lla`, and `lt` to eza variants. This is accepted —

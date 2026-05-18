@@ -1,6 +1,6 @@
 # System packages — administration tools and terminal-compatibility data
 # available to all users regardless of home-manager state. Per-user dev
-# tooling lives in modules/home/.
+# tooling lives in home/core/nixos/.
 { pkgs, ... }: {
   environment.systemPackages = with pkgs; [
     git
