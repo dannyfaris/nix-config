@@ -1,30 +1,18 @@
-# Version control — git (dual identity), gh (HTTPS+token credential helper),
-# glab (work side).
-# See docs/decisions/ADR-009-git.md for rationale.
-#
-# Dual identity mechanism: git's `includeIf gitdir:~/work/` directive
-# auto-applies the work email under ~/work/, personal email everywhere
-# else. No manual switching.
+# Version control — base configuration shared by every host: git itself,
+# glab as both a package and a gitlab.com credential helper. Per-host
+# identity (single vs dual) and gh enablement live in companion files
+# (git-identity-dual.nix, git-identity-work.nix, gh.nix) imported via
+# hostContext.extraHomeModules. See ADR-009 for the auth-model rationale
+# and ADR-020 for the import-split convention.
 #
 # Auth model: HTTPS + token via gh/glab credential helpers. Not SSH —
 # explicitly chosen to avoid passphrase friction in agent-CLI workflows
-# (see ADR-009 § "Why HTTPS over SSH").
+# (ADR-009 § "Why HTTPS over SSH").
 { lib, pkgs, ... }: {
   programs.git = {
     enable = true;
 
-    # Personal default identity matches the user's GitHub handle
-    # (dannyfaris) — GitHub attribution is email-based, not name-based,
-    # so the name is purely cosmetic on commit logs. Under ~/work/ the
-    # gitdir-include below overrides BOTH name and email to the work
-    # identity ("Daniel Faris" / GotaXi email) so commits to the work
-    # GitLab show the user's real name (employer convention).
     settings = {
-      user = {
-        name = "dannyfaris";
-        email = "daniel@faris.co.nz";
-      };
-
       init.defaultBranch = "main";
       pull.rebase = true;
 
@@ -40,38 +28,10 @@
         "${lib.getExe pkgs.glab} auth git-credential"
       ];
     };
-
-    includes = [{
-      condition = "gitdir:~/work/";
-      contents.user = {
-        name = "Daniel Faris";
-        email = "daniel.faris@gotaxi.co.nz";
-      };
-    }];
-  };
-
-  programs.gh = {
-    enable = true;
-    # Explicit even though it matches the home-manager default — makes the
-    # HTTPS-only stance visible in config rather than relying on an
-    # upstream default that could shift. See ADR-009 § "Why git_protocol".
-    settings.git_protocol = "https";
-    # Registers gh as git's HTTPS credential helper for github.com.
-    gitCredentialHelper.enable = true;
   };
 
   # glab — GitLab CLI. Auth via `glab auth login` interactively on first
   # run (token persisted to ~/.config/glab-cli/, not in nix). The git
   # credential helper for gitlab.com is wired above (declarative).
   home.packages = [ pkgs.glab ];
-
-  # Project directory convention: ~/work/ for employer/GitLab work,
-  # ~/personal/ for everything else. The gitdir-include above keys off
-  # ~/work/; ~/personal/ is the conventional sibling for personal repos.
-  # Both directories are ensured on activation — mkdir -p is idempotent
-  # so existing contents are untouched. Removing the convention later
-  # leaves the directories on disk (we don't auto-remove user data).
-  home.activation.ensureProjectDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "$HOME/work" "$HOME/personal"
-  '';
 }

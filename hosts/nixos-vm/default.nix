@@ -21,6 +21,9 @@
   _module.args.hostContext = {
     hostName  = "nixos-vm";
     flakePath = "/home/dbf/nix-config";
-    extraHomeModules = [ ];
+    extraHomeModules = [
+      ../../home/core/nixos/git-identity-dual.nix
+      ../../home/core/nixos/gh.nix
+    ];
   };
 }
