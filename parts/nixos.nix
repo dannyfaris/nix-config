@@ -13,4 +13,10 @@ in
     system   = "aarch64-linux";
     role     = "headless";
   };
+
+  flake.nixosConfigurations.mercury = mkHost {
+    hostname = "mercury";
+    system   = "aarch64-linux";
+    role     = "headless";
+  };
 }
