@@ -32,7 +32,7 @@ Dendritic auto-discovery is well-suited to configurations where there are many m
 Role-explicit imports also align better with the operating principles of this repository (`philosophy.md`):
 
 - **Explicit over implicit.** A role file is a top-to-bottom manifest of what that role includes. Auto-discovery hides applicability inside module bodies.
-- **Whitelist over blanket.** A role explicitly lists what it has; auto-discovery loads everything and lets modules opt themselves out.
+- **Whitelist over blanket.** A role explicitly lists what it has; auto-discovery loads everything and lets modules opt themselves out via `mkIf false`.
 - **No premature abstraction.** Auto-discovery earns its keep at a scale this configuration doesn't have.
 - **Single source of truth.** The role file is the single answer to "what does this kind of machine include."
 

@@ -121,7 +121,7 @@ The exact attribute shape for a host declaration is defined in §5 (Module organ
 
 The configuration is built on four load-bearing principles. Each is specified in detail in the section noted; the summary here exists for quick reference.
 
-**4.1 Role-explicit composition (§5).** Each role file lists the modules it includes. Hosts adopt a role and optionally add further modules via `imports`. `flake-parts` provides flake-level organisation; there is no module auto-discovery and no per-module `mkIf` guarding on host attributes as the load-bearing applicability mechanism. Modules live in a directory grid that encodes tier and platform, enforced by path-based linting.
+**4.1 Explicit composition (§5).** Role files explicitly list the modules they include; hosts adopt a role and optionally add further modules. Module bodies are pure configuration — applicability is not declared inside modules. The directory structure (`core/`-vs-`experimental/` × `shared/`-vs-`nixos/`-vs-`darwin/`) is a project-level organisational convention enforced by lint, not a framework feature.
 
 **4.2 Roles and hosts (§3).** Roles are first-class, named compositions of modules. Hosts are thin instantiations of roles. Roles compose modules with only role-shaped wiring; tool-specific configuration lives in modules. Hosts contain only role adoption, identifying data, and optional module opt-ins (`imports`, `experimental`).
 
@@ -368,7 +368,7 @@ Experiments do not generate ADRs by default. ADRs are reserved for architectural
 
 A module under `modules/*/shared/` or `home/*/shared/` MUST work identically on all supported platforms (`x86_64-linux`, `aarch64-linux`, `aarch64-darwin`, and `x86_64-darwin` if used) by construction. The shared module's behaviour does not depend on which platform it is evaluated for.
 
-This is enforced by the `shared-purity` invariant (§8.1), which catches platform conditionals deterministically. The lint is *necessary but not sufficient*: a shared module that references a platform-specific package attribute path (e.g., `pkgs.linuxPackages.something`) slips past the path-and-conditional check but will fail to build on the affected platform. The residual case is caught at build time by the `hosts-build` invariant (§8.1 #7) — a shared module that doesn't actually work on all platforms will fail to build for at least one host.
+This is enforced by the `shared-purity` invariant (§8.1). The lint catches platform conditionals (the most common violation), but it is necessary, not sufficient: references to platform-specific package attributes (e.g., `pkgs.linuxPackages.something`) are not detected by the lint. These would still fail at build time on the affected platform via the `hosts-build` invariant (§8.1 #7).
 
 ### 7.2 What "shared" means in practice
 
@@ -424,8 +424,8 @@ Every convention that admits a deterministic test is encoded as an automated che
 |---|-----------|-----------|-------------|
 | 1 | `shared-purity` | No platform conditionals (`isDarwin`, `isLinux`, `stdenv.is*`, platform-keyed `optionals`, references to platform-specific paths) appear in any file under `modules/*/shared/` or `home/*/shared/`. Necessary but not sufficient — see §7.1. | `scripts/lint-shared-purity.sh` |
 | 2 | `tier-deps` | No file under `modules/core/` or `home/core/` imports from `modules/experimental/` or `home/experimental/`. | `scripts/lint-tier-deps.sh` |
-| 3 | `kebab-case` | Module, role, and host filenames are kebab-case (no camelCase, no snake_case). | `scripts/lint-kebab-case.sh` |
-| 4 | `role-purity` | Role files (in `roles/`) contain only an `imports` list and, if needed, `_module.args` at the top level. No `mkDefault` selections, no inline option setting. A role-level choice between alternative tools is expressed as a choice of which module to import. | `scripts/lint-role-purity.sh` |
+| 3 | `filename-kebab-case` | All `.nix` filenames are kebab-case (no camelCase, no snake_case). | `scripts/lint-filename-kebab-case.sh` |
+| 4 | `role-purity` | Role files (in `roles/`) contain only an `imports` list and, if needed, `_module.args` at the top level. No `mkDefault` selections, no inline option setting. A role-level choice between alternative tools is expressed as a choice of which module to import. Values in `imports` resolve to module paths under `modules/core/` or `home/core/`, or to other role files. | `scripts/lint-role-purity.sh` |
 | 5 | `host-purity` | Host `default.nix` files contain only the declared attribute set (`role`, `hostname`, `system`, `imports`, `experimental`) and no inline module logic. Values in `imports` resolve to paths under `modules/core/` or `home/core/`; values in `experimental` resolve to paths under `modules/experimental/` or `home/experimental/`; no path appears in both attributes. | `scripts/lint-host-purity.sh` |
 | 6 | `flake-evaluates` | The flake evaluates without errors. A module placed under the wrong tree (a Home Manager module under `modules/`, a NixOS module under `home/`) fails evaluation here. Errors from this invariant come from Nix directly and do not follow the `[<rule-name>]` format. | `nix flake check` |
 | 7 | `hosts-build` | Every host configuration that the current machine can build natively, builds. Cross-platform builds may run via `linux-builder` on macOS hosts but are not required. | `nix build .#<host>` per applicable host |
