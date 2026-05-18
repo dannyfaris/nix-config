@@ -114,7 +114,7 @@ git auth path doesn't use SSH.
 
 ## Implementation
 
-mosh configured at the system level in `modules/system/mosh.nix`:
+mosh configured at the system level in `modules/core/nixos/mosh.nix`:
 
 ```nix
 {
@@ -127,9 +127,9 @@ automatically — both are required, and the module handles them together.
 
 OSC52 is configured at three places:
 
-- **Helix** (`modules/home/editor.nix`): in
+- **Helix** (`home/core/nixos/editor.nix`): in
   `programs.helix.settings.editor`, set `clipboard-provider = "termcode"`.
-- **Zellij** (`modules/home/multiplexer.nix`): default settings already
+- **Zellij** (`home/core/nixos/multiplexer.nix`): default settings already
   pass OSC52 through. No extra config needed in the typical case; if the
   bridge ever stops working, check zellij's clipboard config first.
 - **Terminal emulator on the Mac**: outside this repo's scope. Use

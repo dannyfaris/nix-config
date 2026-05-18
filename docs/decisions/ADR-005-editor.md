@@ -108,7 +108,7 @@ the headless dev stack.
 
 ## Implementation
 
-Configured in `modules/home/editor.nix`:
+Configured in `home/core/nixos/editor.nix`:
 
 ```nix
 let
@@ -156,7 +156,7 @@ Notes:
   a single attrset). The shape above is the correct one.
 - `lib.getExe pkgs.nixfmt` resolves to the absolute binary path,
   surviving any future binary-rename in nixpkgs.
-- `nixd` LSP and `nixfmt` formatter are installed by `modules/home/nix-tooling.nix`
+- `nixd` LSP and `nixfmt` formatter are installed by `home/core/nixos/nix-tooling.nix`
   (ADR-007); helix invokes them through PATH.
 - The nixd `options.{nixos,home-manager}.expr` strings are passed through
   to nixd verbatim; nixd evaluates them at hover-time. The flake path

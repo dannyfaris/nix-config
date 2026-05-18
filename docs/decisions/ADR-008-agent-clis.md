@@ -29,7 +29,7 @@ sops-nix integration is needed for these tools.
   not `cursor`).
 
 Cursor CLI is the only unfree package; it's added to the
-`allowUnfreePredicate` whitelist in `modules/system/nix.nix`. Codex and
+`allowUnfreePredicate` whitelist in `modules/core/nixos/nix-daemon.nix`. Codex and
 Gemini CLI are both Apache-licensed; no whitelist entries needed.
 
 ## Rationale
@@ -62,9 +62,9 @@ pattern can be added as a follow-up. The mechanism would be:
 1. Add `openai_api_key` (or whichever) to `secrets/secrets.yaml` via
    `sops`.
 2. Declare `sops.secrets.openai_api_key.owner = "dbf"` in
-   `modules/system/sops.nix`.
-3. In `modules/home/agent-clis.nix`, add a fish `shellInit` block that
-   reads the file and exports the env var:
+   `modules/core/nixos/sops.nix`.
+3. In `home/core/nixos/agent-clis.nix`, add a fish `shellInit` block
+   that reads the file and exports the env var:
    ```fish
    if test -r /run/secrets/openai_api_key
      set -gx OPENAI_API_KEY (cat /run/secrets/openai_api_key)
@@ -99,7 +99,7 @@ This is documented here as the future path; not implemented now.
 
 ## Implementation
 
-Configured in `modules/home/agent-clis.nix`:
+Configured in `home/core/nixos/agent-clis.nix`:
 
 ```nix
 { pkgs, ... }: {
@@ -116,7 +116,7 @@ Configured in `modules/home/agent-clis.nix`:
 is preferred.)
 
 Cursor CLI is the only unfree package among the new additions. The
-unfree whitelist in `modules/system/nix.nix` extends to include it
+unfree whitelist in `modules/core/nixos/nix-daemon.nix` extends to include it
 alongside the existing `claude-code` entry:
 
 ```nix

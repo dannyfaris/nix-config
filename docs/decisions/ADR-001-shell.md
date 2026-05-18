@@ -73,13 +73,13 @@ user prioritised: the gap between a fresh install and a productive shell.
 
 Configured in:
 
-- `modules/system/users.nix` — sets `users.users.dbf.shell = pkgs.fish` and
+- `modules/core/nixos/users.nix` — sets `users.users.dbf.shell = pkgs.fish` and
   `programs.fish.enable = true`. The system-side enable is **load-bearing**:
   it registers fish in `/etc/shells`, which is the gate for being a valid
   login shell. Without it, switching the user's shell to a home-manager-only
   fish locks the user out at next login. This is documented in a `# why`
   comment at that line.
-- `modules/home/shell.nix` — `programs.fish.enable = true` at the home-manager
+- `home/core/nixos/shell.nix` — `programs.fish.enable = true` at the home-manager
   level for user rc (plugins, abbreviations, environment).
 
 When advising on env-var changes in fish sessions, remember the syntax is

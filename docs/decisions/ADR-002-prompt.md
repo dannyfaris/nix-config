@@ -70,7 +70,7 @@ as a worked example of a recommendation reversing on closer examination.
 
 ## Implementation
 
-Configured in `modules/home/prompt.nix` via `programs.starship`. Settings
+Configured in `home/core/nixos/prompt.nix` via `programs.starship`. Settings
 declared inline as a nix attrset (`programs.starship.settings`), not in a
 separate TOML file. Initial minimal shape:
 

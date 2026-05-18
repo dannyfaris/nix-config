@@ -70,7 +70,7 @@ strangers' servers.
 
 ## Implementation
 
-Configured in `modules/home/multiplexer.nix`:
+Configured in `home/core/nixos/multiplexer.nix`:
 
 ```nix
 programs.zellij.enable = true;

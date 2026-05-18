@@ -1,9 +1,18 @@
 # Taxonomy: how files and modules are named
 
-This document captures the naming convention applied across `modules/home/`,
-`modules/system/`, and (by extension) any future module trees. The decision
-itself is recorded in [ADR-012](./decisions/ADR-012-taxonomy.md); this
-document is the applied principle with examples.
+This document captures the naming convention applied across the
+home-manager module tree (`home/core/nixos/`) and the system module
+tree (`modules/core/nixos/`), and by extension any future module
+trees. The decision itself is recorded in
+[ADR-012](./decisions/ADR-012-taxonomy.md); this document is the
+applied principle with examples.
+
+> **Note:** the historical examples below reference the pre-refactor
+> directories `modules/home/` and `modules/system/` because the rule
+> was articulated against that tree. The current tree is
+> `home/core/nixos/` and `modules/core/nixos/` per the PRD §5 role/host
+> layout (introduced post-ADR-013 through ADR-016). The naming rule
+> itself applies unchanged; only the directories moved.
 
 ## The rule
 

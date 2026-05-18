@@ -3,6 +3,14 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Note:** the directory paths referenced throughout this ADR
+> (`modules/home/`, `modules/system/`) reflect the pre-refactor layout
+> in place when the decision was made. The PRD §5 role/host refactor
+> (introduced post-ADR-013 through ADR-016, landed on branch
+> `claude/headless-dev-config-v7cUS`) moved these to `home/core/nixos/`
+> and `modules/core/nixos/` respectively. The naming rule this ADR
+> captures applies unchanged in the new tree.
+
 ## Context
 
 `modules/home/` and `modules/system/` are decomposed into multiple thematic

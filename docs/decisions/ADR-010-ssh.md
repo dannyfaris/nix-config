@@ -7,7 +7,7 @@
 
 The repo's *inbound* SSH (i.e., the `services.openssh` config that lets
 the user SSH *into* this box from their Mac) is hardened and unchanged
-by this tier — see `modules/system/ssh.nix`.
+by this tier — see `modules/core/nixos/sshd.nix`.
 
 The question this ADR answers is about *outbound* SSH: should the dev box
 have SSH keys generated for talking to other machines, and how should
@@ -74,7 +74,7 @@ doesn't have to re-derive them.
 
 ## Implementation
 
-Configured in `modules/home/ssh.nix`:
+Configured in `home/core/nixos/ssh.nix`:
 
 ```nix
 {
