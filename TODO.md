@@ -202,7 +202,9 @@ Operational, on the operator's machine + AWS console:
       `nixos-generate-config --show-hardware-config` and commit
 - [ ] Verify per the runbook's Verification section (work-only:
       `which gh` empty, no `~/personal/`, default `git config
-      user.email` is the work email, etc.)
+      user.email` is the work email, etc.; rootless docker daemon
+      active under systemctl --user, `docker run --rm hello-world`
+      works as dbf without sudo)
 - [ ] If `system.stateVersion` in `hosts/mercury/default.nix` doesn't
       match the chosen AMI's NixOS release, update it before the first
       switch (note: now wrapped in `lib.mkDefault`, so an amazon-image

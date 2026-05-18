@@ -18,6 +18,11 @@
     # boot. Mercury intentionally does NOT import the VM-side
     # boot-systemd.nix or networking-networkmanager.nix.
     "${modulesPath}/virtualisation/amazon-image.nix"
+
+    # Rootless Docker — resolves ADR-006's deferred daemon decision.
+    # Mercury-only (not in the role) because the VM doesn't run
+    # containers. See ADR-021.
+    ../../modules/core/nixos/docker.nix
   ];
 
   networking.hostName = "mercury";

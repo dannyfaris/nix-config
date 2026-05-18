@@ -90,27 +90,34 @@ or a migration trigger documented.
 
 ### Tool-vs-runtime split (lazydocker)
 
-lazydocker is in home-manager but **docker itself is not**. The split:
+lazydocker is in home-manager but **docker itself is not** at the role
+level. The split:
 
 - **lazydocker (TUI client)** — universal, in home-manager. Same archetype
   as lazygit: it's a UI over whatever's available, with no runtime of its
   own.
-- **docker CLI** — per-project. Each project that needs docker declares
-  the CLI version it wants in its own `flake.nix` `devShells.default`,
-  picked up via direnv on `cd` (ADR-003). This avoids global docker
-  version churn and lets different projects pin different versions.
-- **docker daemon** — a deployment decision, not a per-project one. The
-  daemon is a host service running as root; it can't be in a user's
-  per-project env. When the first project that needs docker arrives,
-  decide where the daemon lives — most likely the user's Mac (Docker
-  Desktop / OrbStack), accessed from the VM via `DOCKER_HOST=ssh://…` or
-  `tcp://…` set in the project's `.envrc`. Alternatives are
-  `virtualisation.docker.enable` on the VM itself, or rootless podman.
+- **docker CLI** — per-project by default. Each project that needs docker
+  declares the CLI version it wants in its own `flake.nix`
+  `devShells.default`, picked up via direnv on `cd` (ADR-003). This
+  avoids global docker version churn and lets different projects pin
+  different versions. *Per-host exception: Mercury and any other
+  headless host that imports `modules/core/nixos/docker.nix` gets the
+  docker CLI system-wide alongside the daemon — see ADR-021 for the
+  rationale on overriding this default once a daemon exists locally.*
+- **docker daemon** — a deployment decision, not a per-project one.
+  **Resolved (2026-05-18) by [ADR-021](./ADR-021-docker-on-headless.md):**
+  rootless Docker via `virtualisation.docker.rootless.enable` on hosts
+  that need it (Mercury today), imported per-host from
+  `modules/core/nixos/docker.nix` rather than from the role. The
+  originally-sketched alternatives (Docker Desktop on the Mac with
+  `DOCKER_HOST=ssh://…`, rootful `virtualisation.docker.enable`, podman)
+  are discussed and rejected in ADR-021.
 
-This split means lazydocker can sit ready in home-manager today without
-any docker daemon configured anywhere. The first time a project needs
-docker, only that project's `flake.nix` / `.envrc` changes — the global
-config stays put.
+This split means lazydocker sits ready in home-manager regardless of
+daemon state. Hosts without the daemon module work exactly as ADR-006
+originally specified (per-project CLI via devShells, daemon remote or
+absent); hosts with the daemon module additionally get a local
+rootless daemon and a system-wide CLI.
 
 ## Consequences
 

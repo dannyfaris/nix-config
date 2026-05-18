@@ -237,6 +237,18 @@ After the first successful switch:
 - `~/work/` exists; `~/personal/` does not (ADR-020).
 - `mosh dbf@<mercury-public-dns>` connects; reconnects survive a
   laptop-sleep cycle.
+- Rootless Docker is up (ADR-021):
+  - `systemctl --user status docker` shows the user dockerd as
+    `active (running)`.
+  - `groups dbf` does NOT include `docker` (rootless doesn't need it).
+  - `docker run --rm hello-world` succeeds as `dbf` with no sudo and
+    no `DOCKER_HOST` override (the rootless module sets the env var).
+  - `docker compose version` and `docker-compose --version` both
+    respond — the subcommand form works via cli-plugins
+    auto-discovery, the standalone is `pkgs.docker-compose`.
+  - After a full reboot and SSH back in: `systemctl --user status
+    docker` still shows the daemon running before login (lingering
+    is enabled).
 
 ## Security group rules
 
