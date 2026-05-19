@@ -41,6 +41,15 @@
   # which is what we want. The option is also marked `internal = true`
   # — not for user override. Don't set it here.
 
+  # amazon-image.nix sets PermitRootLogin = "prohibit-password" at the
+  # same module-merge priority as the role's sshd.nix "no", which would
+  # otherwise be a hard eval conflict. mkForce here because the "no
+  # root, ever" stance (CLAUDE.md "Deliberate stances") is non-negotiable;
+  # the override lives on Mercury because Mercury is what brings
+  # amazon-image into the module set (PRD §5.4 — overrides on the
+  # diverging side; ADR-020 — divergence = choice of import).
+  services.openssh.settings.PermitRootLogin = lib.mkForce "no";
+
   _module.args.hostContext = {
     hostName  = "mercury";
     flakePath = "/home/dbf/nix-config";
