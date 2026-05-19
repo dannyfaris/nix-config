@@ -84,6 +84,12 @@ This is documented here as the future path; not implemented now.
 - ✓ Credentials live in each tool's own state dir
   (`~/.config/...` typically), where the user's existing tools already
   store theirs.
+- ✓ The set is split along a host-policy axis: Claude Code + Cursor are
+  the always-on base in `agent-clis.nix`; Codex + Gemini CLI are
+  opt-in via `agent-clis-extras.nix`, applied on hosts that want the
+  broader set. Work-only hosts (e.g. Mercury) get only the base,
+  reflecting the work environment's narrower vendor scope. The split
+  follows ADR-020's host-divergences-via-import-splits convention.
 - ✗ First-time login on this box is interactive (browser device flow or
   callback) — not declarative. Same character compromise as `gh auth
   login` and `glab auth login` (ADR-009).
@@ -96,18 +102,33 @@ This is documented here as the future path; not implemented now.
 - ⚠ Migration trigger: an agent CLI changing its auth model. If that
   happens, this ADR gets superseded by a new one with the actual
   implementation.
+- ⚠ Migration trigger: a host wanting Codex *xor* Gemini (one but not the
+  other). The current grouped split assumes they toggle together;
+  unbundling into per-tool files (`codex.nix`, `gemini-cli.nix`) is the
+  easy refactor.
 
 ## Implementation
 
-Configured in `home/core/nixos/agent-clis.nix`:
+Split across two files. The base lives in `home/core/nixos/agent-clis.nix`
+and ships on every host:
 
 ```nix
 { pkgs, ... }: {
   home.packages = with pkgs; [
     claude-code
+    cursor-cli
+  ];
+}
+```
+
+The opt-in extras live in `home/core/nixos/agent-clis-extras.nix` and ship
+only on hosts that include the file in `hostContext.extraHomeModules`:
+
+```nix
+{ pkgs, ... }: {
+  home.packages = with pkgs; [
     codex
     gemini-cli
-    cursor-cli
   ];
 }
 ```

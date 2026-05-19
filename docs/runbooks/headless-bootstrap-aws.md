@@ -232,6 +232,12 @@ After the first successful switch:
   `~/.config/glab-cli/`).
 - `which gh` returns nothing — gh is intentionally not installed on
   Mercury (ADR-020).
+- `which codex` and `which gemini` return nothing — Mercury ships only
+  the base agent set (Claude Code + Cursor); Codex and Gemini CLI live
+  in the opt-in `agent-clis-extras.nix` which Mercury does not import
+  (ADR-008, ADR-020).
+- `which claude` (Claude Code) and `which cursor-agent` (Cursor CLI)
+  both resolve — these are the base agents on every host.
 - `git config user.email` returns `daniel.faris@gotaxi.co.nz` by default
   (single work identity per `git-identity-work.nix`).
 - `~/work/` exists; `~/personal/` does not (ADR-020).
