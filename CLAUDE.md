@@ -88,3 +88,9 @@ sudo nixos-rebuild switch --flake .#nixos-vm
 ## Open work
 
 See [TODO.md](./TODO.md) for the prioritised roadmap and task tracking.
+
+## License
+
+MIT — see [LICENSE](./LICENSE). Personal NixOS configuration shared
+publicly for transparency and reuse; not maintained as a generalisable
+template (PRD §2.2).
