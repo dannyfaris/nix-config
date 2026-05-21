@@ -19,4 +19,10 @@ in
     system   = "aarch64-linux";
     role     = "headless";
   };
+
+  flake.nixosConfigurations.metis = mkHost {
+    hostname = "metis";
+    system   = "x86_64-linux";
+    role     = "headless";
+  };
 }
