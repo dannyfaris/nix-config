@@ -16,6 +16,7 @@
     ../../modules/core/nixos/boot-systemd.nix
     ../../modules/core/nixos/networking-networkmanager.nix
     ../../modules/core/nixos/tailscale.nix
+    ../../modules/core/nixos/docker.nix   # Rootless Docker — see ADR-021.
   ];
 
   networking.hostName = "metis";

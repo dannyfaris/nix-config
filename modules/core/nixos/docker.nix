@@ -1,13 +1,12 @@
-# Rootless Docker — per-user dockerd for dbf. Imported per-host (currently
-# Mercury only); NOT in the headless role because the UTM VM doesn't run
+# Rootless Docker — per-user dockerd for dbf. Imported per-host (Mercury
+# and Metis); NOT in the headless role because the UTM VM doesn't run
 # containers and pulling docker into its closure for nothing would be
 # wasteful.
 #
 # Resolves the deferred decision in ADR-006 § "Tool-vs-runtime split"
-# ("docker daemon: deferred until the first project needs it"). Mercury
-# is that first project. See ADR-021 for the rootless-over-rootful
-# rationale and the system-wide CLI deviation from ADR-006's per-project
-# devShells stance.
+# ("docker daemon: deferred until the first project needs it"). See
+# ADR-021 for the rootless-over-rootful rationale and the system-wide
+# CLI deviation from ADR-006's per-project devShells stance.
 { pkgs, ... }: {
   virtualisation.docker.rootless = {
     enable = true;
