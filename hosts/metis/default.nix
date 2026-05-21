@@ -36,6 +36,7 @@
       ../../home/core/nixos/git-identity-dual.nix
       ../../home/core/nixos/gh.nix
       ../../home/core/nixos/agent-clis-extras.nix
+      ../../home/core/nixos/macchina.nix
     ];
   };
 }
