@@ -8,6 +8,7 @@
     ./hardware.nix
     ../../modules/core/nixos/boot-systemd.nix
     ../../modules/core/nixos/networking-networkmanager.nix
+    ../../modules/core/nixos/tailscale.nix
   ];
 
   networking.hostName = "nixos-vm";
