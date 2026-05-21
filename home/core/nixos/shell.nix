@@ -7,6 +7,7 @@
 _: {
   programs.fish = {
     enable = true;
+    interactiveShellInit = "set -g fish_greeting";
 
     # Sparse abbreviation set. Fish abbreviations expand inline so the
     # actual command is visible in history — preferred over aliases.
