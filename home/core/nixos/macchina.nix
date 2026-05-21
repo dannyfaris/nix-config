@@ -3,7 +3,7 @@
 # (EC2 work host where login noise is unwanted).
 { pkgs, config, ... }:
 let
-  esc    = "\u001b";
+  esc    = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
   dark   = "${esc}[38;2;82;119;195m";
   light  = "${esc}[38;2;127;183;255m";
   bdark  = "${esc}[48;2;82;119;195m";
