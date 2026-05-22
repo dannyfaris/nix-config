@@ -8,7 +8,7 @@
 #
 # Bootstrap note: before the first nixos-rebuild switch, Metis's SSH host key
 # must be added to .sops.yaml and secrets/secrets.yaml re-encrypted.
-# See hardware.nix for the step-by-step bootstrap procedure.
+# Full step-by-step procedure: docs/runbooks/headless-bootstrap-metis.md.
 { ... }:
 {
   imports = [
@@ -17,6 +17,7 @@
     ../../modules/core/nixos/networking-networkmanager.nix
     ../../modules/core/nixos/tailscale.nix
     ../../modules/core/nixos/docker.nix   # Rootless Docker — see ADR-021.
+    ../../modules/core/nixos/btrfs-scrub.nix   # Periodic checksum verification on btrfs subvolumes (monthly default).
   ];
 
   networking.hostName = "metis";

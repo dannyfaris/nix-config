@@ -1,34 +1,44 @@
-# Placeholder hardware configuration for Metis (HP ProDesk Mini 600 G9,
-# x86_64-linux, bare metal).
+# Hardware configuration for Metis (HP ProDesk Mini 600 G9, x86_64-linux,
+# bare metal).
 #
-# PLACEHOLDER — replace with nixos-generate-config output after installation.
+# Filesystem layout: btrfs on a single NVMe partition with three flat
+# subvolumes (root / home / nix). Snapshot tooling is intentionally NOT
+# wired up — the layout is a clean foundation we can layer Snapper onto
+# later if needed, without restructuring.
 #
-# Bootstrap procedure (run once after the ISO install):
+# The kernel-module list below is a placeholder. Real values get filled in
+# during install from `nixos-generate-config --no-filesystems` output —
+# see docs/runbooks/headless-bootstrap-metis.md (Phase 7) for the exact
+# block-replacement procedure. Everything else in this file (the
+# `btrfsOpts` let-binding, the `fileSystems` entries, `zramSwap.enable`,
+# `boot.supportedFilesystems`) is the committed configuration and must
+# survive that replacement.
 #
-# 1. Boot the NixOS ISO and install normally (accept the generated config).
-#
-# 2. Boot into the installed system. Retrieve the SSH host age key:
-#      nix-shell -p ssh-to-age --run \
-#        'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
-#
-# 3. On the Mac: add the resulting age key to .sops.yaml alongside the
-#    existing &nixos-vm key, then re-encrypt so both hosts can decrypt:
-#      sops updatekeys secrets/secrets.yaml
-#
-# 4. Replace this file with the actual hardware config:
-#      nixos-generate-config --show-hardware-config
-#    Copy the output here (fileSystems, initrd modules, kernelModules,
-#    swapDevices — replace placeholder values below with real ones).
-#
-# 5. Commit, push, then on metis:
-#      nixos-rebuild switch --flake .#metis
+# Full bootstrap procedure: docs/runbooks/headless-bootstrap-metis.md.
 #
 { lib, ... }:
+let
+  # Shared mount options for every btrfs subvolume on the NVMe SSD:
+  #   compress=zstd:1 — transparent compression, near-zero CPU cost.
+  #   noatime         — skip atime updates on read, cutting CoW write churn.
+  #   ssd             — SSD-aware allocator behaviour.
+  #   discard=async   — batched TRIM (smoother than sync discard).
+  btrfsOpts = subvol: [
+    "subvol=${subvol}"
+    "compress=zstd:1"
+    "noatime"
+    "ssd"
+    "discard=async"
+  ];
+in
 {
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
-  # Placeholder kernel modules — replace with nixos-generate-config output.
+  # PLACEHOLDER kernel modules — replace with nixos-generate-config output.
+  # `nvme` is included unconditionally: without it, stage-1 cannot see the
+  # NVMe disk and the boot drops to an emergency shell.
   boot.initrd.availableKernelModules = [
+    "nvme"
     "ahci"
     "xhci_pci"
     "ehci_pci"
@@ -39,10 +49,26 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  # Placeholder filesystems — replace with actual values from nixos-generate-config.
+  # Defensive: a fileSystems entry with fsType="btrfs" already pulls the
+  # module into the initrd, but stating it explicitly matches what
+  # nixos-generate-config emits and survives future refactors.
+  boot.supportedFilesystems = [ "btrfs" ];
+
+  # btrfs root, three flat subvolumes sharing one partition.
   fileSystems."/" = {
     device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
+    fsType = "btrfs";
+    options = btrfsOpts "root";
+  };
+  fileSystems."/home" = {
+    device = "/dev/disk/by-label/nixos";
+    fsType = "btrfs";
+    options = btrfsOpts "home";
+  };
+  fileSystems."/nix" = {
+    device = "/dev/disk/by-label/nixos";
+    fsType = "btrfs";
+    options = btrfsOpts "nix";
   };
   fileSystems."/boot" = {
     device = "/dev/disk/by-label/boot";
@@ -53,5 +79,9 @@
     ];
   };
 
+  # No disk swap. Compressed RAM-backed swap as an overflow valve for cold
+  # anonymous pages — keeps reclaim graceful under load with zero SSD wear.
+  # Default sizing (50 % of RAM, zstd) is appropriate for 32 GiB.
+  zramSwap.enable = true;
   swapDevices = [ ];
 }
