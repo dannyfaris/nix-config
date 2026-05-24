@@ -81,6 +81,7 @@ in
   '';
 
   # NixOS snowflake — two-tone blue ANSI art displayed to the left of system info.
+  # Glyph layout adapted from https://github.com/4DBug/nix-ansi; colour escapes applied here.
   xdg.configFile."macchina/nixos-ascii.txt".text =
     "${dark}       ◢██◣${light}   ◥███◣  ◢██◣\n"
     + "${dark}       ◥███◣${light}   ◥███◣◢███◤\n"
