@@ -20,6 +20,9 @@ TEAL=$'\033[38;5;73m'
 DIM=$'\033[2m'
 RST=$'\033[0m'
 SEP=" ${DIM}│${RST} "
+# U+E0A0 Powerline branch glyph as UTF-8 hex bytes — bash 3.2+ compatible
+# and avoids putting raw Nerd Font bytes in the source file.
+BRANCH_GLYPH=$'\xee\x82\xa0'
 
 {
   read -r MODEL
@@ -52,9 +55,18 @@ if [ ${#SAFE_CWD} -gt 200 ]; then
 fi
 CF="${CACHE_DIR%/}/cc-statusline-${SESSION_ID}-${SAFE_CWD}"
 CACHE_MAX_AGE=5
+# Cache field separator: ASCII Unit Separator (\x1f). Tab can't be used —
+# bash's `read` with whitespace-only IFS collapses consecutive delimiters,
+# destroying empty fields (PREFIX is empty at repo root, HEAD_REF is empty
+# on attached HEAD), which silently misaligned every subsequent field.
+US=$'\x1f'
 
 stat_mtime() {
-  stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0
+  # GNU stat (Linux) first; BSD stat (macOS) as fallback.
+  # On GNU stat, "-f" means filesystem-info mode and would corrupt the
+  # output — putting -c first picks GNU's correct mtime format on Linux
+  # and falls through cleanly to BSD's "-f %m" on macOS.
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0
 }
 cache_fresh() {
   [ -f "$CF" ] && [ $((NOW - $(stat_mtime "$CF"))) -lt "$CACHE_MAX_AGE" ]
@@ -65,7 +77,7 @@ STAGED=0; MODIFIED=0; UNTRACKED=0; CONFLICT=0
 
 if [ -n "$CWD" ]; then
   if cache_fresh; then
-    IFS=$'\t' read -r IS_REPO TOP PREFIX BRANCH HEAD_REF \
+    IFS="$US" read -r IS_REPO TOP PREFIX BRANCH HEAD_REF \
                        STAGED MODIFIED UNTRACKED CONFLICT < "$CF"
   else
     { read -r TOP; read -r PREFIX; } < <(
@@ -87,7 +99,7 @@ if [ -n "$CWD" ]; then
       done < <(git -C "$CWD" status --porcelain 2>/dev/null)
     fi
     TMP="${CF}.$$.tmp"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf "%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s\n" \
       "$IS_REPO" "$TOP" "$PREFIX" "$BRANCH" "$HEAD_REF" \
       "$STAGED" "$MODIFIED" "$UNTRACKED" "$CONFLICT" > "$TMP" \
       && mv -f "$TMP" "$CF"
@@ -121,8 +133,13 @@ if [ "$IS_REPO" = "1" ]; then
     GIT_LABEL="@${HEAD_REF}"
   fi
   if [ -n "$GIT_LABEL" ]; then
-    # Powerline branch glyph (U+E0A0) — leading space for separation
-    GIT_SEG=" ${TEAL} ${GIT_LABEL}${RST}"
+    # On a branch: "<path> on <glyph> <branch>" (DIM "on", TEAL glyph+name).
+    # Detached HEAD: "<path> <glyph> @<sha>" — "on" reads oddly with a SHA.
+    if [ -n "$BRANCH" ]; then
+      GIT_SEG=" ${DIM}on${RST} ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
+    else
+      GIT_SEG=" ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
+    fi
     [ -n "$WORKTREE" ]           && GIT_SEG+=" ${DIM}(${WORKTREE})${RST}"
     [ "${CONFLICT:-0}"  -gt 0 ]  && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
     [ "${STAGED:-0}"    -gt 0 ]  && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
