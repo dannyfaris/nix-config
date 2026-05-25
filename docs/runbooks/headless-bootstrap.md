@@ -21,11 +21,13 @@ for the per-host file layout this runbook assumes.
 
 Run once per fresh clone of this repo on the operator machine:
 
-- This repo cloned, with `just install-hooks` run once (`core.hooksPath`
-  is not versioned). Verifies the pre-commit hook enforcing ADR-023's
+- `nix` with flakes enabled. `just` available — not yet a home-manager
+  package, so use ad-hoc invocation: `nix shell nixpkgs#just -c just
+  <recipe>` or `nix run nixpkgs#just -- <recipe>`.
+- This repo cloned, with `just install-hooks` run once (use the ad-hoc
+  invocation above for this first call too). `core.hooksPath` isn't
+  versioned, so every fresh clone needs this. The hook enforces ADR-023's
   "don't hand-edit `hardware-configuration.nix`" rule.
-- `nix` with flakes enabled. `just` available (e.g. `nix shell
-  nixpkgs#just` ad-hoc; not yet in home-manager).
 - An existing age decryption identity for `secrets/secrets.yaml`. Today
   the UTM VM's host SSH key (`/etc/ssh/ssh_host_ed25519_key`) is the
   only such identity; `sops updatekeys` (step 2 below) must therefore
@@ -57,6 +59,11 @@ Run once per fresh clone of this repo on the operator machine:
   `/dev/nvme0n1`. Pre-Nitro instances (t2.\*, m4.\*, c4.\*) use
   `/dev/xvda` — verify with `lsblk` from the target host and update
   `disko.nix` if needed.
+- *Optional but recommended:* snapshot the EBS volume **before**
+  invoking `just bootstrap`. `nixos-anywhere` is destructive (wipes
+  the disk); a pre-install snapshot gives you a true rollback option
+  via terminate + relaunch if Instance Connect and Serial Console
+  both fail. See Break-glass below.
 
 ### Bare-metal host (Metis, future bare-metal hosts)
 
@@ -70,7 +77,9 @@ Run once per fresh clone of this repo on the operator machine:
   (`sudo systemctl start sshd`), set a temporary `nixos` password
   (`sudo passwd nixos`), and add the operator's Mac SSH key to
   `/home/nixos/.ssh/authorized_keys` (or `/root/.ssh/authorized_keys`
-  if connecting as root).
+  if connecting as root). The live USB's `nixos` user has passwordless
+  sudo by default, so `nixos-anywhere` can elevate as needed during
+  step 3.
 - Network reachable from operator. Wired ethernet picks up DHCP
   automatically; Wi-Fi needs `sudo systemctl start wpa_supplicant`
   then `wpa_cli` (or `nmtui` if present).
@@ -273,9 +282,10 @@ If you lose SSH access:
 2. **EC2 Serial Console** — must be enabled at the account level
    one-time. Direct serial access via the AWS console regardless of
    network state.
-3. **Snapshot the EBS volume before `just bootstrap` if you want a
-   true rollback option.** Last resort if Instance Connect and
-   Serial Console both fail: terminate + relaunch from the snapshot.
+3. **Terminate + relaunch from a pre-install EBS snapshot** if both
+   Instance Connect and Serial Console fail. Requires having
+   snapshotted the EBS volume *before* `just bootstrap` (see Per-host
+   preconditions above for the recommendation).
 
 ### Bare metal
 
