@@ -1,6 +1,18 @@
+# Recipients.
+#
+# Host recipients (nixos-vm, mercury): age keys derived from each host's
+# /etc/ssh/ssh_host_ed25519_key. Used at activation time by sops-nix to
+# decrypt secrets for the running host. One per host.
+#
+# Operator recipient (mac): age key derived from a human-controlled
+# credential. Used by the operator to run `sops`/`sops updatekeys` from
+# their daily-driver machine without depending on any individual host
+# being alive. Closes the sops-decryption bus-factor gap recorded in
+# TODO.md (formerly: "the only decryption identity lives on the VM").
 keys:
   - &nixos-vm age1wwg6k2xnt4kakkajl7y2eydxw3jf4ll7z8ql64v9hvjdm8svh5psjxxz3l
   - &mercury  age1vze2vqnjtmyltqez5uw3g5dzr64wa0qaz0mwngvq662djxcwlefsnjlx2t
+  - &mac      age1qh0dm468a2pqr9rs4wr0zxslfmart8as8s7md93ah6dgd9rw55kqu94frp
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
@@ -8,3 +20,4 @@ creation_rules:
       - age:
           - *nixos-vm
           - *mercury
+          - *mac
