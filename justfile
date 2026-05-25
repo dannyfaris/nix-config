@@ -133,9 +133,16 @@ bootstrap host target:
     # syscall instead of kexec_file_load. Necessary on Ubuntu's -aws
     # kernels, which ship with CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y and
     # reject NixOS's unsigned bzImage with EADDRNOTAVAIL even when
-    # Secure Boot is disabled and lockdown is none. Harmless on every
-    # other kernel (kexec-tools' option parser is last-wins, so this
-    # overrides nixos-anywhere's default --kexec-syscall-auto).
+    # Secure Boot is disabled and lockdown is none. Safe across the
+    # x86_64 targets this repo supports — kexec_load is universal on
+    # modern Linux; we lose kernel-side image relocation flexibility,
+    # which we don't need. kexec-tools' option parser is last-wins, so
+    # this overrides nixos-anywhere's default --kexec-syscall-auto.
+    #
+    # No automatic swap setup: if sops-install-secrets OOMs on a
+    # memory-constrained target (t3.medium-class), see
+    # docs/runbooks/headless-bootstrap.md "Troubleshooting" for the
+    # disk-backed-swap workaround.
     nix run github:nix-community/nixos-anywhere/1.13.0 -- \
         --flake ".#{{host}}" \
         --target-host {{target}} \
@@ -164,17 +171,29 @@ bootstrap-clean:
     @echo "Cleaned /dev/shm/nix-bootstrap-*"
 
 # One-time-per-clone operator setup. Derives ~/.config/sops/age/keys.txt
-# from /etc/ssh/ssh_host_ed25519_key (the VM's SSH host key, which IS
-# this repo's sops decryption identity — same key sops-nix uses at
-# activation time as root). sops doesn't read SSH host keys directly
-# (perms + format quirks: SOPS_AGE_SSH_PRIVATE_KEY_FILE produced wrong
-# age identities in sops 3.12.1 testing), so we pre-convert via
-# ssh-to-age. Reqs sudo to read the SSH key.
+# from /etc/ssh/ssh_host_ed25519_key (the local host's SSH key, which
+# on the UTM VM is this repo's sops decryption identity — same key
+# sops-nix uses at activation time as root). sops doesn't read SSH
+# host keys directly (perms + format quirks: SOPS_AGE_SSH_PRIVATE_KEY_FILE
+# produced wrong age identities in sops 3.12.1 testing), so we
+# pre-convert via ssh-to-age. Requires sudo to read the SSH key.
 #
-# Without this, `sops -d` / `sops updatekeys` as dbf fail with
-# "no identity matched any of the recipients."
+# Cross-platform: Linux uses /dev/shm for tmpfs scratch (never touches
+# disk); macOS falls back to mktemp default (APFS-backed but unlinked
+# on cleanup — slightly weaker but no /dev/shm equivalent at a stable
+# path).
+#
+# Note for non-VM operators (future Macs, etc.): the resulting identity
+# is keyed to the LOCAL host's SSH key. For it to actually decrypt
+# secrets/secrets.yaml, the derived age recipient must be added to
+# .sops.yaml + sops updatekeys re-encrypted from a host that already
+# has decryption capability. Today only the UTM VM holds the seed
+# (see docs/runbooks/headless-bootstrap.md "Operator prerequisites").
+#
+# Without this, `sops -d` / `sops updatekeys` fail with "no identity
+# matched any of the recipients."
 
-# Set up ~/.config/sops/age/keys.txt from the VM's SSH host key (one-time).
+# Set up ~/.config/sops/age/keys.txt from the local SSH host key (one-time).
 setup-sops-identity:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -184,10 +203,25 @@ setup-sops-identity:
         echo "Remove it first if you want to regenerate."
         exit 0
     fi
-    tmp=$(mktemp -d -p /dev/shm)
+    key=/etc/ssh/ssh_host_ed25519_key
+    if ! sudo test -f "$key"; then
+        echo "ERROR: $key not found." >&2
+        case "$(uname -s)" in
+            Darwin*) echo "  macOS may not have host keys yet — enable Remote Login (System Settings → Sharing) once, or run 'sudo ssh-keygen -A'." >&2 ;;
+            Linux*)  echo "  Run 'sudo ssh-keygen -A' to generate host keys." >&2 ;;
+        esac
+        exit 1
+    fi
+    # Tmpfs scratch dir on Linux (/dev/shm); macOS falls back to mktemp's
+    # default (no /dev/shm equivalent; APFS-backed but unlinked on cleanup).
+    case "$(uname -s)" in
+        Linux*)  tmp=$(mktemp -d -p /dev/shm) ;;
+        Darwin*) tmp=$(mktemp -d) ;;
+        *)       echo "ERROR: Unsupported OS '$(uname -s)'." >&2; exit 1 ;;
+    esac
     trap 'rm -rf "$tmp"' EXIT
-    echo "=== Reading /etc/ssh/ssh_host_ed25519_key (sudo required) ==="
-    sudo cat /etc/ssh/ssh_host_ed25519_key > "$tmp/host-key"
+    echo "=== Reading $key (sudo required) ==="
+    sudo cat "$key" > "$tmp/host-key"
     chmod 600 "$tmp/host-key"
     echo "=== Converting SSH key to age private key ==="
     nix shell nixpkgs#ssh-to-age -c \
@@ -196,7 +230,9 @@ setup-sops-identity:
     install -m 600 "$tmp/age-key" "$target"
     echo
     echo "Installed: $target"
-    echo "  sops -d / sops updatekeys will now work as dbf without env vars."
+    echo "  sops -d / sops updatekeys will now work without env vars,"
+    echo "  PROVIDED the derived age recipient is already in .sops.yaml"
+    echo "  and secrets/secrets.yaml is encrypted for it."
 
 # Configure git to use this repo's .githooks/ directory (one-time per clone).
 install-hooks:

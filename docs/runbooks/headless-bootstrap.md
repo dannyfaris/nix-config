@@ -202,8 +202,10 @@ The recipe:
      `kexec_load` syscall. Necessary on Ubuntu's `-aws` kernels (which
      ship with `CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y` and reject NixOS's
      unsigned bzImage via `kexec_file_load` with `EADDRNOTAVAIL` even
-     when Secure Boot is disabled and lockdown is none). Harmless on
-     every other kernel — kexec-tools' option parser is last-wins, so
+     when Secure Boot is disabled and lockdown is none). Safe across
+     the x86_64 targets this repo supports — `kexec_load` is universal
+     on modern Linux; we lose kernel-side image relocation flexibility,
+     which we don't need. kexec-tools' option parser is last-wins, so
      this overrides nixos-anywhere's default `--kexec-syscall-auto`.
 4. Cleans up `/dev/shm/nix-bootstrap-<host>` on success.
 
@@ -356,6 +358,10 @@ bootstrap:
      mkswap /mnt/_temp_swap && \
      swapon /mnt/_temp_swap'
    ```
+
+   4 GiB headroom is enough for the AWS SDK Go compile (actual peak
+   is ~2.5 GiB). If `/mnt` has limited free space (e.g. a root
+   partition <16 GiB), reduce to `-l 2G`.
 
 2. Re-run nixos-anywhere with `--phases install,reboot` (skip the
    already-completed kexec + disko phases). Note the target-host
