@@ -1,5 +1,7 @@
 # ADR-018: Headless secrets — continue with sops-nix
 
+> **Amended by [ADR-022](./ADR-022-headless-bootstrap-nixos-anywhere.md) on 2026-05-25** for the host SSH key acquisition order only. ADR-022 shifts host-key generation from post-boot harvest (described in this ADR's Implementation section and the original AWS runbook) to operator-side pre-generation injected via `nixos-anywhere --extra-files`. The core decision below (sops-nix, age recipient per host, SSH host key as decryption identity, plaintext blob safe in a public repo) is unchanged and remains authoritative for everything except acquisition order.
+
 **Date**: 2026-05-18
 **Status**: Accepted
 
@@ -17,7 +19,7 @@ Headless hosts continue to use sops-nix, identically to the UTM VM. The host's e
 
 ## Rationale
 
-The decision the path of least friction. sops-nix is already wired in this repo (PRD §2.2 explicitly mentioned its prior introduction in Tier 2), the encryption key is the host's SSH key which exists by the time of the first rebuild, and the encrypted blob in `secrets/secrets.yaml` is safe to publish even after the repo goes public. Adding Mercury costs one runbook step (the recipient onboarding) and zero new infrastructure.
+The decision is the path of least friction. sops-nix is already wired in this repo (PRD §2.2 explicitly mentioned its prior introduction in Tier 2), the encryption key is the host's SSH key which exists by the time of the first rebuild, and the encrypted blob in `secrets/secrets.yaml` is safe to publish even after the repo goes public. Adding Mercury costs one runbook step (the recipient onboarding) and zero new infrastructure.
 
 The 1Password route looked attractive on paper because workstation hosts already use `op` and unifying the two would simplify the mental model. But on a headless host, `op` requires a service-account token to be provisioned out-of-band and stored somewhere on the host — which is itself a secret, and the bootstrap problem doesn't go away, just moves. The token also makes the host's identity in 1Password's audit trail less specific than per-secret sops recipients are in `.sops.yaml`. Neither downside is fatal, but they're real, and there's no concrete value to weigh them against until a headless workload that benefits from runtime secret access exists.
 

@@ -1,7 +1,9 @@
 # ADR-017: Headless bootstrap path — AWS NixOS AMI
 
+> **Superseded by [ADR-022](./ADR-022-headless-bootstrap-nixos-anywhere.md) on 2026-05-25.** Mercury's bootstrap target shifted from a fresh NixOS AMI launch to an in-place conversion of an existing Ubuntu instance, and a bare-metal sibling host (Metis) joined the runway; both are now handled by `nixos-anywhere` + `disko`. The decision below is preserved as the historical record — the migration trigger noted in this ADR's Consequences (AWS withdrawing or stopping AMI updates) is independent of the reason for the actual supersede, and remains a valid trigger should a future scenario favour reverting to the AMI path.
+
 **Date**: 2026-05-18
-**Status**: Accepted
+**Status**: Superseded by ADR-022 (2026-05-25)
 
 ## Context
 
