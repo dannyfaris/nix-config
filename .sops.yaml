@@ -1,8 +1,10 @@
 keys:
   - &nixos-vm age1wwg6k2xnt4kakkajl7y2eydxw3jf4ll7z8ql64v9hvjdm8svh5psjxxz3l
+  - &mercury  age1vze2vqnjtmyltqez5uw3g5dzr64wa0qaz0mwngvq662djxcwlefsnjlx2t
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
     key_groups:
       - age:
           - *nixos-vm
+          - *mercury
