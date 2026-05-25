@@ -66,6 +66,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [021](./ADR-021-docker-on-headless.md) | Docker on headless | rootless daemon, system-wide CLI, per-host opt-in | Resolves ADR-006's deferred daemon decision; Mercury-only, not in the role |
 | [022](./ADR-022-headless-bootstrap-nixos-anywhere.md) | Headless bootstrap (revised) | `nixos-anywhere` + `disko`, pre-injected host keys | Supersedes ADR-017; amends ADR-018. One install path across AWS + bare metal |
 | [023](./ADR-023-host-config-three-file-structure.md) | Per-host file structure | `default.nix` / `disko.nix` / `hardware-configuration.nix` | Each file has a single ownership story; eliminates the mixed-content `hardware.nix` |
+| [024](./ADR-024-claude-code-config.md) | Claude Code config | home.file deploy, settings.json mutable | Stable config files sync via Nix; per-host settings.json edit references them |
 
 ## Conventions
 
