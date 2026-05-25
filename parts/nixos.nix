@@ -16,7 +16,7 @@ in
 
   flake.nixosConfigurations.mercury = mkHost {
     hostname = "mercury";
-    system   = "aarch64-linux";
+    system   = "x86_64-linux";
     role     = "headless";
   };
 
