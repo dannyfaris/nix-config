@@ -42,6 +42,15 @@
   # image's NixOS release if it differs.
   system.stateVersion = lib.mkDefault "25.11";
 
+  # 4 GiB t3.medium: zram absorbs hot pressure via compression; disk
+  # swap on the ext4 root provides true overflow when working set
+  # exceeds RAM. Both are needed — metis's zram-only is sized for its
+  # 32 GiB box. swappiness lowered from default 60 so the kernel
+  # prefers zram over EBS-backed disk swap until truly under pressure.
+  zramSwap.enable = true;
+  swapDevices = [ { device = "/swapfile"; size = 8192; } ];
+  boot.kernel.sysctl."vm.swappiness" = 10;
+
   # UEFI boot — explicit override of amazon-options.nix's default
   # (`pkgs.stdenv.hostPlatform.isAarch64`, i.e. false on x86_64).
   # disko.nix produces a UEFI-shaped layout (ESP + EF00 partition type),
