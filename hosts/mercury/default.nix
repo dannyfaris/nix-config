@@ -42,7 +42,7 @@
   # image's NixOS release if it differs.
   system.stateVersion = lib.mkDefault "25.11";
 
-  # UEFI boot — explicit override of amazon-image-options.nix's default
+  # UEFI boot — explicit override of amazon-options.nix's default
   # (`pkgs.stdenv.hostPlatform.isAarch64`, i.e. false on x86_64).
   # disko.nix produces a UEFI-shaped layout (ESP + EF00 partition type),
   # so BIOS boot would fail. ec2.efi is marked `internal = true` in
