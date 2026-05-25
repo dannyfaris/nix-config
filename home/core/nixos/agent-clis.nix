@@ -21,4 +21,10 @@
     claude-code
     cursor-cli
   ];
+
+  # Custom statusline — see ADR-024.
+  home.file.".claude/statusline.sh" = {
+    source = ./claude-statusline.sh;
+    executable = true;
+  };
 }

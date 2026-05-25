@@ -18,7 +18,7 @@ to install by default in home-manager.
 
 ## Decision
 
-Eleven tools are installed at the home-manager level, available everywhere
+Twelve tools are installed at the home-manager level, available everywhere
 on this user's account:
 
 - **ripgrep** (`rg`) — replaces `grep`
@@ -32,12 +32,12 @@ on this user's account:
 - **yazi** — TUI file manager
 - **htop** — process / system monitor
 - **dust** — replaces `du` with visual disk usage tree
+- **jq** — JSON processor (driven by the Claude Code statusline; see ADR-024)
 
 A second tier of tools is **deliberately deferred** rather than installed
 pre-emptively:
 
 - **delta** (better git diff pager) — defer until first wanted.
-- **jq** (JSON tool) — defer until first JSON workflow.
 
 A third tier is **deliberately skipped**, with reasons recorded so the
 decision isn't relitigated unintentionally:
@@ -54,7 +54,7 @@ decision isn't relitigated unintentionally:
 
 ## Rationale
 
-The ten locked-in tools each earn their place by daily use:
+The twelve locked-in tools each earn their place by daily use:
 
 - **ripgrep + fd + fzf** form the modern search/navigation triad. Used
   several times an hour in any serious dev workflow.
@@ -79,8 +79,11 @@ The ten locked-in tools each earn their place by daily use:
 - **htop** answers "what's eating CPU/RAM?" — the only way to see that on
   a headless box. Cheap, invisible until needed.
 - **dust** answers "where did my disk go?" — same pattern as htop.
+- **jq** earned its place by the deferred tier's documented trigger
+  (first JSON workflow): ADR-024's statusline parses Claude Code's
+  JSON-on-stdin. Broadly useful for ad-hoc JSON inspection beyond that.
 
-The deferred tier (delta, jq) is held for two reasons: each is genuinely
+The deferred tier (delta) is held for two reasons: it's genuinely
 useful but only sometimes; and adding tools pre-emptively contradicts the
 "no premature abstraction" principle (philosophy.md).
 
@@ -134,7 +137,7 @@ rootless daemon and a system-wide CLI.
   (colour, git status, modern formatting; defaults still alphabetical /
   one-per-line). The original `ls` is still callable via
   `command ls` / `\ls` / `/run/current-system/sw/bin/ls` if ever needed.
-- ✗ Ten new tools to be aware of. Mitigated by each being a near-drop-in
+- ✗ Twelve new tools to be aware of. Mitigated by each being a near-drop-in
   for a familiar command.
 - ⚠ Migration trigger: multi-machine setup → reconsider atuin for
   cross-machine history sync.
@@ -153,6 +156,7 @@ integrations cleanly, e.g. fzf's Ctrl-R history binding); plain
   programs.eza.enable = true;
   programs.zoxide.enable = true;
   programs.lazygit.enable = true;
+  programs.lazydocker.enable = true;
   programs.yazi.enable = true;
 
   home.packages = with pkgs; [
@@ -160,6 +164,7 @@ integrations cleanly, e.g. fzf's Ctrl-R history binding); plain
     fd
     htop
     dust
+    jq
   ];
 }
 ```

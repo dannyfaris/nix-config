@@ -122,7 +122,7 @@ Per-host one-time edit to `~/.claude/settings.json` (not Nix-managed):
 Companion changes:
 
 - `home/core/nixos/cli-utils.nix` gains `jq` in its `home.packages`
-  list. ADR-006's "locked list" gets a one-line amendment noting
-  the addition (statusline is the immediate driver; jq is broadly
-  useful).
+  list. ADR-006's locked list and rationale are amended to add jq
+  (moved from the deferred tier to installed; statusline is the
+  immediate driver, jq is broadly useful).
 - `docs/decisions/README.md` index table gains a row for this ADR.

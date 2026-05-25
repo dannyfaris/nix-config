@@ -48,7 +48,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [003](./ADR-003-direnv.md) | Per-project envs | direnv + nix-direnv | Standard nix dev-shell activation pattern |
 | [004](./ADR-004-multiplexer.md) | Multiplexer | zellij | Discoverable status bar; modern out-of-box UX |
 | [005](./ADR-005-editor.md) | Editor | helix | Batteries-included; selection-first model |
-| [006](./ADR-006-cli-utilities.md) | CLI utilities | rg, fd, fzf, bat, eza, zoxide, lazygit, yazi, htop, dust | Modern Unix replacements |
+| [006](./ADR-006-cli-utilities.md) | CLI utilities | rg, fd, fzf, bat, eza, zoxide, lazygit, lazydocker, yazi, htop, dust, jq | Modern Unix replacements |
 | [007](./ADR-007-nix-tooling.md) | Nix tooling | nh, nom, nixd, nixfmt, statix, deadnix | Modern overlay on nix UX |
 | [008](./ADR-008-agent-clis.md) | AI coding agents | Claude Code + Cursor (base), Codex + Gemini (extras) | OAuth login flows; extras opt-in per host |
 | [009](./ADR-009-git.md) | Git | dual identity, HTTPS+token | personal/work split via gitdir; HTTPS via gh/glab credential helpers |

@@ -1,4 +1,4 @@
-# Modern CLI utilities — rg, fd, fzf, bat, eza, zoxide, lazygit, yazi, htop, dust.
+# Modern CLI utilities — rg, fd, fzf, bat, eza, zoxide, lazygit, lazydocker, yazi, htop, dust, jq.
 # See docs/decisions/ADR-006-cli-utilities.md for the locked, deferred, and
 # skipped lists with rationale.
 #
@@ -46,5 +46,6 @@
     fd
     htop
     dust
+    jq
   ];
 }
