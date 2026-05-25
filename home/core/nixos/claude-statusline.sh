@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ~/.claude/statusline.sh
 # Two-line statusline for Claude Code.
-# Line 1: host │ model │ effort │ context bar % │ 5h rate limit + reset
-# Line 2: repo-rooted path  branch (worktree) !conflicts +staged ~modified ?untracked
+# Line 1: model │ effort │ context bar % │ 5h-window clock + countdown
+# Line 2: host │ repo-rooted path on branch (worktree) !conflicts +staged ~modified ?untracked
 #
 # Cross-platform: works on macOS and Linux. Requires jq and a Nerd Font.
 # Schema reference: https://code.claude.com/docs/en/statusline
@@ -20,9 +20,11 @@ TEAL=$'\033[38;5;73m'
 DIM=$'\033[2m'
 RST=$'\033[0m'
 SEP=" ${DIM}│${RST} "
-# U+E0A0 Powerline branch glyph as UTF-8 hex bytes — bash 3.2+ compatible
-# and avoids putting raw Nerd Font bytes in the source file.
-BRANCH_GLYPH=$'\xee\x82\xa0'
+# Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
+# putting raw Nerd Font bytes in the source file.
+BRANCH_GLYPH=$'\xee\x82\xa0'   # U+E0A0 Powerline branch
+DESKTOP_GLYPH=$'\xef\x84\x88'  # U+F108 nf-fa-desktop (host marker)
+CLOCK_GLYPH=$'\xef\x80\x97'    # U+F017 nf-fa-clock_o (rate-limit marker)
 
 {
   read -r MODEL
@@ -175,7 +177,7 @@ for ((i=0; i<E; i++)); do BAR+="░"; done
 RLIM=""
 if [ -n "$FIVE_PCT" ]; then
   FI=$(printf '%.0f' "$FIVE_PCT" 2>/dev/null || echo 0)
-  RLIM="${SEP}${DIM}${RST}5h ${FI}%"
+  RLIM="${SEP}${CLOCK_GLYPH}  ${FI}%"
   case "$FIVE_RESET" in
     ''|*[!0-9]*) ;;
     *)
@@ -187,11 +189,14 @@ if [ -n "$FIVE_PCT" ]; then
   esac
 fi
 
-printf '%s%s%s%s%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
-  "$DIM" "$hostname" "$RST" "$SEP" \
+# ═══ LINE 1: model │ effort │ context │ rate-limit ═══════════════
+printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
   "$MAUVE" "$MODEL" "$RST" \
   "$EFFORT_SEG" "$SEP" \
   "$BC" "$BAR" "$RST" \
   "$PCT" "$RLIM"
 
-[ -n "$SHORT_CWD" ] && printf '%s%s%s%s\n' "$BLUE" "$SHORT_CWD" "$RST" "$GIT_SEG"
+# ═══ LINE 2: host │ path on branch ════════════════════════════════
+LINE2="${DIM}${DESKTOP_GLYPH}  ${hostname}${RST}"
+[ -n "$SHORT_CWD" ] && LINE2+="${SEP}${BLUE}${SHORT_CWD}${RST}${GIT_SEG}"
+printf '%s\n' "$LINE2"
