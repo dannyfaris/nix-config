@@ -34,7 +34,6 @@ CLOCK_GLYPH=$'\xef\x80\x97'    # U+F017 nf-fa-clock_o (rate-limit marker)
   read -r EFFORT
   read -r FIVE_PCT
   read -r FIVE_RESET
-  read -r SESSION_ID
 } < <(jq -r '
   (.model.display_name // "—"),
   (.workspace.current_dir // ""),
@@ -42,74 +41,38 @@ CLOCK_GLYPH=$'\xef\x80\x97'    # U+F017 nf-fa-clock_o (rate-limit marker)
   (.context_window.used_percentage // 0),
   (.effort.level // ""),
   (.rate_limits.five_hour.used_percentage // ""),
-  (.rate_limits.five_hour.resets_at // ""),
-  (.session_id // "")
+  (.rate_limits.five_hour.resets_at // "")
 ' <<<"$input")
 
-# ─── Unified cache: path resolution + git status (5s TTL) ─────────
-# Keyed on session_id + CWD so cd-between-repos within a session
-# doesn't show wrong (cross-repo) data. Bash 3.2-safe truncation
-# keeps the filename under typical filesystem limits.
-CACHE_DIR="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
-SAFE_CWD="${CWD//\//_}"
-if [ ${#SAFE_CWD} -gt 200 ]; then
-  SAFE_CWD="${SAFE_CWD:${#SAFE_CWD}-200}"
-fi
-CF="${CACHE_DIR%/}/cc-statusline-${SESSION_ID}-${SAFE_CWD}"
-CACHE_MAX_AGE=5
-# Cache field separator: ASCII Unit Separator (\x1f). Tab can't be used —
-# bash's `read` with whitespace-only IFS collapses consecutive delimiters,
-# destroying empty fields (PREFIX is empty at repo root, HEAD_REF is empty
-# on attached HEAD), which silently misaligned every subsequent field.
-US=$'\x1f'
-
-stat_mtime() {
-  # GNU stat (Linux) first; BSD stat (macOS) as fallback.
-  # On GNU stat, "-f" means filesystem-info mode and would corrupt the
-  # output — putting -c first picks GNU's correct mtime format on Linux
-  # and falls through cleanly to BSD's "-f %m" on macOS.
-  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0
-}
-cache_fresh() {
-  [ -f "$CF" ] && [ $((NOW - $(stat_mtime "$CF"))) -lt "$CACHE_MAX_AGE" ]
-}
-
-IS_REPO=0; TOP=""; PREFIX=""; BRANCH=""; HEAD_REF=""
+# ─── Git state — queried fresh each render, no cache ──────────────
+# Statusline renders are debounced (~300ms) and event-driven, not a hot
+# loop, so three git invocations per render is fine. Caching this was
+# the source of all of Slice 1's platform-specific bugs; not worth it.
+TOP=""; PREFIX=""; BRANCH=""; HEAD_REF=""
 STAGED=0; MODIFIED=0; UNTRACKED=0; CONFLICT=0
-
 if [ -n "$CWD" ]; then
-  if cache_fresh; then
-    IFS="$US" read -r IS_REPO TOP PREFIX BRANCH HEAD_REF \
-                       STAGED MODIFIED UNTRACKED CONFLICT < "$CF"
-  else
-    { read -r TOP; read -r PREFIX; } < <(
-      git -C "$CWD" rev-parse --show-toplevel --show-prefix 2>/dev/null
-    )
-    if [ -n "$TOP" ]; then
-      IS_REPO=1
-      BRANCH=$(git -C "$CWD" branch --show-current 2>/dev/null)
-      [ -z "$BRANCH" ] && HEAD_REF=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
-      while IFS= read -r line; do
-        case "${line:0:2}" in
-          DD|AU|UD|UA|DU|AA|UU) CONFLICT=$((CONFLICT + 1)) ;;
-          '??')                 UNTRACKED=$((UNTRACKED + 1)) ;;
-          *)
-            [ "${line:0:1}" != " " ] && STAGED=$((STAGED + 1))
-            [ "${line:1:1}" != " " ] && MODIFIED=$((MODIFIED + 1))
-            ;;
-        esac
-      done < <(git -C "$CWD" status --porcelain 2>/dev/null)
-    fi
-    TMP="${CF}.$$.tmp"
-    printf "%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s\n" \
-      "$IS_REPO" "$TOP" "$PREFIX" "$BRANCH" "$HEAD_REF" \
-      "$STAGED" "$MODIFIED" "$UNTRACKED" "$CONFLICT" > "$TMP" \
-      && mv -f "$TMP" "$CF"
+  { read -r TOP; read -r PREFIX; } < <(
+    git -C "$CWD" rev-parse --show-toplevel --show-prefix 2>/dev/null
+  )
+  if [ -n "$TOP" ]; then
+    BRANCH=$(git -C "$CWD" branch --show-current 2>/dev/null)
+    [ -z "$BRANCH" ] && HEAD_REF=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
+    while IFS= read -r line; do
+      case "${line:0:2}" in
+        DD|AU|UD|UA|DU|AA|UU) CONFLICT=$((CONFLICT + 1)) ;;
+        '??')                 UNTRACKED=$((UNTRACKED + 1)) ;;
+        *)
+          [ "${line:0:1}" != " " ] && STAGED=$((STAGED + 1))
+          [ "${line:1:1}" != " " ] && MODIFIED=$((MODIFIED + 1))
+          ;;
+      esac
+    done < <(git -C "$CWD" status --porcelain 2>/dev/null)
   fi
 fi
 
+# ─── Path: repo-rooted, with non-git fallback ─────────────────────
 SHORT_CWD=""
-if [ "$IS_REPO" = "1" ] && [ -n "$TOP" ]; then
+if [ -n "$TOP" ]; then
   repo_name="${TOP##*/}"
   PREFIX="${PREFIX%/}"
   if [ -n "$PREFIX" ]; then
@@ -126,8 +89,9 @@ elif [ -n "$CWD" ]; then
   }' <<<"$display_cwd")
 fi
 
+# ─── Git segment ──────────────────────────────────────────────────
 GIT_SEG=""
-if [ "$IS_REPO" = "1" ]; then
+if [ -n "$TOP" ]; then
   GIT_LABEL=""
   if [ -n "$BRANCH" ]; then
     GIT_LABEL="$BRANCH"
@@ -142,14 +106,15 @@ if [ "$IS_REPO" = "1" ]; then
     else
       GIT_SEG=" ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
     fi
-    [ -n "$WORKTREE" ]           && GIT_SEG+=" ${DIM}(${WORKTREE})${RST}"
-    [ "${CONFLICT:-0}"  -gt 0 ]  && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
-    [ "${STAGED:-0}"    -gt 0 ]  && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
-    [ "${MODIFIED:-0}"  -gt 0 ]  && GIT_SEG+=" ${YELLOW}~${MODIFIED}${RST}"
-    [ "${UNTRACKED:-0}" -gt 0 ]  && GIT_SEG+=" ${MAUVE}?${UNTRACKED}${RST}"
+    [ -n "$WORKTREE" ]     && GIT_SEG+=" ${DIM}(${WORKTREE})${RST}"
+    [ "$CONFLICT"  -gt 0 ] && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
+    [ "$STAGED"    -gt 0 ] && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
+    [ "$MODIFIED"  -gt 0 ] && GIT_SEG+=" ${YELLOW}~${MODIFIED}${RST}"
+    [ "$UNTRACKED" -gt 0 ] && GIT_SEG+=" ${MAUVE}?${UNTRACKED}${RST}"
   fi
 fi
 
+# ─── Effort indicator ─────────────────────────────────────────────
 EFFORT_SEG=""
 case "$EFFORT" in
   low)    EFFORT_SEG="${SEP}${DIM}▽ low${RST}" ;;
@@ -159,6 +124,7 @@ case "$EFFORT" in
   max)    EFFORT_SEG="${SEP}${RED}⬆ max${RST}" ;;
 esac
 
+# ─── Context bar with threshold colours ───────────────────────────
 PCT=${PCT_RAW%%.*}
 case "$PCT" in
   ''|*[!0-9]*) PCT=0 ;;
@@ -174,6 +140,7 @@ BAR=""
 for ((i=0; i<F; i++)); do BAR+="█"; done
 for ((i=0; i<E; i++)); do BAR+="░"; done
 
+# ─── 5h rate limit with reset countdown ───────────────────────────
 RLIM=""
 if [ -n "$FIVE_PCT" ]; then
   FI=$(printf '%.0f' "$FIVE_PCT" 2>/dev/null || echo 0)
