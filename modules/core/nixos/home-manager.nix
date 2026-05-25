@@ -42,6 +42,8 @@
         ../../../home/core/nixos/cli-utils.nix
         ../../../home/core/nixos/nix-tooling.nix
         ../../../home/core/nixos/agent-clis.nix
+        # Role default for every NixOS host.
+        ../../../home/core/nixos/macchina.nix
       ] ++ (hostContext.extraHomeModules or [ ]);
 
       home = {

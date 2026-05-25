@@ -258,6 +258,9 @@ After the first successful switch:
   - After a full reboot and SSH back in: `systemctl --user status
     docker` still shows the daemon running before login (lingering
     is enabled).
+- Macchina login banner shows on SSH login (the
+  `home/core/nixos/macchina.nix` module is a role default wired in
+  `modules/core/nixos/home-manager.nix`).
 
 ## Security group rules
 

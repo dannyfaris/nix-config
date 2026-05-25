@@ -1,6 +1,7 @@
-# System info display on login — Macchina with the Hydrogen theme.
-# Scoped to nixos-vm and metis via extraHomeModules; not on Mercury
-# (EC2 work host where login noise is unwanted).
+# System info display on login — Macchina with a customised Hydrogen
+# theme that swaps the upstream ASCII for the two-tone NixOS snowflake
+# defined below. Role default for every NixOS host (wired in
+# modules/core/nixos/home-manager.nix).
 { pkgs, config, ... }:
 let
   esc    = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
@@ -102,17 +103,18 @@ in
 
   # loginShellInit runs once on SSH login, not on every zellij pane open.
   # Guard prevents a startup error if macchina is transiently missing from PATH.
-  # Interface priority: tailscale0 when it has an assigned IPv4 (i.e. connected),
-  # otherwise whichever interface carries the default route. Runs without
-  # --interface if neither resolves — Local IP readout is simply absent.
-  # tailscale0 is available on these hosts because both nixos-vm and metis
-  # import modules/core/nixos/tailscale.nix (see each host's imports).
+  # Interface priority: tailscale0 when present with an assigned IPv4,
+  # otherwise the interface the kernel would actually use for outbound
+  # traffic (queried via `ip route get`, which respects metric, policy,
+  # and multi-default-route precedence; `ip route show default | first`
+  # is unreliable on multi-homed hosts). Runs without --interface if
+  # neither resolves — Local IP readout is simply absent.
   programs.fish.loginShellInit = ''
     if command -q macchina
         if ip addr show tailscale0 2>/dev/null | string match --quiet --regex 'inet '
             macchina --interface tailscale0
         else
-            set -l _iface (ip route show default 2>/dev/null \
+            set -l _iface (ip -o route get 192.0.2.1 2>/dev/null \
                 | string replace --regex --filter '.*\bdev\s+(\S+).*' '$1')[1]
             if test -n "$_iface"
                 macchina --interface $_iface

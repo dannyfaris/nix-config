@@ -458,8 +458,9 @@ Run these from the VM or your Mac.
   - `docker run --rm hello-world` succeeds as `dbf` with no sudo, no
     `DOCKER_HOST` override.
   - `docker compose version` and `docker-compose --version` both respond.
-- Macchina login banner shows the Tailscale interface (per
-  `macchina.nix` in `hosts/metis/default.nix`).
+- Macchina login banner shows on SSH login (the
+  `home/core/nixos/macchina.nix` module is a role default wired in
+  `modules/core/nixos/home-manager.nix`).
 - Power-loss recovery test (optional but worth it the first time, since
   it's the reason there's no LUKS): pull the power, wait 10s, plug back
   in. The box should boot unattended and Tailscale should rejoin within
