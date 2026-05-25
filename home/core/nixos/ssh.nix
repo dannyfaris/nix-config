@@ -1,14 +1,19 @@
-# Outbound SSH — defaults only; key generation deferred.
-# See docs/decisions/ADR-010-ssh.md for rationale.
+# Outbound SSH — defaults only + one local Include for operator one-offs.
+# See docs/decisions/ADR-010-ssh.md for the broader rationale.
 #
-# No matchBlocks, no identity files, no key generation. Git auth uses
-# HTTPS + token via gh/glab (see ADR-009), so SSH keys aren't needed for
-# git. No other non-git SSH-out workflow exists yet on this box.
+# No matchBlocks declared here, no identity files, no key generation. Git
+# auth uses HTTPS + token via gh/glab (see ADR-009), so SSH keys aren't
+# needed for git. The Include directive below lets the operator maintain
+# one-off matchBlocks (e.g. for bootstrap-only access to a new cloud host
+# via nixos-anywhere) at ~/.ssh/config.local without having them clobbered
+# on every nh os switch — home-manager owns the generated ~/.ssh/config
+# but the Include'd file is untouched.
 #
-# When SSH keys are eventually added (e.g. for a future x86_64 desktop or
-# cloud servers), generate fresh ed25519 keys on this box, use a
-# passphrase + ssh-agent, and add matchBlocks here. Agent forwarding from
-# the Mac stays explicitly OFF (standard security best practice).
+# When SSH keys become a permanent fixture (e.g. for a future x86_64
+# desktop or cloud servers used routinely), generate fresh ed25519 keys
+# on this box, use a passphrase + ssh-agent, and add matchBlocks here
+# directly. Agent forwarding from the Mac stays explicitly OFF (standard
+# security best practice).
 _: {
   programs.ssh = {
     enable = true;
@@ -17,5 +22,15 @@ _: {
     # the trace warning and makes the stance explicit. We don't depend on
     # any of those defaults (no matchBlocks declared; no SSH keys yet).
     enableDefaultConfig = false;
+    # Pull in ~/.ssh/config.local at file scope. Standard pattern for
+    # mixing nix-managed SSH config with operator-maintained one-offs
+    # (e.g. a temporary matchBlock for a host being bootstrapped via
+    # nixos-anywhere). Missing-file is silently ignored by ssh, so this
+    # is safe to enable unconditionally.
+    #
+    # programs.ssh.includes emits the Include at file scope (before any
+    # Host blocks), which is the upstream-blessed mechanism and avoids
+    # the scoping subtleties of putting Include inside a Host * block.
+    includes = [ "~/.ssh/config.local" ];
   };
 }
