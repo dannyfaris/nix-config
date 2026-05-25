@@ -31,7 +31,34 @@ Run once per fresh clone of this repo on the operator machine:
 - An existing age decryption identity for `secrets/secrets.yaml`. Today
   the UTM VM's host SSH key (`/etc/ssh/ssh_host_ed25519_key`) is the
   only such identity; `sops updatekeys` (step 2 below) must therefore
-  run on the VM, or with that key imported transiently.
+  run on the VM. Before first use, derive the operator-side age key
+  from the SSH host key:
+
+  ```bash
+  just setup-sops-identity
+  ```
+
+  One-time-per-fresh-clone; idempotent. Creates
+  `~/.config/sops/age/keys.txt` so subsequent `sops -d` /
+  `sops updatekeys` work as `dbf` without env-var ceremony. Without
+  this, the bootstrap pre-flight will refuse to proceed.
+- An `~/.ssh/config.local` entry for the host being bootstrapped, so
+  the operator can `ssh <host>` without typing the full target string.
+  `home/core/nixos/ssh.nix` includes this file at file scope; entries
+  there survive `nh os switch` (unlike `~/.ssh/config`, which
+  home-manager owns). Example for an AWS host:
+
+  ```
+  Host mercury
+    User ubuntu
+    HostName ec2-x-x-x-x.<region>.compute.amazonaws.com
+    IdentityFile ~/.ssh/mercury.pem
+  ```
+
+  The matchBlock is needed only during bootstrap (the `ubuntu` /
+  `nixos` account is gone post-install and `root` SSH is disabled;
+  you'll SSH as `dbf` from your Mac afterwards). You can leave the
+  entry in place or remove it post-bootstrap — either is fine.
 - Daniel's Mac SSH key in `modules/core/nixos/users.nix` matches the
   private key on the laptop you'll SSH from. Once `nixos-anywhere`
   completes, that key is the sole inbound credential — get it right
@@ -164,11 +191,20 @@ Substitute `<user>`:
 The recipe:
 1. Pre-flight 1: confirms the new host's age recipient is in
    `secrets/secrets.yaml` (catches forgotten step 2 directly).
-2. Pre-flight 2: confirms operator-side sops decryption works.
-3. Invokes `nixos-anywhere` (pinned to 1.13.0) with `--extra-files`
-   pointing at the staged key + `--generate-hardware-config` writing
-   the real hardware config back to
-   `hosts/<host>/hardware-configuration.nix`.
+2. Pre-flight 2: confirms operator-side sops decryption works (failure
+   here means `just setup-sops-identity` wasn't run — see Operator
+   prerequisites).
+3. Invokes `nixos-anywhere` (pinned to 1.13.0) with:
+   - `--extra-files` pointing at the staged host key
+   - `--generate-hardware-config` writing the real hardware config back
+     to `hosts/<host>/hardware-configuration.nix`
+   - `--kexec-extra-flags --kexec-syscall` to force the legacy
+     `kexec_load` syscall. Necessary on Ubuntu's `-aws` kernels (which
+     ship with `CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y` and reject NixOS's
+     unsigned bzImage via `kexec_file_load` with `EADDRNOTAVAIL` even
+     when Secure Boot is disabled and lockdown is none). Harmless on
+     every other kernel — kexec-tools' option parser is last-wins, so
+     this overrides nixos-anywhere's default `--kexec-syscall-auto`.
 4. Cleans up `/dev/shm/nix-bootstrap-<host>` on success.
 
 On failure mid-install, the staged key is preserved so you can retry
@@ -297,6 +333,59 @@ If you lose SSH access:
    systemd-boot's menu at startup.
 3. **Boot from the live USB again** if needed for offline repair
    (mount the btrfs root, chroot, fix, reboot).
+
+## Troubleshooting
+
+### Build OOMs on `sops-install-secrets` (memory-constrained targets)
+
+On small instances (t3.medium with 4 GiB RAM and no default swap, or
+similar), the Go compiler can be OOM-killed while building
+`sops-install-secrets`'s `aws-sdk-go-v2/service/s3` dependency. Visible
+signal: `signal: killed` in the last log lines of the failed build.
+
+The kexec installer is still alive after the failure and the disk is
+already partitioned via disko — recover without restarting the whole
+bootstrap:
+
+1. From the operator, add disk-backed swap on the disko-mounted future
+   root (the installer's own `/` is tmpfs, so it can't host swap):
+
+   ```bash
+   ssh root@<host> 'fallocate -l 4G /mnt/_temp_swap && \
+     chmod 600 /mnt/_temp_swap && \
+     mkswap /mnt/_temp_swap && \
+     swapon /mnt/_temp_swap'
+   ```
+
+2. Re-run nixos-anywhere with `--phases install,reboot` (skip the
+   already-completed kexec + disko phases). Note the target-host
+   becomes `root@<host>` for the installer:
+
+   ```bash
+   nix run github:nix-community/nixos-anywhere/1.13.0 -- \
+       --flake .#<host> \
+       --target-host root@<host> \
+       --extra-files /dev/shm/nix-bootstrap-<host> \
+       --phases install,reboot \
+       --kexec-extra-flags --kexec-syscall \
+       --generate-hardware-config nixos-generate-config \
+                                  hosts/<host>/hardware-configuration.nix
+   ```
+
+3. After the new system boots and you've SSHed in as `dbf`, the
+   swapfile persists as an orphan at `/_temp_swap` (4 GiB unused on
+   disk). Clean up:
+
+   ```bash
+   sudo swapoff /_temp_swap   # may print "Invalid argument" if not
+                              # active in the new system — harmless
+   sudo rm /_temp_swap
+   ```
+
+Larger instances (t3.large 8 GiB+, m5.large+) won't need this — the
+AWS SDK Go build fits in RAM. The justfile's `bootstrap` recipe doesn't
+add swap by default because most targets won't need it; this section
+is the documented workaround for when they do.
 
 ## What this runbook does NOT cover
 

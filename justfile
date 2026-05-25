@@ -119,7 +119,7 @@ bootstrap host target:
     echo "=== Pre-flight 2: operator-side sops decryption ==="
     if ! nix shell nixpkgs#sops -c sops -d secrets/secrets.yaml > /dev/null 2>&1; then
         echo "ERROR: operator-side sops decryption failed." >&2
-        echo "  Independent of {{host}}; your own age identity may be misconfigured." >&2
+        echo "  Run 'just setup-sops-identity' first (one-time per fresh clone)." >&2
         exit 1
     fi
     echo "  OK — operator decrypts cleanly"
@@ -128,10 +128,19 @@ bootstrap host target:
     # Pinned to 1.13.0 (the release ADR-022 was validated against).
     # Bump deliberately when reviewing release notes — this is the
     # bootstrap path; a regression here can brick an install.
+    #
+    # --kexec-extra-flags --kexec-syscall forces the legacy kexec_load
+    # syscall instead of kexec_file_load. Necessary on Ubuntu's -aws
+    # kernels, which ship with CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y and
+    # reject NixOS's unsigned bzImage with EADDRNOTAVAIL even when
+    # Secure Boot is disabled and lockdown is none. Harmless on every
+    # other kernel (kexec-tools' option parser is last-wins, so this
+    # overrides nixos-anywhere's default --kexec-syscall-auto).
     nix run github:nix-community/nixos-anywhere/1.13.0 -- \
         --flake ".#{{host}}" \
         --target-host {{target}} \
         --extra-files "$tmp" \
+        --kexec-extra-flags --kexec-syscall \
         --generate-hardware-config nixos-generate-config \
                                    "hosts/{{host}}/hardware-configuration.nix"
     echo
@@ -153,6 +162,41 @@ bootstrap host target:
 bootstrap-clean:
     @rm -rf /dev/shm/nix-bootstrap-*
     @echo "Cleaned /dev/shm/nix-bootstrap-*"
+
+# One-time-per-clone operator setup. Derives ~/.config/sops/age/keys.txt
+# from /etc/ssh/ssh_host_ed25519_key (the VM's SSH host key, which IS
+# this repo's sops decryption identity — same key sops-nix uses at
+# activation time as root). sops doesn't read SSH host keys directly
+# (perms + format quirks: SOPS_AGE_SSH_PRIVATE_KEY_FILE produced wrong
+# age identities in sops 3.12.1 testing), so we pre-convert via
+# ssh-to-age. Reqs sudo to read the SSH key.
+#
+# Without this, `sops -d` / `sops updatekeys` as dbf fail with
+# "no identity matched any of the recipients."
+
+# Set up ~/.config/sops/age/keys.txt from the VM's SSH host key (one-time).
+setup-sops-identity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    target=~/.config/sops/age/keys.txt
+    if [[ -f "$target" ]]; then
+        echo "Identity already at $target."
+        echo "Remove it first if you want to regenerate."
+        exit 0
+    fi
+    tmp=$(mktemp -d -p /dev/shm)
+    trap 'rm -rf "$tmp"' EXIT
+    echo "=== Reading /etc/ssh/ssh_host_ed25519_key (sudo required) ==="
+    sudo cat /etc/ssh/ssh_host_ed25519_key > "$tmp/host-key"
+    chmod 600 "$tmp/host-key"
+    echo "=== Converting SSH key to age private key ==="
+    nix shell nixpkgs#ssh-to-age -c \
+        ssh-to-age -private-key -i "$tmp/host-key" -o "$tmp/age-key"
+    install -d -m 700 ~/.config/sops/age
+    install -m 600 "$tmp/age-key" "$target"
+    echo
+    echo "Installed: $target"
+    echo "  sops -d / sops updatekeys will now work as dbf without env vars."
 
 # Configure git to use this repo's .githooks/ directory (one-time per clone).
 install-hooks:
