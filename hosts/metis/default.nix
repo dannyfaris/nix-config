@@ -6,13 +6,19 @@
 # Personal dev box: dual git identity (personal + work) + full agent-CLI set,
 # mirroring nixos-vm.
 #
-# Bootstrap note: before the first nixos-rebuild switch, Metis's SSH host key
-# must be added to .sops.yaml and secrets/secrets.yaml re-encrypted.
-# Full step-by-step procedure: docs/runbooks/headless-bootstrap-metis.md.
-{ ... }:
+# Bootstrap via nixos-anywhere + disko (ADR-022); per-host files follow the
+# three-file convention (ADR-023). Host key is pre-generated on the operator
+# (`just gen-host-key metis`) and injected at install via --extra-files;
+# secrets are sops-nix (ADR-018, amended by ADR-022 for acquisition order).
+# Runbook: docs/runbooks/headless-bootstrap.md (slice 4 will consolidate
+# the old AWS- and Metis-specific runbooks into one).
+{ inputs, ... }:
 {
   imports = [
-    ./hardware.nix
+    ./hardware-configuration.nix
+    ./disko.nix
+    inputs.disko.nixosModules.disko
+
     ../../modules/core/nixos/boot-systemd.nix
     ../../modules/core/nixos/networking-networkmanager.nix
     ../../modules/core/nixos/tailscale.nix
@@ -24,6 +30,16 @@
 
   # Set once at install; never change, even after upgrading.
   system.stateVersion = "25.11";
+
+  # Defensive — kept deliberately even though disko's btrfs module also
+  # pulls btrfs into the initrd. Matches what nixos-generate-config emits
+  # and survives future refactors. Do NOT strip as redundant.
+  boot.supportedFilesystems = [ "btrfs" ];
+
+  # zram-only swap — 50 % of RAM, zstd compression, appropriate for
+  # 32 GiB. No disk swap (no hibernate on a headless box; zero SSD wear).
+  zramSwap.enable = true;
+  swapDevices = [ ];
 
   # Per-host values consumed by home-manager modules (editor.nix nixd
   # options, nix-tooling NH_FLAKE). Forwarded into the HM submodule system
