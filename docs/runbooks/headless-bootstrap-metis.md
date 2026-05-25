@@ -1,5 +1,16 @@
 # Headless bootstrap — Metis (bare-metal HP ProDesk Mini 600 G9)
 
+> **Superseded by [headless-bootstrap.md](./headless-bootstrap.md)** (2026-05-25).
+>
+> This runbook describes the pre-ADR-022 procedure: manual
+> `parted`/`mkfs`/`btrfs subvolume` partitioning, a two-pass install
+> (stock NixOS then flake), post-boot host-key harvest, and surgical
+> kernel-modules merge into a mixed-content `hardware.nix`. It is
+> preserved unchanged for historical reference; do not follow it for
+> new hosts. The current procedure uses `nixos-anywhere` + `disko` with
+> pre-injected host SSH keys and the three-file per-host structure
+> (`default.nix` / `disko.nix` / `hardware-configuration.nix`).
+
 Operational procedure for bringing Metis up on bare metal from a fresh disk
 to a fully-managed `nh os switch` target. Metis is an x86_64-linux personal
 dev box adopting the `headless` role (per `parts/nixos.nix` and

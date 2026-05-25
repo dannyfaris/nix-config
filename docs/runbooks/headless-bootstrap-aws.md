@@ -1,5 +1,14 @@
 # Headless bootstrap — AWS EC2 (NixOS AMI)
 
+> **Superseded by [headless-bootstrap.md](./headless-bootstrap.md)** (2026-05-25).
+>
+> This runbook describes the pre-ADR-022 procedure: launch a NixOS AMI,
+> post-boot host-key harvest, then a first `nixos-rebuild switch` to
+> activate the flake. It is preserved unchanged for historical reference;
+> do not follow it for new hosts. The current procedure uses
+> `nixos-anywhere` + `disko` with pre-injected host SSH keys — same
+> single procedure for both AWS and bare-metal hosts.
+
 Operational procedure for bringing up a new headless host on AWS from clean
 state to a fully-managed `nh os switch` target. See ADR-017 for the
 decision behind this path; see ADR-018 for the secrets choice this runbook
