@@ -48,7 +48,16 @@
   # 32 GiB box. swappiness lowered from default 60 so the kernel
   # prefers zram over EBS-backed disk swap until truly under pressure.
   zramSwap.enable = true;
-  swapDevices = [ { device = "/swapfile"; size = 8192; } ];
+  # Defence-in-depth per ADR-021: random key destroys swapfile content
+  # at every reboot, so EBS snapshots and post-termination volume
+  # recovery can't yield swapped-out secrets. Disables hibernate,
+  # irrelevant on a cloud VM. AES-NI on Nitro makes per-IO cost
+  # negligible.
+  swapDevices = [ {
+    device = "/swapfile";
+    size = 8192;
+    randomEncryption.enable = true;
+  } ];
   boot.kernel.sysctl."vm.swappiness" = 10;
 
   # systemd-oomd: enableUserSlices wires user.slice with
