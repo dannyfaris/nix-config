@@ -1,7 +1,9 @@
 # ADR-014: Role composition — independent (not inherited)
 
+> **Superseded by [ADR-027](./ADR-027-foundation-and-bundles.md) on 2026-05-27.** ADR-027 removes the role layer entirely in favour of a foundation + capability-bundles model. The question this ADR answered ("how do roles relate to each other?") no longer applies: with no role layer, there is nothing to inherit. The underlying intent — keep composition flat, avoid inheritance contracts — survives in ADR-027 (bundles are themselves non-inherited, and host import lists remain flat). The decision below is preserved as the historical record of the role-era design.
+
 **Date**: 2026-05-14
-**Status**: Accepted
+**Status**: Superseded by ADR-027
 
 ## Context
 

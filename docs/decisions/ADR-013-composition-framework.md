@@ -1,7 +1,9 @@
 # ADR-013: Composition framework — flake-parts with role-explicit imports
 
+> **Amended by [ADR-027](./ADR-027-foundation-and-bundles.md) on 2026-05-27** for the role-layer sub-claim only. ADR-027 walks back the *role* abstraction (which this ADR introduced as the load-bearing composition unit) and replaces it with a foundation + capability-bundles model. The broader claims of this ADR — flake-parts as the organisational framework, **explicit imports over auto-discovery**, **whitelist over blanket**, **no premature abstraction**, and the directory grid (`core/`-vs-`experimental/` × `shared/`-vs-`nixos/`-vs-`darwin/`) — are unchanged and remain authoritative. References below to "roles" should be read in light of ADR-027: the composition mechanism is the same; the named structural unit has shifted from "role" to "foundation + bundles." Specifically, the "Single source of truth" framing in the Rationale ("the role file is the single answer to 'what does this kind of machine include'") shifts under ADR-027: the answer now lives in each host's import list (`foundation.nix` + opt-in bundles), not in a role file.
+
 **Date**: 2026-05-14
-**Status**: Accepted
+**Status**: Accepted (with amendment per ADR-027)
 
 ## Context
 

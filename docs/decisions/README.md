@@ -55,8 +55,8 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [010](./ADR-010-ssh.md) | SSH | defaults only | Outbound key generation deferred (HTTPS git removes the need) |
 | [011](./ADR-011-remote-dev-qol.md) | Remote-dev QoL | mosh + OSC52 | Session resilience; cross-machine clipboard |
 | [012](./ADR-012-taxonomy.md) | Module taxonomy | Most-communicative term | The naming rule itself, as a meta-decision |
-| [013](./ADR-013-composition-framework.md) | Composition framework | flake-parts + role-explicit imports | Roles list modules explicitly; no auto-discovery |
-| [014](./ADR-014-independent-roles.md) | Role composition | independent, not inherited | Each role imports modules directly; no shared parents |
+| [013](./ADR-013-composition-framework.md) | Composition framework | flake-parts + role-explicit imports | Roles list modules explicitly; no auto-discovery. **Amended by ADR-027** (role layer walked back; explicit-imports philosophy preserved) |
+| [014](./ADR-014-independent-roles.md) | Role composition | independent, not inherited | Each role imports modules directly; no shared parents. **Superseded by ADR-027** (role layer removed entirely) |
 | [015](./ADR-015-tier-as-directory.md) | Stability tier | encoded as directory | `core/` vs `experimental/` in the path |
 | [016](./ADR-016-host-identity.md) | Host identity | stable per physical machine | Hardware change = new host; software role change = no rename |
 | [017](./ADR-017-headless-bootstrap-aws-ami.md) | Headless bootstrap (AWS) | NixOS AMI + amazon-image module | **Superseded by ADR-022.** Resolves PRD §12 deferral; chose AMI over nixos-anywhere/disko at the time (path changed when Mercury became an in-place Ubuntu conversion) |
@@ -68,6 +68,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [023](./ADR-023-host-config-three-file-structure.md) | Per-host file structure | `default.nix` / `disko.nix` / `hardware-configuration.nix` | Each file has a single ownership story; eliminates the mixed-content `hardware.nix` |
 | [024](./ADR-024-claude-code-config.md) | Claude Code config | home.file deploy, settings.json mutable | Stable config files sync via Nix; per-host settings.json edit references them |
 | [025](./ADR-025-ci-in-flake.md) | Continuous integration | flake-defined `nix flake check` + GitHub Actions matrix | Every check is a flake output; CI is thin YAML; `.githooks/` replaced by `git-hooks.nix` installed by devShell. Realises ADR-023's planned banner-check enforcement |
+| [027](./ADR-027-foundation-and-bundles.md) | Composition model (replaces roles) | foundation + capability bundles | `roles/` removed; each host imports `foundation.nix` + opt-in bundles. Supersedes ADR-014; amends ADR-013 |
 
 ## Conventions
 
