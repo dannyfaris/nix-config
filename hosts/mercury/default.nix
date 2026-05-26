@@ -61,11 +61,11 @@
   boot.kernel.sysctl."vm.swappiness" = 10;
 
   # systemd-oomd: enableUserSlices wires user.slice with
-  # ManagedOOMMemoryPressure=kill at 80 % PSI / 30 s, killing the
-  # heaviest descendant before the kernel thrash-hangs. system/root
-  # slices intentionally excluded — oomd would otherwise be free to
-  # kill the slice containing sshd, costing a break-glass recovery via
-  # Instance Connect.
+  # ManagedOOMMemoryPressure=kill at 80 % memory-pressure (systemd
+  # default duration), killing the heaviest descendant before the
+  # kernel thrash-hangs. system/root slices intentionally excluded —
+  # oomd would otherwise be free to kill the slice containing sshd,
+  # costing a break-glass recovery via Instance Connect.
   systemd.oomd.enableUserSlices = true;
 
   # UEFI boot — explicit override of amazon-options.nix's default
