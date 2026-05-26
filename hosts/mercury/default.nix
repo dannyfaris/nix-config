@@ -51,6 +51,14 @@
   swapDevices = [ { device = "/swapfile"; size = 8192; } ];
   boot.kernel.sysctl."vm.swappiness" = 10;
 
+  # systemd-oomd: enableUserSlices wires user.slice with
+  # ManagedOOMMemoryPressure=kill at 80 % PSI / 30 s, killing the
+  # heaviest descendant before the kernel thrash-hangs. system/root
+  # slices intentionally excluded — oomd would otherwise be free to
+  # kill the slice containing sshd, costing a break-glass recovery via
+  # Instance Connect.
+  systemd.oomd.enableUserSlices = true;
+
   # UEFI boot — explicit override of amazon-options.nix's default
   # (`pkgs.stdenv.hostPlatform.isAarch64`, i.e. false on x86_64).
   # disko.nix produces a UEFI-shaped layout (ESP + EF00 partition type),
