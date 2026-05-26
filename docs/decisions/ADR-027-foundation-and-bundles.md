@@ -79,30 +79,42 @@ Migration proceeds as five small slices, each peer-reviewable per the operator's
 5. **Slice 4 — Remove role plumbing.** Delete `roles/`, drop the `role` argument from `lib/mk-host.nix`, simplify `parts/nixos.nix`. Remove the `role-purity` lint reference from PRD §8.1 (already done in slice 1b).
 6. **Slice 5 — Sync ancillary documentation.** `CLAUDE.md` references to roles, AI memory files, any remaining stale references.
 
-Filesystem layout (effective at slice 2):
+Filesystem layout (decomposition decided in slice 2 after peer review):
 
 ```
 modules/core/nixos/
-  foundation.nix              # unconditional baseline
-                              # (candidates: users, sops, locale,
-                              # nix-daemon, firewall, system-packages,
-                              # home-manager — finalised in slice 2)
+  foundation.nix              # imports: locale, nix-daemon, firewall, sops,
+                              #          users, system-packages, home-manager
+  ghostty-terminfo.nix        # standalone — extracted from system-packages
+                              # so it can sit in remote-access bundle
   bundles/
-    remote-access.nix         # sshd + mosh + ghostty.terminfo
-    container-runtime.nix     # docker (host opt-in)
-    local-linux-platform.nix  # boot-systemd + networking-networkmanager
-    tailscale-mesh.nix        # tailscale (single-module today — stays standalone
-                              # until a sibling joins; see "standalone modules" below)
-  <standalone modules>        # btrfs-scrub.nix, docker.nix, etc. — direct host imports
+    remote-access.nix         # sshd + mosh + ghostty-terminfo
+  boot-systemd.nix            # standalone (no coherent sibling)
+  networking-networkmanager.nix  # standalone (no coherent sibling)
+  docker.nix                  # standalone (single-module; container-runtime
+                              # bundle would be pre-wrapping a single module)
+  tailscale.nix               # standalone (single-module; tailscale-mesh
+                              # bundle would be pre-wrapping a single module)
+  btrfs-scrub.nix             # standalone (no coherent sibling)
 
 home/core/nixos/
-  foundation.nix              # universal home environment wiring
+  (no foundation.nix — the home tree is all capabilities; nothing
+   foundation-shaped to aggregate. PRD §3.2 hedges this case with
+   "where applicable".)
   bundles/
-    cli-tooling.nix           # shell + prompt + direnv + multiplexer + editor + cli-utils + nix-tooling
-    agent-clis-base.nix       # claude-code + cursor-cli (universal today)
-    agent-clis-extras.nix     # codex + gemini-cli (host opt-in)
+    cli-tooling.nix           # shell + prompt + direnv + multiplexer
+                              # + editor + cli-utils + nix-tooling
     git-personal.nix          # git + git-identity-dual + gh
     git-work.nix              # git + git-identity-work
+  ssh.nix                     # standalone (single SSH outbound config)
+  macchina.nix                # standalone (single login-info display)
+  agent-clis.nix              # standalone — kept as one cohesive module
+                              # installing claude-code + cursor-cli
+                              # (splitting into per-CLI modules just to
+                              # satisfy the bundle ≥ 2 rule would be
+                              # pure ceremony)
+  agent-clis-extras.nix       # standalone — same rationale for
+                              # codex + gemini-cli
 ```
 
-The exact bundle decomposition is finalised in slice 2; the listing above is illustrative of the shape, not prescriptive. Single-module bundles named above will be reconsidered during slice 2 — they either acquire a sibling and stay a bundle, or revert to standalone modules. The rule is enforced at slice-2 review, not at ADR time.
+The decomposition above resolves the "single-module bundles will be reconsidered during slice 2" question raised in the original draft: those entries either acquired a sibling and stayed a bundle (none, in the event), or reverted to standalone modules (most). The `local-linux-platform` bundle was rejected on coherence grounds during the same review — "bootloader + NetworkManager" was a host-shape label rather than a capability.
