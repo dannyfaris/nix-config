@@ -113,3 +113,108 @@ you find shell configuration in it.
   has been chosen well; they're a single-file content change otherwise.
 - Inconsistency-as-honesty: the rule is a single sentence, but it produces
   three name shapes, and that's the right answer.
+
+## Structural units: bundles, foundation, and standalone modules
+
+The naming rule above covers *individual modules*. A separate, narrower
+convention covers the *aggregator files* that compose them — introduced
+by [ADR-027](./decisions/ADR-027-foundation-and-bundles.md) when the role
+abstraction was walked back. The structural picture is simpler than the
+three-bucket framing might suggest: there is one kind of aggregator file
+(a bundle), and one naming convention (`foundation.nix`) that marks the
+bundle every host imports.
+
+### Bundles
+
+**Name:** kebab-case, describes the capability the bundle groups
+(`remote-access.nix`, `cli-tooling.nix`, `desktop-env.nix`,
+`container-runtime.nix`, `agent-clis-base.nix`).
+
+**Location:** under a `bundles/` subdirectory per platform layer:
+
+```
+modules/core/nixos/bundles/remote-access.nix
+modules/core/nixos/bundles/cli-tooling.nix
+home/core/nixos/bundles/agent-clis-base.nix
+```
+
+**The naming rule (load-bearing):** **bundle names describe what is in
+the bundle, not what kind of host imports it.** This is the lesson from
+the walked-back role taxonomy: `headless.nix` named the kind of host;
+its contents became a category lie. `remote-access.nix` names the
+capability; its contents *cannot* become a category lie because the name
+isn't making a category claim. A host importing `remote-access.nix` is
+just a host with that capability — no implied taxonomy.
+
+Concretely, this rules out names like:
+
+- `headless.nix` (host-kind) — what ADR-027 retired.
+- `workstation.nix` (host-kind) — same problem.
+- `server-bundle.nix` (host-kind by another name) — same.
+
+And rules in names like:
+
+- `remote-access.nix` (the capability of being reachable over SSH/mosh)
+- `desktop-env.nix` (the capability of running a graphical desktop)
+- `container-runtime.nix` (the capability of running containers)
+
+Applies the existing "most-communicative term" rule (above) to the
+capability layer.
+
+### Foundation: a bundle by convention
+
+`foundation.nix` is the bundle that hosts of a given platform import by
+convention. It is structurally a bundle (same `bundle-purity` rule, same
+≥ 2 imports, same pure aggregation) and is distinguished only by:
+
+- **Name** — always `foundation.nix`. The name signals "this is the
+  bundle every host imports."
+- **Placement** — at the top of the platform's module tree, one level
+  above `bundles/`:
+
+  ```
+  modules/core/nixos/foundation.nix
+  modules/core/darwin/foundation.nix      # when Darwin lands
+  modules/core/shared/foundation.nix      # if a cross-platform foundation emerges
+  home/core/nixos/foundation.nix
+  home/core/darwin/foundation.nix
+  home/core/shared/foundation.nix
+  ```
+
+  Placement at the top of the tree rather than inside `bundles/` is a
+  discoverability choice: a contributor browsing the platform's module
+  directory sees `foundation.nix` immediately.
+
+**Why "foundation":** describes the file's *position* — the floor every
+host of that platform stands on. Considered alternatives (`base`,
+`common`, `baseline`, `essentials`, `prelude`, `bedrock`) and rejected for
+specific reasons in the conversation that produced ADR-027. "Foundation"
+won on three criteria: no collision with existing repo vocabulary
+(`core`, `shared`, `experimental`, `role`-now-gone); architectural
+metaphor that matches how hosts relate to it ("built on", not "measured
+against"); and conceptually neutral on its contents.
+
+The contents convention (foundation tends to hold identity + admin +
+posture; other bundles hold capabilities) is a guideline about what
+belongs *inside* foundation, not a structural rule.
+
+### Standalone modules
+
+A module that lives directly at `modules/core/<platform>/<name>.nix` (or
+the home equivalent) without a `bundles/` parent. Naming follows the
+existing module-naming rule (role-based, tool/protocol, or collective
+category — pick the most communicative term for the module's contents).
+Standalone is the honest state for a capability that hasn't yet attracted
+a sibling worth grouping with — see ADR-027 for the rule-of-two trigger
+to promote a standalone module into a bundle.
+
+## Why the structural naming is a separate concern
+
+The module-naming rule (top of this document) answers "what do we call
+a file that configures a tool or role?". The bundle-naming rule answers
+"what do we call a file that *aggregates* other modules?". They
+intersect — both aim for the most-communicative term — but the failure
+modes are different: a misnamed module is a documentation problem; a
+misnamed bundle becomes a category lie (the role lesson). The bundle
+rule is therefore stricter: not "the most communicative term" but
+"specifically a capability term, never a host-kind term."

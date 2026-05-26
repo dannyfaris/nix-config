@@ -10,7 +10,7 @@
 
 ### 1.1 What this document is
 
-A design document for a unified Nix configuration that serves as the declarative substrate for all of Dan's primary computing environments: headless NixOS dev machines, NixOS Niri workstations, and macOS workstations. Multiple instances of each role are expected.
+A design document for a unified Nix configuration that serves as the declarative substrate for all of Dan's primary computing environments: headless NixOS dev machines, NixOS Niri workstations, and macOS workstations. Multiple instances of each host shape are expected.
 
 Audience: Dan (now and future), Claude Code (which will read this at the start of every implementation session), and any human collaborator who needs to understand the system.
 
@@ -39,11 +39,11 @@ For the primary criterion to hold, the configuration must also deliver:
 - **A stable core.** The load-bearing parts of the environment are reliable, well-considered, and changed deliberately. They are the substance of what gets deployed.
 - **A safe surface for experimentation.** New tools and configurations can be tried in isolation from the core. Successful experiments are promoted deliberately; failed ones are removed cleanly, without residue. This is what keeps the core itself improving over time.
 - **Durable design context.** Conventions, rationale, and structural rules live in the repository, not in Dan's head — enabling effective collaboration with stateless AI agents and surviving long absences.
-- **Reproducible bootstrap.** Any role instance can be brought up from a clean OS via a documented, repeatable sequence.
+- **Reproducible bootstrap.** Any host can be brought up from a clean OS via a documented, repeatable sequence.
 
 ### 1.5 Out of scope for this section
 
-Detailed role contents, module organisation, enforcement mechanisms, and remaining design specifics are covered in §§3–11.
+The composition model, module organisation, enforcement mechanisms, and remaining design specifics are covered in §§3–11.
 
 ---
 
@@ -51,8 +51,9 @@ Detailed role contents, module organisation, enforcement mechanisms, and remaini
 
 ### 2.1 In scope
 
-- Three role types: `headless`, `linux-workstation`, `macos-workstation`.
-- Multiple instances per role.
+- Two platforms: NixOS (`x86_64-linux`, `aarch64-linux`) and macOS (`aarch64-darwin`).
+- Three host shapes expected to recur: headless NixOS, NixOS workstation (with desktop environment), macOS workstation. These are descriptive groupings, not enforced categories — hosts are composed from foundation + bundles + standalone modules (§3), and shape is what the composition adds up to.
+- Multiple hosts per shape.
 - Single repository, single flake, shared module layer.
 - Bootstrap from clean OS via a documented sequence.
 
@@ -65,53 +66,76 @@ Detailed role contents, module organisation, enforcement mechanisms, and remaini
 - Replacing or duplicating tooling that already solves a problem well (e.g., browser sync, 1Password for secrets).
 - Exhaustive capture of every setting on every machine — capturing intent, not state.
 - Commit signing.
-- `agenix` / `sops-nix`. Runtime secret access via the 1Password CLI (`op`) is sufficient for current workstation use. `headless` instances in current scope do not consume runtime secrets; if a future headless workload requires them, the mechanism (1Password service-account tokens, `sops-nix` re-introduction scoped to the role, or another option) is a decision deferred to that point (see §12).
+- `agenix` / `sops-nix`. Runtime secret access via the 1Password CLI (`op`) is sufficient for current workstation use. Headless hosts in original scope did not consume runtime secrets; this changed with the first concrete headless host (Mercury, ADR-018), which adopted `sops-nix` for the user password hash. Subsequent secret-consumption decisions are per-host: see ADR-018 and the bus-factor / Option-C deliberations in TODO.
 - Tutorial or learning content — assumes working familiarity with Nix, flake-parts, and module composition.
 - Use as a public template — this is Dan's configuration; generalisation is a separate project if ever undertaken.
 - Build-time performance tuning beyond defaults — correctness and clarity dominate.
 
 ---
 
-## 3. Roles and instances
+## 3. Composition model
 
-### 3.1 The role-instance model
+### 3.1 The model
 
-The configuration is organised around **roles**: named, reusable compositions of modules that together define what it means to be a particular kind of machine. **Hosts** are instances of roles — thin declarations that adopt a role and supply instance-specific details.
+A host's configuration is composed from two kinds of import targets:
 
-This separation means:
-- Decisions about *what a kind of machine should be* are made once, in the role.
-- Decisions about *which specific machine this is* live in the host file.
-- Spinning up a new machine of an existing role is a matter of writing a small host file, not reconstructing role-level decisions.
+- **Bundles** — aggregator files whose body is an `imports` list naming two or more modules toward one coherent named capability. Hosts opt in by importing the bundle.
+- **Standalone modules** — capability modules a host imports directly when no natural bundle home has yet emerged for them. They graduate to bundle membership when a coherent sibling appears (rule of two).
 
-### 3.2 Role composition
+One bundle per platform — named `foundation.nix` and placed at the top of the platform's module tree — is imported by every host of that platform by convention. Foundation is structurally a bundle (same `bundle-purity` rule applies); it is distinguished from other bundles only by its conventional universal-import status and by placement at the top of the tree rather than inside `bundles/`. See [ADR-027](./decisions/ADR-027-foundation-and-bundles.md) for the design rationale.
 
-Roles are **independent compositions**. Each role directly imports the modules it needs from `modules/` and `home/`. Roles do not inherit from or extend each other.
+This composition means:
+- Decisions about *what every host of a platform needs unconditionally* are made once, in the platform's `foundation.nix`.
+- Decisions about *what a host does* are expressed as the bundles and standalone modules it imports.
+- Spinning up a new host is a matter of writing a small host file that imports `foundation.nix` plus the bundles and standalone modules its purpose requires.
 
-Where roles need overlapping module sets (notably `headless` and `linux-workstation`), the overlap is mechanical — both role files import the same modules — not architectural. The single source of truth for shared behaviour is the module itself, not a shared parent role.
+Roles — as a single-word categorical label for a host's purpose — are not part of the model. The role abstraction was tried and walked back in ADR-027; a host's purpose is described by its composition, not by a category name.
 
-Roles are thin: their job is to compose modules. A role file contains an `imports` list and (if genuinely needed) `_module.args` — nothing else. Where a role needs to choose between alternative tools (e.g., which compositor a `linux-workstation` uses), the choice is expressed as a choice of which module to import (`./modules/core/nixos/niri.nix` vs. `./modules/core/nixos/sway.nix`), not as a `mkDefault` setting an option. This keeps roles as pure composition; tool-specific configuration lives entirely in modules.
+### 3.2 Foundation
 
-### 3.3 The three roles
+Each platform has a `foundation.nix` at `modules/core/<platform>/foundation.nix` (and, where applicable, `home/core/<platform>/foundation.nix`). Its contents are whatever modules are unconditionally true of every host the platform serves — typically:
 
-**`headless`** — A NixOS machine without a graphical environment, accessed remotely. Optimised for development work via SSH. Instances include VPS dev boxes, bare-metal Linux servers, and VMs used for transient development environments.
+- **Identity** — the user(s) the host runs as, the host's secrets-decryption wiring, and other "this host is one of ours" attributes.
+- **Administration** — Nix daemon settings, locale/timezone, the unfree-package whitelist, baseline admin packages.
+- **Posture** — security defaults (firewall, login policies) that apply unconditionally.
 
-**`linux-workstation`** — A NixOS machine with a graphical environment, used directly. The full development environment of `headless` plus a GUI layer, compositor, desktop applications, and the visual environment for daily work. Initial instances will use the Niri compositor; this is a choice the role makes, not part of its identity.
+Foundation should stay honestly minimal: it is reserved for things that aren't opt-in capabilities. A capability — even one every current host happens to want — belongs in a capability bundle, not in foundation. The "every host imports it today" property is a fleet snapshot, not a reason to fold the capability into foundation.
 
-**`macos-workstation`** — A macOS machine managed via `nix-darwin`, used directly. Provides the cross-platform development environment shared with the Linux roles, plus macOS-specific configuration: applications via `nix-homebrew`, system settings via nix-darwin's typed options, launchd agents, and per-app auto-update disabling. Mac App Store applications are out of scope for declarative management in the current design; they are installed once interactively. Initial instances are MacBook Air and Mac mini.
+Structurally, foundation is a bundle. The `bundle-purity` rule (§8.1) applies to it uniformly (≥ 2 imports, pure aggregation, no inline configuration). Placement at the top of the platform tree, rather than inside `bundles/`, is a discoverability convention reflecting its conventional universal-import status — not a separate structural layer.
 
-Detailed role contents are captured in the modules themselves; the PRD does not enumerate them.
+### 3.3 Capability bundles
+
+A bundle is a file at `modules/core/<platform>/bundles/<name>.nix` (or `home/core/<platform>/bundles/<name>.nix`). Its body is an `imports` list naming two or more modules toward a coherent named capability.
+
+Bundle names describe what is in the bundle, not what kind of host imports it. Illustrative examples (final decomposition lives in slice 2 of the role-removal migration):
+
+- `remote-access` — sshd + mosh + ghostty.terminfo
+- `cli-tooling` — shell + prompt + direnv + multiplexer + editor + cli-utils + nix-tooling
+- `agent-clis-base` — claude-code + cursor-cli
+- `desktop-env` — niri + waybar + stylix + mako
+- `container-runtime` — rootless docker daemon + CLI
+
+A bundle exists when it groups two or more modules. Single-module "bundles" are forbidden; the underlying capability stays a standalone module (§3.1, second bullet) until a sibling joins it. The pre-wrapping trap is the same forecast-driven abstraction the role layer fell into and is rejected for the same reason.
+
+Bundles are flat: they import modules, not other bundles. A bundle-of-bundles is not part of this model.
 
 ### 3.4 Host instances
 
-A host file is minimal. It declares:
+A host file declares:
 
-- The role being adopted.
-- Hostname and any host-identifying metadata.
-- Hardware configuration (for NixOS hosts).
-- Instance-specific overrides where genuinely necessary.
-- Optionally, opt-in to experimental modules for that instance.
+- Identifying metadata: hostname, platform tuple, hardware configuration (for NixOS hosts).
+- An `imports` list naming `foundation.nix`, plus the bundles and standalone modules the host composes. Experimental modules (under `modules/experimental/` or `home/experimental/`) opted into for this instance appear in the same `imports` list, distinguished by their path prefix.
+- Instance-specific option overrides where genuinely host-specific (see below).
 
-A host file should not contain inline configuration logic. If a host needs behaviour, that behaviour belongs in a module, which the host (or its role) imports.
+A host file may contain inline option overrides where the override is genuinely instance-specific and would be a category mistake to place in a shared module. The test: would moving this override into foundation or a bundle apply it to hosts that shouldn't have it? If yes, the host file is the right home. Concrete examples from current hosts:
+
+- AWS-image conflicts (`ec2.efi = true`) — only the AWS host has the conflict.
+- Hardware-specific swap sizing (`swapDevices`, `zramSwap` size) — sized for the specific machine's RAM and storage.
+- Memory-pressure policy (`systemd.oomd.enableUserSlices`) — opted into per host based on its workload.
+- Kernel parameters tuned for the host (`boot.kernel.sysctl.*`).
+- Module conflict resolution via `lib.mkForce` where the conflicting module is imported only by this host (e.g., overriding amazon-image's `PermitRootLogin` default).
+
+What remains forbidden in host files: inline conditional logic, helper function definitions, derivation definitions, or anything that would belong in a reusable module. The `host-purity` invariant (§8.1) enforces this.
 
 The exact attribute shape for a host declaration is defined in §5 (Module organisation).
 
@@ -121,11 +145,11 @@ The exact attribute shape for a host declaration is defined in §5 (Module organ
 
 The configuration is built on four load-bearing principles. Each is specified in detail in the section noted; the summary here exists for quick reference.
 
-**4.1 Explicit composition (§5).** Role files explicitly list the modules they include; hosts adopt a role and optionally add further modules. Module bodies are pure configuration — applicability is not declared inside modules. The directory structure (`core/`-vs-`experimental/` × `shared/`-vs-`nixos/`-vs-`darwin/`) is a project-level organisational convention enforced by lint, not a framework feature.
+**4.1 Explicit composition (§5).** Hosts and bundles explicitly list the modules they include. Module bodies are pure configuration — applicability is not declared inside modules. The directory structure (`core/`-vs-`experimental/` × `shared/`-vs-`nixos/`-vs-`darwin/`) is a project-level organisational convention enforced by lint, not a framework feature.
 
-**4.2 Roles and hosts (§3).** Roles are first-class, named compositions of modules. Hosts are thin instantiations of roles. Roles compose modules with only role-shaped wiring; tool-specific configuration lives in modules. Hosts contain only role adoption, identifying data, and optional module opt-ins (`imports`, `experimental`).
+**4.2 Foundation, bundles, and hosts (§3).** A host's configuration is composed from bundles (aggregator files importing two or more modules toward a coherent capability) and standalone modules (capability modules without a bundle home yet). One bundle per platform, named `foundation.nix` and placed at the top of the platform's module tree, is imported by every host of that platform by convention; structurally it is a bundle like any other. Host files contain identifying data, an `imports` list naming the foundation, bundles, and standalone modules they compose, and instance-specific option overrides where genuinely host-specific (see §3.4 for the test).
 
-**4.3 Stability tiers (§6).** Modules occupy one of two tiers: `core` (stable, applied to all instances of a role) or `experimental` (under evaluation, scoped to individual hosts). Tier is encoded in directory structure. Core must not depend on experimental.
+**4.3 Stability tiers (§6).** Modules occupy one of two tiers: `core` (stable, available to foundation and bundles) or `experimental` (under evaluation, scoped to individual hosts). Tier is encoded in directory structure. Core must not depend on experimental.
 
 **4.4 Cross-platform purity (§7).** Shared modules work identically on all supported platforms by construction. Platform-specific behaviour lives in platform-specific modules. There are no platform conditionals in shared modules.
 
@@ -148,18 +172,20 @@ docs/
     ADR-NNN-<slug>.md
 hosts/
   <hostname>/
-    default.nix              # pure declarative data
+    default.nix              # imports list + identifying data
     disko.nix                # declarative disk layout (NixOS hosts; see ADR-023)
     hardware-configuration.nix  # auto-generated NixOS hardware probe (see ADR-023)
-roles/
-  headless.nix
-  linux-workstation.nix
-  macos-workstation.nix
 modules/
   core/
     shared/                  # cross-platform system modules
+      foundation.nix         # (if cross-platform foundation emerges)
+      bundles/               # cross-platform bundles
     nixos/                   # NixOS-specific system modules
+      foundation.nix         # unconditional baseline for every NixOS host
+      bundles/               # NixOS-specific bundles
     darwin/                  # nix-darwin-specific system modules
+      foundation.nix         # unconditional baseline for every macOS host
+      bundles/               # Darwin-specific bundles
   experimental/
     shared/
     nixos/
@@ -167,8 +193,14 @@ modules/
 home/
   core/
     shared/                  # cross-platform Home Manager modules
+      foundation.nix
+      bundles/
     nixos/                   # Home Manager modules used only on NixOS hosts
+      foundation.nix
+      bundles/
     darwin/                  # Home Manager modules used only on macOS hosts
+      foundation.nix
+      bundles/
   experimental/
     shared/
     nixos/
@@ -187,44 +219,62 @@ scripts/
 
 **`shared/` vs. `nixos/` vs. `darwin/`** — separated to encode platform applicability. Modules in `shared/` must work identically on all supported platforms (see §7 for the cross-platform contract). Modules in `nixos/` or `darwin/` may use platform-specific constructs freely.
 
-This three-axis split (system vs. user, core vs. experimental, shared vs. platform-specific) makes every module's role visible from its path, and makes structural rules enforceable by path-based linting.
+This three-axis split (system vs. user, core vs. experimental, shared vs. platform-specific) makes every module's purpose visible from its path, and makes structural rules enforceable by path-based linting.
 
-### 5.3 Roles
+### 5.3 Bundles and standalone modules
 
-Roles live at top level in `roles/`, one file per role. A role file is a pure composition: it imports the modules the role requires and declares no inline configuration of its own. Logic lives in modules; roles compose them.
+**Bundles** are aggregator files whose body is an `imports` list naming two or more modules toward one coherent named capability. They live under `modules/core/<platform>/bundles/` (and the parallel home tree). Bundle filenames describe the capability (`remote-access.nix`, `cli-tooling.nix`, `desktop-env.nix`). Bundle files contain no inline configuration — logic lives in the modules they import.
 
-The three roles correspond directly to the three files: `roles/headless.nix`, `roles/linux-workstation.nix`, `roles/macos-workstation.nix`.
+**Foundation** is the bundle that hosts of a given platform conventionally always import. It lives at `modules/core/<platform>/foundation.nix` (and the parallel home tree), one level above `bundles/`. Placement at the top of the platform tree is a discoverability convention reflecting its universal-import status. Structurally it is governed by the same `bundle-purity` rule as any other bundle.
+
+**Standalone modules** sit at the top of their platform directory (e.g. `modules/core/nixos/btrfs-scrub.nix`) and are imported directly by the hosts that want them. A standalone module graduates to a bundle when a second module joins it under a coherent capability label.
+
+The bundles-vs-standalone-modules distinction is mechanical (bundles aggregate ≥ 2 modules; standalone modules don't aggregate at all). The foundation-vs-other-bundles distinction is purely conventional (foundation is the one bundle every host imports; placement and name signal that). One structural rule — `bundle-purity` (§8.1) — covers all aggregator files; modules are just modules.
 
 ### 5.4 Hosts
 
 Each host has a directory under `hosts/` named for the host itself.
 
-A host's `default.nix` is a pure declarative attribute set — data, not logic:
+A host's `default.nix` is a thin module: identifying data plus an `imports` list naming the foundation, bundles, and standalone modules the host composes.
 
 ```nix
+{ inputs, ... }:
 {
-  role = "linux-workstation";
-  hostname = "mothership";
-  system = "x86_64-linux";
-
-  # Optional: additional core modules to import beyond what the role provides.
-  # Used for host-level capabilities (e.g., `linux-builder` on a macOS host).
   imports = [
-    # paths under modules/core/ or home/core/
+    ./hardware-configuration.nix
+    ./disko.nix
+    inputs.disko.nixosModules.disko
+
+    # Foundation — every NixOS host imports this.
+    ../../modules/core/nixos/foundation.nix
+
+    # Capability bundles this host opts into.
+    ../../modules/core/nixos/bundles/remote-access.nix
+    ../../modules/core/nixos/bundles/local-linux-platform.nix
+    ../../modules/core/nixos/bundles/container-runtime.nix
+    ../../home/core/nixos/bundles/cli-tooling.nix
+    ../../home/core/nixos/bundles/agent-clis-extras.nix
+
+    # Standalone modules (no bundle home yet).
+    ../../modules/core/nixos/btrfs-scrub.nix
+
+    # Optional: experimental modules opted into for this instance.
+    # ../../modules/experimental/nixos/<name>.nix
   ];
 
-  # Optional: experimental modules opted into for this instance
-  experimental = [
-    # paths under modules/experimental/ or home/experimental/
-  ];
+  networking.hostName = "mothership";
+  system.stateVersion = "25.11";
+
+  # Per-host values consumed by home-manager modules.
+  _module.args.hostContext = { /* ... */ };
 }
 ```
 
-The flake's host-construction logic (in `lib/mk-host.nix`) reads these declarations, resolves the role, and produces a NixOS or nix-darwin configuration whose `imports` list is the role's modules, followed by the host's `imports`, followed by the host's `experimental`. The Nix module system merges the resulting set into the final configuration.
+The flake's host-construction logic (in `lib/mk-host.nix`) is a thin wrapper around `nixpkgs.lib.nixosSystem` (or the nix-darwin equivalent): it wires `inputs` as a `specialArg` and imports the third-party flake-modules (home-manager, sops-nix). The user's modules — foundation, bundles, standalone modules — are imported explicitly by the host file itself, where they can be read top-to-bottom as a manifest of what the host is doing.
 
-**On module merging.** The Nix module system does not "layer" modules in import order — option values are merged via priority (`mkDefault`, `mkForce`, `mkOverride`). Core modules set option values at default priority. Where a host import or an experimental module needs to override a value already set by the role's modules, it uses `lib.mkForce` (for a hard override) or `lib.mkOverride <priority>` with an explicit priority lower than the default. Experimental modules are not implicitly higher-priority than core; an experiment that needs to win must say so explicitly. This avoids silent merge failures where an experimental module's value loses to a default-priority core value.
+**On module merging.** The Nix module system does not "layer" modules in import order — option values are merged via priority (`mkDefault`, `mkForce`, `mkOverride`). Core modules set option values at default priority. Where a host or experimental module needs to override a value already set by a foundation or bundle module, it uses `lib.mkForce` (for a hard override) or `lib.mkOverride <priority>` with an explicit priority lower than the default. Experimental modules are not implicitly higher-priority than core; an experiment that needs to win must say so explicitly. This avoids silent merge failures where an experimental module's value loses to a default-priority core value.
 
-Hosts must not contain inline module logic. If a host needs behaviour beyond what its role provides, that behaviour belongs in a module — added via `imports` (for a core module) or `experimental` (for a module still under evaluation).
+Hosts must not contain inline module *logic* (helper definitions, `let`-bound logic, derivations). Instance-specific option overrides are permitted where the override is genuinely host-specific per §3.4's test. If a host needs reusable behaviour beyond what foundation + its imported bundles provide, that behaviour belongs in a module — imported directly (if standalone) or added to a bundle (if it shares a coherent capability with an existing module).
 
 For NixOS hosts installed via `nixos-anywhere` (ADR-022), the per-host directory follows a three-file convention (ADR-023): `default.nix` (hand-authored logical config), `disko.nix` (declarative disk layout), and `hardware-configuration.nix` (auto-generated by `nixos-anywhere --generate-hardware-config`, committed verbatim, never hand-edited).
 
@@ -234,9 +284,9 @@ For NixOS hosts installed via `nixos-anywhere` (ADR-022), the per-host directory
 
 **Module attributes:** match the filename. A module at `modules/core/shared/fish.nix` declares behaviour into the attribute path corresponding to `fish`. Mismatches are caught by lint.
 
-**Roles:** as defined in §3 — `headless`, `linux-workstation`, `macos-workstation`. These are the only role names; new roles require updating the PRD.
+**Bundles:** kebab-case, named after the capability they group (`remote-access.nix`, `cli-tooling.nix`, `desktop-env.nix`). Do not name bundles after the kind of host that imports them — that's the role-shaped category claim that ADR-027 walked back. A bundle name should describe what is *in* the bundle, not what kind of host *uses* it.
 
-**Hosts:** stable per physical machine. The host directory's name refers to a specific machine, not to its current role or purpose. A machine's software role may change without renaming. Hardware-platform changes (e.g., MacBook Air → MacBook Pro, motherboard replacement, new cloud infrastructure) are treated as a different host: a new `hosts/<name>/` directory is created with a fresh name, and the prior host directory may be retired. Existing host directories are not renamed in place. The rule is recorded in ADR-016.
+**Hosts:** stable per physical machine. The host directory's name refers to a specific machine, not to its current purpose. A machine's software composition may change without renaming. Hardware-platform changes (e.g., MacBook Air → MacBook Pro, motherboard replacement, new cloud infrastructure) are treated as a different host: a new `hosts/<name>/` directory is created with a fresh name, and the prior host directory may be retired. Existing host directories are not renamed in place. The rule is recorded in ADR-016.
 
 Examples drawn from the initial set of hosts:
 - `mothership` — the existing Linux workstation
@@ -247,7 +297,7 @@ These names are accepted under the rule: each refers unambiguously to a specific
 
 ### 5.6 Helpers and scripts
 
-**`lib/`** contains Nix helper functions used across modules and roles. The host-construction helper, `mk-host.nix`, lives here. Additional helpers are added when concrete need arises.
+**`lib/`** contains Nix helper functions used across the configuration. The host-construction helper, `mk-host.nix`, lives here. Additional helpers are added when concrete need arises.
 
 **`scripts/`** contains non-Nix shell scripts implementing the structural lint checks defined in §8, plus operational scripts that automate multi-step procedures — notably `promote.sh` and `remove.sh` for the experimental-to-core lifecycle (§6.4). Additional scripts are added when concrete need arises.
 
@@ -273,12 +323,12 @@ Architectural decisions are recorded as ADRs in `docs/decisions/`, numbered sequ
 
 ADRs capture decisions with rationale, and serve as live design context — readable by humans and by AI agents working on the configuration.
 
-The ADRs introduced alongside this PRD:
+The ADRs introduced alongside this PRD (with subsequent status):
 
 ```
 docs/decisions/
-  ADR-013-composition-framework.md
-  ADR-014-independent-roles.md
+  ADR-013-composition-framework.md   # amended by ADR-027 (role layer walked back)
+  ADR-014-independent-roles.md       # superseded by ADR-027
   ADR-015-tier-as-directory.md
   ADR-016-host-identity.md
 ```
@@ -291,9 +341,9 @@ Earlier ADRs (`ADR-001` through `ADR-012`) record decisions made during the prio
 
 ### 6.1 The two tiers
 
-**Core.** Stable, proven modules. Imported by roles and applied to every instance of the relevant role. Changes to core are deliberate.
+**Core.** Stable, proven modules. Eligible for import by foundation, bundles, or directly by hosts. Changes to core are deliberate.
 
-**Experimental.** Modules under evaluation. Scoped to individual host instances via the host's `experimental` attribute. Never imported by roles. May be promoted to core or removed at any time, both via explicit decision (see §6.4).
+**Experimental.** Modules under evaluation. Scoped to individual host instances by being imported (under `modules/experimental/` or `home/experimental/` paths) directly in a host's `imports` list. Never imported by foundation or bundles. May be promoted to core or removed at any time, both via explicit decision (see §6.4).
 
 A `deprecated/` tier is not part of the current design. Failed experiments are removed; superseded core modules are replaced or deleted directly. The tier can be added later if a phase-out path is ever needed.
 
@@ -301,18 +351,18 @@ A `deprecated/` tier is not part of the current design. Failed experiments are r
 
 - Core modules MUST NOT import experimental modules.
 - Experimental modules MAY import core modules.
-- Roles import only core modules. Experimental modules are opted into at the host level.
+- Foundation files and bundles import only core modules. Experimental modules are opted into at the host level by appearing in the host's `imports` list under an `experimental/` path.
 
 These rules are enforced by the `tier-deps` invariant (§8.1).
 
 ### 6.3 Scoping
 
-Experimental modules are scoped to specific host instances, not to roles. A host opts in by listing the experimental module's path in its `experimental` attribute (see §5.4).
+Experimental modules are scoped to specific host instances. A host opts in by adding the experimental module's path (under `modules/experimental/` or `home/experimental/`) to its `imports` list (see §5.4).
 
 This means:
-- A new host of an existing role does not inherit the in-flight experiments of any other host.
+- A new host of similar shape does not inherit the in-flight experiments of any other host.
 - An experiment can be tried on one machine without affecting any other.
-- Promotion to core is what makes a module apply to all instances of a role.
+- Promotion to core is what makes a module eligible for foundation or bundle membership, and therefore (when promoted into a bundle most hosts import) for fleet-wide rollout.
 
 ### 6.4 Promotion and removal
 
@@ -320,15 +370,15 @@ Both promotion and removal are explicit, deliberate decisions made through a rev
 
 The review is conducted by Dan. Its cadence, format, and triggers are at his discretion.
 
-Both procedures are scripted to keep the action atomic — a partial promotion (file moved but role import not added) is the failure mode to design against.
+Both procedures are scripted to keep the action atomic — a partial promotion (file moved but no consumers updated) is the failure mode to design against.
 
 #### Promotion procedure
 
 `scripts/promote.sh <module-path>` performs:
 
 1. Move the file from `modules/experimental/<platform>/` to `modules/core/<platform>/` (or the equivalent for `home/`).
-2. Add the module to the relevant role(s), so it applies to all instances of that role.
-3. Remove the experimental opt-in from any host's `experimental` attribute.
+2. Add the module to the appropriate consumer — a bundle (existing or new), the platform's `foundation.nix`, or one or more host `imports` lists — depending on the scope decided at promotion time.
+3. Remove the experimental-path entries from any host's `imports` list (the experimental opt-in path is no longer valid; the new core path is what the consumer references).
 
 The author then commits the result with a message that captures the promotion and the rationale:
 
@@ -343,7 +393,7 @@ promote: <module-name> from experimental to core
 `scripts/remove.sh <module-path>` performs:
 
 1. Delete the file from `modules/experimental/<platform>/` (or `home/experimental/<platform>/`).
-2. Remove the experimental opt-in from any host's `experimental` attribute.
+2. Remove the experimental-path entries from any host's `imports` list.
 
 The author then commits the result with a message that captures the removal and what was learned:
 
@@ -359,7 +409,7 @@ The "what was learned" matters. A failed experiment is a learning artefact. The 
 
 Experiments and their outcomes are recorded in commit history. The combination of file location (promotion = file move, removal = file deletion) and commit message captures what was tried, when, on which hosts, and how it resolved.
 
-Experiments do not generate ADRs by default. ADRs are reserved for architectural decisions; most experiments are not architectural in nature. An experiment whose outcome *is* architectural — for example, replacing a foundational tool across all roles — would generate an ADR for that decision, but the ADR is about the architectural shift, not the experimental process that led to it.
+Experiments do not generate ADRs by default. ADRs are reserved for architectural decisions; most experiments are not architectural in nature. An experiment whose outcome *is* architectural — for example, replacing a foundational tool across the fleet — would generate an ADR for that decision, but the ADR is about the architectural shift, not the experimental process that led to it.
 
 ---
 
@@ -387,7 +437,7 @@ The unifying property: the configuration target is a tool that exists with ident
 
 - Configuration that is literally identical across platforms.
 - References to packages that exist with the same attribute path on all target platforms.
-- Conditional logic based on user choice or role, not on platform.
+- Conditional logic based on user choice or host capability, not on platform.
 
 ### 7.4 Forbidden in shared modules
 
@@ -407,11 +457,10 @@ Modules under `modules/*/nixos/`, `modules/*/darwin/`, `home/*/nixos/`, and `hom
 
 Some differences between hosts look platform-shaped but are not, and must not be treated as such:
 
-- **Role differences.** A NixOS host with a graphical environment and a NixOS host without one are both NixOS; the difference is the role, not the platform. The split between `headless` and `linux-workstation` lives at the role level, not the module level.
-- **Capability differences.** A macOS host with `linux-builder` configured can build Linux derivations; a macOS host without it cannot. This is a capability of the specific instance, not a platform distinction. Host-level capabilities are added via the host's `imports` (§5.4), not by platform conditionals.
+- **Capability differences.** A NixOS host with a graphical environment and a NixOS host without one are both NixOS; the difference is which bundles each host imports (a desktop host adds `desktop-env`, `desktop-apps`, etc.). Similarly, a macOS host with `linux-builder` configured can build Linux derivations, and one without it cannot. These are capabilities of the specific instance, expressed by composition (bundle selection + standalone module imports), not by platform conditionals. `modules/core/<platform>/foundation.nix` does not branch on whether the host has any particular capability; capabilities live in bundles and standalone modules that hosts opt into.
 - **Hardware differences.** Architecture (`aarch64` vs `x86_64`) is part of the platform tuple, but within a single platform family (e.g., both `aarch64-linux` and `x86_64-linux` are NixOS) the architecture is rarely a module-level concern. Hardware-specific configuration lives in the host's `hardware-configuration.nix` (auto-generated; see ADR-023) and `disko.nix` (disk layout), not in module trees.
 
-The `shared/`-vs-`nixos/`-vs-`darwin/` split is about the *operating system the module's options target*. Other axes of variation are handled by role composition or host-level configuration, not by the cross-platform contract.
+The `shared/`-vs-`nixos/`-vs-`darwin/` split is about the *operating system the module's options target*. Other axes of variation are handled by bundle selection and host-level composition (§3, §5.4), not by the cross-platform contract.
 
 ---
 
@@ -426,8 +475,8 @@ Every convention that admits a deterministic test is encoded as an automated che
 | 1 | `shared-purity` | No platform conditionals (`isDarwin`, `isLinux`, `stdenv.is*`, platform-keyed `optionals`, references to platform-specific paths) appear in any file under `modules/*/shared/` or `home/*/shared/`. Necessary but not sufficient — see §7.1. | `scripts/lint-shared-purity.sh` |
 | 2 | `tier-deps` | No file under `modules/core/` or `home/core/` imports from `modules/experimental/` or `home/experimental/`. | `scripts/lint-tier-deps.sh` |
 | 3 | `filename-kebab-case` | All `.nix` filenames are kebab-case (no camelCase, no snake_case). | `scripts/lint-filename-kebab-case.sh` |
-| 4 | `role-purity` | Role files (in `roles/`) contain only an `imports` list and, if needed, `_module.args` at the top level. No `mkDefault` selections, no inline option setting. A role-level choice between alternative tools is expressed as a choice of which module to import. Values in `imports` resolve to module paths under `modules/core/` or `home/core/`, or to other role files. | `scripts/lint-role-purity.sh` |
-| 5 | `host-purity` | Host `default.nix` files contain only the declared attribute set (`role`, `hostname`, `system`, `imports`, `experimental`) and no inline module logic. Values in `imports` resolve to paths under `modules/core/` or `home/core/`; values in `experimental` resolve to paths under `modules/experimental/` or `home/experimental/`; no path appears in both attributes. | `scripts/lint-host-purity.sh` |
+| 4 | `bundle-purity` | Aggregator files — `modules/core/<platform>/foundation.nix`, `home/core/<platform>/foundation.nix`, and any file under `modules/core/<platform>/bundles/` or `home/core/<platform>/bundles/` — contain only an `imports` list at the top level. No `mkDefault` selections, no inline option setting. Each entry in `imports` resolves to a distinct module under `modules/core/` or `home/core/` (post-path-resolution; the same module referenced via two relative-path spellings counts once). Aggregator files must import **two or more distinct modules** — single-module "bundles" are forbidden, and the underlying capability stays a standalone module until a sibling joins it. Bundles do not import other bundles (the model is flat per ADR-027). | `scripts/lint-bundle-purity.sh` |
+| 5 | `host-purity` | Host `default.nix` files contain: identifying data (`networking.hostName`, `system.stateVersion`, `nixpkgs.hostPlatform` when applicable); per-host wiring (`_module.args.hostContext`); an `imports` list resolving to paths under `modules/core/`, `home/core/`, `modules/experimental/`, `home/experimental/`, or `./hardware-configuration.nix` / `./disko.nix` in the same directory; and instance-specific option overrides where the override is genuinely host-specific and would be a category mistake to place in a shared module (e.g., AWS-image conflicts, hardware-specific swap sizing, oomd policy, module-conflict resolution via `lib.mkForce`, host-tuned kernel parameters). Forbidden: inline conditional logic on host attributes, helper function definitions, derivation definitions, or any construct that would belong in a reusable module. Lint enforces the *structural* envelope (no helper definitions, no `let` bindings introducing logic, no derivation syntax) rather than judging each option assignment — the test of "genuinely host-specific" is left to author and reviewer per PRD §3.4. | `scripts/lint-host-purity.sh` |
 | 6 | `flake-evaluates` | The flake evaluates without errors. A module placed under the wrong tree (a Home Manager module under `modules/`, a NixOS module under `home/`) fails evaluation here. Errors from this invariant come from Nix directly and do not follow the `[<rule-name>]` format. | `nix flake check` |
 | 7 | `hosts-build` | Every host configuration that the current machine can build natively, builds. Cross-platform builds may run via `linux-builder` on macOS hosts but are not required. | `nix build .#<host>` per applicable host |
 | 8 | `format` | All Nix code is formatted. | `nixfmt` (RFC 166 official) |
@@ -518,14 +567,14 @@ Hook failures reference rules by name (§8.3), allowing the agent to map errors 
 
 The design-level workflow for routine changes:
 
-1. **Edit** the relevant module, role, or host file.
+1. **Edit** the relevant module, foundation, bundle, or host file.
 2. **Commit.** Pre-commit runs fast structural checks only (formatter, linters, path-based lint scripts). Any failure aborts the commit with a rule-named error message.
 3. **(Optional) Verify locally** with `nix run .#verify` if making non-trivial changes — this runs the full check set (evaluation + host builds) without waiting for push.
 4. **Push.** Pre-push runs `nix flake check` (evaluation) then `nix build .#<host>` for each host the current machine can build natively. Any failure aborts the push.
 5. **Rebuild** the machine (`darwin-rebuild switch` or `nixos-rebuild switch` against the flake) to apply the change.
 6. **Verify** the change behaves as expected.
 
-For experimental modules: the workflow includes opting the module into a host's `experimental` attribute before rebuild. For promotion or removal: use `scripts/promote.sh` or `scripts/remove.sh` (§6.4).
+For experimental modules: the workflow includes adding the experimental module's path (under `modules/experimental/` or `home/experimental/`) to the host's `imports` list before rebuild. For promotion or removal: use `scripts/promote.sh` or `scripts/remove.sh` (§6.4).
 
 Operational detail — exact commands, troubleshooting steps, recovery from failed activations — lives in `CLAUDE.md` and the repository README, not in this PRD.
 
@@ -578,7 +627,7 @@ Recovery procedures for failed activations are defined in §11.
 
 ### 11.1 Bootstrap intent
 
-Standing up a new instance of any role from a clean operating system is a documented, repeatable sequence. The configuration provides the target state; the bootstrap sequence brings a machine from its starting condition to that target.
+Standing up a new host from a clean operating system is a documented, repeatable sequence. The configuration provides the target state; the bootstrap sequence brings a machine from its starting condition to that target.
 
 The exact commands for each scenario live in the repository README and `CLAUDE.md`. This section documents the design.
 
@@ -592,13 +641,13 @@ For any host, bootstrap consists of the same conceptual phases:
 4. **Authenticate.** Sign into 1Password on the new machine to make runtime secrets available to the configured environment.
 5. **Verify.** Confirm the activated environment matches expectations.
 
-### 11.3 Per-role notes
+### 11.3 Per-host-shape notes
 
-**`macos-workstation`:** Install Nix on the existing macOS install, clone, activate via `nix run nix-darwin -- switch`. After first activation, `darwin-rebuild` is available on `PATH`. Homebrew components are activated as part of the flake. Mac App Store applications, if used, are installed manually after bootstrap — they are out of scope for declarative management in current design.
+**macOS hosts (managed via `nix-darwin`):** Install Nix on the existing macOS install, clone, activate via `nix run nix-darwin -- switch`. After first activation, `darwin-rebuild` is available on `PATH`. Homebrew components are activated as part of the flake. Mac App Store applications, if used, are installed manually after bootstrap — they are out of scope for declarative management in current design.
 
-**`linux-workstation`:** Bootstrap from a fresh NixOS install (via ISO). In-place migration from non-NixOS Linux distributions is not supported by this configuration; existing non-NixOS machines must be reinstalled.
+**NixOS workstation hosts (with desktop environment bundles):** Bootstrap from a fresh NixOS install (via ISO). In-place migration from non-NixOS Linux distributions is not supported by this configuration; existing non-NixOS machines must be reinstalled.
 
-**`headless`:** Bootstrap requires installing NixOS onto a target machine (typically a VPS or bare-metal server). The specific bootstrap tool and declarative disk-layout approach are deferred until the first concrete `headless` instance is provisioned. The decision is recorded in §12.
+**NixOS headless hosts (no desktop environment bundles):** Bootstrap via `nixos-anywhere` + `disko` with operator-injected host SSH keys (resolved in [ADR-022](./decisions/ADR-022-headless-bootstrap-nixos-anywhere.md), superseding the earlier AMI-launch approach in ADR-017). Applies to VPS, cloud, and bare-metal targets uniformly.
 
 ### 11.4 Rollback
 
@@ -621,7 +670,7 @@ The configuration is recoverable from two stores:
 
 Recovering a machine after total loss is the same operation as bootstrapping a new one:
 
-1. Provision a clean OS install matching the role's platform.
+1. Provision a clean OS install matching the host's platform.
 2. Run the bootstrap sequence (§11.2) for the appropriate host.
 
 Data — Obsidian vault contents, photography libraries, project repositories — is explicitly out of scope (§2.2) and is recovered separately via its own backup mechanisms.
@@ -630,7 +679,7 @@ Data — Obsidian vault contents, photography libraries, project repositories �
 
 A successful design produces a configuration that another competent operator (familiar with Nix at a general level, given access to the repository and 1Password) can rebuild from in an afternoon. This is the operational standard the bootstrap design serves.
 
-For `macos-workstation` and `linux-workstation` roles, this test holds today. For `headless`, it holds once the bootstrap tool decision (§11.3) is made.
+The test holds today for macOS hosts and for NixOS headless hosts (the latter via the nixos-anywhere + disko path resolved in ADR-022, demonstrated on Mercury and Metis). For NixOS workstation hosts, it will hold once the first such host (`mothership`) is provisioned.
 
 ---
 
@@ -638,9 +687,9 @@ For `macos-workstation` and `linux-workstation` roles, this test holds today. Fo
 
 Design decisions that have been deliberately deferred. Decisions resolved during PRD drafting are documented in the relevant section above and not duplicated here.
 
-**Bootstrap path for `headless` instances.** *Resolved (2026-05-18) for AWS by [ADR-017](./decisions/ADR-017-headless-bootstrap-aws-ami.md):* official NixOS AMI from https://nixos.github.io/amis/ + the `amazon-image.nix` module from nixpkgs. `nixos-anywhere` + `disko` is the assumed fallback for providers without a NixOS image but is not yet committed; that's a per-provider decision to record when the first non-AWS headless host is provisioned.
+**Bootstrap path for headless hosts.** *Resolved (2026-05-18) for AWS by [ADR-017](./decisions/ADR-017-headless-bootstrap-aws-ami.md):* official NixOS AMI from https://nixos.github.io/amis/ + the `amazon-image.nix` module from nixpkgs. *Subsequently superseded (2026-05-25) by [ADR-022](./decisions/ADR-022-headless-bootstrap-nixos-anywhere.md):* `nixos-anywhere` + `disko` with operator-pre-generated host keys, providing one install path across AWS + bare metal.
 
-**Runtime secrets on `headless` instances.** *Resolved (2026-05-18) by [ADR-018](./decisions/ADR-018-headless-secrets-sops.md):* continue with `sops-nix`, identical to the UTM VM. The host's cloud-init-generated ed25519 SSH key is the decryption identity. 1Password `op` on headless is deferred again until a real headless workload requires it (the trigger is described in ADR-018's Consequences).
+**Runtime secrets on headless hosts.** *Resolved (2026-05-18) by [ADR-018](./decisions/ADR-018-headless-secrets-sops.md):* continue with `sops-nix`, identical to the UTM VM. The host's ed25519 SSH key is the decryption identity. 1Password `op` on headless is deferred again until a real headless workload requires it (the trigger is described in ADR-018's Consequences).
 
 **Continuous integration.** Deferred per §9.5. May be added once cross-platform coverage becomes valuable.
 
