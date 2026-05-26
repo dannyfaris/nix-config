@@ -67,6 +67,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [022](./ADR-022-headless-bootstrap-nixos-anywhere.md) | Headless bootstrap (revised) | `nixos-anywhere` + `disko`, pre-injected host keys | Supersedes ADR-017; amends ADR-018. One install path across AWS + bare metal |
 | [023](./ADR-023-host-config-three-file-structure.md) | Per-host file structure | `default.nix` / `disko.nix` / `hardware-configuration.nix` | Each file has a single ownership story; eliminates the mixed-content `hardware.nix` |
 | [024](./ADR-024-claude-code-config.md) | Claude Code config | home.file deploy, settings.json mutable | Stable config files sync via Nix; per-host settings.json edit references them |
+| [025](./ADR-025-ci-in-flake.md) | Continuous integration | flake-defined `nix flake check` + GitHub Actions matrix | Every check is a flake output; CI is thin YAML; `.githooks/` replaced by `git-hooks.nix` installed by devShell. Realises ADR-023's planned banner-check enforcement |
 
 ## Conventions
 
