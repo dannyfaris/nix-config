@@ -1,235 +1,75 @@
 # nix-config Roadmap
 
-Prioritised roadmap and progress tracker. See [docs/](./docs/) for design
-rationale (philosophy, taxonomy, and 12 ADRs); this file tracks *what's
-happening when*.
+Prioritised roadmap and task tracking. Completed milestones live in git
+history and the ADRs under [docs/decisions/](./docs/decisions/); this
+file tracks open work.
 
-## Tier 1 — Flake conversion + home-manager (DONE)
+## Good → Great
 
-- [x] Draft CLAUDE.md + TODO.md
-- [x] Scaffold flake skeleton (flake-parts, inputs wired, `nix flake show` passes)
-- [x] Scaffold module layout (hosts/, modules/system/, modules/home/)
-- [x] Decompose bootstrap config into modules
-- [x] `sudo nixos-rebuild switch --flake .#nixos-vm` succeeds
-- [x] Verify equivalence (SSH, user, claude-code, `nix flake check`)
-- [x] Trim bootstrap header (repo-level narrative now lives in CLAUDE.md)
+Opinionated improvements surfaced by a maturity review (2026-05-26).
+Each item names the cost of the current shape and what "great" looks
+like; see git log for the full review.
 
-## Tier 2 — Secrets management (DONE)
+### Do soon
 
-- [x] Integrate sops-nix
-- [x] Replace inline `hashedPassword` with `hashedPasswordFile`
-- [x] Audit for any other plaintext secrets (only secret was the password hash)
-- [x] Scrub plaintext hash from git history (`git-filter-repo`)
+- [ ] **`shared/` migration** — introduce `home/core/shared/` and
+      `modules/core/shared/` and move modules that already satisfy the
+      cross-platform contract (shell, prompt, direnv, multiplexer,
+      editor, git*, cli-utils, agent-clis*, gh). Leaves `nixos/` for
+      genuinely Linux-bound modules (macchina, nix-tooling NH_FLAKE).
+      Closes the gap between PRD §5.1 and the tree on disk; gets
+      strictly more expensive once `macos-workstation` lands. Pure
+      rename + import-path refactor; `nix flake check` catches any
+      mistake. **M, low risk.**
+- [ ] **Fix `nrs` abbreviation** — `home/core/nixos/shell.nix:16`
+      expands to `sudo nixos-rebuild switch`, contradicting `nh os switch`
+      as the canon. Replace with `nos = "nh os switch"`. Trains muscle
+      memory in the right direction. **S, low.**
+- [ ] **Drop duplicated `system` arg from `lib/mk-host.nix`** — let
+      `nixpkgs.hostPlatform` from `hardware-configuration.nix` carry
+      the platform. The mk-host comment already telegraphs the refactor;
+      removes a tripping hazard at 6+ hosts. **S, low.**
+- [ ] **Delete superseded runbooks** —
+      `docs/runbooks/headless-bootstrap-aws.md` and
+      `headless-bootstrap-metis.md`. The ADR superseding rule exists
+      because ADRs are referenced from code; runbooks aren't. Git
+      history is the right archive. **S, low.**
 
-## Tier 3 — Headless Dev (DONE)
+### Trigger-driven
 
-A comprehensive terminal tooling layer: fish + starship + direnv + zellij +
-helix + git/gh/glab + ssh + modern CLI utils + nix tooling + four agent
-CLIs. Standalone-useful and carries forward unchanged when the desktop tier
-is later re-introduced on x86_64.
-
-See [docs/](./docs/) for design rationale.
-
-### Slice 1 — Rollback the desktop commit (DONE)
-
-- [x] Local rebuild from rolled-back tree succeeds (`nix build` clean)
-- [x] Tag `tier3-desktop-deferred` at the rolled-back commit (preserves desktop work)
-- [x] `git push --force-with-lease` to remote
-- [x] Push the tag to remote
-
-### Slice 2 — Documentation foundation (DONE)
-
-- [x] `docs/README.md`, `docs/philosophy.md`, `docs/taxonomy.md` created
-- [x] 12 ADRs created in `docs/decisions/`
-- [x] `CLAUDE.md` updated with `docs/` pointer + tier renumbering reference
-- [x] `TODO.md` transformed (this file)
-- [x] AI memory files updated to point to `docs/`
-
-### Slice 3a — Decompose modules/system/ (refactor only) (DONE)
-
-- [x] Extract `boot.nix`, `networking.nix`, `locale.nix`, `nix.nix`,
-      `ssh.nix`, `sops.nix`, `users.nix`, `packages.nix` from existing
-      `default.nix`
-- [x] `default.nix` becomes imports-only
-- [x] Build verifies byte-identical system closure (stronger than
-      `nix store diff-closures` — same store path before and after)
-
-### Slice 3b — System-side support for headless tier (DONE)
-
-- [x] `modules/system/users.nix`: add `users.users.dbf.shell = pkgs.fish` and
-      `programs.fish.enable = true` (system-side gate; see ADR-001)
-- [x] `modules/system/mosh.nix` created with `programs.mosh.enable = true`
-- [x] `modules/system/nix.nix`: extend `allowUnfreePredicate` to include
-      `cursor-cli` (codex and gemini-cli are free; see
-      `agent_clis_implementation_notes.md`)
-
-### Slice 4 — modules/home/ taxonomy scaffold + migrate existing (DONE)
-
-- [x] Rewrite `modules/home/default.nix` as wrapper with `home-manager.users.dbf.imports`
-- [x] Add `home-manager.backupFileExtension = "hm-bak"` and `news.display = "silent"`
-- [x] Create stub files: `shell, prompt, direnv, multiplexer, editor, ssh, cli-utils, nix-tooling`
-- [x] Migrate `claude-code` package to `agent-clis.nix`
-- [x] Migrate `gh` package to `git.nix`
-- [x] Build verifies; closure diff empty at package level (only home-manager metadata changed)
-
-### Slice 5a — Terminal foundation (DONE)
-
-- [x] `shell.nix`: `programs.fish.enable` + sparse abbreviation set
-- [x] `prompt.nix`: `programs.starship.enable` + minimal config (see ADR-002)
-- [x] `direnv.nix`: `programs.direnv.enable` + `programs.direnv.nix-direnv.enable`
-- [x] `multiplexer.nix`: `programs.zellij.enable`
-
-### Slice 5b — Editor (DONE)
-
-- [x] `editor.nix`: `programs.helix.enable` + settings (theme, line-number,
-      bufferline, lsp, `clipboard-provider = "termcode"`)
-- [x] Helix nix language entry: nixd LSP, nixfmt formatter via `lib.getExe`,
-      `auto-format = true`
-
-### Slice 5c — Version control + SSH (DONE)
-
-- [x] `git.nix`: `programs.git` with dual identity (personal default; work
-      via `gitdir:~/work/`), `programs.gh` with `git_protocol = "https"`
-      and `gitCredentialHelper.enable`, glab as package
-- [x] `ssh.nix`: `programs.ssh.enable = true` with explanatory comment
-
-### Slice 5d — Tooling collections (DONE)
-
-- [x] `cli-utils.nix`: `programs.X.enable` for fzf, bat, eza, zoxide,
-      lazygit, yazi; `home.packages` for ripgrep, fd, htop, dust
-- [x] `nix-tooling.nix`: `home.packages` with nh, nix-output-monitor, nixd,
-      nixfmt, statix, deadnix
-
-Note: post-slice statix/deadnix baseline pass run per ADR-007. Findings
-in hand-written files were fixed in a follow-up cleanup commit;
-pre-existing findings in auto-generated `hardware-configuration.nix`
-were left intact (the file is regenerated by `nixos-generate-config`).
-
-### Slice 5e — Agent CLIs (DONE)
-
-- [x] `agent-clis.nix`: `home.packages` with claude-code, codex, gemini-cli,
-      cursor-cli (no sops integration — all four use OAuth; see ADR-008)
-
-### Slice 6 — End-to-end verification (DONE)
-
-- [x] `nix flake check` clean
-- [x] `nh os switch` clean (replaced `sudo nixos-rebuild switch` as the
-      canonical activation command — see CLAUDE.md)
-- [x] Smoke tests pass: fish login, starship prompt with nix-shell ❄️
-      indicator, direnv activation, zellij detach/reattach, helix with
-      nixd rich hovers, dual git identity (personal/work), gh clone
-      produces HTTPS, glab auth, mosh from Mac, four agent CLIs invoke,
-      htop (after ghostty.terminfo)
-
-Note: **OSC52 clipboard paste deferred to Tier 5.** nix-config side is
-correct (helix `clipboard-provider = "termcode"`, zellij default
-pass-through, mosh supports OSC52). The remaining unknown is Mac-side
-Ghostty behaviour — likely the `clipboard-write = ask` default never
-prompted or got dismissed. To investigate at Tier 5 with whatever Mac
-terminal setup is in use then.
-
-Emergent improvements that landed during this slice (visible in git log):
-- ghostty.terminfo added to system packages (fixes ncurses tools over
-  SSH from Ghostty client)
-- `NH_FLAKE` env var wired so `nh os switch` works from any cwd
-- glab credential helper wired declaratively in `programs.git.settings.credential`
-- nixd LSP `config.nixd.options` wired for rich hovers on
-  NixOS/home-manager option attributes
-- yazi `shellWrapperName = "y"` (adopting new home-manager default)
-- `programs.ssh.enableDefaultConfig = false` (opt out of deprecated
-  upstream behaviour)
-- eza-aliasing carve-out documented in ADR-006 (revising the original
-  blanket "don't alias originals" stance)
-- Git identity correction (dannyfaris for personal, Daniel Faris for
-  work; legacy `~/.gitconfig` cleanup; precedence-trap warning in
-  ADR-009)
-
-## Multi-host expansion — Mercury (DONE)
-
-First instance of the `headless` role beyond the UTM VM: a work-only dev
-box on AWS EC2 (Nitro, x86_64, t3.medium). The forcing function for the
-PRD §5 role/host refactor — both hosts now adopt `roles/headless.nix`
-from a shared module tree under `modules/core/nixos/` + `home/core/nixos/`.
-
-Code:
-
-- [x] Pre-publication cleanup: strip work email from the SSH-key comment
-      in `modules/core/nixos/users.nix` (was the last identifying string
-      in the working tree)
-- [x] PRD §5 structural refactor — `roles/`, `hosts/`, `lib/mk-host.nix`,
-      `modules/core/nixos/`, `home/core/nixos/`; both hosts share
-      `roles/headless.nix`
-- [x] Per-host parametrisation via `_module.args.hostContext`
-      (`hostName`, `flakePath`, `extraHomeModules`) forwarded into HM
-      submodules via `extraSpecialArgs`. Editor's nixd options and
-      nix-tooling's NH_FLAKE now read from `hostContext` — closes the
-      "Hardcoded paths/hostnames to update" carryover from Tier 3
-- [x] Work-only divergence via import splits: `git.nix` (base) +
-      `git-identity-dual.nix` (VM) + `git-identity-work.nix` (Mercury)
-      + `gh.nix` (VM only). No host-keyed `mkIf`
-- [x] `hosts/mercury/default.nix` adopts the role; imports
-      amazon-image module; declares its hostContext including the
-      work-identity import
-- [x] `hosts/mercury/hardware-configuration.nix` — real version
-      generated by nixos-anywhere on first boot, committed in ca03222
-- [x] ADR-017 (AWS AMI bootstrap — **superseded by ADR-022**), ADR-018
-      (sops continues on headless), ADR-019 (hostContext
-      parametrisation), ADR-020 (import-split convention), ADR-021
-      (rootless Docker on headless), ADR-022 (nixos-anywhere + disko
-      bootstrap), ADR-023 (host-config three-file structure)
-- [x] `docs/runbooks/headless-bootstrap.md` (consolidated runbook).
-      The earlier `headless-bootstrap-aws.md` is preserved verbatim as
-      a historical reference for the pre-ADR-022 AMI-launch procedure;
-      its top-of-file note points at the consolidated runbook
-- [x] PRD §12 deferrals 1 (headless bootstrap path) and 2 (headless
-      secrets) marked resolved
-- [x] Pre-flight `ec2.efi` — `amazon-options.nix` defaults to
-      `pkgs.stdenv.hostPlatform.isAarch64`; on x86_64 Mercury we set
-      `ec2.efi = true` explicitly in `hosts/mercury/default.nix` to
-      match the UEFI-shaped disko layout
-
-Operational (bootstrap path replaced by ADR-022 — nixos-anywhere +
-disko + injected host key via `just gen-host-key` → `just bootstrap`,
-which subsumed the original AMI-launch / SSH-clone / hardware-regen
-sequence):
-
-- [x] GitHub repo public (2026-05-25)
-- [x] Sops recipient onboarding — `.sops.yaml` includes the `mercury`
-      age anchor; `secrets/secrets.yaml` re-keyed
-- [x] First `nh os switch` on Mercury succeeded; subsequent
-      operator-tooling and statusline iterations have shipped to it
-- [x] Mercury runs the headless role end-to-end (work-only identity,
-      rootless docker, mosh reachable, tailscale on)
+- [ ] **Promote `hostContext` to a typed module** —
+      `options.hostContext = lib.mkOption {...}` with sensible defaults;
+      `flakePath` becomes a default rather than a per-host literal.
+      **Trigger:** 4th host *or* `shared/` migration landing —
+      whichever comes first. ADR-019 names the ~5-field threshold;
+      we're at 3.
+- [ ] **`shared-purity` lint** — single `scripts/lint-shared-purity.sh`
+      that greps `modules/core/shared/` and `home/core/shared/` for
+      platform conditionals (`stdenv.isDarwin`, `pkgs.stdenv.isLinux`,
+      etc.). Wired into `parts/checks.nix` via `git-hooks.nix` as an
+      extra hook (framework now exists post-ADR-025). The other two
+      lints PRD §8.1 named are moot: `role-purity` disappears with the
+      role layer (planned ADR-027); `tier-deps` has nothing to enforce
+      while `experimental/` is empty. **Trigger:** once `shared/` exists.
+- [ ] **`_local-linux` mini-role** — bundle systemd-boot +
+      NetworkManager + Tailscale, currently duplicated across
+      `nixos-vm` and `metis`. **Trigger:** when `mothership` (the
+      linux-workstation host) lands and the duplication becomes
+      fourfold. Don't pre-empt; ADR-013 anticipates this exact
+      pressure point.
 
 ## Bus-factor — sops decryption identity for the operator
 
-ADR-018 commits to sops-nix on headless hosts. `sops updatekeys`
-(needed when adding a new host's recipient) requires running on a
-machine that holds an existing decryption identity for
-`secrets/secrets.yaml`. Until 2026-05-25 the only such identity was
-the UTM VM's host SSH private key — which lives only on the VM
-itself — leaving the repo a single VM-loss away from un-recoverable
-secrets.
+Option A landed 2026-05-25 (operator's Mac SSH key added to
+`.sops.yaml`; `secrets/secrets.yaml` re-keyed to all three recipients).
+B below is a belt-and-braces extension.
 
-Closed via belt-and-braces:
-
-- [x] **Option A — operator recipient.** Added the operator's Mac SSH
-      key (`dbf@mac`, age recipient `age1qh0dm46…`) as a third entry
-      on `.sops.yaml`; `sops updatekeys` re-encrypted
-      `secrets/secrets.yaml` to all three recipients on 2026-05-25.
-      Future onboarding can now run from the Mac without depending on
-      any host. Cost: laptop key compromise becomes a recipient-
-      revocation event for every encrypted file.
 - [ ] **Option B — VM host-key backup.** Store the VM's
       `/etc/ssh/ssh_host_ed25519_key` (and `.pub`) as a 1Password
-      secure note. Belt-and-braces with A: lets the VM identity be
-      restored on a fresh machine if both the VM disappears AND the
-      Mac dies. Operator-only step. Cost: an out-of-band copy of a
-      host identity that should ideally not leave the host.
-- [ ] **Option C (not chosen)** — move to 1Password service-account
-      tokens per ADR-018's "future direction". Bigger surgery than
-      this gap warrants; revisit if 1Password becomes the root of
-      trust for other reasons.
+      secure note. Lets the VM identity be restored on a fresh
+      machine if both the VM disappears AND the Mac dies. Operator-
+      only step. Cost: an out-of-band copy of a host identity that
+      should ideally not leave the host.
 
 ### Follow-ups
 
@@ -252,72 +92,67 @@ Closed via belt-and-braces:
       is preserved). Then `just setup-sops-identity ~/.ssh/id_ed25519`
       replaces the one-shot above for future operator clones.
 
-## Tier 4 — Desktop environment (deferred)
+## Pending roles
 
-Niri + waybar + Stylix + fuzzel + ghostty + mako. Configuration was
-completed in commit `9dc80b2` and rolled back; preserved at git tag
-`tier3-desktop-deferred` for recovery. To be re-introduced on x86_64
-hardware (Tier 5).
+- [ ] **`linux-workstation` role** — pending `mothership` hardware
+      (x86_64 desktop). Recover desktop modules (niri + waybar +
+      Stylix + fuzzel + ghostty + mako) from git tag
+      `tier3-desktop-deferred`. The deferral is hardware-driven, not
+      design-driven: niri requires `EGL_EXT_device_drm`, which UTM's
+      Apple Virtualization Framework GPU does not expose. References:
+      sodiboo/system (niri-flake idioms), eduardofuncao/nixferatu
+      (Niri+Stylix end-to-end).
+- [ ] **`macos-workstation` role** — design landed (PRD §3 +
+      ADRs 013–016); no code yet. Will land on `mba` and `mac-mini`.
 
-The original tier work touched: niri-flake + stylix flake inputs;
-`modules/desktop/` (5 files); greetd block in `hosts/nixos-vm/default.nix`.
+## Carryover when new hosts land
 
-The deferral is hardware-driven, not design-driven: niri requires
-`EGL_EXT_device_drm`, which UTM's Apple Virtualization Framework GPU does
-not expose.
+Small per-host onboarding checks and deferrals that surface as each
+new host comes up.
 
-## Tier 5 — x86_64 desktop migration
-
-### Host setup
-
-- [ ] Provision x86_64 host
-- [ ] Add `hosts/<desktop>/` (mirror of `hosts/nixos-vm/` shape)
-- [ ] Re-introduce desktop modules from `tier3-desktop-deferred` tag
-- [ ] Enable `services.greetd` on the desktop host
-- [ ] Verify niri renders on real GPU
-- [ ] Factor any remaining host-specific bits out of shared modules
-- [ ] Reference: ryan4yin/nix-config for multi-host flake-parts patterns
-
-### Hardcoded paths/hostnames to update (Tier 3 leftovers — DONE)
-
-Resolved as part of the Multi-host expansion slice via the
-`_module.args.hostContext` mechanism (ADR-019). Both files now read
-`flakePath`/`hostName` from `hostContext` rather than hardcoding the
-strings inline.
-
-- [x] `home/core/nixos/editor.nix` — `flakePath` and `hostName` now
-      come from `hostContext`, set per-host in `hosts/<host>/default.nix`
-- [x] `home/core/nixos/nix-tooling.nix` — `NH_FLAKE` now reads
-      `hostContext.flakePath`
-
-### Tier-3 deferrals to revisit
-
-- [ ] **OSC52 paste investigation** — nix-config side is correct; the
-      Mac-side Ghostty config likely has `clipboard-write = ask` as the
-      default. To resolve: set `clipboard-write = allow` in Ghostty's
-      config OR diagnose if mosh/zellij/Ghostty-version is stripping
-      OSC52 in the new Tier-5 setup. See ADR-011.
-- [ ] **atuin reconsideration** — fzf's Ctrl-R was sufficient for the
-      single-VM case. Multi-machine = atuin's killer feature (encrypted
-      history sync). See ADR-006 "skipped tier with rationale".
-- [ ] **ghostty.terminfo entry** — currently in `modules/system/packages.nix`
-      because the Mac client is Ghostty. If Tier 5 changes terminals,
-      swap to the matching terminfo (alacritty, kitty, etc.) or drop if
-      bundled in nixpkgs `ncurses` by then.
-- [ ] **SSH keys generation** — deferred per ADR-010 because no non-git
-      SSH-out workflow existed on the VM. Tier 5 may surface real needs
-      (cloud hosts, VM↔desktop, etc.). When generating: ed25519 +
-      passphrase + ssh-agent; agent forwarding from Mac stays OFF.
-
-### Migration gotchas surfaced during Tier 3
-
-- [ ] **`~/.gitconfig` precedence trap** (per ADR-009): if the Tier 5
-      host has a legacy `~/.gitconfig` from any pre-nix setup, it will
-      silently override `~/.config/git/config` (XDG, nix-managed) and
-      defeat the gitdir-conditional work-identity. Verify the file does
-      not exist before declaring identity setup correct.
-- [ ] **Verify `home.sessionVariables` env-var pickup**: a freshly-set
-      env var from home-manager needs a *truly fresh* shell to land —
+- [ ] **`~/.gitconfig` precedence trap** (per ADR-009): a legacy
+      `~/.gitconfig` from any pre-nix setup silently overrides
+      `~/.config/git/config` (XDG, nix-managed) and defeats the
+      gitdir-conditional work-identity. Verify the file does not exist
+      before declaring identity setup correct.
+- [ ] **`home.sessionVariables` freshness**: a freshly-set env var
+      from home-manager needs a *truly fresh* shell to land —
       `exec fish` inherits exported state from the parent and triggers
-      `__HM_SESS_VARS_SOURCED`'s early-return. Disconnect+reconnect the
-      ssh/mosh session for clean pickup.
+      `__HM_SESS_VARS_SOURCED`'s early-return. Disconnect+reconnect
+      the ssh/mosh session for clean pickup.
+- [ ] **SSH key generation** (per ADR-010): deferred because no
+      non-git SSH-out workflow existed on the VM. Surfaces on hosts
+      that need SSH-out beyond git (cloud control planes, host-to-host,
+      etc.). Policy when generating: ed25519 + passphrase + ssh-agent;
+      agent forwarding from Mac stays OFF.
+- [ ] **OSC52 paste investigation** — nix-config side is correct;
+      the Mac-side Ghostty likely has `clipboard-write = ask` as the
+      default. Resolve when `linux-workstation` lands with foot and
+      the round-trip can be exercised end-to-end. See ADR-011.
+- [ ] **`foot.terminfo` on headless hosts** — when
+      `linux-workstation` lands and foot becomes the workstation
+      terminal, add `pkgs.foot.terminfo` to
+      `modules/core/nixos/system-packages.nix` (same pattern as the
+      existing `ghostty.terminfo` line, additive). Ghostty terminfo
+      stays — Mac client → headless hosts is still load-bearing.
+
+## For future consideration
+
+Considered, not currently pursuing. Listed so we don't reconsider from
+scratch each time the question recurs.
+
+- **atuin** (encrypted shell history with cross-machine sync). Killer
+  feature would be unifying history across nixos-vm + mercury + metis
+  (and future hosts). Not adopting because mercury is work-only by an
+  explicit boundary (see `mercury_push_boundary.md` memory); syncing
+  mercury's history into a personal stream crosses the same boundary
+  in the opposite direction. A "nixos-vm + metis only" carve-out is
+  the only safe shape and friction is small enough today that fzf
+  Ctrl-R suffices. Revisit if (a) cross-host history recall becomes a
+  real pain point, or (b) the work/personal host split changes shape.
+  See ADR-006 "skipped tier with rationale".
+
+- **1Password service-account tokens for sops** (Bus-factor Option C).
+  Documented in ADR-018's "future direction" section. Bigger surgery
+  than the current bus-factor gap warrants; revisit if 1Password
+  becomes the root of trust for other reasons.
