@@ -41,6 +41,14 @@
   zramSwap.enable = true;
   swapDevices = [ ];
 
+  # systemd-oomd: kills the heaviest descendant in user.slice at 80 %
+  # memory-pressure (systemd default duration). 32 GiB makes
+  # thrash-to-hang rarer than on Mercury, but Docker builds + agent
+  # CLIs can still saturate zram — same failure mode, same mitigation.
+  # system/root slices excluded so oomd can't kill sshd (break-glass
+  # via LAN SSH).
+  systemd.oomd.enableUserSlices = true;
+
   # Per-host values consumed by home-manager modules (editor.nix nixd
   # options, nix-tooling NH_FLAKE). Forwarded into the HM submodule system
   # via extraSpecialArgs in modules/core/nixos/home-manager.nix. See ADR-019.
