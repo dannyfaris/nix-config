@@ -52,14 +52,21 @@
   # Per-host values consumed by home-manager modules (editor.nix nixd
   # options, nix-tooling NH_FLAKE). Forwarded into the HM submodule system
   # via extraSpecialArgs in modules/core/nixos/home-manager.nix. See ADR-019.
+  #
+  # extraHomeModules is now the full HM imports list for this host —
+  # capability bundles plus standalone modules, per ADR-027's bundle
+  # model. Personal dev box: cli tooling + dual git identity + GitHub
+  # CLI + agent CLI extras + login info + base agent CLIs + outbound
+  # SSH. Mirrors nixos-vm.
   _module.args.hostContext = {
     hostName  = "metis";
     flakePath = "/home/dbf/nix-config";
-    # Personal dev box: dual identity (personal default; work under ~/work/)
-    # plus full GitHub CLI + agent-CLI set — mirrors nixos-vm.
     extraHomeModules = [
-      ../../home/core/nixos/git-identity-dual.nix
-      ../../home/core/nixos/gh.nix
+      ../../home/core/nixos/bundles/cli-tooling.nix
+      ../../home/core/nixos/bundles/git-personal.nix
+      ../../home/core/nixos/ssh.nix
+      ../../home/core/nixos/macchina.nix
+      ../../home/core/nixos/agent-clis.nix
       ../../home/core/nixos/agent-clis-extras.nix
     ];
   };
