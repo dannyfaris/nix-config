@@ -17,20 +17,26 @@ companion.
 ## Structure
 
 ```
-flake.nix              # flake-parts entry point
-parts/                 # flake-parts modules (nixosConfigurations, etc.)
-lib/mk-host.nix        # host constructor — thin wrapper over lib.nixosSystem
-roles/                 # named compositions; one file per role (PRD §3, §5.3)
-hosts/<hostname>/      # host instance: hardware, hostname, stateVersion, _module.args
-modules/core/nixos/    # stable NixOS modules (nix settings, SSH, users, etc.)
-home/core/nixos/       # stable home-manager modules (user packages, dotfiles)
+flake.nix                          # flake-parts entry point
+parts/                             # flake-parts modules (nixosConfigurations, etc.)
+lib/mk-host.nix                    # host constructor — thin wrapper over lib.nixosSystem
+hosts/<hostname>/                  # host instance: hardware, hostname, stateVersion,
+                                   # _module.args, imports of foundation + bundles
+modules/core/nixos/foundation.nix  # bundle every NixOS host imports by convention
+modules/core/nixos/bundles/        # capability bundles (system-level)
+modules/core/nixos/                # standalone NixOS modules (nix settings, SSH, etc.)
+home/core/nixos/bundles/           # capability bundles (home-level)
+home/core/nixos/                   # standalone home-manager modules
 ```
 
-A new host is a new directory under `hosts/` that adopts a role from
-`roles/`, not a rewrite. Per-host values (e.g. flake path, hostname for
-nixd) flow from each host's `_module.args.hostContext` into home-manager
-modules via the wiring in `modules/core/nixos/home-manager.nix`; see
-ADR-019.
+Composition follows the foundation + bundles model (ADR-027): every host
+imports `foundation.nix` (identity + admin + posture), opts into capability
+bundles for what the host does, and imports standalone modules for
+capabilities that don't yet have a bundle home. A new host is a new
+directory under `hosts/` that composes these directly — no role layer.
+Per-host values (e.g. flake path, hostname for nixd) flow from each host's
+`_module.args.hostContext` into home-manager modules via the wiring in
+`modules/core/nixos/home-manager.nix`; see ADR-019.
 
 ## Philosophy
 

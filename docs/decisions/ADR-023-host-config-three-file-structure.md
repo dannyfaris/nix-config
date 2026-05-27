@@ -19,7 +19,7 @@ The three-file split is a recognised convention in well-regarded multi-host NixO
 
 Each `hosts/<name>/` directory installed via `nixos-anywhere` (ADR-022) contains exactly three files, each with a single ownership story:
 
-- **`default.nix`** — hand-authored. Logical settings (`hostName`, `system.stateVersion`, `_module.args.hostContext`, role/platform module imports, host-specific `mkForce` / `mkDefault` overrides, ergonomic flags like `zramSwap.enable`).
+- **`default.nix`** — hand-authored. Logical settings (`hostName`, `system.stateVersion`, `_module.args.hostContext`, the `imports` list naming `foundation.nix` + capability bundles + standalone modules + platform modules like `amazon-image.nix`, host-specific `mkForce` / `mkDefault` overrides, ergonomic flags like `zramSwap.enable`).
 - **`disko.nix`** — hand-authored. Declarative disk layout: partitions, filesystems, mount options, btrfs subvolumes. Read by `disko` at install time and by NixOS at runtime for `fileSystems` entries — single source of truth.
 - **`hardware-configuration.nix`** — auto-generated. Kernel modules, microcode, `nixpkgs.hostPlatform`. Pre-bootstrap state: a stub containing only `nixpkgs.hostPlatform = lib.mkDefault "<arch>-linux"` so `nix flake check` evaluates before the host exists. Post-bootstrap state: replaced verbatim by `nixos-anywhere --generate-hardware-config nixos-generate-config` output (which uses `--no-filesystems`, so the output coexists with `disko.nix` without conflict). See [ADR-022 §Implementation](./ADR-022-headless-bootstrap-nixos-anywhere.md#implementation) for the operator command. Convention-protected by a top-of-file comment declaring it auto-generated (see Implementation below for the exact form).
 

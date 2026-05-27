@@ -7,12 +7,12 @@ trees. The decision itself is recorded in
 [ADR-012](./decisions/ADR-012-taxonomy.md); this document is the
 applied principle with examples.
 
-> **Note:** the historical examples below reference the pre-refactor
+> **Note:** some of the examples below reference the pre-refactor
 > directories `modules/home/` and `modules/system/` because the rule
 > was articulated against that tree. The current tree is
-> `home/core/nixos/` and `modules/core/nixos/` per the PRD §5 role/host
-> layout (introduced post-ADR-013 through ADR-016). The naming rule
-> itself applies unchanged; only the directories moved.
+> `home/core/nixos/` and `modules/core/nixos/` per the PRD §5
+> directory grid. The naming rule itself applies unchanged; only the
+> directories moved.
 
 ## The rule
 
