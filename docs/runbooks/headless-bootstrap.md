@@ -94,19 +94,38 @@ Run once per fresh clone of this repo on the operator machine:
 
 ### Bare-metal host (Metis, future bare-metal hosts)
 
-> **Metis specifically requires physical access.** Its config is
-> committed but the install is pending hardware availability. Do not
-> attempt to bootstrap Metis remotely.
+> **Bare-metal hosts require physical access** until verification
+> completes. Do not attempt to bootstrap remotely.
 
 - Latest NixOS 25.11 minimal ISO flashed to a ≥4 GiB USB stick.
   (Wi-Fi-only targets may need the unfree-firmware ISO build.)
 - Target booted from USB to a `nixos@nixos` shell. Enable sshd
-  (`sudo systemctl start sshd`), set a temporary `nixos` password
-  (`sudo passwd nixos`), and add the operator's Mac SSH key to
-  `/home/nixos/.ssh/authorized_keys` (or `/root/.ssh/authorized_keys`
-  if connecting as root). The live USB's `nixos` user has passwordless
+  (`sudo systemctl start sshd`) and set a temporary `nixos` password
+  (`sudo passwd nixos`). The live USB's `nixos` user has passwordless
   sudo by default, so `nixos-anywhere` can elevate as needed during
   step 3.
+- Two SSH public keys appended to `/home/nixos/.ssh/authorized_keys`
+  (or `/root/.ssh/authorized_keys` if connecting as root):
+  1. **The operator machine's public key** — whatever machine will
+     run `just bootstrap` (today: the VM, since it holds the sops
+     decryption identity required by step 3's pre-flight). On the VM,
+     `cat ~/.ssh/id_ed25519.pub`. `nixos-anywhere`'s `ssh-copy-id`
+     runs non-interactively from the operator, so without an
+     already-authorized operator key it will exhaust `MaxAuthTries`
+     and fail with `Too many authentication failures`. Cloud hosts
+     (Mercury-class) sidestep this via an AMI keypair (`mercury.pem`)
+     referenced from `~/.ssh/config.local`; bare metal has no
+     equivalent and the operator key must be seeded by hand.
+  2. **The Mac SSH key from `modules/core/nixos/users.nix`.** This
+     is the *post-install* credential — once `nixos-anywhere`
+     completes and `users.mutableUsers = false` activates, the Mac
+     key becomes `dbf`'s sole inbound credential. The operator key
+     from (1) is discarded with the live USB and never authorized
+     for `dbf`.
+
+  Smoke-test both *before* kicking off step 3: from the operator
+  machine, `ssh -o BatchMode=yes nixos@<target> 'echo ok'` must
+  succeed without password.
 - Network reachable from operator. Wired ethernet picks up DHCP
   automatically; Wi-Fi needs `sudo systemctl start wpa_supplicant`
   then `wpa_cli` (or `nmtui` if present).
