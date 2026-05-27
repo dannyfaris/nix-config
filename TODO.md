@@ -12,15 +12,6 @@ like; see git log for the full review.
 
 ### Do soon
 
-- [ ] **`shared-purity` lint** — single `scripts/lint-shared-purity.sh`
-      that greps `modules/core/shared/` and `home/core/shared/` for
-      platform conditionals (`stdenv.isDarwin`, `pkgs.stdenv.isLinux`,
-      etc.). Wired into `parts/checks.nix` via `git-hooks.nix` as an
-      extra hook (framework exists per ADR-025). Trigger fired with
-      slice 6's shared/ migration. The other two lints PRD §8.1 named
-      are moot: `role-purity` disappeared with ADR-027's role removal;
-      `tier-deps` has nothing to enforce while `experimental/` is empty.
-      **S, low.**
 - [ ] **Promote `hostContext` to a typed module** —
       `options.hostContext = lib.mkOption {...}` with sensible defaults;
       `flakePath` becomes a default rather than a per-host literal.
@@ -44,6 +35,18 @@ like; see git log for the full review.
 
 ### Trigger-driven
 
+- [ ] **`shared-purity` lint** — single `scripts/lint-shared-purity.sh`
+      that greps `modules/core/shared/` and `home/core/shared/` for
+      platform conditionals (`stdenv.isDarwin`, `pkgs.stdenv.isLinux`,
+      etc.). Registered as an extra hook in `parts/checks.nix` via
+      `git-hooks.nix`. The other two lints PRD §8.1 named are moot:
+      `role-purity` disappeared with ADR-027's role removal;
+      `tier-deps` has nothing to enforce while `experimental/` is
+      empty. **Trigger:** ADR-025 implementation lands (the
+      `parts/checks.nix` / `git-hooks.nix` framework the lint plugs
+      into doesn't exist on disk yet — ADR-025 was a decision-only
+      landing in `f2dd956`; implementation pending in a separate
+      session). **S, low** once the framework is in place.
 - [ ] **`_local-linux` mini-bundle** — bundle systemd-boot +
       NetworkManager + Tailscale, currently duplicated across
       `nixos-vm` and `metis`. **Trigger:** when `mothership` (a future
