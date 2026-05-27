@@ -19,7 +19,7 @@
     ./firewall.nix
     ./sops.nix
     ./users.nix
-    ./system-packages.nix
+    ../shared/system-packages.nix
     ./home-manager.nix
   ];
 }
