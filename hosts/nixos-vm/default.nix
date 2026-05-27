@@ -1,11 +1,22 @@
-# Host-specific configuration for the UTM VM (aarch64-linux). Adopts the
-# headless role (via parts/nixos.nix) and adds the VM-specific platform
-# modules (systemd-boot, NetworkManager) that the role itself doesn't pick.
+# Host-specific configuration for the UTM VM (aarch64-linux).
+#
+# Composes foundation + capability bundles + standalone modules directly
+# (per ADR-027), no longer adopts the `headless` role. Standalones:
+# bare-metal-VM platform modules (systemd-boot, NetworkManager) and
+# Tailscale.
 { ... }:
 
 {
   imports = [
     ./hardware.nix
+
+    # Foundation — bundle every NixOS host imports by convention.
+    ../../modules/core/nixos/foundation.nix
+
+    # Capability bundles.
+    ../../modules/core/nixos/bundles/remote-access.nix
+
+    # Standalone system modules.
     ../../modules/core/nixos/boot-systemd.nix
     ../../modules/core/nixos/networking-networkmanager.nix
     ../../modules/core/nixos/tailscale.nix
