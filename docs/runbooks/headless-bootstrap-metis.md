@@ -1,4 +1,4 @@
-# Headless bootstrap — Metis (bare-metal HP ProDesk Mini 600 G9)
+# Headless bootstrap — Metis (bare-metal HP ProDesk 600 G3 Desktop Mini)
 
 > **Superseded by [headless-bootstrap.md](./headless-bootstrap.md)** (2026-05-25).
 >
@@ -75,7 +75,7 @@ stock minimal ISO.
 ## Phase 2 — BIOS preparation
 
 `[metis]` With monitor and USB keyboard attached, power on and tap **F10**
-to enter BIOS Setup (HP ProDesk 600 G9 default).
+to enter BIOS Setup (HP ProDesk 600 G3 default).
 
 Settings to confirm or change:
 
@@ -110,7 +110,7 @@ easier to do it in two passes.
 
 ### Confirm the target device
 
-`[metis]` **Do not assume `/dev/nvme0n1`.** The ProDesk Mini 600 G9 ships
+`[metis]` **Do not assume `/dev/nvme0n1`.** The ProDesk 600 G3 Desktop Mini ships
 in multiple variants (NVMe SSD, SATA SSD, occasionally an HDD too). From
 the installer shell:
 

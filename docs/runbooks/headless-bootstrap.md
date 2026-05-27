@@ -134,7 +134,7 @@ Run once per fresh clone of this repo on the operator machine:
   Wake-on-LAN optional. Update BIOS firmware while you're here — much
   easier from the pre-OS HP updater than from Linux later.
 - `hosts/<host>/disko.nix` device path verified with `lsblk` from the
-  live USB. The HP ProDesk Mini 600 G9 ships in multiple storage
+  live USB. The HP ProDesk 600 G3 Desktop Mini ships in multiple storage
   variants — `/dev/nvme0n1` is most common but not universal.
 - A monitor and USB keyboard physically attached to the target until
   verification completes — your only console if anything goes wrong.
