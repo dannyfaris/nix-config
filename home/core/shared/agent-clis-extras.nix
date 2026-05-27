@@ -9,7 +9,8 @@
 # managed API keys needed.
 #
 # Both are Apache-licensed — no unfree whitelist entry required.
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   home.packages = with pkgs; [
     codex
     gemini-cli

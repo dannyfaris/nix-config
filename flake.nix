@@ -37,10 +37,14 @@
     };
   };
 
-  outputs = inputs:
+  outputs =
+    inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       # Systems this flake targets. Needed by flake-parts perSystem.
-      systems = [ "aarch64-linux" "x86_64-linux" ];
+      systems = [
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
 
       imports = [
         ./parts/nixos.nix

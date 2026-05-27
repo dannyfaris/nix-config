@@ -24,7 +24,8 @@
 # talk to live per-project in flake.nix devShells (e.g. the docker CLI
 # itself), or per-host as a system service (e.g. the docker daemon — when
 # we have a first project that needs one).
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   programs = {
     fzf.enable = true;
     bat.enable = true;

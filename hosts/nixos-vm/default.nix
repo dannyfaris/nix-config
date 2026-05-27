@@ -36,7 +36,7 @@
   # Personal dev box: cli tooling + dual git identity + GitHub CLI + agent
   # CLI extras + login info display + base agent CLIs + outbound SSH.
   _module.args.hostContext = {
-    hostName  = "nixos-vm";
+    hostName = "nixos-vm";
     flakePath = "/home/dbf/nix-config";
     extraHomeModules = [
       ../../home/core/shared/bundles/cli-tooling.nix

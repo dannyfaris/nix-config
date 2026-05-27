@@ -16,7 +16,8 @@
 #
 # Unfree: cursor-cli is whitelisted in modules/core/nixos/nix-daemon.nix's
 # allowUnfreePredicate (alongside claude-code).
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   home.packages = with pkgs; [
     claude-code
     cursor-cli

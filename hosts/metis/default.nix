@@ -28,8 +28,8 @@
     ../../modules/core/nixos/boot-systemd.nix
     ../../modules/core/nixos/networking-networkmanager.nix
     ../../modules/core/nixos/tailscale.nix
-    ../../modules/core/nixos/docker.nix   # Rootless Docker — see ADR-021.
-    ../../modules/core/nixos/btrfs-scrub.nix   # Periodic checksum verification on btrfs subvolumes (monthly default).
+    ../../modules/core/nixos/docker.nix # Rootless Docker — see ADR-021.
+    ../../modules/core/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
   ];
 
   networking.hostName = "metis";
@@ -65,7 +65,7 @@
   # CLI + agent CLI extras + login info + base agent CLIs + outbound
   # SSH. Mirrors nixos-vm.
   _module.args.hostContext = {
-    hostName  = "metis";
+    hostName = "metis";
     flakePath = "/home/dbf/nix-config";
     extraHomeModules = [
       ../../home/core/shared/bundles/cli-tooling.nix

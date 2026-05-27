@@ -1,0 +1,12 @@
+# statix configuration. Picked up by `statix check` from the project root
+# (default `-c .`). Referenced by parts/checks.nix's pre-commit statix hook.
+#
+# Excludes auto-generated hardware-configuration.nix files (per ADR-023)
+# and the nixos-vm legacy two-file hardware.nix exception. These files have
+# inherent statix W20 (repeated-key) warnings from nixos-generate-config's
+# output shape that can't be refactored without breaking ADR-023's
+# regenerate-via-nixos-anywhere contract.
+ignore = [
+  "hosts/*/hardware-configuration.nix",
+  "hosts/nixos-vm/hardware.nix",
+]

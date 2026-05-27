@@ -15,7 +15,8 @@
 # Parametrisation: `hostContext.flakePath` comes from each host's
 # `_module.args.hostContext` via the HM extraSpecialArgs forwarder in
 # modules/core/nixos/home-manager.nix. See ADR-019.
-{ pkgs, hostContext, ... }: {
+{ pkgs, hostContext, ... }:
+{
   home.packages = with pkgs; [
     nh
     nix-output-monitor

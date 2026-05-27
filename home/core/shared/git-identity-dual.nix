@@ -3,7 +3,8 @@
 # both personal and employer code (the UTM VM today). Companion to
 # git-identity-work.nix which is the single-work alternative used on
 # work-only hosts (Mercury). See ADR-009 § "Dual identity" and ADR-020.
-{ lib, ... }: {
+{ lib, ... }:
+{
   programs.git = {
     # Personal default identity matches the user's GitHub handle
     # (dannyfaris) — GitHub attribution is email-based, not name-based,
@@ -16,13 +17,15 @@
       email = "daniel@faris.co.nz";
     };
 
-    includes = [{
-      condition = "gitdir:~/work/";
-      contents.user = {
-        name = "Daniel Faris";
-        email = "daniel.faris@gotaxi.co.nz";
-      };
-    }];
+    includes = [
+      {
+        condition = "gitdir:~/work/";
+        contents.user = {
+          name = "Daniel Faris";
+          email = "daniel.faris@gotaxi.co.nz";
+        };
+      }
+    ];
   };
 
   # Project directory convention: ~/work/ for employer/GitLab work,

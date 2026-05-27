@@ -31,7 +31,10 @@
             type = "filesystem";
             format = "vfat";
             mountpoint = "/boot";
-            mountOptions = [ "fmask=0022" "dmask=0022" ];
+            mountOptions = [
+              "fmask=0022"
+              "dmask=0022"
+            ];
           };
         };
         root = {
@@ -41,19 +44,35 @@
             # -L nixos: filesystem label. -f: required to overwrite
             # any prior filesystem signature (fresh install or
             # reinstall on the same disk).
-            extraArgs = [ "-L" "nixos" "-f" ];
+            extraArgs = [
+              "-L"
+              "nixos"
+              "-f"
+            ];
             subvolumes = {
               "@root" = {
                 mountpoint = "/";
-                mountOptions = [ "subvol=@root" "compress=zstd:1" "noatime" ];
+                mountOptions = [
+                  "subvol=@root"
+                  "compress=zstd:1"
+                  "noatime"
+                ];
               };
               "@home" = {
                 mountpoint = "/home";
-                mountOptions = [ "subvol=@home" "compress=zstd:1" "noatime" ];
+                mountOptions = [
+                  "subvol=@home"
+                  "compress=zstd:1"
+                  "noatime"
+                ];
               };
               "@nix" = {
                 mountpoint = "/nix";
-                mountOptions = [ "subvol=@nix" "compress=zstd:1" "noatime" ];
+                mountOptions = [
+                  "subvol=@nix"
+                  "compress=zstd:1"
+                  "noatime"
+                ];
               };
             };
           };

@@ -12,7 +12,12 @@
 # pre-generated on the operator and injected via --extra-files, not
 # harvested post-boot). Operator runbook at
 # docs/runbooks/headless-bootstrap.md.
-{ lib, modulesPath, inputs, ... }:
+{
+  lib,
+  modulesPath,
+  inputs,
+  ...
+}:
 
 {
   imports = [
@@ -62,11 +67,13 @@
   # recovery can't yield swapped-out secrets. Disables hibernate,
   # irrelevant on a cloud VM. AES-NI on Nitro makes per-IO cost
   # negligible.
-  swapDevices = [ {
-    device = "/swapfile";
-    size = 8192;
-    randomEncryption.enable = true;
-  } ];
+  swapDevices = [
+    {
+      device = "/swapfile";
+      size = 8192;
+      randomEncryption.enable = true;
+    }
+  ];
   boot.kernel.sysctl."vm.swappiness" = 10;
 
   # systemd-oomd: enableUserSlices wires user.slice with
@@ -102,7 +109,7 @@
   # mercury_push_boundary rule) + login info + base agent CLIs +
   # outbound SSH. No agent-clis-extras.
   _module.args.hostContext = {
-    hostName  = "mercury";
+    hostName = "mercury";
     flakePath = "/home/dbf/nix-config";
     extraHomeModules = [
       ../../home/core/shared/bundles/cli-tooling.nix

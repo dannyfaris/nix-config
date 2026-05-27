@@ -7,7 +7,8 @@
 # ("docker daemon: deferred until the first project needs it"). See
 # ADR-021 for the rootless-over-rootful rationale and the system-wide
 # CLI deviation from ADR-006's per-project devShells stance.
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   virtualisation.docker.rootless = {
     enable = true;
     # Sets DOCKER_HOST=unix:///run/user/$UID/docker.sock so the docker
@@ -24,8 +25,18 @@
     # the pinned nixpkgs revision (no assertion, no autosetting). The
     # 100000-165535 range is the conventional default that distros
     # using `useradd`'s automatic-subuid behaviour would assign.
-    subUidRanges = [{ startUid = 100000; count = 65536; }];
-    subGidRanges = [{ startGid = 100000; count = 65536; }];
+    subUidRanges = [
+      {
+        startUid = 100000;
+        count = 65536;
+      }
+    ];
+    subGidRanges = [
+      {
+        startGid = 100000;
+        count = 65536;
+      }
+    ];
 
     # systemd lingering: keep dbf's user-mode dockerd running across
     # session disconnects. Without this, the daemon stops when the

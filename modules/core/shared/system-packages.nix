@@ -7,7 +7,8 @@
 # `modules/core/nixos/bundles/remote-access.nix` for hosts that need it
 # (any host reached remotely from a Ghostty terminal). See ADR-027 for
 # the bundle model.
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   environment.systemPackages = with pkgs; [
     git
     vim

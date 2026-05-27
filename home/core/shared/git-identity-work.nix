@@ -6,7 +6,8 @@
 # even if manually mkdir'd) — if a personal project ends up here, it
 # would get the work identity, which is wrong. Don't mix work and
 # personal on the same host. See ADR-020 and ADR-009.
-{ lib, ... }: {
+{ lib, ... }:
+{
   programs.git.settings.user = {
     name = "Daniel Faris";
     email = "daniel.faris@gotaxi.co.nz";

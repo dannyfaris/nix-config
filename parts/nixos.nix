@@ -9,18 +9,20 @@ let
   mkHost = import ../lib/mk-host.nix { inherit inputs; };
 in
 {
-  flake.nixosConfigurations.nixos-vm = mkHost {
-    hostname = "nixos-vm";
-    system   = "aarch64-linux";
-  };
+  flake.nixosConfigurations = {
+    nixos-vm = mkHost {
+      hostname = "nixos-vm";
+      system = "aarch64-linux";
+    };
 
-  flake.nixosConfigurations.mercury = mkHost {
-    hostname = "mercury";
-    system   = "x86_64-linux";
-  };
+    mercury = mkHost {
+      hostname = "mercury";
+      system = "x86_64-linux";
+    };
 
-  flake.nixosConfigurations.metis = mkHost {
-    hostname = "metis";
-    system   = "x86_64-linux";
+    metis = mkHost {
+      hostname = "metis";
+      system = "x86_64-linux";
+    };
   };
 }

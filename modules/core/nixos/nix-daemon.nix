@@ -2,7 +2,10 @@
 { lib, ... }:
 {
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
 
     # Hardlink-dedupe /nix/store on write.
     auto-optimise-store = true;
@@ -21,7 +24,8 @@
   programs.command-not-found.enable = false;
 
   # Whitelist unfree packages by name. Do NOT replace with allowUnfree = true.
-  nixpkgs.config.allowUnfreePredicate = pkg:
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
     builtins.elem (lib.getName pkg) [
       "claude-code"
       "cursor-cli"

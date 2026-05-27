@@ -8,7 +8,8 @@
 # Auth model: HTTPS + token via gh/glab credential helpers. Not SSH —
 # explicitly chosen to avoid passphrase friction in agent-CLI workflows
 # (ADR-009 § "Why HTTPS over SSH").
-{ lib, pkgs, ... }: {
+{ lib, pkgs, ... }:
+{
   programs.git = {
     enable = true;
 

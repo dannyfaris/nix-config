@@ -11,7 +11,10 @@ in
   users.users.dbf = {
     isNormalUser = true;
     description = "Daniel";
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+    ];
 
     hashedPasswordFile = config.sops.secrets.dbf-password.path;
 

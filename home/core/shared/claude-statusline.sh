@@ -22,9 +22,9 @@ RST=$'\033[0m'
 SEP=" ${DIM}│${RST} "
 # Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
 # putting raw Nerd Font bytes in the source file.
-BRANCH_GLYPH=$'\xee\x82\xa0'   # U+E0A0 Powerline branch
-DESKTOP_GLYPH=$'\xef\x84\x88'  # U+F108 nf-fa-desktop (host marker)
-CLOCK_GLYPH=$'\xef\x80\x97'    # U+F017 nf-fa-clock_o (rate-limit marker)
+BRANCH_GLYPH=$'\xee\x82\xa0'  # U+E0A0 Powerline branch
+DESKTOP_GLYPH=$'\xef\x84\x88' # U+F108 nf-fa-desktop (host marker)
+CLOCK_GLYPH=$'\xef\x80\x97'   # U+F017 nf-fa-clock_o (rate-limit marker)
 
 {
   read -r MODEL
@@ -48,10 +48,19 @@ CLOCK_GLYPH=$'\xef\x80\x97'    # U+F017 nf-fa-clock_o (rate-limit marker)
 # Statusline renders are debounced (~300ms) and event-driven, not a hot
 # loop, so three git invocations per render is fine. Caching this was
 # the source of all of Slice 1's platform-specific bugs; not worth it.
-TOP=""; PREFIX=""; BRANCH=""; HEAD_REF=""
-STAGED=0; MODIFIED=0; UNTRACKED=0; CONFLICT=0
+TOP=""
+PREFIX=""
+BRANCH=""
+HEAD_REF=""
+STAGED=0
+MODIFIED=0
+UNTRACKED=0
+CONFLICT=0
 if [ -n "$CWD" ]; then
-  { read -r TOP; read -r PREFIX; } < <(
+  {
+    read -r TOP
+    read -r PREFIX
+  } < <(
     git -C "$CWD" rev-parse --show-toplevel --show-prefix 2>/dev/null
   )
   if [ -n "$TOP" ]; then
@@ -59,12 +68,12 @@ if [ -n "$CWD" ]; then
     [ -z "$BRANCH" ] && HEAD_REF=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
     while IFS= read -r line; do
       case "${line:0:2}" in
-        DD|AU|UD|UA|DU|AA|UU) CONFLICT=$((CONFLICT + 1)) ;;
-        '??')                 UNTRACKED=$((UNTRACKED + 1)) ;;
-        *)
-          [ "${line:0:1}" != " " ] && STAGED=$((STAGED + 1))
-          [ "${line:1:1}" != " " ] && MODIFIED=$((MODIFIED + 1))
-          ;;
+      DD | AU | UD | UA | DU | AA | UU) CONFLICT=$((CONFLICT + 1)) ;;
+      '??') UNTRACKED=$((UNTRACKED + 1)) ;;
+      *)
+        [ "${line:0:1}" != " " ] && STAGED=$((STAGED + 1))
+        [ "${line:1:1}" != " " ] && MODIFIED=$((MODIFIED + 1))
+        ;;
       esac
     done < <(git -C "$CWD" status --porcelain 2>/dev/null)
   fi
@@ -106,10 +115,10 @@ if [ -n "$TOP" ]; then
     else
       GIT_SEG=" ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
     fi
-    [ -n "$WORKTREE" ]     && GIT_SEG+=" ${DIM}(${WORKTREE})${RST}"
-    [ "$CONFLICT"  -gt 0 ] && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
-    [ "$STAGED"    -gt 0 ] && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
-    [ "$MODIFIED"  -gt 0 ] && GIT_SEG+=" ${YELLOW}~${MODIFIED}${RST}"
+    [ -n "$WORKTREE" ] && GIT_SEG+=" ${DIM}(${WORKTREE})${RST}"
+    [ "$CONFLICT" -gt 0 ] && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
+    [ "$STAGED" -gt 0 ] && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
+    [ "$MODIFIED" -gt 0 ] && GIT_SEG+=" ${YELLOW}~${MODIFIED}${RST}"
     [ "$UNTRACKED" -gt 0 ] && GIT_SEG+=" ${MAUVE}?${UNTRACKED}${RST}"
   fi
 fi
@@ -117,28 +126,32 @@ fi
 # ─── Effort indicator ─────────────────────────────────────────────
 EFFORT_SEG=""
 case "$EFFORT" in
-  low)    EFFORT_SEG="${SEP}${DIM}▽ low${RST}" ;;
-  medium) EFFORT_SEG="${SEP}${YELLOW}◆ med${RST}" ;;
-  high)   EFFORT_SEG="${SEP}${YELLOW}▲ high${RST}" ;;
-  xhigh)  EFFORT_SEG="${SEP}${RED}▲ xhigh${RST}" ;;
-  max)    EFFORT_SEG="${SEP}${RED}⬆ max${RST}" ;;
+low) EFFORT_SEG="${SEP}${DIM}▽ low${RST}" ;;
+medium) EFFORT_SEG="${SEP}${YELLOW}◆ med${RST}" ;;
+high) EFFORT_SEG="${SEP}${YELLOW}▲ high${RST}" ;;
+xhigh) EFFORT_SEG="${SEP}${RED}▲ xhigh${RST}" ;;
+max) EFFORT_SEG="${SEP}${RED}⬆ max${RST}" ;;
 esac
 
 # ─── Context bar with threshold colours ───────────────────────────
 PCT=${PCT_RAW%%.*}
 case "$PCT" in
-  ''|*[!0-9]*) PCT=0 ;;
+'' | *[!0-9]*) PCT=0 ;;
 esac
-[ "$PCT" -lt 0 ]   && PCT=0
+[ "$PCT" -lt 0 ] && PCT=0
 [ "$PCT" -gt 100 ] && PCT=100
-if   [ "$PCT" -ge 80 ]; then BC="$RED"
-elif [ "$PCT" -ge 60 ]; then BC="$YELLOW"
-else                         BC="$GREEN"
+if [ "$PCT" -ge 80 ]; then
+  BC="$RED"
+elif [ "$PCT" -ge 60 ]; then
+  BC="$YELLOW"
+else
+  BC="$GREEN"
 fi
-F=$((PCT / 10)); E=$((10 - F))
+F=$((PCT / 10))
+E=$((10 - F))
 BAR=""
-for ((i=0; i<F; i++)); do BAR+="█"; done
-for ((i=0; i<E; i++)); do BAR+="░"; done
+for ((i = 0; i < F; i++)); do BAR+="█"; done
+for ((i = 0; i < E; i++)); do BAR+="░"; done
 
 # ─── 5h rate limit with reset countdown ───────────────────────────
 RLIM=""
@@ -146,13 +159,13 @@ if [ -n "$FIVE_PCT" ]; then
   FI=$(printf '%.0f' "$FIVE_PCT" 2>/dev/null || echo 0)
   RLIM="${SEP}${CLOCK_GLYPH}  ${FI}%"
   case "$FIVE_RESET" in
-    ''|*[!0-9]*) ;;
-    *)
-      REM=$((FIVE_RESET - NOW))
-      if [ "$REM" -gt 0 ]; then
-        RLIM+=" ${DIM}$((REM / 3600))h$(((REM % 3600) / 60))m${RST}"
-      fi
-      ;;
+  '' | *[!0-9]*) ;;
+  *)
+    REM=$((FIVE_RESET - NOW))
+    if [ "$REM" -gt 0 ]; then
+      RLIM+=" ${DIM}$((REM / 3600))h$(((REM % 3600) / 60))m${RST}"
+    fi
+    ;;
   esac
 fi
 

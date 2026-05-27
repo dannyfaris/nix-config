@@ -11,7 +11,12 @@
 # Parametrisation: `hostContext.{flakePath,hostName}` come from each host's
 # `_module.args.hostContext` via the HM extraSpecialArgs forwarder in
 # modules/core/nixos/home-manager.nix. See ADR-019.
-{ lib, pkgs, hostContext, ... }:
+{
+  lib,
+  pkgs,
+  hostContext,
+  ...
+}:
 let
   inherit (hostContext) flakePath hostName;
 in
@@ -20,7 +25,7 @@ in
     enable = true;
 
     settings = {
-      theme = "default";   # TODO: choose a theme at first use (ADR-005)
+      theme = "default"; # TODO: choose a theme at first use (ADR-005)
 
       editor = {
         line-number = "relative";
@@ -56,14 +61,16 @@ in
 
     # programs.helix.languages.language is a LIST of attribute sets (one per
     # language), not a single attrset.
-    languages.language = [{
-      name = "nix";
-      auto-format = true;
-      # pkgs.nixfmt is the RFC-style formatter. Don't swap with:
-      #   - pkgs.nixfmt-classic — separate package, pre-RFC Serokell style.
-      #   - pkgs.nixfmt-rfc-style — deprecated alias, emits warnings.
-      formatter.command = "${lib.getExe pkgs.nixfmt}";
-      language-servers = [ "nixd" ];
-    }];
+    languages.language = [
+      {
+        name = "nix";
+        auto-format = true;
+        # pkgs.nixfmt is the RFC-style formatter. Don't swap with:
+        #   - pkgs.nixfmt-classic — separate package, pre-RFC Serokell style.
+        #   - pkgs.nixfmt-rfc-style — deprecated alias, emits warnings.
+        formatter.command = "${lib.getExe pkgs.nixfmt}";
+        language-servers = [ "nixd" ];
+      }
+    ];
   };
 }
