@@ -1,5 +1,7 @@
 # Mercury — work-only headless dev host on AWS EC2 (Nitro, x86_64, t3.medium).
-# Adopts the headless role (via parts/nixos.nix). Imports the
+#
+# Composes foundation + capability bundles + standalone modules directly
+# (per ADR-027), no longer adopts the `headless` role. Imports the
 # amazon-image module which provides EBS/NVMe initrd modules, the
 # `ena` enhanced-networking driver, cloud-init for SSH-key injection
 # on first boot, `boot.growPartition`, and the long NVMe I/O timeout.
@@ -8,8 +10,8 @@
 # the three-file convention (ADR-023). ADR-017 is superseded; ADR-018
 # is amended by ADR-022 for the host-key acquisition order (host key is
 # pre-generated on the operator and injected via --extra-files, not
-# harvested post-boot). Operator runbook will live at
-# docs/runbooks/headless-bootstrap.md (slice 4).
+# harvested post-boot). Operator runbook at
+# docs/runbooks/headless-bootstrap.md.
 { lib, modulesPath, inputs, ... }:
 
 {
@@ -23,13 +25,20 @@
     # boot.growPartition + the long NVMe I/O timeout. amazon-image's
     # fileSystems declarations are lib.mkDefault (nixpkgs #377406), so
     # disko's layout wins without lib.mkForce. Mercury intentionally
-    # does NOT import the VM-side boot-systemd.nix or
-    # networking-networkmanager.nix.
+    # does NOT import boot-systemd.nix or networking-networkmanager.nix
+    # — those bare-metal platform modules are subsumed by amazon-image
+    # for cloud hosts.
     "${modulesPath}/virtualisation/amazon-image.nix"
 
+    # Foundation — bundle every NixOS host imports by convention.
+    ../../modules/core/nixos/foundation.nix
+
+    # Capability bundles.
+    ../../modules/core/nixos/bundles/remote-access.nix
+
+    # Standalone system modules.
     # Rootless Docker — resolves ADR-006's deferred daemon decision.
-    # Mercury-only (not in the role) because the VM doesn't run
-    # containers. See ADR-021.
+    # Mercury opts in; the VM doesn't run containers. See ADR-021.
     ../../modules/core/nixos/docker.nix
   ];
 
@@ -78,10 +87,11 @@
   ec2.efi = true;
 
   # amazon-image.nix sets PermitRootLogin = "prohibit-password" at the
-  # same module-merge priority as the role's sshd.nix "no", which would
-  # otherwise be a hard eval conflict. mkForce here because the "no
-  # root, ever" stance (CLAUDE.md "Deliberate stances") is non-negotiable;
-  # the override lives on Mercury because Mercury is what brings
+  # same module-merge priority as sshd.nix's "no" (sshd.nix is reached
+  # via bundles/remote-access.nix post-ADR-027), which would otherwise
+  # be a hard eval conflict. mkForce here because the "no root, ever"
+  # stance (CLAUDE.md "Deliberate stances") is non-negotiable; the
+  # override lives on Mercury because Mercury is what brings
   # amazon-image into the module set (PRD §5.4 — overrides on the
   # diverging side; ADR-020 — divergence = choice of import).
   services.openssh.settings.PermitRootLogin = lib.mkForce "no";

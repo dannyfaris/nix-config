@@ -22,7 +22,6 @@ in
   flake.nixosConfigurations.mercury = mkHost {
     hostname = "mercury";
     system   = "x86_64-linux";
-    role     = "headless";
   };
 
   flake.nixosConfigurations.metis = mkHost {
