@@ -75,7 +75,7 @@ upgrade, and home-manager wires them cleanly.
 
 ## Implementation
 
-Configured in `home/core/nixos/nix-tooling.nix`:
+Configured in `home/core/shared/nix-tooling.nix`:
 
 ```nix
 { pkgs, ... }: {

@@ -63,7 +63,7 @@ subsequent re-entries instant.
 
 ## Implementation
 
-Configured in `home/core/nixos/direnv.nix`:
+Configured in `home/core/shared/direnv.nix`:
 
 ```nix
 programs.direnv = {
@@ -81,8 +81,8 @@ Per-project pattern (in any project's repo):
 - First `cd` in: `direnv allow` once.
 - Subsequent: instant activation.
 
-Home-manager package list at `home/core/nixos/cli-utils.nix` and
-`home/core/nixos/nix-tooling.nix` should stay minimal: only tools wanted
+Home-manager package list at `home/core/shared/cli-utils.nix` and
+`home/core/shared/nix-tooling.nix` should stay minimal: only tools wanted
 *everywhere* (git, ripgrep, the editor, etc.). Per-project tools belong in
 that project's `flake.nix`, not in home-manager.
 

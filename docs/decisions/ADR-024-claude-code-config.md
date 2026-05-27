@@ -6,7 +6,7 @@
 ## Context
 
 ADR-008 installs the Claude Code CLI on every host via the base
-`home/core/nixos/agent-clis.nix`. Beyond the binary, Claude Code keeps
+`home/core/shared/agent-clis.nix`. Beyond the binary, Claude Code keeps
 configuration and runtime state co-located in `~/.claude/`. Some of
 that tree is *configuration* (settings.json, CLAUDE.md, agents/,
 commands/, hooks/, skills/, statusline scripts) and is a good
@@ -34,7 +34,7 @@ reference deployed artifacts from settings.json with a one-time
 per-host edit.
 
 First artifact under this pattern: the statusline script at
-`home/core/nixos/claude-statusline.sh`, deployed to
+`home/core/shared/claude-statusline.sh`, deployed to
 `~/.claude/statusline.sh`.
 
 ## Rationale
@@ -96,9 +96,9 @@ First artifact under this pattern: the statusline script at
 
 ## Implementation
 
-Script lives at `home/core/nixos/claude-statusline.sh` (bash;
+Script lives at `home/core/shared/claude-statusline.sh` (bash;
 cross-platform; requires `jq`). Wired alongside the existing
-`home.packages` list in `home/core/nixos/agent-clis.nix`:
+`home.packages` list in `home/core/shared/agent-clis.nix`:
 
 ```nix
 # Custom statusline — see ADR-024.
@@ -121,7 +121,7 @@ Per-host one-time edit to `~/.claude/settings.json` (not Nix-managed):
 
 Companion changes:
 
-- `home/core/nixos/cli-utils.nix` gains `jq` in its `home.packages`
+- `home/core/shared/cli-utils.nix` gains `jq` in its `home.packages`
   list. ADR-006's locked list and rationale are amended to add jq
   (moved from the deferred tier to installed; statusline is the
   immediate driver, jq is broadly useful).

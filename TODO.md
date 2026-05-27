@@ -42,11 +42,9 @@ like; see git log for the full review.
       `git-hooks.nix`. The other two lints PRD §8.1 named are moot:
       `role-purity` disappeared with ADR-027's role removal;
       `tier-deps` has nothing to enforce while `experimental/` is
-      empty. **Trigger:** ADR-025 implementation lands (the
-      `parts/checks.nix` / `git-hooks.nix` framework the lint plugs
-      into doesn't exist on disk yet — ADR-025 was a decision-only
-      landing in `f2dd956`; implementation pending in a separate
-      session). **S, low** once the framework is in place.
+      empty. **Unblocked**: ADR-025 framework landed; the
+      `parts/checks.nix` / `git-hooks.nix` extension point exists.
+      **S, low**.
 - [ ] **`_local-linux` mini-bundle** — bundle systemd-boot +
       NetworkManager + Tailscale, currently duplicated across
       `nixos-vm` and `metis`. **Trigger:** when `mothership` (a future

@@ -45,7 +45,7 @@ Run once per fresh clone of this repo on the operator machine:
   this, the bootstrap pre-flight will refuse to proceed.
 - An `~/.ssh/config.local` entry for the host being bootstrapped, so
   the operator can `ssh <host>` without typing the full target string.
-  `home/core/nixos/ssh.nix` includes this file at file scope; entries
+  `home/core/shared/ssh.nix` includes this file at file scope; entries
   there survive `nh os switch` (unlike `~/.ssh/config`, which
   home-manager owns). Example for an AWS host:
 

@@ -106,13 +106,13 @@ treefmt-nix = {
 
 Each module follows the per-output-file convention used by `parts/nixos.nix` (attributed there to ryan4yin's flake shape).
 
-**`parts/checks.nix`** imports `git-hooks-nix.flakeModule`. Pre-commit hooks: nixfmt, statix, deadnix, actionlint, plus an extra `hardware-config-banner` hook whose `entry` points to `./scripts/hardware-config-banner.sh` and whose `files` pattern matches `^hosts/[^/]+/hardware-configuration\.nix$`. Per-host checks under `checks.<system>` via `lib.optionalAttrs` per the Decision section. The hook `package` references for nixfmt are explicitly `pkgs.nixfmt` (canonical RFC-style formatter) — *not* `pkgs.nixfmt-rfc-style` (deprecated alias; see the comments in `home/core/nixos/nix-tooling.nix`).
+**`parts/checks.nix`** imports `git-hooks-nix.flakeModule`. Pre-commit hooks: nixfmt, statix, deadnix, actionlint, plus an extra `hardware-config-banner` hook whose `entry` points to `./scripts/hardware-config-banner.sh` and whose `files` pattern matches `^hosts/[^/]+/hardware-configuration\.nix$`. Per-host checks under `checks.<system>` via `lib.optionalAttrs` per the Decision section. The hook `package` references for nixfmt are explicitly `pkgs.nixfmt` (canonical RFC-style formatter) — *not* `pkgs.nixfmt-rfc-style` (deprecated alias; see the comments in `home/core/shared/nix-tooling.nix`).
 
 **`parts/formatter.nix`** imports `treefmt-nix.flakeModule`. Programs enabled: `nixfmt`, `shfmt`. `projectRootFile = "flake.nix"`.
 
 **`parts/dev-shells.nix`** defines `devShells.default = pkgs.mkShell` with `inherit (config.pre-commit.installationScript) shellHook;` and a packages list including `just`, `nixfmt`, `statix`, `deadnix`, `actionlint`, `nix-output-monitor`, `sops`, `age`. `actionlint` is included so ad-hoc local runs match the CI hook surface.
 
-**`.github/workflows/ci.yaml`**: matrix `include` covers `{ runner: ubuntu-24.04, arch: x86_64-linux }` and `{ runner: ubuntu-24.04-arm, arch: aarch64-linux }`. Steps: `actions/checkout@v4`, `cachix/install-nix-action@v30` with
+**`.github/workflows/ci.yaml`**: matrix `include` covers `{ runner: ubuntu-24.04, arch: x86_64-linux }` and `{ runner: ubuntu-24.04-arm, arch: aarch64-linux }`. Steps: `actions/checkout@v4`, `cachix/install-nix-action@v31` with
 
 ```
 extra_nix_config: |
@@ -122,7 +122,7 @@ extra_nix_config: |
 
 then `nix flake check --print-build-logs`. Concurrency group cancels in-progress on PR commits, never on `main`.
 
-**`.github/workflows/flake-lock.yaml`**: schedule `0 4 * * 1`, plus `workflow_dispatch`. Permissions `contents: write, pull-requests: write`. Uses `cachix/install-nix-action@v30` for consistency with the gating workflow, then `DeterminateSystems/update-flake-lock@main` with `token: ${{ secrets.GH_PAT_FLAKE_LOCK }}` (fine-grained PAT scoped to this repo: contents r/w, pull-requests r/w, metadata r), `pr-title: "flake: weekly lockfile bump"`, `pr-labels: dependencies,automated,flake-lock`, and a `pr-body` template surfacing per-input commit range URLs.
+**`.github/workflows/flake-lock.yaml`**: schedule `0 4 * * 1`, plus `workflow_dispatch`. Permissions `contents: write, pull-requests: write`. Uses `cachix/install-nix-action@v31` for consistency with the gating workflow, then `DeterminateSystems/update-flake-lock@main` with `token: ${{ secrets.GH_PAT_FLAKE_LOCK }}` (fine-grained PAT scoped to this repo: contents r/w, pull-requests r/w, metadata r), `pr-title: "flake: weekly lockfile bump"`, `pr-labels: dependencies,automated,flake-lock`, and a `pr-body` template surfacing per-input commit range URLs.
 
 **`.github/workflows/gitleaks.yaml`**: triggers on `pull_request` and `push`; uses `gitleaks/gitleaks-action@v2` with default (incremental) scope.
 
@@ -150,3 +150,15 @@ then `nix flake check --print-build-logs`. Concurrency group cancels in-progress
 3. After first green CI run on a PR, configure branch protection on `main` to require both matrix statuses.
 
 The binary cache backend is the subject of follow-up **ADR-026**. CI's Implementation will gain a cache-substituter step at that time without other structural change to this ADR's commitments.
+
+### Implementation notes (post-acceptance)
+
+Three corrections discovered during the implementation pass (2026-05-27):
+
+1. **`self` is not available inside `perSystem`.** flake-parts deliberately scrubs `self` from `perSystem`'s module args (it throws via `throwAliasError'`). The per-host `host-<name>` checks are therefore defined at the top-level `flake.checks.<system>.host-<name>` namespace, not inside `perSystem`. `pre-commit.settings.hooks` correctly remains in `perSystem`.
+
+2. **`config.pre-commit.installationScript` is a string, not an attrset.** The Implementation section's prescribed `inherit (config.pre-commit.installationScript) shellHook` would throw at evaluation. The correct path is `config.pre-commit.shellHook` — that's what `parts/dev-shells.nix` uses.
+
+3. **nixfmt lives in treefmt only, not in the pre-commit hooks list.** Enabling nixfmt in both `treefmt-nix` and `git-hooks.nix`'s pre-commit hooks (as the Implementation section originally listed) causes two nixfmt invocations per `nix flake check`. The implementation keeps the formatter cleanly separated: treefmt owns formatting (nixfmt + shfmt, exposed via `nix fmt` and `checks.<system>.treefmt`); pre-commit owns linting (statix + deadnix + actionlint + hardware-config-banner).
+
+A small conformance gap surfaced: the auto-generated `hosts/<name>/hardware-configuration.nix` files have inherent statix W20 (repeated-key) warnings from `nixos-generate-config`'s output shape, which can't be refactored without breaking ADR-023's regenerate-via-`nixos-anywhere` contract. The implementation excludes those files via `statix.toml`'s `ignore = [...]` (statix runs whole-tree, so per-hook `excludes` don't filter it), via the per-hook `excludes` in `parts/checks.nix` for deadnix, and via `treefmt.settings.global.excludes` in `parts/formatter.nix`. The `nixos-vm` legacy two-file `hardware.nix` is excluded by the same set per ADR-023's legacy carve-out.

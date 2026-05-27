@@ -63,7 +63,7 @@ pattern can be added as a follow-up. The mechanism would be:
    `sops`.
 2. Declare `sops.secrets.openai_api_key.owner = "dbf"` in
    `modules/core/nixos/sops.nix`.
-3. In `home/core/nixos/agent-clis.nix`, add a fish `shellInit` block
+3. In `home/core/shared/agent-clis.nix`, add a fish `shellInit` block
    that reads the file and exports the env var:
    ```fish
    if test -r /run/secrets/openai_api_key
@@ -109,7 +109,7 @@ This is documented here as the future path; not implemented now.
 
 ## Implementation
 
-Split across two files. The base lives in `home/core/nixos/agent-clis.nix`
+Split across two files. The base lives in `home/core/shared/agent-clis.nix`
 and ships on every host:
 
 ```nix
@@ -121,7 +121,7 @@ and ships on every host:
 }
 ```
 
-The opt-in extras live in `home/core/nixos/agent-clis-extras.nix` and ship
+The opt-in extras live in `home/core/shared/agent-clis-extras.nix` and ship
 only on hosts that include the file in `hostContext.extraHomeModules`:
 
 ```nix

@@ -79,7 +79,7 @@ Configured in:
   login shell. Without it, switching the user's shell to a home-manager-only
   fish locks the user out at next login. This is documented in a `# why`
   comment at that line.
-- `home/core/nixos/shell.nix` — `programs.fish.enable = true` at the home-manager
+- `home/core/shared/shell.nix` — `programs.fish.enable = true` at the home-manager
   level for user rc (plugins, abbreviations, environment).
 
 When advising on env-var changes in fish sessions, remember the syntax is

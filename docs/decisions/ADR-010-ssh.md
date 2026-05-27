@@ -74,7 +74,7 @@ doesn't have to re-derive them.
 
 ## Implementation
 
-Configured in `home/core/nixos/ssh.nix`:
+Configured in `home/core/shared/ssh.nix`:
 
 ```nix
 {

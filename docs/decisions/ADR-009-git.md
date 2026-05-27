@@ -149,7 +149,7 @@ interactive flow (same compromise as gh — not declarative, but stable).
 
 > **Update (post-ADR-020, 2026-05-18):** what was a single
 > `modules/home/git.nix` has been split into four files to support
-> work-only hosts cleanly: a shared base (`home/core/nixos/git.nix`)
+> work-only hosts cleanly: a shared base (`home/core/shared/git.nix`)
 > plus three per-host pieces (`git-identity-dual.nix`,
 > `git-identity-work.nix`, `gh.nix`) selected per-host via
 > `hostContext.extraHomeModules`. The mechanism is documented in
@@ -158,7 +158,7 @@ interactive flow (same compromise as gh — not declarative, but stable).
 > no longer the live shape.
 
 Originally configured in `modules/home/git.nix` (single file, the
-combined behaviour now distributed across `home/core/nixos/git.nix`
+combined behaviour now distributed across `home/core/shared/git.nix`
 plus the per-host identity and forge-CLI pieces selected via
 `hostContext.extraHomeModules` — `git-identity-dual.nix` + `gh.nix`
 on the dual-identity UTM VM, `git-identity-work.nix` on Mercury):

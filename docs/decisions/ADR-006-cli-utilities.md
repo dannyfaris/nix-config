@@ -144,7 +144,7 @@ rootless daemon and a system-wide CLI.
 
 ## Implementation
 
-Configured in `home/core/nixos/cli-utils.nix`. Pattern: use dedicated
+Configured in `home/core/shared/cli-utils.nix`. Pattern: use dedicated
 `programs.X` modules where home-manager provides them (these wire shell
 integrations cleanly, e.g. fzf's Ctrl-R history binding); plain
 `home.packages` for the rest.

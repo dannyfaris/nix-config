@@ -23,10 +23,12 @@ lib/mk-host.nix                    # host constructor — thin wrapper over lib.
 hosts/<hostname>/                  # host instance: hardware, hostname, stateVersion,
                                    # _module.args, imports of foundation + bundles
 modules/core/nixos/foundation.nix  # bundle every NixOS host imports by convention
-modules/core/nixos/bundles/        # capability bundles (system-level)
-modules/core/nixos/                # standalone NixOS modules (nix settings, SSH, etc.)
-home/core/nixos/bundles/           # capability bundles (home-level)
-home/core/nixos/                   # standalone home-manager modules
+modules/core/nixos/bundles/        # NixOS-specific capability bundles (system-level)
+modules/core/nixos/                # NixOS-specific standalone modules
+modules/core/shared/               # cross-platform standalone system modules
+home/core/shared/bundles/          # capability bundles (home-level, cross-platform)
+home/core/shared/                  # cross-platform standalone home-manager modules
+home/core/nixos/                   # NixOS-specific home-manager modules (e.g. macchina)
 ```
 
 Composition follows the foundation + bundles model (ADR-027): every host
@@ -63,7 +65,7 @@ the config. Always keep the UTM window reachable.
 
 ```bash
 # Rebuild and switch — canonical command, runs anywhere thanks to NH_FLAKE
-# (set in home/core/nixos/nix-tooling.nix from hostContext.flakePath).
+# (set in home/core/shared/nix-tooling.nix from hostContext.flakePath).
 # nh wraps nixos-rebuild with integrated nom tree-view progress and a
 # generation diff at the end.
 nh os switch

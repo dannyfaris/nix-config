@@ -17,10 +17,10 @@ Work-vs-personal divergences in shared modules are expressed by splitting the mo
 
 Concretely for the current scope:
 
-- `home/core/nixos/git.nix` is the base — `programs.git.enable`, `init.defaultBranch`, `pull.rebase`, the gitlab.com credential helper, glab as a package. Imported by every host via the standard imports list.
-- `home/core/nixos/git-identity-dual.nix` is the personal-default + work-include identity, plus the `~/work` + `~/personal` activation script. The VM imports this via its `extraHomeModules`.
-- `home/core/nixos/git-identity-work.nix` is the single-work identity plus the `~/work`-only activation script. Mercury imports this via its `extraHomeModules`.
-- `home/core/nixos/gh.nix` is `programs.gh` and its HTTPS credential helper. The VM imports this; Mercury does not.
+- `home/core/shared/git.nix` is the base — `programs.git.enable`, `init.defaultBranch`, `pull.rebase`, the gitlab.com credential helper, glab as a package. Imported by every host via the standard imports list.
+- `home/core/shared/git-identity-dual.nix` is the personal-default + work-include identity, plus the `~/work` + `~/personal` activation script. The VM imports this via its `extraHomeModules`.
+- `home/core/shared/git-identity-work.nix` is the single-work identity plus the `~/work`-only activation script. Mercury imports this via its `extraHomeModules`.
+- `home/core/shared/gh.nix` is `programs.gh` and its HTTPS credential helper. The VM imports this; Mercury does not.
 
 ## Rationale
 
@@ -43,9 +43,9 @@ The cost of the split is more files. The PRD anticipated this (§5.1's directory
 
 ## Implementation
 
-The split lives at `home/core/nixos/git.nix` + `git-identity-dual.nix` + `git-identity-work.nix` + `gh.nix`. Each host's `hosts/<host>/default.nix` declares its choices via `_module.args.hostContext.extraHomeModules`:
+The split lives at `home/core/shared/git.nix` + `git-identity-dual.nix` + `git-identity-work.nix` + `gh.nix`. Each host's `hosts/<host>/default.nix` declares its choices via `_module.args.hostContext.extraHomeModules`:
 
-- nixos-vm: `[ ../../home/core/nixos/git-identity-dual.nix ../../home/core/nixos/gh.nix ]`
-- mercury:  `[ ../../home/core/nixos/git-identity-work.nix ]`
+- nixos-vm: `[ ../../home/core/shared/git-identity-dual.nix ../../home/core/shared/gh.nix ]`
+- mercury:  `[ ../../home/core/shared/git-identity-work.nix ]`
 
 The wiring file (`modules/core/nixos/home-manager.nix`) appends `extraHomeModules` to the standard imports list. The mechanism is the one documented in ADR-019; this ADR records the convention that it is the right tool for work-vs-personal divergences specifically, in preference to host-keyed conditionals.

@@ -1,18 +1,19 @@
 # Taxonomy: how files and modules are named
 
 This document captures the naming convention applied across the
-home-manager module tree (`home/core/nixos/`) and the system module
-tree (`modules/core/nixos/`), and by extension any future module
-trees. The decision itself is recorded in
+home-manager module trees (`home/core/shared/` and `home/core/nixos/`)
+and the system module trees (`modules/core/nixos/` and
+`modules/core/shared/`), and by extension any future module trees. The
+decision itself is recorded in
 [ADR-012](./decisions/ADR-012-taxonomy.md); this document is the
 applied principle with examples.
 
 > **Note:** some of the examples below reference the pre-refactor
 > directories `modules/home/` and `modules/system/` because the rule
-> was articulated against that tree. The current tree is
-> `home/core/nixos/` and `modules/core/nixos/` per the PRD §5
-> directory grid. The naming rule itself applies unchanged; only the
-> directories moved.
+> was articulated against that tree. The current trees are
+> `home/core/{shared,nixos}/` and `modules/core/{nixos,shared}/` per
+> the PRD §5 directory grid. The naming rule itself applies unchanged;
+> only the directories moved.
 
 ## The rule
 
@@ -134,8 +135,8 @@ bundle every host imports.
 
 ```
 modules/core/nixos/bundles/remote-access.nix
-modules/core/nixos/bundles/cli-tooling.nix
-home/core/nixos/bundles/agent-clis-base.nix
+home/core/shared/bundles/cli-tooling.nix
+home/core/shared/bundles/git-personal.nix
 ```
 
 **The naming rule (load-bearing):** **bundle names describe what is in

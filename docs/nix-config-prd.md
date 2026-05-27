@@ -252,8 +252,8 @@ A host's `default.nix` is a thin module: identifying data plus an `imports` list
     ../../modules/core/nixos/bundles/remote-access.nix
     ../../modules/core/nixos/bundles/local-linux-platform.nix
     ../../modules/core/nixos/bundles/container-runtime.nix
-    ../../home/core/nixos/bundles/cli-tooling.nix
-    ../../home/core/nixos/bundles/agent-clis-extras.nix
+    ../../home/core/shared/bundles/cli-tooling.nix
+    ../../home/core/shared/bundles/agent-clis-extras.nix
 
     # Standalone modules (no bundle home yet).
     ../../modules/core/nixos/btrfs-scrub.nix

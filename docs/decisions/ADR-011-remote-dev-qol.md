@@ -128,9 +128,9 @@ automatically — both are required, and the module handles them together.
 
 OSC52 is configured at three places:
 
-- **Helix** (`home/core/nixos/editor.nix`): in
+- **Helix** (`home/core/shared/editor.nix`): in
   `programs.helix.settings.editor`, set `clipboard-provider = "termcode"`.
-- **Zellij** (`home/core/nixos/multiplexer.nix`): default settings already
+- **Zellij** (`home/core/shared/multiplexer.nix`): default settings already
   pass OSC52 through. No extra config needed in the typical case; if the
   bridge ever stops working, check zellij's clipboard config first.
 - **Terminal emulator on the Mac**: outside this repo's scope. Use

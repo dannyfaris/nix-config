@@ -42,7 +42,7 @@ The second trap, less obvious: a module that sets `_module.args.<name>` cannot i
 
 - `hosts/<host>/default.nix` sets `_module.args.hostContext = { hostName = …; flakePath = …; extraHomeModules = [ … ]; };`
 - `modules/core/nixos/home-manager.nix` takes `{ hostContext, ... }` and sets `home-manager.extraSpecialArgs = { inherit hostContext; }`.
-- `home/core/nixos/editor.nix` and `home/core/nixos/nix-tooling.nix` take `{ … , hostContext, … }` and read `hostContext.flakePath` / `hostContext.hostName` directly.
+- `home/core/shared/editor.nix` and `home/core/shared/nix-tooling.nix` take `{ … , hostContext, … }` and read `hostContext.flakePath` / `hostContext.hostName` directly.
 - `hostContext.extraHomeModules` is appended to the home-manager imports list inside the wiring file: `imports = [ … ] ++ (hostContext.extraHomeModules or [ ]);`.
 
-A reference to this ADR lives in the header comments of `modules/core/nixos/home-manager.nix`, `home/core/nixos/editor.nix`, and `home/core/nixos/nix-tooling.nix`, so the parametrisation pattern is discoverable from any of the modules that consume it.
+A reference to this ADR lives in the header comments of `modules/core/nixos/home-manager.nix`, `home/core/shared/editor.nix`, and `home/core/shared/nix-tooling.nix`, so the parametrisation pattern is discoverable from any of the modules that consume it.
