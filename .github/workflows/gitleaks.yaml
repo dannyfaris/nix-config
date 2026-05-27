@@ -1,0 +1,24 @@
+# Secrets scanning on every push and PR. Default scope is incremental
+# (gitleaks-action v2 diffs against the merge base for PRs and against
+# the push range for pushes), which needs the full history.
+#
+# No GITLEAKS_LICENSE env var is required for personal-account repos;
+# the license is only required for organization repos per the
+# gitleaks-action v2 README.
+name: gitleaks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

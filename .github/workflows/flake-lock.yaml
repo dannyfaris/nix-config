@@ -1,0 +1,60 @@
+# Weekly lockfile bump. Opens a PR; merging is manual — green CI proves
+# structural correctness (every host still builds) but not behavioural
+# neutrality (a renamed home-manager option, a service whose defaults
+# shifted, etc.), so the manual click is the forcing function for a
+# 15-second eyeball on the per-input commit ranges.
+#
+# Why a fine-grained PAT instead of the default GITHUB_TOKEN: PRs opened
+# with the default token don't trigger downstream workflows (GitHub's
+# recursion guard), which would defeat the purpose — `flake-check` would
+# never run on the bumped lockfile.
+#
+# See docs/decisions/ADR-025-ci-in-flake.md for the rationale.
+name: flake-lock
+
+on:
+  schedule:
+    - cron: '0 4 * * 1' # Mondays 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # Serialise overlapping cron + workflow_dispatch runs so the second
+  # invocation doesn't fail trying to create an already-existing PR
+  # branch.
+  group: flake-lock
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = false
+
+      # DeterminateSystems no longer publishes immutable version tags for
+      # update-flake-lock; upstream README recommends @main. Acceptable
+      # blast radius: the PAT is scoped to this single repo with the
+      # minimum permissions needed (contents r/w, pull-requests r/w,
+      # metadata r), and the merge is manual either way.
+      #
+      # No `pr-body:` set: the action's default template interpolates
+      # `{{ env.GIT_COMMIT_MESSAGE }}`, and `nix flake update
+      # --commit-lock-file` already emits per-input commit range URLs in
+      # that body, which is what ADR-025 §Rationale asks for.
+      - uses: DeterminateSystems/update-flake-lock@main
+        with:
+          token: ${{ secrets.GH_PAT_FLAKE_LOCK }}
+          pr-title: "flake: weekly lockfile bump"
+          pr-labels: |
+            dependencies
+            automated
+            flake-lock

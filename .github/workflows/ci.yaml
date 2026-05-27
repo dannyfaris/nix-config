@@ -1,0 +1,51 @@
+# Per-host build + lint/format gate. The explicit `name:` on the job
+# produces job display names `flake-check (x86_64-linux)` and
+# `flake-check (aarch64-linux)` — the names branch-protection on `main`
+# requires (configured out-of-band per ADR-025 §Implementation
+# operator-side setup). Without the explicit name, GitHub would
+# auto-generate `flake-check (x86_64-linux, ubuntu-24.04)` from every
+# matrix dimension (including `runner:` introduced by `include`), which
+# would never match the protection rule.
+#
+# See docs/decisions/ADR-025-ci-in-flake.md for the framework rationale.
+name: flake-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  # PR runs: group by branch, cancel stale. Main runs: group by run_id,
+  # never cancel (one in-flight per push is the worst case anyway).
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  flake-check:
+    name: flake-check (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64-linux, aarch64-linux]
+        include:
+          - arch: x86_64-linux
+            runner: ubuntu-24.04
+          - arch: aarch64-linux
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          # `accept-flake-config = false` carries the whitelist-over-blanket
+          # stance from modules/core/nixos/nix-daemon.nix into CI: a
+          # transitive input's nixConfig block can't silently add a
+          # substituter or change settings here. Binary-cache configuration
+          # lands in a follow-up workflow tweak per ADR-026.
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = false
+
+      - run: nix flake check --print-build-logs
