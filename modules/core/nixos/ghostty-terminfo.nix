@@ -8,11 +8,15 @@
 # This is the terminfo-only output of pkgs.ghostty — doesn't pull in the
 # full terminal app.
 #
-# During slice 2 of the role-removal migration this entry is duplicated
-# in modules/core/nixos/system-packages.nix; Nix module merging
-# deduplicates so closures stay byte-identical. The duplicate line in
-# system-packages.nix is removed in slice 4 once no host imports
-# system-packages directly via the role.
+# During slices 2–3 of the role-removal migration this entry is
+# duplicated in modules/core/nixos/system-packages.nix. The two
+# `environment.systemPackages = [ pkgs.ghostty.terminfo ]` declarations
+# concatenate into the merged list (list-option merging is
+# concatenation, NOT set union), but `pkgs.buildEnv` deduplicates
+# store paths when assembling `system-path` (the symlink farm), so the
+# resulting runtime closure is byte-identical to a single declaration.
+# The duplicate line in system-packages.nix is removed in slice 4 once
+# the role and its direct system-packages import are retired.
 { pkgs, ... }:
 {
   environment.systemPackages = [
