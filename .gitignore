@@ -4,3 +4,8 @@ result-*
 
 # direnv (if used later)
 .direnv/
+
+# git-hooks.nix's generated pre-commit config (symlink to /nix/store/...).
+# The configuration lives in parts/checks.nix; this file is regenerated
+# automatically by the devShell's shellHook.
+.pre-commit-config.yaml
