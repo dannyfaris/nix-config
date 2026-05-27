@@ -12,16 +12,23 @@ like; see git log for the full review.
 
 ### Do soon
 
-- [ ] **`shared/` migration** — introduce `home/core/shared/` and
-      `modules/core/shared/` and move modules that already satisfy the
-      cross-platform contract (shell, prompt, direnv, multiplexer,
-      editor, git*, cli-utils, agent-clis*, gh). Leaves `nixos/` for
-      genuinely Linux-bound modules (macchina, nix-tooling NH_FLAKE).
-      Closes the gap between PRD §5.1 and the tree on disk; gets
-      strictly more expensive once `macos-workstation` lands. Pure
-      rename + import-path refactor; `nix flake check` catches any
-      mistake. **M, low risk.**
-- [ ] **Fix `nrs` abbreviation** — `home/core/nixos/shell.nix:16`
+- [ ] **`shared-purity` lint** — single `scripts/lint-shared-purity.sh`
+      that greps `modules/core/shared/` and `home/core/shared/` for
+      platform conditionals (`stdenv.isDarwin`, `pkgs.stdenv.isLinux`,
+      etc.). Wired into `parts/checks.nix` via `git-hooks.nix` as an
+      extra hook (framework exists per ADR-025). Trigger fired with
+      slice 6's shared/ migration. The other two lints PRD §8.1 named
+      are moot: `role-purity` disappeared with ADR-027's role removal;
+      `tier-deps` has nothing to enforce while `experimental/` is empty.
+      **S, low.**
+- [ ] **Promote `hostContext` to a typed module** —
+      `options.hostContext = lib.mkOption {...}` with sensible defaults;
+      `flakePath` becomes a default rather than a per-host literal.
+      Trigger fired with slice 6's shared/ migration. ADR-019 names
+      the ~5-field threshold; we're at 3 fields and 3 hosts, but the
+      migration provides a clean moment to introduce the typed layer
+      before Darwin onboarding adds more. **S, low.**
+- [ ] **Fix `nrs` abbreviation** — `home/core/shared/shell.nix:16`
       expands to `sudo nixos-rebuild switch`, contradicting `nh os switch`
       as the canon. Replace with `nos = "nh os switch"`. Trains muscle
       memory in the right direction. **S, low.**
@@ -37,26 +44,12 @@ like; see git log for the full review.
 
 ### Trigger-driven
 
-- [ ] **Promote `hostContext` to a typed module** —
-      `options.hostContext = lib.mkOption {...}` with sensible defaults;
-      `flakePath` becomes a default rather than a per-host literal.
-      **Trigger:** 4th host *or* `shared/` migration landing —
-      whichever comes first. ADR-019 names the ~5-field threshold;
-      we're at 3.
-- [ ] **`shared-purity` lint** — single `scripts/lint-shared-purity.sh`
-      that greps `modules/core/shared/` and `home/core/shared/` for
-      platform conditionals (`stdenv.isDarwin`, `pkgs.stdenv.isLinux`,
-      etc.). Wired into `parts/checks.nix` via `git-hooks.nix` as an
-      extra hook (framework now exists post-ADR-025). The other two
-      lints PRD §8.1 named are moot: `role-purity` disappears with the
-      role layer (planned ADR-027); `tier-deps` has nothing to enforce
-      while `experimental/` is empty. **Trigger:** once `shared/` exists.
-- [ ] **`_local-linux` mini-role** — bundle systemd-boot +
+- [ ] **`_local-linux` mini-bundle** — bundle systemd-boot +
       NetworkManager + Tailscale, currently duplicated across
-      `nixos-vm` and `metis`. **Trigger:** when `mothership` (the
-      linux-workstation host) lands and the duplication becomes
-      fourfold. Don't pre-empt; ADR-013 anticipates this exact
-      pressure point.
+      `nixos-vm` and `metis`. **Trigger:** when `mothership` (a future
+      Linux desktop host) lands and the duplication becomes fourfold.
+      Don't pre-empt — per ADR-027 a bundle earns its place when ≥ 2
+      hosts share the grouping under a coherent named capability.
 
 ## Bus-factor — sops decryption identity for the operator
 
@@ -92,18 +85,22 @@ B below is a belt-and-braces extension.
       is preserved). Then `just setup-sops-identity ~/.ssh/id_ed25519`
       replaces the one-shot above for future operator clones.
 
-## Pending roles
+## Pending hosts
 
-- [ ] **`linux-workstation` role** — pending `mothership` hardware
-      (x86_64 desktop). Recover desktop modules (niri + waybar +
-      Stylix + fuzzel + ghostty + mako) from git tag
+- [ ] **`mothership`** — Linux desktop host. Pending hardware. Will
+      compose foundation + bundles + standalone modules per ADR-027,
+      including a new `desktop-env` bundle (niri + waybar + Stylix +
+      fuzzel + ghostty + mako) recovered from git tag
       `tier3-desktop-deferred`. The deferral is hardware-driven, not
       design-driven: niri requires `EGL_EXT_device_drm`, which UTM's
       Apple Virtualization Framework GPU does not expose. References:
       sodiboo/system (niri-flake idioms), eduardofuncao/nixferatu
       (Niri+Stylix end-to-end).
-- [ ] **`macos-workstation` role** — design landed (PRD §3 +
-      ADRs 013–016); no code yet. Will land on `mba` and `mac-mini`.
+- [ ] **`mba`, `mac-mini`** — macOS hosts via nix-darwin. Will need
+      a `modules/core/darwin/` tree mirroring the NixOS one (with its
+      own `foundation.nix`). See also GH issue #8 for the three
+      system modules (mosh, nix-daemon, sshd) deferred pending Darwin
+      onboarding.
 
 ## Carryover when new hosts land
 
@@ -127,14 +124,14 @@ new host comes up.
       agent forwarding from Mac stays OFF.
 - [ ] **OSC52 paste investigation** — nix-config side is correct;
       the Mac-side Ghostty likely has `clipboard-write = ask` as the
-      default. Resolve when `linux-workstation` lands with foot and
-      the round-trip can be exercised end-to-end. See ADR-011.
-- [ ] **`foot.terminfo` on headless hosts** — when
-      `linux-workstation` lands and foot becomes the workstation
-      terminal, add `pkgs.foot.terminfo` to
-      `modules/core/nixos/system-packages.nix` (same pattern as the
-      existing `ghostty.terminfo` line, additive). Ghostty terminfo
-      stays — Mac client → headless hosts is still load-bearing.
+      default. Resolve when `mothership` lands with foot and the
+      round-trip can be exercised end-to-end. See ADR-011.
+- [ ] **`foot.terminfo` on headless hosts** — when `mothership` lands
+      and foot becomes the workstation terminal, add a new
+      `modules/core/shared/foot-terminfo.nix` (same pattern as the
+      existing `ghostty-terminfo.nix`) and add it to the
+      `bundles/remote-access.nix` imports. Ghostty terminfo stays —
+      Mac client → headless hosts is still load-bearing.
 
 ## For future consideration
 
