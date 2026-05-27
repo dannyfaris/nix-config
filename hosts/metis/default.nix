@@ -68,12 +68,12 @@
     hostName  = "metis";
     flakePath = "/home/dbf/nix-config";
     extraHomeModules = [
-      ../../home/core/nixos/bundles/cli-tooling.nix
-      ../../home/core/nixos/bundles/git-personal.nix
-      ../../home/core/nixos/ssh.nix
+      ../../home/core/shared/bundles/cli-tooling.nix
+      ../../home/core/shared/bundles/git-personal.nix
+      ../../home/core/shared/ssh.nix
       ../../home/core/nixos/macchina.nix
-      ../../home/core/nixos/agent-clis.nix
-      ../../home/core/nixos/agent-clis-extras.nix
+      ../../home/core/shared/agent-clis.nix
+      ../../home/core/shared/agent-clis-extras.nix
     ];
   };
 }

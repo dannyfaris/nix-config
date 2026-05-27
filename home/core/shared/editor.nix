@@ -6,7 +6,7 @@
 #     the closure). format-on-save works regardless of PATH.
 #   - nixd is invoked by name and resolved against PATH at runtime.
 #
-# Both binaries are installed by home/core/nixos/nix-tooling.nix.
+# Both binaries are installed by home/core/shared/nix-tooling.nix.
 #
 # Parametrisation: `hostContext.{flakePath,hostName}` come from each host's
 # `_module.args.hostContext` via the HM extraSpecialArgs forwarder in
