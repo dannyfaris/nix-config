@@ -24,10 +24,11 @@ Run once per fresh clone of this repo on the operator machine:
 - `nix` with flakes enabled. `just` available — not yet a home-manager
   package, so use ad-hoc invocation: `nix shell nixpkgs#just -c just
   <recipe>` or `nix run nixpkgs#just -- <recipe>`.
-- This repo cloned, with `just install-hooks` run once (use the ad-hoc
-  invocation above for this first call too). `core.hooksPath` isn't
-  versioned, so every fresh clone needs this. The hook enforces ADR-023's
-  "don't hand-edit `hardware-configuration.nix`" rule.
+- This repo cloned, with the devShell entered once (`nix develop`, or
+  direnv-reload via the repo's `.envrc`). The devShell's shellHook
+  installs `.git/hooks/pre-commit` and clears any stale `core.hooksPath`
+  setting; the hook enforces ADR-023's "don't hand-edit
+  `hardware-configuration.nix`" rule. See ADR-025 for the framework.
 - An existing age decryption identity for `secrets/secrets.yaml`. Today
   the UTM VM's host SSH key (`/etc/ssh/ssh_host_ed25519_key`) is the
   only such identity; `sops updatekeys` (step 2 below) must therefore
@@ -246,9 +247,9 @@ git commit -m "<host>: real hardware-configuration.nix from nixos-anywhere"
 git push
 ```
 
-The pre-commit hook (`just install-hooks`) accepts the new banner
-from `nixos-generate-config`. Do not hand-edit this file — re-run
-`just bootstrap` to regenerate.
+The pre-commit hook (installed automatically by the devShell, per
+ADR-025) accepts the new banner from `nixos-generate-config`. Do not
+hand-edit this file — re-run `just bootstrap` to regenerate.
 
 ## Post-install
 

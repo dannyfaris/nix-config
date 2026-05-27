@@ -233,14 +233,3 @@ setup-sops-identity:
     echo "  sops -d / sops updatekeys will now work without env vars,"
     echo "  PROVIDED the derived age recipient is already in .sops.yaml"
     echo "  and secrets/secrets.yaml is encrypted for it."
-
-# Configure git to use this repo's .githooks/ directory (one-time per clone).
-install-hooks:
-    git config core.hooksPath .githooks
-    @echo "Hooks installed (core.hooksPath=.githooks)."
-    @echo "To uninstall: just uninstall-hooks"
-
-# Revert to git's default .git/hooks/ directory.
-uninstall-hooks:
-    git config --unset core.hooksPath
-    @echo "Hooks uninstalled (core.hooksPath unset)."
