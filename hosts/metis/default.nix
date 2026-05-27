@@ -1,17 +1,16 @@
 # Host-specific configuration for Metis (HP ProDesk Mini 600 G9, x86_64-linux,
-# bare metal). Adopts the headless role (via parts/nixos.nix) and adds the
-# bare-metal platform modules (systemd-boot, NetworkManager) that the role
-# itself doesn't pick.
+# bare metal).
 #
-# Personal dev box: dual git identity (personal + work) + full agent-CLI set,
-# mirroring nixos-vm.
+# Composes foundation + capability bundles + standalone modules directly
+# (per ADR-027), no longer adopts the `headless` role. Personal dev box:
+# dual git identity (personal + work) + full agent-CLI set, mirroring
+# nixos-vm.
 #
 # Bootstrap via nixos-anywhere + disko (ADR-022); per-host files follow the
 # three-file convention (ADR-023). Host key is pre-generated on the operator
 # (`just gen-host-key metis`) and injected at install via --extra-files;
 # secrets are sops-nix (ADR-018, amended by ADR-022 for acquisition order).
-# Runbook: docs/runbooks/headless-bootstrap.md (slice 4 will consolidate
-# the old AWS- and Metis-specific runbooks into one).
+# Runbook: docs/runbooks/headless-bootstrap.md.
 { inputs, ... }:
 {
   imports = [
@@ -19,6 +18,13 @@
     ./disko.nix
     inputs.disko.nixosModules.disko
 
+    # Foundation — bundle every NixOS host imports by convention.
+    ../../modules/core/nixos/foundation.nix
+
+    # Capability bundles.
+    ../../modules/core/nixos/bundles/remote-access.nix
+
+    # Standalone system modules.
     ../../modules/core/nixos/boot-systemd.nix
     ../../modules/core/nixos/networking-networkmanager.nix
     ../../modules/core/nixos/tailscale.nix
