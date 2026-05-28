@@ -55,15 +55,15 @@ B below is a belt-and-braces extension.
 
 ## Pending hosts
 
-- [ ] **`mothership`** — Linux desktop host. Pending hardware. Will
-      compose foundation + bundles + standalone modules per ADR-027,
-      including a new `desktop-env` bundle (niri + waybar + Stylix +
-      fuzzel + ghostty + mako) recovered from git tag
-      `tier3-desktop-deferred`. The deferral is hardware-driven, not
-      design-driven: niri requires `EGL_EXT_device_drm`, which UTM's
-      Apple Virtualization Framework GPU does not expose. References:
+- [ ] **`mothership`** — second Linux desktop host. Pending hardware.
+      Will compose foundation + bundles + standalone modules per
+      ADR-027, reusing the `desktop-env` bundle landed for metis
+      (ADR-028: niri + DMS + ghostty + greetd, Stylix-driven). The
+      original `tier3-desktop-deferred` stack (waybar/fuzzel/mako) is
+      superseded by ADR-028 — do not resurrect. References:
       sodiboo/system (niri-flake idioms), eduardofuncao/nixferatu
-      (Niri+Stylix end-to-end).
+      (Niri+Stylix end-to-end), AvengeMedia/DankMaterialShell (DMS
+      upstream).
 - [ ] **`mba`, `mac-mini`** — macOS hosts via nix-darwin. Will need
       a `modules/core/darwin/` tree mirroring the NixOS one (with its
       own `foundation.nix`). See also GH issue #8 for the three
@@ -92,14 +92,9 @@ new host comes up.
       agent forwarding from Mac stays OFF.
 - [ ] **OSC52 paste investigation** — nix-config side is correct;
       the Mac-side Ghostty likely has `clipboard-write = ask` as the
-      default. Resolve when `mothership` lands with foot and the
-      round-trip can be exercised end-to-end. See ADR-011.
-- [ ] **`foot.terminfo` on headless hosts** — when `mothership` lands
-      and foot becomes the workstation terminal, add a new
-      `modules/core/shared/foot-terminfo.nix` (same pattern as the
-      existing `ghostty-terminfo.nix`) and add it to the
-      `bundles/remote-access.nix` imports. Ghostty terminfo stays —
-      Mac client → headless hosts is still load-bearing.
+      default. Resolve once metis's desktop env lands (ADR-028) and the
+      ghostty-to-ghostty round-trip can be exercised end-to-end. See
+      ADR-011.
 
 ## For future consideration
 
