@@ -96,6 +96,9 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - One inline comment per non-obvious setting explaining "why", not "what".
 - Module file naming follows the "most-communicative term" rule. See
   [docs/taxonomy.md](./docs/taxonomy.md).
+- **PRs land via squash auto-merge.** After `gh pr create`, run
+  `gh pr merge <num> --auto --squash` to enable auto-merge; the PR
+  squash-merges itself once required checks pass.
 - Desktop environment lands on metis (x86_64) per
   [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md):
   Niri + Dank Material Shell + Ghostty + greetd, with Stylix as the
