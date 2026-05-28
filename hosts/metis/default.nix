@@ -55,18 +55,22 @@
   # via LAN SSH).
   systemd.oomd.enableUserSlices = true;
 
-  # Per-host values consumed by home-manager modules (editor.nix nixd
-  # options, nix-tooling NH_FLAKE). Forwarded into the HM submodule system
-  # via extraSpecialArgs in modules/core/nixos/home-manager.nix. See ADR-019.
+  # Per-host parametrisation consumed by home-manager modules
+  # (editor.nix nixd options, nix-tooling NH_FLAKE). Set via the typed
+  # option layer in modules/core/nixos/host-context.nix; bridged to
+  # extraSpecialArgs via the host-context module's _module.args write.
+  # See ADR-019.
   #
-  # extraHomeModules is now the full HM imports list for this host —
-  # capability bundles plus standalone modules, per ADR-027's bundle
-  # model. Personal dev box: cli tooling + dual git identity + GitHub
-  # CLI + agent CLI extras + login info + base agent CLIs + outbound
-  # SSH. Mirrors nixos-vm.
-  _module.args.hostContext = {
+  # extraHomeModules is the full HM imports list for this host — capability
+  # bundles plus standalone modules, per ADR-027's bundle model. Personal
+  # dev box: cli tooling + dual git identity + GitHub CLI + agent CLI
+  # extras + login info display + base agent CLIs + outbound SSH. Mirrors
+  # nixos-vm.
+  #
+  # flakePath omitted — the host-context default ("/home/dbf/nix-config")
+  # matches this host.
+  hostContext = {
     hostName = "metis";
-    flakePath = "/home/dbf/nix-config";
     extraHomeModules = [
       ../../home/core/shared/bundles/cli-tooling.nix
       ../../home/core/shared/bundles/git-personal.nix

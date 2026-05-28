@@ -8,12 +8,13 @@
 # paths (cli-tooling, git-personal/git-work) plus standalone modules
 # (ssh, macchina, agent-clis, ...). See ADR-027 for the bundle model.
 #
-# Parametrisation: `hostContext` arrives as a function argument set by each
-# host's `_module.args.hostContext` (see ADR-019). It is consumed here as a
-# function arg — not read via config._module.args, which is a write-only sink
-# at the option layer — and forwarded into the home-manager submodule system
-# so individual home modules (editor.nix nixd options, nix-tooling NH_FLAKE)
-# can read it the same way.
+# Parametrisation: `hostContext` arrives as a function argument, sourced
+# from the typed option layer in ./host-context.nix (which writes
+# `_module.args.hostContext = config.hostContext;` to bridge the option
+# layer to fn-arg consumption — avoids the imports-evaluation-timing
+# trap of reading `config.hostContext` to compute home-manager imports).
+# Each host sets the value via `hostContext = { ... };` at the top of its
+# default.nix. See ADR-019.
 { hostContext, ... }:
 {
   home-manager = {

@@ -10,16 +10,6 @@ Opinionated improvements surfaced by a maturity review (2026-05-26).
 Each item names the cost of the current shape and what "great" looks
 like; see git log for the full review.
 
-### Do soon
-
-- [ ] **Promote `hostContext` to a typed module** —
-      `options.hostContext = lib.mkOption {...}` with sensible defaults;
-      `flakePath` becomes a default rather than a per-host literal.
-      Trigger fired with slice 6's shared/ migration. ADR-019 names
-      the ~5-field threshold; we're at 3 fields and 3 hosts, but the
-      migration provides a clean moment to introduce the typed layer
-      before Darwin onboarding adds more. **S, low.**
-
 ### Trigger-driven
 
 - [ ] **`_local-linux` mini-bundle** — bundle systemd-boot +

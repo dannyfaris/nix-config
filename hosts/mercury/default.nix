@@ -103,14 +103,16 @@
   # diverging side; ADR-020 — divergence = choice of import).
   services.openssh.settings.PermitRootLogin = lib.mkForce "no";
 
-  # extraHomeModules is now the full HM imports list for this host —
+  # extraHomeModules is the full HM imports list for this host —
   # capability bundles plus standalone modules, per ADR-027's bundle
   # model. Work-only: cli tooling + work-only git (no gh per the
   # mercury_push_boundary rule) + login info + base agent CLIs +
   # outbound SSH. No agent-clis-extras.
-  _module.args.hostContext = {
+  #
+  # flakePath omitted — the host-context default ("/home/dbf/nix-config")
+  # matches this host.
+  hostContext = {
     hostName = "mercury";
-    flakePath = "/home/dbf/nix-config";
     extraHomeModules = [
       ../../home/core/shared/bundles/cli-tooling.nix
       ../../home/core/shared/bundles/git-work.nix
