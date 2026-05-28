@@ -22,7 +22,11 @@ in
       # Leading host segment via two mutually-exclusive custom modules
       # (one fires based on $SSH_CONNECTION). See ADR-002 history block
       # and GH issue #17.
-      format = "\${custom.host_local}\${custom.host_ssh}$directory$git_branch$git_status$nix_shell$character";
+      #
+      # `$nix_shell` slots between `$directory` and `$git_branch` so the
+      # `(❄️)` renders as path-metadata (matches the statusline). See
+      # ADR-002's `(…)`-as-metadata convention.
+      format = "\${custom.host_local}\${custom.host_ssh}$directory$nix_shell$git_branch$git_status$character";
       add_newline = false;
 
       # Per-module styles — match the role-based palette mapping in the
@@ -59,12 +63,15 @@ in
         style = "";
       };
 
-      # Nix-shell indicator. Leading `❯` (chev) is part of the module's
-      # own format so it renders only when in a nix-shell; this is the
-      # second `❯` separator on the line (after the host one), matching
-      # the statusline's conditional `❯ ❄️` segment.
+      # Nix-shell indicator — renders as `(❄️)` path-metadata immediately
+      # after `$directory` (see format string above). Parens are escaped
+      # (`\(` / `\)`) because starship treats unescaped `(...)` as a
+      # "render-if-non-empty" conditional group, not literal parens. Only
+      # the snowflake picks up `$style`; the parens stay default
+      # foreground. Matches the statusline's conditional `(❄️)` segment.
+      # See ADR-002's `(…)`-as-metadata convention.
       nix_shell = {
-        format = "${chev} [$symbol]($style) ";
+        format = "\\([$symbol]($style)\\) ";
         symbol = "❄️";
         style = "blue"; # nix blue (base0D via Stylix palette)
       };

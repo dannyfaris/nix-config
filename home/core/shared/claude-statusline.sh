@@ -194,10 +194,14 @@ printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
   "$PCT" "$RLIM"
 
 # ═══ LINE 2: host │ path on branch ════════════════════════════════
+# Nix-shell indicator — `(❄️)` as path-metadata immediately after the
+# cwd, mirroring the starship prompt's nix_shell module placement (see
+# ADR-002's `(…)`-as-metadata convention). $IN_NIX_SHELL set by
+# nix-direnv on flake-env activation; inherited into the Claude Code
+# subprocess. Same env-at-spawn caveat as $SSH_CONNECTION.
+NIX_SHELL_SEG=""
+[ -n "$IN_NIX_SHELL" ] && NIX_SHELL_SEG=" (${BLUE}${NIX_GLYPH}${RST})"
+
 LINE2="${HOST_COLOUR}${HOST_GLYPH}  ${hostname}${RST}"
-[ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${GIT_SEG}"
-# Nix-shell indicator — mirrors the starship prompt's nix_shell module.
-# $IN_NIX_SHELL set by nix-direnv on flake-env activation; inherited into
-# the Claude Code subprocess. Same env-at-spawn caveat as $SSH_CONNECTION.
-[ -n "$IN_NIX_SHELL" ] && LINE2+="${CHEV}${NIX_GLYPH}"
+[ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${NIX_SHELL_SEG}${GIT_SEG}"
 printf '%s\n' "$LINE2"
