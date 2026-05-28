@@ -21,6 +21,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Default-permissions pin (defense-in-depth). The workflow only needs to
+# read repo contents — checkout clones, Nix fetches public flake inputs.
+# Without this, GitHub grants the broader default which includes write
+# scopes for several APIs we don't use. Explicit-over-implicit per
+# CLAUDE.md's whitelist > blanket stance, applied to the workflow's
+# token surface.
+permissions:
+  contents: read
+
 jobs:
   flake-check:
     name: flake-check (${{ matrix.arch }})
@@ -39,6 +48,13 @@ jobs:
 
       - uses: cachix/install-nix-action@v31
         with:
+          # Explicit GH token for Nix's github.com fetches.
+          # install-nix-action v31's docs say `GITHUB_TOKEN` is picked
+          # up automatically when this input is empty; setting it
+          # explicitly is defense-in-depth (makes auth deterministic
+          # and surfaces in the action's logs).
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
           # `accept-flake-config = false` carries the whitelist-over-blanket
           # stance from modules/core/nixos/nix-daemon.nix into CI: a
           # transitive input's nixConfig block can't silently add a
