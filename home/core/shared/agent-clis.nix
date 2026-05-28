@@ -39,6 +39,14 @@ let
   # was added — and untracked moved to it — so the SSH host marker
   # (MAUVE/base0E) is the only purple element on line 2; see
   # `home/core/shared/prompt.nix` for the matching prompt change.
+  #
+  # Two slots carry a deliberate dual role across the two lines:
+  #   - ORANGE: untracked counter (line 2) + Opus model label (line 1)
+  #   - TEAL:   branch (line 2) + Sonnet model label (line 1)
+  # Both pair semantically — "attention" or "label" hues, applied to
+  # similar-role elements at distinct positions across lines. Haiku
+  # and unknown models render in default foreground (no SGR) — that
+  # absence is itself a signal: lightweight tier, no flourish.
   # See ADR-024 §Implementation and ADR-028 slice 6 for the why.
   statuslineColours = pkgs.writeText "statusline-colours.sh" ''
     # Generated from config.lib.stylix.colors at activation time.
