@@ -31,7 +31,7 @@
 # costs disappear once the cache is trusted.
 #
 # Per ADR-028.
-{ inputs, ... }:
+{ config, inputs, ... }:
 {
   imports = [ inputs.niri-flake.nixosModules.niri ];
 
@@ -52,12 +52,17 @@
     ];
   };
 
-  # niri-session imports the user-manager PATH at session start; the
-  # NixOS default would otherwise inject a stripped PATH on niri.service
-  # that shadows it, breaking binary resolution for niri-spawned helpers.
-  # Required companion when launching niri-session via greetd. Source:
-  # nixpkgs `nixos/modules/programs/wayland/niri.nix:51` sets exactly
-  # this with the same rationale verbatim; niri-flake's nixosModule
-  # does not.
-  systemd.user.services.niri.enableDefaultPath = false;
+  # Register niri's package-shipped systemd user units (niri.service +
+  # niri-shutdown.target, at `$out/{lib,share}/systemd/user/` — hardlinked)
+  # for systemd-user discovery. niri-flake's nixosModule installs the niri
+  # package via `environment.systemPackages` only, so without this NixOS
+  # never symlinks the shipped units into `/etc/systemd/user/` and greetd
+  # → niri-session's `systemctl --user --wait start niri.service` fails
+  # with "Unit not found". NixOS only layers a `PATH=` drop-in onto a unit
+  # when `systemd.user.services.niri.<anything>` is also set; we
+  # deliberately don't, so the package's `ExecStart=niri --session` runs
+  # verbatim (niri-session itself runs `systemctl --user import-environment`
+  # before start, populating PATH at runtime). See issue #67 for the
+  # incident write-up that motivated this shape.
+  systemd.packages = [ config.programs.niri.package ];
 }
