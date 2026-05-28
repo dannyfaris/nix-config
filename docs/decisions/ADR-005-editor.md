@@ -168,3 +168,17 @@ Notes:
   project directory.
 - Arrow keys work fine in helix; the user is free to use them indefinitely
   or transition to `hjkl` at their own pace. Both are first-class.
+
+**`EDITOR` wiring (two-layer).** Interactive user shells get
+`home.sessionVariables.{EDITOR,VISUAL} = "hx";` from
+`home/core/shared/editor.nix` itself. System-mediated tools
+(`sudoedit`, `visudo`, `systemctl edit`) get
+`environment.variables.{SUDO_EDITOR,SYSTEMD_EDITOR} = "${pkgs.helix}/bin/hx";`
+from a dedicated `modules/core/shared/editor-defaults.nix` imported via
+`foundation.nix`. The system layer uses absolute store paths because
+sudo strips `PATH` from the inherited environment. `VISUAL` complements
+`EDITOR` for tools (notably git) that check `VISUAL` first.
+`programs.helix.defaultEditor = true;` was rejected — it only sets
+`EDITOR`, not `VISUAL`. The system-layer module lives in `shared/`
+because `environment.variables` is shared-name between NixOS and
+nix-darwin; ready for Darwin onboarding without duplication.

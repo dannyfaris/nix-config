@@ -73,4 +73,14 @@ in
       }
     ];
   };
+
+  # User-shell defaults. System-mediated tools (sudoedit, visudo, systemctl
+  # edit) get their parallel SUDO_EDITOR / SYSTEMD_EDITOR from
+  # modules/core/shared/editor-defaults.nix — sudo strips PATH so that
+  # layer uses absolute store paths. VISUAL complements EDITOR for tools
+  # (notably git) that check VISUAL first.
+  home.sessionVariables = {
+    EDITOR = "hx";
+    VISUAL = "hx";
+  };
 }

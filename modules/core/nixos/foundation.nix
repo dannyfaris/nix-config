@@ -20,6 +20,7 @@
     ./sops.nix
     ./users.nix
     ../shared/system-packages.nix
+    ../shared/editor-defaults.nix
     ./host-context.nix
     ./home-manager.nix
   ];
