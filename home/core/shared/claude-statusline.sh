@@ -20,7 +20,8 @@ hostname=$(hostname -s)
 source ~/.claude/statusline-colours.sh
 DIM='' # dim SGR too low-contrast in practice; keep var for one-point reintro
 RST=$'\033[0m'
-SEP=" ${DIM}│${RST} "
+SEP=" ${DIM}│${RST} " # line 1 status-bar separator (parallel segments)
+CHEV=" ❯ "            # line 2 reading-flow separator (sequential segments)
 # Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
 # putting raw Nerd Font bytes in the source file.
 BRANCH_GLYPH=$'\xee\x82\xa0'  # U+E0A0 Powerline branch
@@ -187,5 +188,5 @@ printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
 
 # ═══ LINE 2: host │ path on branch ════════════════════════════════
 LINE2="${DIM}${HOST_GLYPH}  ${hostname}${RST}"
-[ -n "$SHORT_CWD" ] && LINE2+="${SEP}${BLUE}${SHORT_CWD}${RST}${GIT_SEG}"
+[ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${GIT_SEG}"
 printf '%s\n' "$LINE2"

@@ -11,6 +11,7 @@ let
   # macchina recolour at home/core/nixos/macchina.nix:8.
   desktopGlyph = builtins.fromJSON ''""''; # nf-fa-desktop — local
   sshGlyph = builtins.fromJSON ''""''; # nf-mdi-console_network — SSH
+  chev = builtins.fromJSON ''"❯"''; # ❯ U+276F — reading-flow separator
 in
 {
   programs.starship = {
@@ -34,13 +35,13 @@ in
         description = "Hostname marker — local (no SSH connection)";
         when = ''[ -z "$SSH_CONNECTION" ]'';
         command = "hostname -s";
-        format = "${desktopGlyph}  $output ";
+        format = "${desktopGlyph}  $output ${chev} ";
       };
       custom.host_ssh = {
         description = "Hostname marker — over SSH";
         when = ''[ -n "$SSH_CONNECTION" ]'';
         command = "hostname -s";
-        format = "${sshGlyph}  $output ";
+        format = "${sshGlyph}  $output ${chev} ";
       };
     };
   };
