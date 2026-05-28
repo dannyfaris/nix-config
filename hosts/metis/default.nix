@@ -23,6 +23,7 @@
 
     # Capability bundles.
     ../../modules/core/nixos/bundles/remote-access.nix
+    ../../modules/core/nixos/bundles/desktop-env.nix
 
     # Standalone system modules.
     ../../modules/core/nixos/boot-systemd.nix
@@ -75,6 +76,7 @@
       ../../home/core/shared/bundles/cli-tooling.nix
       ../../home/core/shared/bundles/git-personal.nix
       ../../home/core/shared/bundles/theming.nix
+      ../../home/core/nixos/bundles/desktop-env.nix
       ../../home/core/shared/ssh.nix
       ../../home/core/nixos/macchina.nix
       ../../home/core/shared/agent-clis.nix
