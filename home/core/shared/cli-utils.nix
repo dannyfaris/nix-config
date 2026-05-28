@@ -49,4 +49,15 @@
     dust
     jq
   ];
+
+  # Render man pages through bat with syntax highlighting. `col -bx` strips
+  # overstrike backspaces (man uses overstrike for bold/underline); `-l man`
+  # picks bat's man-page syntax; `-p` drops decorations. MANROFFOPT=-c
+  # disables groff's SGR colour output so it falls back to overstrike
+  # encoding, which `col -bx` can then strip cleanly before bat re-renders.
+  # See ADR-006 §Implementation for the why.
+  home.sessionVariables = {
+    MANPAGER = "sh -c 'col -bx | bat -l man -p'";
+    MANROFFOPT = "-c";
+  };
 }
