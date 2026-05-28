@@ -15,10 +15,19 @@ jobs:
   scan:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      # Pinned at v2 because upstream has not yet cut a Node 24 release —
+      # PRs #207 and #215 are open but unmerged as of 2026-05. From
+      # 2026-06-02, GitHub runners force Node 24 by default, so this
+      # action's `using: "node20"` declaration is ignored and the bundled
+      # JS executes under Node 24. If that breakage materialises, the
+      # documented temporary mitigation is to add
+      # `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true` to the env block
+      # below — valid until Node 20 is removed entirely on 2026-09-16.
+      # Bump to the new tag when upstream merges the migration.
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
