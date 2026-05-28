@@ -42,10 +42,24 @@ jobs:
           # `accept-flake-config = false` carries the whitelist-over-blanket
           # stance from modules/core/nixos/nix-daemon.nix into CI: a
           # transitive input's nixConfig block can't silently add a
-          # substituter or change settings here. Binary-cache configuration
-          # lands in a follow-up workflow tweak per ADR-026.
+          # substituter or change settings here.
+          #
+          # niri.cachix.org is whitelisted explicitly below — mirrors the
+          # nix.settings in modules/core/nixos/niri.nix (ADR-028 slice 3b.5).
+          # Without this, CI's daemon doesn't trust the cache, niri builds
+          # from source, and the build hits the in-flight nixpkgs Rust
+          # crate fetcher 403 (rust-lang/crates.io#13482,
+          # NixOS/nixpkgs#512735). Public key sourced from niri-flake's
+          # flake.nix (the same key niri-flake would have added via the
+          # default-true cache.enable). Cross-arch note: niri.cachix.org
+          # serves x86_64-linux only, but flake-check builds every host
+          # (including aarch64 nixos-vm) and aarch64 hosts don't import
+          # the niri module, so the substituter is queried only for the
+          # x86_64 matrix entry.
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = false
+            extra-substituters = https://niri.cachix.org
+            extra-trusted-public-keys = niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964=
 
       - run: nix flake check --print-build-logs
