@@ -31,13 +31,15 @@ let
     slot:
     "\\033[38;2;${toString c."${slot}-rgb-r"};${toString c."${slot}-rgb-g"};${toString c."${slot}-rgb-b"}m";
 
-  # Six statusline colour bindings derived from the host's base16
-  # palette. Role → base16 slot mapping follows the standard base16
-  # semantic convention (08=red, 0A=yellow, 0B=green, 0C=cyan, 0D=blue,
-  # 0E=magenta) so the colours come out semantically right regardless
-  # of which palette the host picks. See ADR-024 §Implementation and
-  # GH issue #7 for the why; ADR-028 slice 6 for the architectural
-  # placement.
+  # Seven statusline colour bindings derived from the host's base16
+  # palette. Role → base16 slot mapping mostly follows the standard
+  # base16 semantic convention (08=red, 09=orange, 0A=yellow, 0B=green,
+  # 0C=cyan, 0D=blue, 0E=magenta) so the colours come out semantically
+  # right regardless of which palette the host picks. ORANGE (base09)
+  # was added — and untracked moved to it — so the SSH host marker
+  # (MAUVE/base0E) is the only purple element on line 2; see
+  # `home/core/shared/prompt.nix` for the matching prompt change.
+  # See ADR-024 §Implementation and ADR-028 slice 6 for the why.
   statuslineColours = pkgs.writeText "statusline-colours.sh" ''
     # Generated from config.lib.stylix.colors at activation time.
     # See ADR-024 §Implementation and ADR-028 slice 6 for the why.
@@ -47,6 +49,7 @@ let
     YELLOW=$'${fgEscape "base0A"}'
     RED=$'${fgEscape "base08"}'
     MAUVE=$'${fgEscape "base0E"}'
+    ORANGE=$'${fgEscape "base09"}'
     TEAL=$'${fgEscape "base0C"}'
   '';
 in

@@ -45,11 +45,16 @@ in
       # statusline doesn't surface ahead/behind, and we're prioritising
       # parity between the two surfaces. Add back here (and in the
       # statusline) if the upstream-divergence signal earns its place.
+      #
+      # Untracked uses `orange` (base09) rather than the base16-canonical
+      # `purple` (base0E) so the SSH host marker (which uses purple) is
+      # the only purple element on the line. See agent-clis.nix and
+      # claude-statusline.sh for the matching statusline change.
       git_status = {
         conflicted = " [!\${count}](red)";
         staged = " [+\${count}](green)";
         modified = " [~\${count}](yellow)";
-        untracked = " [?\${count}](purple)";
+        untracked = " [?\${count}](orange)";
         format = "$all_status";
         style = "";
       };
@@ -64,19 +69,24 @@ in
         style = "blue"; # nix blue (base0D via Stylix palette)
       };
 
-      # Host segments render in default foreground (no `style` field) for
-      # visual parity with the un-styled claude-statusline.
+      # Host segments — glyph + hostname styled by SSH state. Chevron
+      # separator stays outside the style markup (default foreground)
+      # to keep visual delineation between the host chip and `$directory`.
+      # Counterpart in the statusline lives in claude-statusline.sh's
+      # HOST_COLOUR derivation.
       custom.host_local = {
         description = "Hostname marker — local (no SSH connection)";
         when = ''[ -z "$SSH_CONNECTION" ]'';
         command = "hostname -s";
-        format = "${desktopGlyph}  $output ${chev} ";
+        format = "[${desktopGlyph}  $output]($style) ${chev} ";
+        style = "green";
       };
       custom.host_ssh = {
         description = "Hostname marker — over SSH";
         when = ''[ -n "$SSH_CONNECTION" ]'';
         command = "hostname -s";
-        format = "${sshGlyph}  $output ${chev} ";
+        format = "[${sshGlyph}  $output]($style) ${chev} ";
+        style = "purple";
       };
     };
   };

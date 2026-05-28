@@ -30,12 +30,18 @@ SSH_GLYPH=$'\xef\x92\x89'             # U+F489 nf-mdi-console_network (SSH host 
 CLOCK_GLYPH=$'\xef\x80\x97'           # U+F017 nf-fa-clock_o (rate-limit marker)
 NIX_GLYPH=$'\xe2\x9d\x84\xef\xb8\x8f' # ❄️ U+2744 + U+FE0F (nix-shell marker)
 
-# Host marker — swaps based on SSH state to mirror the starship prompt
-# (ADR-002 history). $SSH_CONNECTION is set by sshd on login and inherited
-# into the Claude Code subprocess; same env-at-spawn caveat applies for
-# detached zellij sessions reattached from a different context.
+# Host marker — glyph + colour swap based on SSH state, mirroring the
+# starship prompt (ADR-002 history). $SSH_CONNECTION is set by sshd on
+# login and inherited into the Claude Code subprocess; same env-at-spawn
+# caveat applies for detached zellij sessions reattached from a different
+# context. GREEN/MAUVE map to base0B/base0E via Stylix; the prompt uses
+# the matching palette aliases (`green`/`purple`).
 HOST_GLYPH=$DESKTOP_GLYPH
-[ -n "$SSH_CONNECTION" ] && HOST_GLYPH=$SSH_GLYPH
+HOST_COLOUR=$GREEN
+if [ -n "$SSH_CONNECTION" ]; then
+  HOST_GLYPH=$SSH_GLYPH
+  HOST_COLOUR=$MAUVE
+fi
 
 {
   read -r MODEL
@@ -130,7 +136,7 @@ if [ -n "$TOP" ]; then
     [ "$CONFLICT" -gt 0 ] && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
     [ "$STAGED" -gt 0 ] && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
     [ "$MODIFIED" -gt 0 ] && GIT_SEG+=" ${YELLOW}~${MODIFIED}${RST}"
-    [ "$UNTRACKED" -gt 0 ] && GIT_SEG+=" ${MAUVE}?${UNTRACKED}${RST}"
+    [ "$UNTRACKED" -gt 0 ] && GIT_SEG+=" ${ORANGE}?${UNTRACKED}${RST}"
   fi
 fi
 
@@ -188,7 +194,7 @@ printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
   "$PCT" "$RLIM"
 
 # ═══ LINE 2: host │ path on branch ════════════════════════════════
-LINE2="${DIM}${HOST_GLYPH}  ${hostname}${RST}"
+LINE2="${HOST_COLOUR}${HOST_GLYPH}  ${hostname}${RST}"
 [ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${GIT_SEG}"
 # Nix-shell indicator — mirrors the starship prompt's nix_shell module.
 # $IN_NIX_SHELL set by nix-direnv on flake-env activation; inherited into
