@@ -139,7 +139,24 @@ scheme — completing the SSH-context signal stack at the statusline
 layer (alongside helix, prompt, zellij, and the macchina banner per
 ADR-028 slice 2). `DIM` and `RST` are SGR style codes (not colours)
 and remain hardcoded in the script. Role → base16 slot mapping
-follows the standard base16 semantic convention: `BLUE`/path →
-`base0D`, `GREEN`/staged → `base0B`, `YELLOW`/modified → `base0A`,
-`RED`/danger → `base08`, `MAUVE`/untracked → `base0E`, `TEAL`/branch →
-`base0C`.
+mostly follows the standard base16 semantic convention with one
+deliberate divergence: `BLUE`/path → `base0D`, `TEAL`/branch →
+`base0C`, `GREEN`/staged → `base0B`, `YELLOW`/modified → `base0A`,
+`ORANGE`/untracked → `base09`, `RED`/danger → `base08`, `MAUVE`/SSH-
+host → `base0E`. `MAUVE` originally mapped to untracked per base16
+convention; untracked moved to `ORANGE` (base09) so the SSH host
+marker (added later — see ADR-002 History) is the only purple
+element on line 2. The seven-binding mapping above is the current
+canonical list.
+
+**Line-2 layout (2026-05-28).** The statusline's line 2 mirrors the
+starship prompt's signal stack so the two surfaces read the same way:
+
+- Host segment (glyph + hostname) on the left, coloured by SSH state —
+  green local, purple SSH. ADR-002 History documents the prompt-side
+  detail and the host-glyph swap rationale.
+- `(…)`-as-metadata convention applies — `(❄️)` lands on **both** the
+  prompt and the statusline (inserted between the path and the git
+  block); `(worktree)` lands on the **statusline only** (starship has
+  no worktree module wired). The canonical convention statement lives
+  in ADR-002 History.

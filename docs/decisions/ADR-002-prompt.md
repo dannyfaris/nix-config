@@ -123,3 +123,47 @@ zellij sessions). A zellij pane started under SSH retains the SSH glyph
 even after detach + local reattach. Accepted as a low-impact edge case;
 the visible signal is "this pane was opened under SSH", which is still
 useful context.
+
+### `(…)`-as-metadata convention (2026-05-28)
+
+Anything wrapped in parentheses on the prompt-or-statusline line is
+**contextual metadata about the immediately-preceding segment**. The
+convention spans both surfaces:
+
+| Wrapping | Surface(s) | Position | Meaning |
+|---|---|---|---|
+| `(❄️)` | prompt + statusline | after the cwd | this directory has a nix-shell active |
+| `(worktree-name)` | statusline only | after the branch | currently on the named git worktree |
+
+(`(worktree)` doesn't appear on the prompt because starship has no
+worktree module wired; the statusline implements it directly. The
+*convention* applies to both; only the worktree *use* is statusline-
+only.)
+
+Both consume their preceding segment's scope: `nix-config (❄️)` reads
+as "the nix-config directory, with nix-shell active"; `main (adr-029)`
+reads as "the main branch, on worktree adr-029".
+
+**Test for new uses** — a signal qualifies as `(…)`-metadata only if
+it describes a *property of the preceding segment's state*, not just
+something that visually relates to it:
+
+- ✓ Property — wrap. `(read-only)` is a property of the directory.
+  `(detached)` is a property of the branch state.
+- ✗ Related-but-separate — don't wrap; render as its own segment.
+  Upstream ahead/behind counts (`⇡1 ⇣2`) are about the branch's
+  relationship with a *remote*, not the branch's own state.
+  Language version indicators (Python `3.12`, Node `22`) are about
+  the directory's *environment*, not the directory itself.
+
+The test boils down to: if you wouldn't naturally say "the X is Y"
+about the preceding segment, it's a separate segment, not metadata.
+
+Implementation: nix-shell renders via `programs.starship.settings.nix_shell`
+positioned between `$directory` and `$git_branch` in the format string,
+with `format = "\([$symbol]($style)\) "` — parens are escaped (`\(`
+`\)`) because starship treats unescaped `(...)` as a "render-if-non-
+empty" conditional group, not literal parens. Only the snowflake picks
+up `$style`; the parens render in default foreground. The statusline
+mirrors this via a conditional `(❄️)` segment inserted between the
+path and the git block in `claude-statusline.sh`.
