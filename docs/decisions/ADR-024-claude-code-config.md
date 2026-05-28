@@ -126,3 +126,20 @@ Companion changes:
   (moved from the deferred tier to installed; statusline is the
   immediate driver, jq is broadly useful).
 - `docs/decisions/README.md` index table gains a row for this ADR.
+
+**Palette-driven colours (added per ADR-028 slice 6, 2026-05-28).** The
+six colour bindings in `claude-statusline.sh` (BLUE / GREEN / YELLOW /
+RED / MAUVE / TEAL) are no longer hardcoded ANSI 256-colour escapes.
+`home/core/shared/agent-clis.nix` emits a `~/.claude/statusline-colours.sh`
+derivation at activation time using `pkgs.writeText` +
+`config.lib.stylix.colors`, and the main script `source`s it at
+startup. The colour escapes are now truecolor (`38;2;R;G;B`) rather
+than 256-colour (`38;5;N`), and the palette tracks each host's Stylix
+scheme — completing the SSH-context signal stack at the statusline
+layer (alongside helix, prompt, zellij, and the macchina banner per
+ADR-028 slice 2). `DIM` and `RST` are SGR style codes (not colours)
+and remain hardcoded in the script. Role → base16 slot mapping
+follows the standard base16 semantic convention: `BLUE`/path →
+`base0D`, `GREEN`/staged → `base0B`, `YELLOW`/modified → `base0A`,
+`RED`/danger → `base08`, `MAUVE`/untracked → `base0E`, `TEAL`/branch →
+`base0C`.

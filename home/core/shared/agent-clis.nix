@@ -16,16 +16,55 @@
 #
 # Unfree: cursor-cli is whitelisted in modules/core/nixos/nix-daemon.nix's
 # allowUnfreePredicate (alongside claude-code).
-{ pkgs, ... }:
+{ pkgs, config, ... }:
+let
+  c = config.lib.stylix.colors;
+
+  # Truecolor SGR foreground escape for a given base16 slot. Returns
+  # the literal 4-char string `\033[38;2;R;G;Bm` — bash's $'...' ANSI-C
+  # quoting decodes `\033` to the ESC byte at runtime. This differs
+  # from the macchina recolour (home/core/nixos/macchina.nix), which
+  # pre-decodes ESC at Nix eval time and interpolates it directly;
+  # here we keep the escape sequence textually readable in the
+  # generated file because operators may want to cat / grep / debug it.
+  fgEscape =
+    slot:
+    "\\033[38;2;${toString c."${slot}-rgb-r"};${toString c."${slot}-rgb-g"};${toString c."${slot}-rgb-b"}m";
+
+  # Six statusline colour bindings derived from the host's base16
+  # palette. Role → base16 slot mapping follows the standard base16
+  # semantic convention (08=red, 0A=yellow, 0B=green, 0C=cyan, 0D=blue,
+  # 0E=magenta) so the colours come out semantically right regardless
+  # of which palette the host picks. See ADR-024 §Implementation and
+  # GH issue #7 for the why; ADR-028 slice 6 for the architectural
+  # placement.
+  statuslineColours = pkgs.writeText "statusline-colours.sh" ''
+    # Generated from config.lib.stylix.colors at activation time.
+    # See ADR-024 §Implementation and ADR-028 slice 6 for the why.
+    # Edit the role→base16-slot mapping in home/core/shared/agent-clis.nix.
+    BLUE=$'${fgEscape "base0D"}'
+    GREEN=$'${fgEscape "base0B"}'
+    YELLOW=$'${fgEscape "base0A"}'
+    RED=$'${fgEscape "base08"}'
+    MAUVE=$'${fgEscape "base0E"}'
+    TEAL=$'${fgEscape "base0C"}'
+  '';
+in
 {
   home.packages = with pkgs; [
     claude-code
     cursor-cli
   ];
 
-  # Custom statusline — see ADR-024.
-  home.file.".claude/statusline.sh" = {
-    source = ./claude-statusline.sh;
-    executable = true;
+  # Custom statusline — see ADR-024. Colours are palette-driven via
+  # Stylix (ADR-028 slice 6 / issue #7); the script sources
+  # statusline-colours.sh at startup. DIM and RST (style codes, not
+  # colours) remain hardcoded in the script.
+  home.file = {
+    ".claude/statusline.sh" = {
+      source = ./claude-statusline.sh;
+      executable = true;
+    };
+    ".claude/statusline-colours.sh".source = statuslineColours;
   };
 }
