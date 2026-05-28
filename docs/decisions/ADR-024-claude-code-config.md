@@ -149,6 +149,39 @@ marker (added later — see ADR-002 History) is the only purple
 element on line 2. The seven-binding mapping above is the current
 canonical list.
 
+**Model name colour by tier (2026-05-28).** Line 1's leading `✦ <model
+name>` segment is coloured per Anthropic model tier so the active
+model is identifiable at a glance:
+
+- `*Sonnet*` → `TEAL` — calm "label" hue, pairs with branch on line 2.
+- `*Opus*`   → `ORANGE` — top of the visual tier ladder, warmest hue.
+- **Haiku** → default foreground (intentional). Absence of styling
+  is itself a signal — the lightweight tier is the "workhorse with no
+  flourish." Reducing visual chrome for the most common use case is
+  the design goal.
+- **Unknown / future tiers** → default foreground (by fallthrough).
+  *Review this mapping when Anthropic ships a new tier name* (e.g. a
+  "Pro" or "Lite" between Sonnet and Opus, or a successor naming
+  scheme entirely) — the current case statement won't recognise it.
+
+Substring match (not exact) so future variants ("Claude 5 Opus",
+"Sonnet 4.7", etc.) inherit their tier's colour without an update.
+Sonnet is checked before Opus so a hypothetical "Sonnet (Opus-tuned)"
+hybrid renders as Sonnet — see the case-statement comment.
+
+The Opus=ORANGE and Sonnet=TEAL choices each share a hue with one
+line-2 role (untracked counter and branch respectively). The dual
+roles are deliberate — both pair "label / attention" semantics across
+the two lines at distinct positions. **ORANGE and TEAL are at
+capacity** for line-1 categorical pairing — if a future line-1 slot
+needs colour, prefer MAUVE or default-fg rather than triple-loading
+either of these.
+
+The originally-used `MAUVE`/Opus was dropped because MAUVE is now the
+SSH host marker, and both elements are leftmost-line-anchors —
+colouring both purple collapsed them into a single apparent signal
+when SSH'd.
+
 **Line-2 layout (2026-05-28).** The statusline's line 2 mirrors the
 starship prompt's signal stack so the two surfaces read the same way:
 

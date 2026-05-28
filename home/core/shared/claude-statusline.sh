@@ -61,6 +61,20 @@ fi
   (.rate_limits.five_hour.resets_at // "")
 ' <<<"$input")
 
+# Model name colour — per-tier so the active model is identifiable at a
+# glance. Substring match so future variants ("Claude 5 Opus", "Sonnet
+# 4.7", etc.) inherit their tier's colour. Order encodes precedence:
+# the first pattern to match wins, so an Opus-tuned Sonnet (hypothetical
+# `Sonnet (Opus-tuned)`) would match `*Sonnet*` first — keep Sonnet
+# before Opus if you need that. Haiku and unknown models hit the `*)`
+# fall-through and render in default foreground. See ADR-024
+# §Implementation.
+case "$MODEL" in
+*Sonnet*) MODEL_COL="$TEAL" ;;
+*Opus*) MODEL_COL="$ORANGE" ;;
+*) MODEL_COL="" ;;
+esac
+
 # ─── Git state — queried fresh each render, no cache ──────────────
 # Statusline renders are debounced (~300ms) and event-driven, not a hot
 # loop, so three git invocations per render is fine. Caching this was
@@ -188,7 +202,7 @@ fi
 
 # ═══ LINE 1: model │ effort │ context │ rate-limit ═══════════════
 printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
-  "$MAUVE" "$MODEL" "$RST" \
+  "$MODEL_COL" "$MODEL" "$RST" \
   "$EFFORT_SEG" "$SEP" \
   "$BC" "$BAR" "$RST" \
   "$PCT" "$RLIM"
