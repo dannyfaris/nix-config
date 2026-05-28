@@ -69,7 +69,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [024](./ADR-024-claude-code-config.md) | Claude Code config | home.file deploy, settings.json mutable | Stable config files sync via Nix; per-host settings.json edit references them |
 | [025](./ADR-025-ci-in-flake.md) | Continuous integration | flake-defined `nix flake check` + GitHub Actions matrix | Every check is a flake output; CI is thin YAML; `.githooks/` replaced by `git-hooks.nix` installed by devShell. Realises ADR-023's planned banner-check enforcement |
 | [027](./ADR-027-foundation-and-bundles.md) | Composition model (replaces roles) | foundation + capability bundles | `roles/` removed; each host imports `foundation.nix` + opt-in bundles. Supersedes ADR-014; amends ADR-013 |
-| [028](./ADR-028-stylix-foundation-and-desktop-env.md) | Theming + desktop env | Stylix in foundation; desktop arrives on metis | `Accepted, Implementation pending`. Niri + DMS + Ghostty + greetd; Stylix-canonical theming across TUI and shell |
+| [028](./ADR-028-stylix-foundation-and-desktop-env.md) | Theming + desktop env | Stylix in foundation; desktop arrives on metis | `Accepted, Implementation pending`. Niri + DMS + Foot + greetd; Stylix-canonical theming across TUI and shell |
 
 ## Conventions
 

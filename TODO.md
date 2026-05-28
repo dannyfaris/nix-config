@@ -52,7 +52,7 @@ B below is a belt-and-braces extension.
 - [ ] **`mothership`** — second Linux desktop host. Pending hardware.
       Will compose foundation + bundles + standalone modules per
       ADR-027, reusing the `desktop-env` bundle landed for metis
-      (ADR-028: niri + DMS + ghostty + greetd, Stylix-driven). The
+      (ADR-028: niri + DMS + foot + greetd, Stylix-driven). The
       original `tier3-desktop-deferred` stack (waybar/fuzzel/mako) is
       superseded by ADR-028 — do not resurrect. References:
       sodiboo/system (niri-flake idioms), eduardofuncao/nixferatu

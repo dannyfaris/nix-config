@@ -5,7 +5,7 @@
 # via its homeModules.niri integration with enableKeybinds = true
 # (set in ./dms.nix). This file adds only what DMS doesn't:
 #
-#   - Mod+T → ghostty (slice 5's verification matrix needs a terminal bind).
+#   - Mod+Return → foot (slice 5's verification matrix needs a terminal bind).
 #   - Mod+Shift+E → niri quit (emergency exit without dropping to console).
 #
 # Niri itself is enabled at the system layer (modules/core/nixos/niri.nix).
@@ -18,7 +18,7 @@
 # Per ADR-028.
 _: {
   programs.niri.settings.binds = {
-    "Mod+T".action.spawn = "ghostty";
+    "Mod+Return".action.spawn = "foot";
     "Mod+Shift+E".action.quit = { };
   };
 }
