@@ -11,12 +11,13 @@ input=$(cat)
 NOW=$(date +%s)
 hostname=$(hostname -s)
 
-BLUE=$'\033[38;5;75m'
-GREEN=$'\033[38;5;114m'
-YELLOW=$'\033[38;5;179m'
-RED=$'\033[38;5;167m'
-MAUVE=$'\033[38;5;141m'
-TEAL=$'\033[38;5;73m'
+# Palette-driven colour bindings — sourced from a Nix-generated file at
+# startup; mapping lives in home/core/shared/agent-clis.nix. The file
+# defines BLUE / GREEN / YELLOW / RED / MAUVE / TEAL as truecolor SGR
+# escapes derived from config.lib.stylix.colors. See ADR-024
+# §Implementation and ADR-028 slice 6 for the migration rationale.
+# shellcheck source=/dev/null
+source ~/.claude/statusline-colours.sh
 DIM=$'\033[2m'
 RST=$'\033[0m'
 SEP=" ${DIM}│${RST} "
