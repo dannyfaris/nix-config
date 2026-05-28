@@ -23,9 +23,9 @@ Adopt a coordinated three-part decision, scoped to land as one ADR because the t
 
 **2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/core/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/core/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Foot, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
 
-**3. DMS reads its palette from Stylix.** A small home-manager module emits a DMS custom-theme JSON derivation from `config.lib.stylix.colors`, wired via `programs.dank-material-shell.settings.customThemeFile` + `currentThemeName = "custom"`, with `enableDynamicTheming = false` to suppress matugen. The base16 → Material 3 mapping is hand-rolled and lives next to the wiring module.
+**3. DMS theming is decoupled from Stylix** (decision rebased 2026-05-29; see §History below). DMS uses its own built-in palette and runtime wallpaper picker. `programs.dank-material-shell.enableDynamicTheming = false` suppresses matugen so it doesn't fight Stylix's GTK/Qt targets. `stylix.image` is not set on DMS-driven hosts; Stylix has no wallpaper consumer there. Stylix remains canonical for the TUI surface, foot terminal, GTK/Qt apps, and niri focus-ring/cursor.
 
-The desktop stack is **niri compositor + DMS shell + Foot terminal + greetd session entry + Stylix theming across both TUI and desktop surfaces.** Waybar, fuzzel, mako, and matugen do not enter the configuration — DMS replaces the first three; the fourth is suppressed via `enableDynamicTheming = false`. (Foot supersedes the originally-named Ghostty for the Linux desktop; see §History.)
+The desktop stack is **niri compositor + DMS shell + Foot terminal + greetd session entry + Stylix theming across the TUI surface, foot, GTK/Qt apps, and niri focus-ring/cursor.** Waybar, fuzzel, mako, and matugen do not enter the configuration — DMS replaces the first three; the fourth is suppressed via `programs.dank-material-shell.enableDynamicTheming = false` so it doesn't fight Stylix's GTK/Qt targets. (Foot supersedes the originally-named Ghostty for the Linux desktop; see §History. DMS theming was originally planned as a Stylix consumer; that bridge is deferred indefinitely — see §History.)
 
 ## Rationale
 
@@ -70,7 +70,7 @@ Decision-only landing; implementation in subsequent slices, each peer-reviewed o
 1. **Slice 1 (this PR) — Documentation reconciliation.** ADR-028 authored; `docs/decisions/README.md` lifecycle convention; CLAUDE.md / PRD / TODO.md framing updates; issue #4 body update. No code changes.
 2. **Slice 2 — Stylix in foundation, TUI targets.** Stylix flake input; `lib/host-palettes.nix` (metis, mercury, nixos-vm); foundation import; HM-side Stylix targets for existing TUI tools; macchina banner recolour. Hard prereq for slices 3–5.
 3. **Slice 3 — desktop-env bundle scaffolding.** New `modules/core/nixos/bundles/desktop-env.nix` (niri + greetd + desktop fonts) and `home/core/nixos/bundles/desktop-env.nix` (niri user config + Foot + DMS). The home-side bundle directory `home/core/nixos/bundles/` is created as part of this slice (it does not exist yet; existing HM bundles live in `home/core/shared/bundles/`, but the desktop stack is Linux-only and belongs under `nixos/` per the shared-purity rule). Metis's `default.nix` adds both imports. Build-verify; no activation.
-4. **Slice 4 — DMS↔Stylix theme wiring.** Standalone HM module emitting DMS custom-theme JSON from `config.lib.stylix.colors`; wire via `programs.dank-material-shell.settings`; document the base16→M3 mapping inline.
+4. **Slice 4 — DMS↔Stylix theme wiring [deferred indefinitely; see §History 2026-05-29].** Originally planned as a standalone HM module emitting DMS custom-theme JSON from `config.lib.stylix.colors`. Decoupled from Stylix on 2026-05-29; no bridge module ships. Slice numbering preserved for archaeological consistency.
 5. **Slice 5 — First activation on metis.** `nh os switch`. End-to-end verify: niri launches, DMS in metis palette, Foot themed, TUI surfaces match.
 6. **Slice 6 (follow-up) — Issue #7 (Claude statusline) ceding colours to Stylix.** Another `config.lib.stylix.colors` consumer; independent of desktop work.
 
@@ -132,3 +132,88 @@ current decision. Stylix's `foot` target is enabled centrally in
 `home/core/shared/bundles/theming.nix` alongside the other TUI targets
 (inert on non-desktop hosts because Stylix gates the target on
 `programs.foot.enable`).
+
+### DMS theming decoupled from Stylix (2026-05-29)
+
+The original Decision (item 3 above) named **DMS** as a downstream
+Stylix consumer, with slice 4 to deliver a custom-theme JSON bridge
+emitting from `config.lib.stylix.colors`. Slice 3 landed without
+slice 4, and slice 4 itself never started.
+
+Deferring slice 4 indefinitely. Rationale:
+
+- **Aesthetic-only payoff, not load-bearing.** The bridge would make
+  the DMS bar/launcher/notification surfaces shift palette with the
+  host's base16 scheme. Useful when there are multiple desktop hosts
+  to distinguish (e.g. tab between metis and mothership); pays off
+  precisely zero today since metis is the only desktop host. The
+  per-host SSH-context signal value (cited in Consequences above)
+  applies at the TUI layer for remote work, not at the DMS-shell
+  layer for local work.
+
+- **Cost was real.** The base16 → M3 mapping is lossy by construction
+  (16 positional slots vs ~20 named semantic tokens); the §Rationale
+  paragraph above documents the lossiness. Each host's palette would
+  need an eyeball pass on the rendered DMS surface. DMS's schema
+  expanded across v1.x — `settings: allow custom json to render all
+  theme options` shipped in v1.4.4 — so the field set is live-mutating
+  and would require tracking.
+
+- **Pattern misfit.** Stylix-consumer modules are downstream readers
+  of `config.lib.stylix.colors` (the macchina banner and Claude
+  statusline are precedents). DMS doesn't quite fit: it ships its own
+  theme engine (matugen) that we would have to actively suppress on
+  every host that imports the bundle. The integration is an
+  always-on subtraction, not an additive consumer.
+
+- **No production-grade prior art at decision time; one reference has
+  since surfaced.** The §Rationale paragraph "No production-grade
+  prior art exists for Stylix→DMS" was accurate when written; the
+  closest public reference (otherdelusions/nixos-config) was found
+  during slice-4 research and its mapping disagrees with the table
+  this ADR sketched in 9 of ~18 token assignments. Choosing among
+  aesthetically-defensible mappings is not the work the operator
+  wants to spend their time on for a single-desktop-host setup.
+
+**Revised framing.** Stylix is canonical for the TUI surface (helix,
+bat, fzf, starship, zellij, yazi, lazygit, fish), foot terminal,
+GTK/Qt apps, niri focus-ring/cursor, macchina banner, and Claude
+Code statusline. **DMS is self-contained for its shell theme and
+wallpaper.** `programs.dank-material-shell.enableDynamicTheming =
+false` is load-bearing — it's the single gate in DMS's
+`distro/nix/common.nix:19` that prevents matugen from running
+against the wallpaper and writing files
+(`~/.config/gtk-{3,4}.0/dank-colors.css`,
+`~/.config/qt{5,6}ct/colors/matugen.conf`) that would conflict with
+Stylix's GTK/Qt targets.
+
+`stylix.image` is intentionally not set anywhere in the
+configuration. Stylix has no wallpaper consumer on a DMS-driven host
+(DMS provides its own runtime wallpaper picker; tuigreet has no
+graphical background; DMS owns the lock screen). On headless hosts
+(mercury, nixos-vm), `stylix.image` would be dead weight.
+
+**Consequences specific to this amendment.**
+
+- Slice 4 (issue #34) closes as deferred. No bridge module ships.
+- Two original §Consequences become moot: "Closure grows on metis:
+  ... + matugen (buildtime dep even with dynamic theming off)" is no
+  longer relevant because matugen is now suppressed by the
+  `enableDynamicTheming` gate before reaching the closure;
+  "Migration trigger 2 — Stylix→matugen upstream lands" is no longer
+  a trigger because we no longer have a Stylix↔DMS interface to
+  revisit.
+- Migration trigger 1 (DMS schema drift) and trigger 3 (mothership
+  arrives) still stand. Mothership arrival is the natural moment to
+  revisit slice 4 — at two desktop hosts, the per-host signal at the
+  DMS-shell layer starts paying off.
+- ADR-028's "single source of truth for theming" claim becomes
+  **scoped** rather than universal: Stylix is canonical for
+  Stylix-target-bearing surfaces, not for shell engines that own
+  their own theme system.
+
+The corresponding code change (adding
+`programs.dank-material-shell.enableDynamicTheming = false` to
+`home/core/nixos/dms.nix` plus a header-comment rewrite, alongside
+two other slice-5-readiness hardening edits) lands in a separate
+follow-up PR. This amendment is docs-only.
