@@ -101,7 +101,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
   squash-merges itself once required checks pass.
 - Desktop environment lands on metis (x86_64) per
   [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md):
-  Niri + Dank Material Shell + Ghostty + greetd, with Stylix as the
+  Niri + Dank Material Shell + Foot + greetd, with Stylix as the
   single theme source-of-truth across TUI and shell. The older
   waybar/fuzzel/mako stack at git tag `tier3-desktop-deferred` is
   superseded and should not be resurrected. Desktop modules are not

@@ -5,12 +5,12 @@
 # user-facing capabilities the desktop session needs are factored into
 # standalone modules beside this file:
 #
-#   - niri.nix    — programs.niri.settings.binds (Mod+T → ghostty, Mod+Shift+E → quit).
-#   - ghostty.nix — programs.ghostty.enable.
-#   - dms.nix     — programs.dank-material-shell.{enable, systemd.enable, niri.enableKeybinds}.
+#   - niri.nix — programs.niri.settings.binds (Mod+Return → foot, Mod+Shift+E → quit).
+#   - foot.nix — programs.foot.enable.
+#   - dms.nix  — programs.dank-material-shell.{enable, systemd.enable, niri.enableKeybinds}.
 #
 # First occupant of home/core/nixos/bundles/. The desktop stack is
-# Linux-only (DMS, niri, greetd-launched Ghostty all carry Linux paths)
+# Linux-only (DMS, niri, greetd-launched Foot all carry Linux paths)
 # so per scripts/lint-shared-purity.sh this lives under nixos/, not
 # shared/.
 #
@@ -20,7 +20,7 @@
 {
   imports = [
     ../niri.nix
-    ../ghostty.nix
+    ../foot.nix
     ../dms.nix
   ];
 }

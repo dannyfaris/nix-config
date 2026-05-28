@@ -21,11 +21,11 @@ Adopt a coordinated three-part decision, scoped to land as one ADR because the t
 
 **1. Stylix is promoted to foundation, with per-host base16 palettes as the single source of truth for theming.** `inputs.stylix.nixosModules.stylix` is imported by `modules/core/nixos/foundation.nix`. A new `lib/host-palettes.nix` maps `hostName → base16-scheme-name`; foundation reads this map keyed on `hostContext.hostName` (the field name set by ADR-019). Missing-host lookups fail loudly at eval. Stylix governs all colour/font surfaces across both the TUI surface (helix, bat, zellij, starship, lazygit, yazi, btop, fish) and — via the wiring below — the desktop shell.
 
-**2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/core/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/core/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Ghostty, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
+**2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/core/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/core/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Foot, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
 
 **3. DMS reads its palette from Stylix.** A small home-manager module emits a DMS custom-theme JSON derivation from `config.lib.stylix.colors`, wired via `programs.dank-material-shell.settings.customThemeFile` + `currentThemeName = "custom"`, with `enableDynamicTheming = false` to suppress matugen. The base16 → Material 3 mapping is hand-rolled and lives next to the wiring module.
 
-The desktop stack is **niri compositor + DMS shell + Ghostty terminal + greetd session entry + Stylix theming across both TUI and desktop surfaces.** Waybar, fuzzel, mako, and matugen do not enter the configuration — DMS replaces the first three; the fourth is suppressed via `enableDynamicTheming = false`.
+The desktop stack is **niri compositor + DMS shell + Foot terminal + greetd session entry + Stylix theming across both TUI and desktop surfaces.** Waybar, fuzzel, mako, and matugen do not enter the configuration — DMS replaces the first three; the fourth is suppressed via `enableDynamicTheming = false`. (Foot supersedes the originally-named Ghostty for the Linux desktop; see §History.)
 
 ## Rationale
 
@@ -69,9 +69,9 @@ Decision-only landing; implementation in subsequent slices, each peer-reviewed o
 
 1. **Slice 1 (this PR) — Documentation reconciliation.** ADR-028 authored; `docs/decisions/README.md` lifecycle convention; CLAUDE.md / PRD / TODO.md framing updates; issue #4 body update. No code changes.
 2. **Slice 2 — Stylix in foundation, TUI targets.** Stylix flake input; `lib/host-palettes.nix` (metis, mercury, nixos-vm); foundation import; HM-side Stylix targets for existing TUI tools; macchina banner recolour. Hard prereq for slices 3–5.
-3. **Slice 3 — desktop-env bundle scaffolding.** New `modules/core/nixos/bundles/desktop-env.nix` (niri + greetd + desktop fonts) and `home/core/nixos/bundles/desktop-env.nix` (niri user config + Ghostty + DMS). The home-side bundle directory `home/core/nixos/bundles/` is created as part of this slice (it does not exist yet; existing HM bundles live in `home/core/shared/bundles/`, but the desktop stack is Linux-only and belongs under `nixos/` per the shared-purity rule). Metis's `default.nix` adds both imports. Build-verify; no activation.
+3. **Slice 3 — desktop-env bundle scaffolding.** New `modules/core/nixos/bundles/desktop-env.nix` (niri + greetd + desktop fonts) and `home/core/nixos/bundles/desktop-env.nix` (niri user config + Foot + DMS). The home-side bundle directory `home/core/nixos/bundles/` is created as part of this slice (it does not exist yet; existing HM bundles live in `home/core/shared/bundles/`, but the desktop stack is Linux-only and belongs under `nixos/` per the shared-purity rule). Metis's `default.nix` adds both imports. Build-verify; no activation.
 4. **Slice 4 — DMS↔Stylix theme wiring.** Standalone HM module emitting DMS custom-theme JSON from `config.lib.stylix.colors`; wire via `programs.dank-material-shell.settings`; document the base16→M3 mapping inline.
-5. **Slice 5 — First activation on metis.** `nh os switch`. End-to-end verify: niri launches, DMS in metis palette, Ghostty themed, TUI surfaces match.
+5. **Slice 5 — First activation on metis.** `nh os switch`. End-to-end verify: niri launches, DMS in metis palette, Foot themed, TUI surfaces match.
 6. **Slice 6 (follow-up) — Issue #7 (Claude statusline) ceding colours to Stylix.** Another `config.lib.stylix.colors` consumer; independent of desktop work.
 
 ## References
@@ -83,3 +83,52 @@ Decision-only landing; implementation in subsequent slices, each peer-reviewed o
 - DMS docs — [CUSTOM_THEMES.md](https://github.com/AvengeMedia/DankMaterialShell/blob/master/docs/CUSTOM_THEMES.md), [home.nix module](https://github.com/AvengeMedia/DankMaterialShell/blob/master/distro/nix/home.nix), [Theme.qml singleton](https://github.com/AvengeMedia/DankMaterialShell/blob/master/quickshell/Common/Theme.qml).
 - Stylix upstream — [issue #2031](https://github.com/nix-community/stylix/issues/2031), [PR #892 (draft)](https://github.com/nix-community/stylix/pull/892).
 - `tier3-desktop-deferred` git tag — older waybar/fuzzel/mako stack; superseded.
+
+## History
+
+### Terminal swapped from Ghostty to Foot (2026-05-28)
+
+The original Decision named **Ghostty** as the metis terminal — inherited
+from the `tier3-desktop-deferred` stack and carried unexamined into
+this ADR. Slice 3 scaffolded a `programs.ghostty.enable = true` module
+on metis (PR #55).
+
+Caught while drafting a prior-art research prompt for slice 4: the
+operator's actual intent is **Foot** on Linux desktop hosts, with
+Ghostty reserved for macOS clients. The original ADR text propagated
+the wrong terminal through Decision, Implementation, and Consequences.
+Slice 3 had landed but slice 4 had not, so the surgery is bounded:
+replace `ghostty.nix` with `foot.nix`, swap the `Mod+T → ghostty`
+keybind to `Mod+Return → foot` (also taking the moment to use the
+tiling-WM-canonical `Mod+Return` for terminal-launch), and amend the
+ADR + companion docs to match.
+
+**Rationale for Foot over Ghostty on Linux desktop:**
+
+- Foot is Wayland-native; doesn't carry the GPU-accelerated TUI
+  feature surface Ghostty brings (less of which is needed inside niri,
+  which already does compositor-level GPU work).
+- Foot's closure is meaningfully smaller — no embedded scripting
+  runtime, no platform abstraction layer.
+- Foot is the historical "lightweight first-class Wayland terminal"
+  in the niri/wlroots/sway lineage; aligns with niri's design
+  philosophy. ADR-011's earlier remote-dev-QoL note already
+  anticipated "linux-workstation lands with foot" — that anticipation
+  is now reality.
+- Ghostty is retained on **macOS clients** (operator's Mac) and via
+  the unchanged `modules/core/shared/ghostty-terminfo.nix` standalone
+  module, which ships the `xterm-ghostty` terminfo entry on every
+  host so SSH'ing in from a Ghostty-on-Mac terminal renders cleanly.
+  The Ghostty client posture (Mac → SSH → any host) is untouched.
+- A future `home/core/darwin/` tree (per the mac-mini onboarding
+  epic, #11) will add `programs.ghostty.enable` for Darwin hosts.
+  The Linux/Darwin split is now: Linux desktop uses Foot, macOS uses
+  Ghostty.
+
+Files touched: see the amendment commit (`git log --grep "metis terminal"`).
+Note: line 14's reference to the `tier3-desktop-deferred` git tag is preserved
+verbatim because it accurately describes a historical artefact, not the
+current decision. Stylix's `foot` target is enabled centrally in
+`home/core/shared/bundles/theming.nix` alongside the other TUI targets
+(inert on non-desktop hosts because Stylix gates the target on
+`programs.foot.enable`).

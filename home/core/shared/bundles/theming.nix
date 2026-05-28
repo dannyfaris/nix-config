@@ -32,5 +32,11 @@ _: {
     # both NixOS and HM layers; foundation deliberately enables
     # neither, so this is the sole switch-on for fish theming.
     fish.enable = true;
+    # foot — desktop-host-only (metis). Inert on nixos-vm and mercury
+    # because Stylix's foot target gates on `programs.foot.enable`,
+    # which only resolves to true via the desktop-env bundle. Kept in
+    # this central whitelist for discoverability — "where does Stylix
+    # theming live?" reads as one file.
+    foot.enable = true;
   };
 }

@@ -12,7 +12,7 @@
 #   - niri.enableKeybinds = true — DMS adds its IPC binds (Mod+Space
 #     spotlight, Mod+N notifications, Mod+X powermenu, Mod+V clipboard,
 #     XF86Audio*, XF86MonBrightness*, etc.) into programs.niri.settings.binds
-#     via lib.mkMerge. No conflict with the Mod+T / Mod+Shift+E binds
+#     via lib.mkMerge. No conflict with the Mod+Return / Mod+Shift+E binds
 #     set in ./niri.nix (DMS doesn't bind either).
 #
 # niri.includes.enable defaults true: DMS ships KDL fragments
