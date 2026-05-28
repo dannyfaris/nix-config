@@ -12,7 +12,7 @@ We use a **light ADR format**:
 # ADR-NNN: [Title]
 
 **Date**: YYYY-MM-DD
-**Status**: Accepted
+**Status**: Accepted, Implementation pending   # or Accepted, Implemented / Superseded by ADR-XXX / Amended by ADR-XXX / Withdrawn
 
 ## Context
 [The forces driving the decision — project constraints, user preferences,
@@ -69,6 +69,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [024](./ADR-024-claude-code-config.md) | Claude Code config | home.file deploy, settings.json mutable | Stable config files sync via Nix; per-host settings.json edit references them |
 | [025](./ADR-025-ci-in-flake.md) | Continuous integration | flake-defined `nix flake check` + GitHub Actions matrix | Every check is a flake output; CI is thin YAML; `.githooks/` replaced by `git-hooks.nix` installed by devShell. Realises ADR-023's planned banner-check enforcement |
 | [027](./ADR-027-foundation-and-bundles.md) | Composition model (replaces roles) | foundation + capability bundles | `roles/` removed; each host imports `foundation.nix` + opt-in bundles. Supersedes ADR-014; amends ADR-013 |
+| [028](./ADR-028-stylix-foundation-and-desktop-env.md) | Theming + desktop env | Stylix in foundation; desktop arrives on metis | `Accepted, Implementation pending`. Niri + DMS + Ghostty + greetd; Stylix-canonical theming across TUI and shell |
 
 ## Conventions
 
@@ -76,9 +77,8 @@ and consistent, but not so much that small decisions feel over-formalised.
   right; gives room to grow.
 - **Filename convention**: `ADR-NNN-<topic>.md` where `<topic>` is a
   short kebab-case slug.
-- **Status starts as Accepted.** If a decision is later superseded, edit the
-  status to "Superseded by ADR-XXX" and add a top-of-file note pointing to
-  the successor. Don't delete or rewrite the historical record.
+- **Status reflects lifecycle.** ADRs move: `Proposed` → `Accepted, Implementation pending` → `Accepted, Implemented`. Terminal states: `Superseded by ADR-XXX`, `Amended by ADR-XXX`, `Withdrawn`. Once an ADR's decision lands in code, the ADR is immutable historical record — don't delete or rewrite; use `Superseded` (contradicting replacement) or `Amended` (extending augmentation) via a new ADR when the decision needs to change. Before implementation, the ADR is plan-state and may be revised freely in response to new information. `Withdrawn` is for ADRs revised so substantially before implementation that preserving the original would mislead — withdraw with a pointer, author fresh.
+- **Existing ADRs (001 through 027) carry bare `Accepted`.** Grandfathered as `Accepted, Implemented` unless `TODO.md` or the ADR's own Implementation section indicates otherwise (notably ADR-025, which is a decision-only landing per `TODO.md`). New ADRs use the lifecycle states above from the outset.
 - **Date** is the date of the original decision, not the date of writing.
   When backfilling ADRs from earlier conversations, use the conversation
   date.

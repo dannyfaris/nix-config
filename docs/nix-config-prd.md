@@ -112,7 +112,7 @@ Bundle names describe what is in the bundle, not what kind of host imports it. I
 - `remote-access` — sshd + mosh + ghostty.terminfo
 - `cli-tooling` — shell + prompt + direnv + multiplexer + editor + cli-utils + nix-tooling
 - `agent-clis-base` — claude-code + cursor-cli
-- `desktop-env` — niri + waybar + stylix + mako
+- `desktop-env` — niri + DMS + ghostty + greetd
 - `container-runtime` — rootless docker daemon + CLI
 
 A bundle exists when it groups two or more modules. Single-module "bundles" are forbidden; the underlying capability stays a standalone module (§3.1, second bullet) until a sibling joins it. The pre-wrapping trap is the same forecast-driven abstraction the role layer fell into and is rejected for the same reason.
@@ -288,10 +288,13 @@ For NixOS hosts installed via `nixos-anywhere` (ADR-022), the per-host directory
 
 **Hosts:** stable per physical machine. The host directory's name refers to a specific machine, not to its current purpose. A machine's software composition may change without renaming. Hardware-platform changes (e.g., MacBook Air → MacBook Pro, motherboard replacement, new cloud infrastructure) are treated as a different host: a new `hosts/<name>/` directory is created with a fresh name, and the prior host directory may be retired. Existing host directories are not renamed in place. The rule is recorded in ADR-016.
 
-Examples drawn from the initial set of hosts:
-- `mothership` — the existing Linux workstation
-- `mba` — the current MacBook Air
-- `mac-mini` — the current Mac mini
+Examples drawn from the current and planned set of hosts:
+- `nixos-vm` — UTM refinement VM (aarch64-linux)
+- `mercury` — work-only headless dev host on AWS EC2 (x86_64-linux)
+- `metis` — personal x86_64 dev box, transitioning from headless to the first desktop host (ADR-028)
+- `mothership` — second Linux desktop host (planned; pending hardware)
+- `mba` — MacBook Air (planned via nix-darwin)
+- `mac-mini` — Mac mini (planned via nix-darwin)
 
 These names are accepted under the rule: each refers unambiguously to a specific physical machine. A replacement (e.g., upgrading the MacBook Air to a MacBook Pro) gets its own host directory and a fresh name.
 
@@ -679,7 +682,7 @@ Data — Obsidian vault contents, photography libraries, project repositories �
 
 A successful design produces a configuration that another competent operator (familiar with Nix at a general level, given access to the repository and 1Password) can rebuild from in an afternoon. This is the operational standard the bootstrap design serves.
 
-The test holds today for macOS hosts and for NixOS headless hosts (the latter via the nixos-anywhere + disko path resolved in ADR-022, demonstrated on Mercury and Metis). For NixOS workstation hosts, it will hold once the first such host (`mothership`) is provisioned.
+The test holds today for NixOS headless hosts (via the nixos-anywhere + disko path resolved in ADR-022, demonstrated on Mercury and Metis). It will hold for NixOS workstation hosts once metis transitions to the desktop env (ADR-028), and for macOS hosts once the mac-mini onboarding completes.
 
 ---
 
