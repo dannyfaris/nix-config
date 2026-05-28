@@ -18,7 +18,7 @@ hostname=$(hostname -s)
 # §Implementation and ADR-028 slice 6 for the migration rationale.
 # shellcheck source=/dev/null
 source ~/.claude/statusline-colours.sh
-DIM=$'\033[2m'
+DIM='' # dim SGR too low-contrast in practice; keep var for one-point reintro
 RST=$'\033[0m'
 SEP=" ${DIM}│${RST} "
 # Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
