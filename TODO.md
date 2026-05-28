@@ -19,10 +19,6 @@ like; see git log for the full review.
       the ~5-field threshold; we're at 3 fields and 3 hosts, but the
       migration provides a clean moment to introduce the typed layer
       before Darwin onboarding adds more. **S, low.**
-- [ ] **Fix `nrs` abbreviation** — `home/core/shared/shell.nix:16`
-      expands to `sudo nixos-rebuild switch`, contradicting `nh os switch`
-      as the canon. Replace with `nos = "nh os switch"`. Trains muscle
-      memory in the right direction. **S, low.**
 - [ ] **Drop duplicated `system` arg from `lib/mk-host.nix`** — let
       `nixpkgs.hostPlatform` from `hardware-configuration.nix` carry
       the platform. The mk-host comment already telegraphs the refactor;
