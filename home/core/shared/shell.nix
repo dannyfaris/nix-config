@@ -9,6 +9,12 @@ _: {
     enable = true;
     interactiveShellInit = "set -g fish_greeting";
 
+    # Terminal title — surfaces SSH context in the emulator's tab/window
+    # chrome (Ghostty etc.). Lives above the shell layer; complements the
+    # starship host segment (always-on, glyph-swap) and the per-host
+    # Stylix palette. See GH #6.
+    functions.fish_title = ''echo (hostname -s)": "(prompt_pwd)'';
+
     # Sparse abbreviation set. Fish abbreviations expand inline so the
     # actual command is visible in history — preferred over aliases.
     shellAbbrs = {
