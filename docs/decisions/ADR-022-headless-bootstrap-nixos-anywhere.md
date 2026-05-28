@@ -90,6 +90,6 @@ Pre-injection workflow (operator-side, executed once per new host):
 
 The `--generate-hardware-config` flag runs `nixos-generate-config --show-hardware-config --no-filesystems` on the target after kexec and writes the result locally to the specified path. The `--no-filesystems` ensures the output coexists with `disko.nix` without filesystem-definition conflict. The resulting file is committed verbatim per ADR-023.
 
-The bootstrap runbooks (`docs/runbooks/headless-bootstrap-aws.md`, `docs/runbooks/headless-bootstrap-metis.md`) will be rewritten — likely consolidated into a single `docs/runbooks/headless-bootstrap.md` with AWS-specific and bare-metal-specific preludes, since the install step is now identical across both. Existing runbooks are kept in git history; they receive top-of-file "superseded" pointers.
+The two prior host-specific bootstrap runbooks have been consolidated into a single `docs/runbooks/headless-bootstrap.md` with AWS-specific and bare-metal-specific preludes, since the install step is identical across both. The original host-specific runbooks are preserved in git history.
 
 A `justfile` recipe (`just bootstrap <host>`) wrapping the workflow above is planned as follow-up implementation work. A pre-commit hook lint for `hardware-configuration.nix` integrity is similarly planned. Both are operational improvements, not architectural decisions; this ADR captures the *why*, the runbook the *how*, and the recipe the *ergonomics*.

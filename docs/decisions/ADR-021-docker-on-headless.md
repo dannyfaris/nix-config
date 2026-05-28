@@ -53,4 +53,4 @@ Three options were on the table for the daemon: rootful Docker (the historical d
 - `hosts/mercury/default.nix` — imports the module directly. The VM's host file does not.
 - ADR-006 (CLI utilities) is updated to mark its deferred decision resolved by this ADR; ADR-006's per-project devShell stance for docker is preserved as the default for hosts that don't import the daemon module.
 
-First-use verification on Mercury after the bootstrap is in `docs/runbooks/headless-bootstrap-aws.md` § Verification: `docker run --rm hello-world` should succeed as `dbf` without any sudo invocation, and `systemctl --user status docker` should show the rootless daemon active.
+First-use verification on Mercury after the bootstrap is in `docs/runbooks/headless-bootstrap.md` § Verification: `docker run --rm hello-world` should succeed as `dbf` without any sudo invocation, and `systemctl --user status docker` should show the rootless daemon active.

@@ -29,7 +29,7 @@ The cost is acceptable in the AWS case because the AMI is well-maintained — th
 
 ## Consequences
 
-- ✓ Bootstrap reduces to: launch AMI → harvest host SSH key for sops → clone repo → `nixos-rebuild switch`. The non-obvious step (sops recipient onboarding) is documented in `docs/runbooks/headless-bootstrap-aws.md`.
+- ✓ Bootstrap reduces to: launch AMI → harvest host SSH key for sops → clone repo → `nixos-rebuild switch`. The non-obvious step (sops recipient onboarding) was documented in `docs/runbooks/headless-bootstrap-aws.md` (now consolidated into `headless-bootstrap.md` per ADR-022; see git history for the AMI-specific original).
 - ✓ The bus-factor test holds for AWS hosts as soon as the runbook exists. Another competent operator with this repo + 1Password access (for the sops age key seed if relevant) can rebuild Mercury in an afternoon.
 - ✓ No external tooling beyond standard `nix` and `aws` CLIs needs to be installed on the operator's machine.
 - ✗ The decision doesn't generalise to non-AWS providers. Each new provider class will require its own ADR if the bootstrap path differs.
@@ -40,4 +40,4 @@ The cost is acceptable in the AWS case because the AMI is well-maintained — th
 
 The amazon-image module is imported in `hosts/<aws-host>/default.nix` via `"${modulesPath}/virtualisation/amazon-image.nix"`. Host-specific platform modules from the VM (`boot-systemd.nix`, `networking-networkmanager.nix`) are not imported on AWS hosts — amazon-image supplies the equivalents. The `hostContext.flakePath` and `hostContext.hostName` parameters (ADR-019) carry forward unchanged from the VM pattern.
 
-The bootstrap runbook lives at `docs/runbooks/headless-bootstrap-aws.md` and is the canonical procedural reference; this ADR captures the why, not the how.
+The bootstrap runbook lived at `docs/runbooks/headless-bootstrap-aws.md` (consolidated into `headless-bootstrap.md` per ADR-022; the AMI-specific original is in git history) and was the canonical procedural reference; this ADR captures the why, not the how.

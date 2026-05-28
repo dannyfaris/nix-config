@@ -27,11 +27,6 @@ like; see git log for the full review.
       `nixpkgs.hostPlatform` from `hardware-configuration.nix` carry
       the platform. The mk-host comment already telegraphs the refactor;
       removes a tripping hazard at 6+ hosts. **S, low.**
-- [ ] **Delete superseded runbooks** —
-      `docs/runbooks/headless-bootstrap-aws.md` and
-      `headless-bootstrap-metis.md`. The ADR superseding rule exists
-      because ADRs are referenced from code; runbooks aren't. Git
-      history is the right archive. **S, low.**
 
 ### Trigger-driven
 

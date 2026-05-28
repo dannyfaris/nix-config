@@ -12,10 +12,9 @@ See [ADR-022](../decisions/ADR-022-headless-bootstrap-nixos-anywhere.md)
 for the bootstrap decision and [ADR-023](../decisions/ADR-023-host-config-three-file-structure.md)
 for the per-host file layout this runbook assumes.
 
-> The previous host-specific runbooks at
-> [`headless-bootstrap-aws.md`](./headless-bootstrap-aws.md) and
-> [`headless-bootstrap-metis.md`](./headless-bootstrap-metis.md) are
-> superseded by this document. They remain in git history for reference.
+> Two prior host-specific runbooks (`headless-bootstrap-aws.md` and
+> `headless-bootstrap-metis.md`) are superseded by this document. They
+> remain in git history for reference.
 
 ## Operator prerequisites
 

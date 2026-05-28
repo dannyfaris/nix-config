@@ -41,8 +41,9 @@ truth, eliminating drift between AI memory and in-repo reference.
 - **[runbooks/](./runbooks/)** — operational procedures: ordered, copy-
   pasteable steps for tasks that aren't (and shouldn't be) declarative.
   Currently:
-  [headless-bootstrap-aws.md](./runbooks/headless-bootstrap-aws.md) —
-  bringing up a new headless host on AWS from clean AMI to `nh os switch`.
+  [headless-bootstrap.md](./runbooks/headless-bootstrap.md) —
+  bringing up a new headless host (AWS or bare-metal) from clean OS to
+  `nh os switch` via `nixos-anywhere` + `disko`.
 
 ## Reading order
 
