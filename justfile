@@ -171,30 +171,45 @@ bootstrap-clean:
     @echo "Cleaned /dev/shm/nix-bootstrap-*"
 
 # One-time-per-clone operator setup. Derives ~/.config/sops/age/keys.txt
-# from /etc/ssh/ssh_host_ed25519_key (the local host's SSH key, which
-# on the UTM VM is this repo's sops decryption identity — same key
-# sops-nix uses at activation time as root). sops doesn't read SSH
-# host keys directly (perms + format quirks: SOPS_AGE_SSH_PRIVATE_KEY_FILE
-# produced wrong age identities in sops 3.12.1 testing), so we
-# pre-convert via ssh-to-age. Requires sudo to read the SSH key.
+# from an SSH private key — defaults to /etc/ssh/ssh_host_ed25519_key
+# (the local host's SSH key, which on the UTM VM is this repo's sops
+# decryption identity — same key sops-nix uses at activation time as
+# root). Operators can override with a user key to seed sops from a
+# non-host identity:
+#   just setup-sops-identity ~/.ssh/id_ed25519     # Mac operator flow
+# sops doesn't read SSH keys directly (perms + format quirks:
+# SOPS_AGE_SSH_PRIVATE_KEY_FILE produced wrong age identities in sops
+# 3.12.1 testing), so we pre-convert via ssh-to-age. Reading the
+# default host key requires sudo; reading a user key in $HOME does not
+# (the `sudo test -f` and `sudo cat` calls below are harmless on
+# user-owned files).
 #
 # Cross-platform: Linux uses /dev/shm for tmpfs scratch (never touches
 # disk); macOS falls back to mktemp default (APFS-backed but unlinked
 # on cleanup — slightly weaker but no /dev/shm equivalent at a stable
 # path).
 #
-# Note for non-VM operators (future Macs, etc.): the resulting identity
-# is keyed to the LOCAL host's SSH key. For it to actually decrypt
-# secrets/secrets.yaml, the derived age recipient must be added to
-# .sops.yaml + sops updatekeys re-encrypted from a host that already
-# has decryption capability. Today only the UTM VM holds the seed
-# (see docs/runbooks/headless-bootstrap.md "Operator prerequisites").
+# Note: the resulting identity is keyed to whichever SSH key path is
+# passed (host key by default, user key when overridden). For it to
+# actually decrypt secrets/secrets.yaml, the derived age recipient
+# must be on .sops.yaml + sops updatekeys re-encrypted from a host
+# that already has decryption capability. As of 2026-05-25 the UTM VM,
+# Mercury, Metis, and the operator's Mac all hold seeds; a new
+# operator (or new key) needs the derived recipient added + sops
+# updatekeys run from any current seed-holder (see
+# docs/runbooks/headless-bootstrap.md "Operator prerequisites").
+#
+# Tilde-expansion gotcha: invoke with an unquoted path so the caller's
+# shell expands `~`:
+#   just setup-sops-identity ~/.ssh/id_ed25519     # OK
+#   just setup-sops-identity '~/.ssh/id_ed25519'   # BREAKS — recipe
+#                                                  # gets literal `~/...`
 #
 # Without this, `sops -d` / `sops updatekeys` fail with "no identity
 # matched any of the recipients."
 
-# Set up ~/.config/sops/age/keys.txt from the local SSH host key (one-time).
-setup-sops-identity:
+# Set up ~/.config/sops/age/keys.txt from an SSH private key (one-time).
+setup-sops-identity key-path='/etc/ssh/ssh_host_ed25519_key':
     #!/usr/bin/env bash
     set -euo pipefail
     target=~/.config/sops/age/keys.txt
@@ -203,7 +218,7 @@ setup-sops-identity:
         echo "Remove it first if you want to regenerate."
         exit 0
     fi
-    key=/etc/ssh/ssh_host_ed25519_key
+    key='{{key-path}}'
     if ! sudo test -f "$key"; then
         echo "ERROR: $key not found." >&2
         case "$(uname -s)" in

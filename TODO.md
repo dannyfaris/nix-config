@@ -47,12 +47,6 @@ B below is a belt-and-braces extension.
       chmod 600 ~/.config/sops/age/keys.txt
       ```
 
-- [ ] **Ergonomic follow-up**: extend `just setup-sops-identity` to
-      take a positional `key-path` (defaulting to
-      `/etc/ssh/ssh_host_ed25519_key` so the existing host-side flow
-      is preserved). Then `just setup-sops-identity ~/.ssh/id_ed25519`
-      replaces the one-shot above for future operator clones.
-
 ## Pending hosts
 
 - [ ] **`mothership`** — second Linux desktop host. Pending hardware.
