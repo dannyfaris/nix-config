@@ -26,16 +26,6 @@ like; see git log for the full review.
 
 ### Trigger-driven
 
-- [ ] **`shared-purity` lint** — single `scripts/lint-shared-purity.sh`
-      that greps `modules/core/shared/` and `home/core/shared/` for
-      platform conditionals (`stdenv.isDarwin`, `pkgs.stdenv.isLinux`,
-      etc.). Registered as an extra hook in `parts/checks.nix` via
-      `git-hooks.nix`. The other two lints PRD §8.1 named are moot:
-      `role-purity` disappeared with ADR-027's role removal;
-      `tier-deps` has nothing to enforce while `experimental/` is
-      empty. **Unblocked**: ADR-025 framework landed; the
-      `parts/checks.nix` / `git-hooks.nix` extension point exists.
-      **S, low**.
 - [ ] **`_local-linux` mini-bundle** — bundle systemd-boot +
       NetworkManager + Tailscale, currently duplicated across
       `nixos-vm` and `metis`. **Trigger:** when `mothership` (a future
