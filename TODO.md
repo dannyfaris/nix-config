@@ -19,10 +19,6 @@ like; see git log for the full review.
       the ~5-field threshold; we're at 3 fields and 3 hosts, but the
       migration provides a clean moment to introduce the typed layer
       before Darwin onboarding adds more. **S, low.**
-- [ ] **Drop duplicated `system` arg from `lib/mk-host.nix`** — let
-      `nixpkgs.hostPlatform` from `hardware-configuration.nix` carry
-      the platform. The mk-host comment already telegraphs the refactor;
-      removes a tripping hazard at 6+ hosts. **S, low.**
 
 ### Trigger-driven
 

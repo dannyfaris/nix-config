@@ -10,19 +10,8 @@ let
 in
 {
   flake.nixosConfigurations = {
-    nixos-vm = mkHost {
-      hostname = "nixos-vm";
-      system = "aarch64-linux";
-    };
-
-    mercury = mkHost {
-      hostname = "mercury";
-      system = "x86_64-linux";
-    };
-
-    metis = mkHost {
-      hostname = "metis";
-      system = "x86_64-linux";
-    };
+    nixos-vm = mkHost { hostname = "nixos-vm"; };
+    mercury = mkHost { hostname = "mercury"; };
+    metis = mkHost { hostname = "metis"; };
   };
 }
