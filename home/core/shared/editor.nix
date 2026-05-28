@@ -25,7 +25,9 @@ in
     enable = true;
 
     settings = {
-      theme = "default"; # TODO: choose a theme at first use (ADR-005)
+      # `programs.helix.settings.theme` is owned by Stylix's helix target
+      # (enabled via home/core/shared/bundles/theming.nix per ADR-028).
+      # Stylix writes the theme name here at default priority.
 
       editor = {
         line-number = "relative";
