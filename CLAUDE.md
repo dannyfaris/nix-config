@@ -102,7 +102,11 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - Desktop environment lands on metis (x86_64) per
   [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md):
   Niri + Dank Material Shell + Foot + greetd, with Stylix as the
-  single theme source-of-truth across TUI and shell. The older
+  theme source-of-truth across TUI, foot, GTK/Qt, and niri's
+  focus-ring/cursor chrome. DMS uses its own built-in theme
+  (decoupled from Stylix per ADR-028 §History 2026-05-29); matugen
+  is suppressed via `programs.dank-material-shell.enableDynamicTheming = false`
+  so it doesn't fight Stylix's GTK/Qt targets. The older
   waybar/fuzzel/mako stack at git tag `tier3-desktop-deferred` is
   superseded and should not be resurrected. Desktop modules are not
   installed on nixos-vm — UTM's Apple Virtualization Framework lacks
