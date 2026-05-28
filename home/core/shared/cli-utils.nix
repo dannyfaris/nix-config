@@ -27,7 +27,13 @@
 { pkgs, ... }:
 {
   programs = {
-    fzf.enable = true;
+    fzf = {
+      enable = true;
+      # Respect .gitignore + faster than find. fd is in home.packages below.
+      defaultCommand = "fd --type f --hidden --exclude .git";
+      fileWidgetCommand = "fd --type f --hidden --exclude .git"; # Ctrl-T
+      changeDirWidgetCommand = "fd --type d --hidden --exclude .git"; # Alt-C
+    };
     bat.enable = true;
     eza.enable = true;
     zoxide.enable = true;

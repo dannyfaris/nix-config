@@ -189,3 +189,11 @@ groff's SGR colour output so it falls back to overstrike encoding,
 which `col -bx` then strips cleanly before bat re-renders. Wired here
 (not in `programs.bat`) because MANPAGER is a shell-session env var,
 not a bat-module toggle.
+
+**fzf + fd integration.** Three `programs.fzf` options point fzf at
+fd instead of system `find`: `defaultCommand` (bare `fzf` /
+`$FZF_DEFAULT_COMMAND`), `fileWidgetCommand` (Ctrl-T file picker),
+`changeDirWidgetCommand` (Alt-C directory picker). All three use
+`fd --type {f,d} --hidden --exclude .git` — `.gitignore`-aware and
+faster than `find`. fd was already in `home.packages` per the locked
+list above; this wiring only points fzf at it.
