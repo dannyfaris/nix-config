@@ -63,6 +63,19 @@
           language = "system";
           pass_filenames = true;
         };
+
+        # Enforces platform-purity in shared/ trees: code under
+        # modules/core/shared/ and home/core/shared/ must be platform-
+        # agnostic (no stdenv.isDarwin etc.). Preventative — both trees
+        # are clean today; lint protects against drift as Darwin onboards.
+        shared-purity = {
+          enable = true;
+          name = "shared-purity";
+          entry = "bash ${../scripts/lint-shared-purity.sh}";
+          files = "^(modules|home)/core/shared/.*\\.nix$";
+          language = "system";
+          pass_filenames = true;
+        };
       };
   };
 }
