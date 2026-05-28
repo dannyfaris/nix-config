@@ -24,9 +24,13 @@ in
       format = "\${custom.host_local}\${custom.host_ssh}$directory$git_branch$git_status$nix_shell$character";
       add_newline = false;
 
+      # Nix-shell indicator. Leading `❯` (chev) is part of the module's
+      # own format so it renders only when in a nix-shell; this is the
+      # second `❯` separator on the line (after the host one), matching
+      # the statusline's conditional `❯ ❄️` segment.
       nix_shell = {
-        format = "[$symbol$name]($style) ";
-        symbol = "❄️ ";
+        format = "${chev} [$symbol]($style) ";
+        symbol = "❄️";
       };
 
       # Host segments render in default foreground (no `style` field) for

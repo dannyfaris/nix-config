@@ -24,10 +24,11 @@ SEP=" ${DIM}│${RST} " # line 1 status-bar separator (parallel segments)
 CHEV=" ❯ "            # line 2 reading-flow separator (sequential segments)
 # Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
 # putting raw Nerd Font bytes in the source file.
-BRANCH_GLYPH=$'\xee\x82\xa0'  # U+E0A0 Powerline branch
-DESKTOP_GLYPH=$'\xef\x84\x88' # U+F108 nf-fa-desktop (local host marker)
-SSH_GLYPH=$'\xef\x92\x89'     # U+F489 nf-mdi-console_network (SSH host marker)
-CLOCK_GLYPH=$'\xef\x80\x97'   # U+F017 nf-fa-clock_o (rate-limit marker)
+BRANCH_GLYPH=$'\xee\x82\xa0'          # U+E0A0 Powerline branch
+DESKTOP_GLYPH=$'\xef\x84\x88'         # U+F108 nf-fa-desktop (local host marker)
+SSH_GLYPH=$'\xef\x92\x89'             # U+F489 nf-mdi-console_network (SSH host marker)
+CLOCK_GLYPH=$'\xef\x80\x97'           # U+F017 nf-fa-clock_o (rate-limit marker)
+NIX_GLYPH=$'\xe2\x9d\x84\xef\xb8\x8f' # ❄️ U+2744 + U+FE0F (nix-shell marker)
 
 # Host marker — swaps based on SSH state to mirror the starship prompt
 # (ADR-002 history). $SSH_CONNECTION is set by sshd on login and inherited
@@ -189,4 +190,8 @@ printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
 # ═══ LINE 2: host │ path on branch ════════════════════════════════
 LINE2="${DIM}${HOST_GLYPH}  ${hostname}${RST}"
 [ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${GIT_SEG}"
+# Nix-shell indicator — mirrors the starship prompt's nix_shell module.
+# $IN_NIX_SHELL set by nix-direnv on flake-env activation; inherited into
+# the Claude Code subprocess. Same env-at-spawn caveat as $SSH_CONNECTION.
+[ -n "$IN_NIX_SHELL" ] && LINE2+="${CHEV}${NIX_GLYPH}"
 printf '%s\n' "$LINE2"
