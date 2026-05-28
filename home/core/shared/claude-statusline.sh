@@ -24,8 +24,16 @@ SEP=" ${DIM}│${RST} "
 # Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
 # putting raw Nerd Font bytes in the source file.
 BRANCH_GLYPH=$'\xee\x82\xa0'  # U+E0A0 Powerline branch
-DESKTOP_GLYPH=$'\xef\x84\x88' # U+F108 nf-fa-desktop (host marker)
+DESKTOP_GLYPH=$'\xef\x84\x88' # U+F108 nf-fa-desktop (local host marker)
+SSH_GLYPH=$'\xef\x92\x89'     # U+F489 nf-mdi-console_network (SSH host marker)
 CLOCK_GLYPH=$'\xef\x80\x97'   # U+F017 nf-fa-clock_o (rate-limit marker)
+
+# Host marker — swaps based on SSH state to mirror the starship prompt
+# (ADR-002 history). $SSH_CONNECTION is set by sshd on login and inherited
+# into the Claude Code subprocess; same env-at-spawn caveat applies for
+# detached zellij sessions reattached from a different context.
+HOST_GLYPH=$DESKTOP_GLYPH
+[ -n "$SSH_CONNECTION" ] && HOST_GLYPH=$SSH_GLYPH
 
 {
   read -r MODEL
@@ -178,6 +186,6 @@ printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
   "$PCT" "$RLIM"
 
 # ═══ LINE 2: host │ path on branch ════════════════════════════════
-LINE2="${DIM}${DESKTOP_GLYPH}  ${hostname}${RST}"
+LINE2="${DIM}${HOST_GLYPH}  ${hostname}${RST}"
 [ -n "$SHORT_CWD" ] && LINE2+="${SEP}${BLUE}${SHORT_CWD}${RST}${GIT_SEG}"
 printf '%s\n' "$LINE2"
