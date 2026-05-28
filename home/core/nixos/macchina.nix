@@ -1,14 +1,24 @@
 # System info display on login — Macchina with a customised Hydrogen
 # theme that swaps the upstream ASCII for the two-tone NixOS snowflake
-# defined below. Role default for every NixOS host (wired in
-# modules/core/nixos/home-manager.nix).
+# defined below. Imported by every NixOS host via hostContext.extraHomeModules
+# (the per-host wiring in modules/core/nixos/home-manager.nix); see ADR-027
+# for the foundation+bundles model that replaced the earlier "role" layer.
 { pkgs, config, ... }:
 let
   esc = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
-  dark = "${esc}[38;2;82;119;195m";
-  light = "${esc}[38;2;127;183;255m";
-  bdark = "${esc}[48;2;82;119;195m";
-  blight = "${esc}[48;2;127;183;255m";
+  # Per-host two-tone NixOS-snowflake from the Stylix palette (ADR-028).
+  # base0D = primary accent (blue/cyan family in most base16 schemes);
+  # base0C = secondary accent (cyan/teal family). Replaces the original
+  # hardcoded NixOS-brand RGB(82,119,195) + RGB(127,183,255) — the
+  # silhouette still reads as NixOS regardless of hue; the per-host
+  # SSH-context signal at login time is the win. `inherit (...)` doesn't
+  # work for these attrs because hyphens aren't valid in identifiers,
+  # so we read them off the colours attrset directly.
+  c = config.lib.stylix.colors;
+  dark = "${esc}[38;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
+  light = "${esc}[38;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
+  bdark = "${esc}[48;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
+  blight = "${esc}[48;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
   reset = "${esc}[0m";
 in
 {
