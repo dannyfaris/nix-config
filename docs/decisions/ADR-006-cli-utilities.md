@@ -180,3 +180,12 @@ We keep them — see Consequences for the rationale.
 would surprise script logic if aliased. Define short *additional*
 aliases for common patterns if you want them (e.g. inside a project's
 fish abbrs), but never replace the original command's behaviour.
+
+**bat as MANPAGER.** `home.sessionVariables.MANPAGER = "sh -c 'col -bx
+| bat -l man -p'"` plus `MANROFFOPT = "-c"`. `col -bx` strips overstrike
+backspaces (man's bold/underline encoding); `-l man` picks bat's
+man-page syntax; `-p` drops decorations. `MANROFFOPT = "-c"` disables
+groff's SGR colour output so it falls back to overstrike encoding,
+which `col -bx` then strips cleanly before bat re-renders. Wired here
+(not in `programs.bat`) because MANPAGER is a shell-session env var,
+not a bat-module toggle.
