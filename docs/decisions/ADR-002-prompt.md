@@ -112,10 +112,27 @@ can only *prepend* a fixed SSH symbol — it cannot swap glyphs by SSH state.
 Two custom modules + `when` shell tests was the only structural way to get
 the swap.
 
-Style omitted (default foreground) for visual parity with the un-styled
-claude-statusline; Stylix's starship target colours built-in modules only,
-not custom ones, so per-host palette wiring of the host segment is a
-deferred follow-up.
+**Always-on rationale (vs Pure/Starship/Powerlevel10k's `ssh_only`
+convention).** The field default suppresses user@host locally and
+surfaces it only on SSH — *absence* is the local signal. We deliberately
+diverge and render the host segment unconditionally. The operator runs
+many concurrent terminal panes across multiple devices: 5–10 panes open
+at once, some local on different desktops, some SSH'd to different
+remote hosts, switched between via window/tab focus. The "where am I"
+question isn't sequential ("which host did I last `cd` into?") but
+parallel ("which of these visible panes is mercury, which is nixos-vm,
+which is the laptop?"). Absence-is-local breaks when you have multiple
+locals — *which* is the load-bearing question, not *whether*. The
+chrome cost (~12 chars permanently at the leftmost position of every
+prompt) is the price of disambiguation under that workload.
+
+**Style.** Host segment is coloured by SSH state — `green` (base0B) when
+local, `purple` (base0E) when SSH'd. Chevron separator stays outside
+the style markup (default foreground) so the host reads as a chip
+against the bare separator. See PR #41 commit history for the
+colour-collision investigation that led here (untracked counter moved
+to `orange`/base09 so the SSH host marker is the only purple on
+line 2).
 
 **Known limitation — zellij detach/reattach.** `$SSH_CONNECTION` is set
 by sshd on login and inherited into long-lived processes (including
