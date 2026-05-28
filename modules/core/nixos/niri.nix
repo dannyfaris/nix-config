@@ -51,4 +51,13 @@
       "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
     ];
   };
+
+  # niri-session imports the user-manager PATH at session start; the
+  # NixOS default would otherwise inject a stripped PATH on niri.service
+  # that shadows it, breaking binary resolution for niri-spawned helpers.
+  # Required companion when launching niri-session via greetd. Source:
+  # nixpkgs `nixos/modules/programs/wayland/niri.nix:51` sets exactly
+  # this with the same rationale verbatim; niri-flake's nixosModule
+  # does not.
+  systemd.user.services.niri.enableDefaultPath = false;
 }

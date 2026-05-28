@@ -19,5 +19,13 @@
       package = pkgs.noto-fonts-color-emoji;
       name = "Noto Color Emoji";
     };
+
+    # foot 1.15.0 changed `dpi-aware` from `auto` to `no`, which
+    # Stylix's foot target adopts verbatim. Under that default,
+    # `:size=N` (points) is multiplied by the compositor scale rather
+    # than the monitor DPI; on a scale-1 output the historical sizing
+    # reads smaller than it used to. 11pt approximates the prior
+    # visual size; operator may retune in slice 5 once metis is live.
+    sizes.terminal = 11;
   };
 }
