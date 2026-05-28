@@ -13,7 +13,7 @@ _: {
     # actual command is visible in history — preferred over aliases.
     shellAbbrs = {
       g = "git";
-      nrs = "sudo nixos-rebuild switch --flake .";
+      nos = "nh os switch";
     };
   };
 }
