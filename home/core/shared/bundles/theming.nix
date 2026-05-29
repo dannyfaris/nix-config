@@ -50,5 +50,14 @@ _: {
     # (low/normal/critical), and the polarity-driven icon-theme
     # (when stylix.icons is configured).
     fnott.enable = true;
+    # waybar — desktop-host-only (metis). Same inert-on-non-desktop
+    # gating as foot/fuzzel/fnott (gates on `programs.waybar.enable`).
+    # Stylix writes the CSS (programs.waybar.style) with the full
+    # base16 palette as @define-color variables, default background
+    # + text + tooltip styling, and per-state workspace-button
+    # styling (focused/active @base05 border; urgent @base08).
+    # Font defaults to monospace (JetBrains Mono Nerd Font) for
+    # Nerd Font glyph coverage in network/tray modules.
+    waybar.enable = true;
   };
 }

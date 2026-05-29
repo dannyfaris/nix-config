@@ -12,11 +12,14 @@
 #     settings (see docs/desktop/fuzzel.md).
 #   - fnott.nix — services.fnott.enable (notification daemon;
 #     D-Bus-activated; see docs/desktop/fnott.md).
+#   - waybar.nix — programs.waybar.enable + status-bar layout
+#     settings (top of screen; tray-bearing; see
+#     docs/desktop/waybar.md).
 #
 # First occupant of home/core/nixos/bundles/. The desktop stack is
-# Linux-only (niri, greetd-launched Foot + fuzzel + fnott all carry
-# Linux paths) so per scripts/lint-shared-purity.sh this lives under
-# nixos/, not shared/.
+# Linux-only (niri, greetd-launched Foot + fuzzel + fnott + waybar
+# all carry Linux paths) so per scripts/lint-shared-purity.sh this
+# lives under nixos/, not shared/.
 #
 # The system-side companion bundle is at modules/core/nixos/bundles/desktop-env.nix.
 #
@@ -27,5 +30,6 @@
     ../foot.nix
     ../fuzzel.nix
     ../fnott.nix
+    ../waybar.nix
   ];
 }
