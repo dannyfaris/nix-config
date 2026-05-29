@@ -43,5 +43,12 @@ _: {
     # writes the font (Inter at popups size), full base16 colour
     # palette across 11 slots, and polarity-driven icon-theme.
     fuzzel.enable = true;
+    # fnott — desktop-host-only (metis). Same inert-on-non-desktop
+    # gating as foot/fuzzel (gates on `services.fnott.enable`).
+    # Stylix writes three fonts (title/summary/body), full colour
+    # palette including per-urgency-level border accents
+    # (low/normal/critical), and the polarity-driven icon-theme
+    # (when stylix.icons is configured).
+    fnott.enable = true;
   };
 }
