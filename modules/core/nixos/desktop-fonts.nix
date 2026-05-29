@@ -1,13 +1,13 @@
-# desktop-fonts — Stylix font configuration + installation for hosts
-# that render UI text.
+# desktop-fonts — Stylix font configuration + the two NixOS-surface
+# wires for hosts that render UI text.
 #
-# Stylix is the source of truth for font names (advertised via
-# fonts.fontconfig.defaultFonts) but does not install packages — its
-# `stylix.fonts.packages` list is populated for downstream consumption
-# without a built-in install wiring. This module both selects the
-# font faces and wires the install for desktop hosts. Headless hosts
-# (mercury, nixos-vm) don't import this module and don't pay the
-# font-package closure cost.
+# Stylix is the source of truth for font names and packages but
+# reaches NixOS only when the operator wires it through. Two wires
+# both live in this module: enabling the fontconfig target writes
+# stylix.fonts.*.name into fonts.fontconfig.defaultFonts, and the
+# explicit fonts.packages assignment installs the four configured
+# packages. Headless hosts (mercury, nixos-vm) don't import this
+# module and don't pay the font-package closure cost.
 #
 # Full rationale, sharp edges, and cadence: docs/desktop/fonts.md.
 #
@@ -38,11 +38,19 @@
     sizes.terminal = 11;
   };
 
-  # Install the Stylix-configured font packages. Stylix populates
-  # stylix.fonts.packages (mono/serif/sans/emoji) for our consumption
-  # but does not push to NixOS's fonts.packages itself; this wiring
-  # is the missing link. Resolves the DejaVu Sans fallback warning
-  # that foot raised pre-fix. See docs/desktop/fonts.md §Installation
-  # model for the full story.
+  # Wire 1: enable Stylix's fontconfig target so the font names
+  # configured above are written into
+  # fonts.fontconfig.defaultFonts.{monospace,serif,sansSerif,emoji}.
+  # Without this, fc-match falls through to NixOS defaults and any
+  # app reading the fontconfig aliases (Firefox, GTK/Qt chrome) gets
+  # DejaVu, not the configured selections.
+  stylix.targets.fontconfig.enable = true;
+
+  # Wire 2: install the Stylix-configured font packages. Stylix
+  # populates stylix.fonts.packages (mono/serif/sans/emoji) for our
+  # consumption but does not push to NixOS's fonts.packages itself.
+  # Together with the fontconfig target above, this resolves the
+  # DejaVu Sans fallback warning foot raised pre-fix. See
+  # docs/desktop/fonts.md §Installation model for the full story.
   fonts.packages = config.stylix.fonts.packages;
 }

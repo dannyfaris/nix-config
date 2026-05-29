@@ -39,25 +39,40 @@ just desktop).
 
 ## Installation model
 
-Stylix's design distinguishes *naming* (what fontconfig advertises as
-the configured monospace / serif / sansSerif / emoji) from
-*installation* (what packages actually exist on disk). Stylix sets
-the names via `fonts.fontconfig.defaultFonts`; it populates a
-`stylix.fonts.packages` list of the configured packages (declared at
-`stylix/fonts.nix:119` in the Stylix source — the sole producer of
-the list, with no consumer) **but does not push that list to
-`fonts.packages`.** Installation is the operator's responsibility.
+Stylix's design distinguishes *naming* (what fontconfig advertises
+for the configured monospace / serif / sansSerif / emoji) from
+*installation* (what packages actually exist on disk). Both rely on
+the operator wiring Stylix's intent into NixOS's surfaces — neither
+is automatic.
 
-We wire installation centrally on desktop hosts via:
+Two wires, both in `modules/core/nixos/desktop-fonts.nix`:
 
 ```nix
+stylix.targets.fontconfig.enable = true;
 fonts.packages = config.stylix.fonts.packages;
 ```
 
-in `modules/core/nixos/desktop-fonts.nix`. This installs all four
-Stylix-configured families on desktop hosts only. Headless hosts
-don't import `desktop-fonts.nix` and don't pay the font-package
-closure cost.
+**`stylix.targets.fontconfig.enable = true`** activates Stylix's
+fontconfig target, which writes `stylix.fonts.*.name` values into
+`fonts.fontconfig.defaultFonts.{monospace,serif,sansSerif,emoji}`.
+This is what `fc-match` consults and what fontconfig-driven
+applications (Firefox, GTK/Qt chrome, anything asking for the
+`monospace`/`sans-serif`/etc. aliases) ultimately resolve to. Without
+the target enabled, Stylix has the names internally but never writes
+them; `fc-match` falls through to NixOS defaults (DejaVu variants).
+Note that apps like foot which read `stylix.fonts.monospace.name`
+*directly* (via Stylix's per-app targets) bypass this layer and work
+regardless — but most desktop chrome (Firefox, GTK/Qt apps) doesn't.
+
+**`fonts.packages = config.stylix.fonts.packages`** installs the
+package list Stylix populates (declared at `stylix/fonts.nix:119` in
+the Stylix source — the sole producer of the list, with no consumer
+upstream). Stylix populates the list for our consumption but does
+not push it to `fonts.packages` itself.
+
+Both wires live in `desktop-fonts.nix`, so desktop hosts get the
+selections and the install; headless hosts (mercury, nixos-vm) don't
+import the module and don't pay the font-package closure cost.
 
 The general (non-desktop-specific) font base comes from NixOS's
 `fonts.enableDefaultPackages = true` (set as `mkDefault true` by
@@ -71,14 +86,17 @@ set ourselves; deliberately not done.
 ## Sharp edges
 
 - **DejaVu Sans fallback warning** (foot launching with "DejaVu Sans:
-  font does not appear to be monospace"). Symptom of the installation
-  gap: Stylix set `fonts.fontconfig.defaultFonts.monospace =
-  "JetBrainsMono Nerd Font"` but the package was never in
-  `fonts.packages`, so fontconfig substituted to whatever it had —
-  on metis, DejaVu Sans (proportional). Resolved by the
-  `fonts.packages = config.stylix.fonts.packages;` wiring on desktop
-  hosts. The same gap would silently apply to any future Stylix font
-  override that doesn't land in `fonts.packages` — be alert.
+  font does not appear to be monospace"). Symptom of the two-wires
+  gap: Stylix had `stylix.fonts.monospace.name = "JetBrainsMono Nerd
+  Font"` configured but neither wire from §Installation model was
+  active — the `JetBrainsMono Nerd Font` package was never in
+  `fonts.packages` *and* the fontconfig target was never enabled to
+  write the name into `fonts.fontconfig.defaultFonts`. fontconfig
+  substituted to whatever it had — on metis, DejaVu Sans
+  (proportional). Resolved by enabling both wires (target + install)
+  in `desktop-fonts.nix`. The same gap would silently apply to any
+  future Stylix font override that doesn't have both wires reaching
+  it — be alert.
 
 - **foot's `dpi-aware = no` default.** foot 1.15.0 changed `dpi-aware`
   from `auto` to `no`, which Stylix's foot target adopts verbatim.
@@ -102,10 +120,11 @@ model), so the cadence is lighter than for keybinds.
 - **Doc precedes implementation.** Font changes land first as a
   selection-table row here; the implementing commit follows in the
   same PR.
-- **Stylix overrides install themselves.** Adding a `stylix.fonts.*`
-  family override on a desktop host needs no extra `fonts.packages`
-  wiring — the central `fonts.packages = config.stylix.fonts.packages`
-  line picks it up automatically.
+- **Stylix overrides pick themselves up.** Adding a `stylix.fonts.*`
+  family override on a desktop host needs no extra wiring — both the
+  install (via `fonts.packages = config.stylix.fonts.packages`) and
+  the name (via `stylix.targets.fontconfig.enable = true`) reach the
+  new value automatically.
 - **No silent installs.** Anything in `fonts.packages` not implied
   by `stylix.fonts.*` (via the central wiring above) or NixOS
   defaults is a cadence bug — document the addition here.
