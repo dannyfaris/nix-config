@@ -18,12 +18,17 @@
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
+#   - cursor-ide.nix — home.packages addition for pkgs.code-cursor
+#     (AI-coding-focused vscode fork; Wayland via host-wide
+#     NIXOS_OZONE_WL set in modules/core/nixos/electron-wayland.nix).
 #
 # First occupant of home/core/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + fuzzel + fnott + waybar
 # all carry Linux paths; firefox's xdg.mimeApps wiring is Linux-only
-# even though pkgs.firefox builds on Darwin) so per
-# scripts/lint-shared-purity.sh this lives under nixos/, not shared/.
+# even though pkgs.firefox builds on Darwin; cursor-ide's launcher
+# integration is Linux-only although pkgs.code-cursor builds on
+# Darwin) so per scripts/lint-shared-purity.sh this lives under
+# nixos/, not shared/.
 #
 # The system-side companion bundle is at modules/core/nixos/bundles/desktop-env.nix.
 #
@@ -36,5 +41,6 @@
     ../fnott.nix
     ../waybar.nix
     ../firefox.nix
+    ../cursor-ide.nix
   ];
 }

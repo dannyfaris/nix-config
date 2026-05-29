@@ -28,6 +28,7 @@
     pkg:
     builtins.elem (lib.getName pkg) [
       "claude-code"
+      "cursor"
       "cursor-cli"
     ];
 }
