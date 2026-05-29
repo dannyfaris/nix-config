@@ -23,9 +23,9 @@ rather than creating a new artifact.
 | [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) | #73 |
 | [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) | #74 |
 | [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) | #75 |
+| [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
 
-Per-tool docs to come as their issues land: browser (#76), Cursor IDE
-(#77).
+Per-tool docs to come as their issues land: Cursor IDE (#77).
 
 ## Document structure
 

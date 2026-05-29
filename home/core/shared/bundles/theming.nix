@@ -59,5 +59,22 @@ _: {
     # Font defaults to monospace (JetBrains Mono Nerd Font) for
     # Nerd Font glyph coverage in network/tray modules.
     waybar.enable = true;
+    # firefox — desktop-host-only (metis). Gates on
+    # `programs.firefox.enable`. profileNames is operator-declared
+    # because Stylix's Firefox module can't auto-detect profile
+    # names without infinite recursion (documented in stylix's
+    # modules/firefox/meta.nix). Stylix writes per-profile font
+    # prefs (font.name.{monospace,sans-serif,serif} and
+    # font.size.{monospace,variable}) into the `default` profile
+    # declared in home/core/nixos/firefox.nix. Chrome-theming
+    # opt-ins (colorTheme via Firefox Color extension;
+    # firefoxGnomeTheme via the firefox-gnome-theme upstream) are
+    # NOT enabled day 1 — stock chrome is fine. The two surfaces
+    # (the profile name here and `programs.firefox.profiles.default`
+    # in firefox.nix) must stay in lockstep.
+    firefox = {
+      enable = true;
+      profileNames = [ "default" ];
+    };
   };
 }
