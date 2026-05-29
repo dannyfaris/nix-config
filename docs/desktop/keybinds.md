@@ -174,7 +174,6 @@ This is a living document. Conventions for evolution:
 ## See also
 
 - `home/core/nixos/niri.nix` — the implementation surface.
-- `docs/desktop/niri.md` (to be established under #71) — niri compositor
-  selection rationale.
+- `docs/desktop/niri.md` — niri compositor selection rationale.
 - #69 — the foundational close-out under which this document was
   created.

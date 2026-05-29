@@ -38,6 +38,12 @@ truth, eliminating drift between AI memory and in-repo reference.
   Consequences / Implementation. See
   [decisions/README.md](./decisions/README.md) for the index and conventions.
 
+- **[desktop/](./desktop/)** — living documents for the Wayland desktop
+  environment: per-tool selections, fonts, keybindings. Complements
+  `decisions/` (immutable ADRs) with mutable rationale that evolves as
+  the desktop grows. See [desktop/README.md](./desktop/README.md) for
+  the index and conventions.
+
 - **[runbooks/](./runbooks/)** — operational procedures: ordered, copy-
   pasteable steps for tasks that aren't (and shouldn't be) declarative.
   Currently:
