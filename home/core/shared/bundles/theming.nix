@@ -38,5 +38,10 @@ _: {
     # this central whitelist for discoverability — "where does Stylix
     # theming live?" reads as one file.
     foot.enable = true;
+    # fuzzel — desktop-host-only (metis). Same inert-on-non-desktop
+    # gating as foot above (gates on `programs.fuzzel.enable`). Stylix
+    # writes the font (Inter at popups size), full base16 colour
+    # palette across 11 slots, and polarity-driven icon-theme.
+    fuzzel.enable = true;
   };
 }

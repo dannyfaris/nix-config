@@ -67,8 +67,9 @@ _: {
     "Mod+Shift+8".action.move-window-to-workspace = 8;
     "Mod+Shift+9".action.move-window-to-workspace = 9;
 
-    # Spawn — terminal
+    # Spawn — terminal + application launcher
     "Mod+Return".action.spawn = "foot";
+    "Mod+Space".action.spawn = "fuzzel";
 
     # Session — quit (niri shows a confirmation dialog by default)
     "Mod+Shift+E".action.quit = { };

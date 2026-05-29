@@ -8,11 +8,13 @@
 #   - niri.nix — programs.niri.settings.binds (curated essential set;
 #     see docs/desktop/keybinds.md for the full taxonomy).
 #   - foot.nix — programs.foot.enable.
+#   - fuzzel.nix — programs.fuzzel.enable + launcher behaviour
+#     settings (see docs/desktop/fuzzel.md).
 #
 # First occupant of home/core/nixos/bundles/. The desktop stack is
-# Linux-only (niri, greetd-launched Foot all carry Linux paths) so
-# per scripts/lint-shared-purity.sh this lives under nixos/, not
-# shared/.
+# Linux-only (niri, greetd-launched Foot + fuzzel all carry Linux
+# paths) so per scripts/lint-shared-purity.sh this lives under
+# nixos/, not shared/.
 #
 # The system-side companion bundle is at modules/core/nixos/bundles/desktop-env.nix.
 #
@@ -21,5 +23,6 @@
   imports = [
     ../niri.nix
     ../foot.nix
+    ../fuzzel.nix
   ];
 }
