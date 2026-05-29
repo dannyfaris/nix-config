@@ -4,9 +4,11 @@
 
 Evergreen NixOS configuration. Three hosts: `nixos-vm` (UTM/aarch64
 refinement target), `mercury` (AWS EC2/x86_64 work-only headless), and
-`metis` (HP ProDesk/x86_64 personal dev box). Metis is transitioning from
-headless to the first desktop host (Niri + DMS); see
-[ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md).
+`metis` (HP ProDesk/x86_64 personal dev box). Metis is the first
+desktop host (niri-only after ADR-028's DMS portion was retracted per
+[ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md)); see also
+[ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)
+for the Stylix-foundation + bundle-composition basis that stands.
 
 ## Reference documentation
 
@@ -99,18 +101,22 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - **PRs land via squash auto-merge.** After `gh pr create`, run
   `gh pr merge <num> --auto --squash` to enable auto-merge; the PR
   squash-merges itself once required checks pass.
-- Desktop environment lands on metis (x86_64) per
-  [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md):
-  Niri + Dank Material Shell + Foot + greetd, with Stylix as the
-  theme source-of-truth across TUI, foot, GTK/Qt, and niri's
-  focus-ring/cursor chrome. DMS uses its own built-in theme
-  (decoupled from Stylix per ADR-028 §History 2026-05-29); matugen
-  is suppressed via `programs.dank-material-shell.enableDynamicTheming = false`
-  so it doesn't fight Stylix's GTK/Qt targets. The older
-  waybar/fuzzel/mako stack at git tag `tier3-desktop-deferred` is
-  superseded and should not be resurrected. Desktop modules are not
-  installed on nixos-vm — UTM's Apple Virtualization Framework lacks
-  `EGL_EXT_device_drm` and cannot render Wayland compositors.
+- Desktop environment lands on metis (x86_64) per ADR-028
+  (Stylix-foundation + bundle composition), amended by
+  [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (DMS
+  retracted; niri-only direction). Stack: niri + foot + greetd,
+  with Stylix as the theme source-of-truth across TUI, foot, GTK/Qt,
+  and niri's focus-ring/cursor chrome. Per-tool selections
+  (application launcher, notification daemon, status bar, browser,
+  IDE) land deliberately as `docs/desktop/<tool>.md` selection
+  rationale per issue (#72–#77). The previously-recorded "do not
+  resurrect waybar/fuzzel/mako" guidance is inverted by ADR-029 —
+  those components are the expected direction via the per-tool
+  issues. First two living documents (`docs/desktop/keybinds.md`,
+  `docs/desktop/fonts.md`) landed during #69's close-out (PRs
+  #80 + #81). Desktop modules are not installed on nixos-vm —
+  UTM's Apple Virtualization Framework lacks `EGL_EXT_device_drm`
+  and cannot render Wayland compositors.
 
 ## Open work
 
