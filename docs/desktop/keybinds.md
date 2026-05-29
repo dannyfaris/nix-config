@@ -58,7 +58,7 @@ philosophy lands:
 - `Mod+W` → `close-window`. Conflicts with the hypothetical
   `Super+W` → `Ctrl+W` (close tab) translation. Pragmatic choice for
   daily use; philosophical target is `Super+Hyper+W`.
-- `Mod+Space` → application launcher (when fuzzel lands per #73).
+- `Mod+Space` → fuzzel application launcher (landed per #73).
   Conflicts with the hypothetical `Hyper+Space` Spotlight-equivalent.
   Migration target is `Hyper+Space`.
 
@@ -108,6 +108,7 @@ focused column.
 | Key | Action |
 |---|---|
 | `Mod+Return` | spawn `foot` (terminal) |
+| `Mod+Space` | spawn `fuzzel` (application launcher) |
 
 ### Session
 
@@ -142,8 +143,9 @@ lock screen, and similar personal system commands. Currently
 unrealised. Any future bindings here are added to this document when
 implemented.
 
-`Mod+Space` is reserved as the interim home for an application
-launcher (#73). Philosophical target is `Hyper+Space`.
+`Mod+Space` is bound to fuzzel as an interim deviation (see
+Implementation status §"Interim deviations" above). Philosophical
+target is `Hyper+Space` if a Hyper modifier is ever realised.
 
 ### `Super+Hyper` (extended WM)
 

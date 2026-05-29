@@ -144,6 +144,16 @@ Without `terminal = "foot"`, fuzzel falls back to whatever it
 guesses for CLI apps (often `xterm`, which we don't install) and
 the launch silently fails. The setting above wires it explicitly.
 
+**`icon-theme` not written until `stylix.icons` is configured.**
+The §Configuration claim that Stylix writes
+`programs.fuzzel.settings.main.icon-theme` is conditional on
+`stylix.icons.{dark,light}` being set. We haven't configured those,
+so the generated `fuzzel.ini` carries no `icon-theme=` line and
+fuzzel falls back to whatever icon theme it picks by default. Not a
+launcher-functionality blocker (`.desktop` apps still launch); only
+affects icon glyph rendering inside the launcher overlay. Separate
+follow-up if/when icon-theme integration matters.
+
 **Wayland-only; Linux-only build.** Fuzzel doesn't compile off
 Linux — same constraint as foot. Hence the `home/core/nixos/`
 placement (per Configuration). If a Darwin host ever imports the
