@@ -22,9 +22,10 @@ rather than creating a new artifact.
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
 | [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) | #73 |
 | [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) | #74 |
+| [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) | #75 |
 
-Per-tool docs to come as their issues land: status bar (#75), browser
-(#76), Cursor IDE (#77).
+Per-tool docs to come as their issues land: browser (#76), Cursor IDE
+(#77).
 
 ## Document structure
 
