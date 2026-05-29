@@ -21,9 +21,10 @@ rather than creating a new artifact.
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
 | [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) | #73 |
+| [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) | #74 |
 
-Per-tool docs to come as their issues land: notification daemon
-(#74), status bar (#75), browser (#76), Cursor IDE (#77).
+Per-tool docs to come as their issues land: status bar (#75), browser
+(#76), Cursor IDE (#77).
 
 ## Document structure
 
