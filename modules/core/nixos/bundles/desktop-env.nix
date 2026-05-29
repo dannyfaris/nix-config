@@ -8,16 +8,14 @@
 #   - niri.nix             — compositor (system enablement + cache opt-out).
 #   - greetd.nix           — display manager (tuigreet on tty1).
 #   - desktop-fonts.nix    — Stylix font selections (mono/sans/emoji) + install wiring.
-#   - dms-home-bridge.nix  — bridges DMS HM modules into home-manager.sharedModules.
 #
 # The home-side companion bundle is at home/core/nixos/bundles/desktop-env.nix.
 #
-# Per ADR-028.
+# Per ADR-028 (amended by ADR-029).
 {
   imports = [
     ../niri.nix
     ../greetd.nix
     ../desktop-fonts.nix
-    ../dms-home-bridge.nix
   ];
 }

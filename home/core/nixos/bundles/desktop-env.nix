@@ -5,22 +5,21 @@
 # user-facing capabilities the desktop session needs are factored into
 # standalone modules beside this file:
 #
-#   - niri.nix — programs.niri.settings.binds (Mod+Return → foot, Mod+Shift+E → quit).
+#   - niri.nix — programs.niri.settings.binds (curated essential set;
+#     see docs/desktop/keybinds.md for the full taxonomy).
 #   - foot.nix — programs.foot.enable.
-#   - dms.nix  — programs.dank-material-shell.{enable, systemd.enable, niri.enableKeybinds}.
 #
 # First occupant of home/core/nixos/bundles/. The desktop stack is
-# Linux-only (DMS, niri, greetd-launched Foot all carry Linux paths)
-# so per scripts/lint-shared-purity.sh this lives under nixos/, not
+# Linux-only (niri, greetd-launched Foot all carry Linux paths) so
+# per scripts/lint-shared-purity.sh this lives under nixos/, not
 # shared/.
 #
 # The system-side companion bundle is at modules/core/nixos/bundles/desktop-env.nix.
 #
-# Per ADR-028.
+# Per ADR-028 (amended by ADR-029).
 {
   imports = [
     ../niri.nix
     ../foot.nix
-    ../dms.nix
   ];
 }

@@ -39,8 +39,8 @@ in
 
   # Stylix is the single source of truth for theming across both the TUI
   # surface (helix, bat, fzf, starship, zellij, yazi, lazygit, fish) and
-  # — once ADR-028 slices 3+ land — the metis desktop env (DMS). Per-host
-  # base16 palette comes from lib/host-palettes.nix keyed on
+  # the metis desktop env (niri + foot, per ADR-028 amended by ADR-029).
+  # Per-host base16 palette comes from lib/host-palettes.nix keyed on
   # hostContext.hostName; missing-host lookups fail loudly at eval.
   #
   # autoEnable = false is the whitelist stance per CLAUDE.md "Deliberate
