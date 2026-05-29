@@ -9,10 +9,10 @@
 # Contents: identity (users, sops), administration (nix-daemon, locale,
 # baseline system packages), security posture (firewall), the
 # home-manager NixOS-module wiring, default editor for system-mediated
-# tools, and Stylix theming (per-host palette + monospace font). Reserved
-# for things that aren't opt-in capabilities. A capability — even one
-# every current host happens to want — belongs in a capability bundle,
-# not here. See ADR-027 and PRD §3.2.
+# tools, and Stylix theming (per-host palette). Reserved for things
+# that aren't opt-in capabilities. A capability — even one every
+# current host happens to want — belongs in a capability bundle, not
+# here. See ADR-027 and PRD §3.2.
 {
   inputs,
   pkgs,
@@ -51,9 +51,10 @@ in
     enable = true;
     autoEnable = false;
     base16Scheme = "${pkgs.base16-schemes}/share/themes/${scheme}.yaml";
-    fonts.monospace = {
-      package = pkgs.nerd-fonts.jetbrains-mono;
-      name = "JetBrainsMono Nerd Font";
-    };
+    # No font configuration here — there is no universal font intent.
+    # Headless hosts (mercury, nixos-vm) don't render fonts; SSH
+    # clients use their own. Desktop-side font selections + install
+    # wiring live in modules/core/nixos/desktop-fonts.nix. See
+    # docs/desktop/fonts.md for the full rationale.
   };
 }
