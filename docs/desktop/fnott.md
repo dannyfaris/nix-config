@@ -136,6 +136,22 @@ session-target-pulled. To verify the daemon is wired correctly,
 send a test notification: `notify-send test`. The unit activates
 and the status flips to *active (running)*.
 
+**First post-install `notify-send` may fail with `ServiceUnknown`
+until dbus-broker rescans.** `dbus-broker` scans D-Bus service
+directories at session start and caches the result for the
+lifetime of the session. When `home-manager` first lays down
+fnott's `org.freedesktop.Notifications.service` file mid-session
+(i.e. on the activation that turns on `services.fnott.enable`),
+the broker doesn't see it until the cache is refreshed. The
+symptom is `notify-send test` failing with
+`GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name
+... is not activatable`. The fix is one-shot:
+`systemctl --user reload dbus.service`. Subsequent sessions
+(after logout / reboot) pick up the service file automatically,
+so this is only ever an issue on the activation that introduces
+fnott. Same shape applies to any future HM-installed D-Bus
+service.
+
 **Wayland-only; Linux-only build.** Fnott doesn't compile off
 Linux — same constraint as foot and fuzzel. Hence the
 `home/core/nixos/` placement. If a Darwin host ever imports the
