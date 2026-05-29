@@ -19,10 +19,11 @@ rather than creating a new artifact.
 | [keybinds.md](./keybinds.md) | Niri keybindings + three-namespace philosophy | #80 |
 | [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
+| [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
 
-Per-tool docs to come as their issues land: `foot.md` (#72), launcher
-(#73), notification daemon (#74), status bar (#75), browser (#76),
-Cursor IDE (#77).
+Per-tool docs to come as their issues land: launcher (#73),
+notification daemon (#74), status bar (#75), browser (#76), Cursor IDE
+(#77).
 
 ## Document structure
 
