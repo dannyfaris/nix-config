@@ -8,6 +8,7 @@
 #   - niri.nix             — compositor (system enablement + cache opt-out).
 #   - greetd.nix           — display manager (tuigreet on tty1).
 #   - desktop-fonts.nix    — Stylix font selections (mono/sans/emoji) + install wiring.
+#   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
 #
 # The home-side companion bundle is at home/core/nixos/bundles/desktop-env.nix.
 #
@@ -17,5 +18,6 @@
     ../niri.nix
     ../greetd.nix
     ../desktop-fonts.nix
+    ../electron-wayland.nix
   ];
 }

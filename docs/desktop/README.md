@@ -25,7 +25,16 @@ rather than creating a new artifact.
 | [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) | #75 |
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
 
-Per-tool docs to come as their issues land: Cursor IDE (#77).
+**Deliberate no-doc:** #77 (Cursor IDE) landed without a per-tool
+selection doc — Cursor is a foregone install across all the
+operator's hosts, not a selection weighed against alternatives.
+Rationale + Wayland-enablement notes live in the module head
+comments at [`home/core/nixos/cursor-ide.nix`](../../home/core/nixos/cursor-ide.nix)
+and [`modules/core/nixos/electron-wayland.nix`](../../modules/core/nixos/electron-wayland.nix).
+This is the documented exception to the §"Doc precedes
+implementation" rule in [workflow.md](../workflow.md): it
+applies to *selections*, not to foregone installs where no
+alternative was weighed.
 
 ## Document structure
 
