@@ -10,10 +10,12 @@
 #   - foot.nix — programs.foot.enable.
 #   - fuzzel.nix — programs.fuzzel.enable + launcher behaviour
 #     settings (see docs/desktop/fuzzel.md).
+#   - fnott.nix — services.fnott.enable (notification daemon;
+#     D-Bus-activated; see docs/desktop/fnott.md).
 #
 # First occupant of home/core/nixos/bundles/. The desktop stack is
-# Linux-only (niri, greetd-launched Foot + fuzzel all carry Linux
-# paths) so per scripts/lint-shared-purity.sh this lives under
+# Linux-only (niri, greetd-launched Foot + fuzzel + fnott all carry
+# Linux paths) so per scripts/lint-shared-purity.sh this lives under
 # nixos/, not shared/.
 #
 # The system-side companion bundle is at modules/core/nixos/bundles/desktop-env.nix.
@@ -24,5 +26,6 @@
     ../niri.nix
     ../foot.nix
     ../fuzzel.nix
+    ../fnott.nix
   ];
 }
