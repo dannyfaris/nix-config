@@ -15,11 +15,15 @@
 #   - waybar.nix — programs.waybar.enable + status-bar layout
 #     settings (top of screen; tray-bearing; see
 #     docs/desktop/waybar.md).
+#   - firefox.nix — programs.firefox.enable + stub default profile
+#     + xdg.mimeApps default-handler registration (Gecko engine,
+#     native Wayland; see docs/desktop/firefox.md).
 #
 # First occupant of home/core/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + fuzzel + fnott + waybar
-# all carry Linux paths) so per scripts/lint-shared-purity.sh this
-# lives under nixos/, not shared/.
+# all carry Linux paths; firefox's xdg.mimeApps wiring is Linux-only
+# even though pkgs.firefox builds on Darwin) so per
+# scripts/lint-shared-purity.sh this lives under nixos/, not shared/.
 #
 # The system-side companion bundle is at modules/core/nixos/bundles/desktop-env.nix.
 #
@@ -31,5 +35,6 @@
     ../fuzzel.nix
     ../fnott.nix
     ../waybar.nix
+    ../firefox.nix
   ];
 }
