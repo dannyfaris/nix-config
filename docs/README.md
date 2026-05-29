@@ -29,6 +29,13 @@ truth, eliminating drift between AI memory and in-repo reference.
   whitelist > blanket, no premature abstraction, etc.) and the *why* behind
   each.
 
+- **[workflow.md](./workflow.md)** — the process principles that shape how
+  work moves through the repo (intent-first issue framing, doc-before-code
+  for selections, peer-review staged diffs before commit, dependencies via
+  linked issues, squash auto-merge, etc.) and the *why* behind each. Sibling
+  to philosophy.md: philosophy is *what* we build; workflow is *how* we
+  build it.
+
 - **[taxonomy.md](./taxonomy.md)** — how modules and files are named in this
   repo. The "most-communicative term" rule and how it's applied. When role
   names win, when tool names win, when collective category names win.
@@ -62,8 +69,11 @@ If you're new to this repo:
    what the structural rules are.
 3. Read [philosophy.md](./philosophy.md) — the operating principles will help
    you predict why subsequent choices were made.
-4. Skim [taxonomy.md](./taxonomy.md) so the module structure makes sense.
-5. Dip into [decisions/](./decisions/) for any specific tool or design choice
+4. Read [workflow.md](./workflow.md) — the process conventions tell you how
+   work moves through the repo (intent-first issues, doc-before-code,
+   peer-review). Read before opening issues or cutting code.
+5. Skim [taxonomy.md](./taxonomy.md) so the module structure makes sense.
+6. Dip into [decisions/](./decisions/) for any specific tool or design choice
    you're curious about.
 
 ## Conventions

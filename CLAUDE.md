@@ -98,9 +98,17 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - One inline comment per non-obvious setting explaining "why", not "what".
 - Module file naming follows the "most-communicative term" rule. See
   [docs/taxonomy.md](./docs/taxonomy.md).
+- **Project workflow conventions** (intent-first issue framing,
+  doc-before-code for selections, peer-review staged diffs before
+  commit, sense-check `main` before implementing, etc.) live in
+  [docs/workflow.md](./docs/workflow.md). Fresh AI sessions and human
+  contributors should read this before opening issues or cutting
+  code.
 - **PRs land via squash auto-merge.** After `gh pr create`, run
   `gh pr merge <num> --auto --squash` to enable auto-merge; the PR
-  squash-merges itself once required checks pass.
+  squash-merges itself once required checks pass. See
+  [docs/workflow.md](./docs/workflow.md) §"PRs land via squash
+  auto-merge" for rationale.
 - Desktop environment lands on metis (x86_64) per ADR-028
   (Stylix-foundation + bundle composition), amended by
   [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (DMS
