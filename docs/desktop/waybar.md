@@ -76,7 +76,7 @@ notification side.
         format-disconnected = "offline";
       };
       tray.spacing = 10;
-      clock.format = "{:%-I:%M %p  %a %d %b}";  # 2:23 PM  Fri 29 May
+      clock.format = "{:%I:%M %p  %a %d %b}";  # 02:23 PM  Fri 29 May
     };
   };
 }
@@ -152,6 +152,18 @@ menu-bar styling more closely, but Inter lacks the Nerd Font glyphs
 used in the status modules. The monospace default is the right
 trade-off; flagged here so a future contributor doesn't switch
 fonts without realising the icons break.
+
+**Clock format restricted to C++20 chrono specifiers, not GNU
+strftime extensions.** Waybar's clock module uses fmt's chrono
+formatter (`std::chrono::format`), which accepts standard
+POSIX/C strftime tokens but rejects GNU extensions like `%-I`
+(no-pad hour). An initial draft used `%-I`; the clock module
+rendered nothing on the bar and logged `chrono format error:
+invalid specifier in chrono-specs` (visible via `journalctl
+--user -u waybar.service`). Use `%I` (zero-pad,
+`02:23 PM`) or `%l` (space-pad, ` 2:23 PM`) for unpadded-style
+hours instead. The current format uses `%I` for column-width
+consistency.
 
 ## References
 

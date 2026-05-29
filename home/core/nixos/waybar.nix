@@ -53,7 +53,7 @@ _: {
         format-disconnected = "offline";
       };
       tray.spacing = 10;
-      clock.format = "{:%-I:%M %p  %a %d %b}"; # 2:23 PM  Fri 29 May
+      clock.format = "{:%I:%M %p  %a %d %b}"; # 02:23 PM  Fri 29 May
     };
   };
 }
