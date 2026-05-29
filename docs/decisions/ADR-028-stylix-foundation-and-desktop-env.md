@@ -1,7 +1,7 @@
 # ADR-028: Stylix in foundation; desktop environment arrives on metis
 
 **Date**: 2026-05-28
-**Status**: Accepted, Implementation pending
+**Status**: Amended by ADR-029 (item 3 retracted; items 1–2 stand and are implemented)
 
 ## Context
 
@@ -23,7 +23,7 @@ Adopt a coordinated three-part decision, scoped to land as one ADR because the t
 
 **2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/core/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/core/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Foot, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
 
-**3. DMS theming is decoupled from Stylix** (decision rebased 2026-05-29; see §History below). DMS uses its own built-in palette and runtime wallpaper picker. `programs.dank-material-shell.enableDynamicTheming = false` suppresses matugen so it doesn't fight Stylix's GTK/Qt targets. `stylix.image` is not set on DMS-driven hosts; Stylix has no wallpaper consumer there. Stylix remains canonical for the TUI surface, foot terminal, GTK/Qt apps, and niri focus-ring/cursor.
+**3. DMS theming is decoupled from Stylix** (decision rebased then retracted 2026-05-29; see §History entries below — fully retracted per ADR-029). DMS uses its own built-in palette and runtime wallpaper picker. `programs.dank-material-shell.enableDynamicTheming = false` suppresses matugen so it doesn't fight Stylix's GTK/Qt targets. `stylix.image` is not set on DMS-driven hosts; Stylix has no wallpaper consumer there. Stylix remains canonical for the TUI surface, foot terminal, GTK/Qt apps, and niri focus-ring/cursor.
 
 The desktop stack is **niri compositor + DMS shell + Foot terminal + greetd session entry + Stylix theming across the TUI surface, foot, GTK/Qt apps, and niri focus-ring/cursor.** Waybar, fuzzel, mako, and matugen do not enter the configuration — DMS replaces the first three; the fourth is suppressed via `programs.dank-material-shell.enableDynamicTheming = false` so it doesn't fight Stylix's GTK/Qt targets. (Foot supersedes the originally-named Ghostty for the Linux desktop; see §History. DMS theming was originally planned as a Stylix consumer; that bridge is deferred indefinitely — see §History.)
 
@@ -70,7 +70,7 @@ Decision-only landing; implementation in subsequent slices, each peer-reviewed o
 1. **Slice 1 (this PR) — Documentation reconciliation.** ADR-028 authored; `docs/decisions/README.md` lifecycle convention; CLAUDE.md / PRD / TODO.md framing updates; issue #4 body update. No code changes.
 2. **Slice 2 — Stylix in foundation, TUI targets.** Stylix flake input; `lib/host-palettes.nix` (metis, mercury, nixos-vm); foundation import; HM-side Stylix targets for existing TUI tools; macchina banner recolour. Hard prereq for slices 3–5.
 3. **Slice 3 — desktop-env bundle scaffolding.** New `modules/core/nixos/bundles/desktop-env.nix` (niri + greetd + desktop fonts) and `home/core/nixos/bundles/desktop-env.nix` (niri user config + Foot + DMS). The home-side bundle directory `home/core/nixos/bundles/` is created as part of this slice (it does not exist yet; existing HM bundles live in `home/core/shared/bundles/`, but the desktop stack is Linux-only and belongs under `nixos/` per the shared-purity rule). Metis's `default.nix` adds both imports. Build-verify; no activation.
-4. **Slice 4 — DMS↔Stylix theme wiring [deferred indefinitely; see §History 2026-05-29].** Originally planned as a standalone HM module emitting DMS custom-theme JSON from `config.lib.stylix.colors`. Decoupled from Stylix on 2026-05-29; no bridge module ships. Slice numbering preserved for archaeological consistency.
+4. **Slice 4 — DMS↔Stylix theme wiring [retracted per ADR-029; see §History 2026-05-29 (DMS retracted)].** Originally planned as a standalone HM module emitting DMS custom-theme JSON from `config.lib.stylix.colors`. Decoupled from Stylix on 2026-05-29 then retracted entirely on the same date when DMS was removed from the configuration. Slice numbering preserved for archaeological consistency.
 5. **Slice 5 — First activation on metis.** `nh os switch`. End-to-end verify: niri launches, DMS in metis palette, Foot themed, TUI surfaces match.
 6. **Slice 6 (follow-up) — Issue #7 (Claude statusline) ceding colours to Stylix.** Another `config.lib.stylix.colors` consumer; independent of desktop work.
 
@@ -217,3 +217,54 @@ The corresponding code change (adding
 `home/core/nixos/dms.nix` plus a header-comment rewrite, alongside
 two other slice-5-readiness hardening edits) lands in a separate
 follow-up PR. This amendment is docs-only.
+
+### DMS retracted; per-tool selection model adopted (2026-05-29)
+
+The Decision (item 3 above) named DMS as the metis shell; the
+amendment immediately above narrowed DMS's role to "Stylix-decoupled
+but still present." This amendment goes further: **DMS is retracted
+from the configuration entirely.** See [ADR-029](./ADR-029-niri-only-desktop.md)
+for the full retraction record.
+
+The retraction was triggered by the slice-5 first-activation on
+metis (issue #67), which surfaced two upstream version-skew failures
+that the 2026-05-29 decoupling amendment above had not anticipated:
+
+1. DMS's `niri.includes.enable = true` generates `include "..."`
+   directives that niri 25.08 does not parse (DMS source explicitly
+   comments this as a HACK pending [sodiboo/niri-flake#1548](https://github.com/sodiboo/niri-flake/pull/1548)
+   — unmerged at the time of writing). niri silently fell back to
+   defaults; no binds, no shell.
+2. DMS 1.5-beta's `shell.qml` uses `pragma AppId com.danklinux.dms`,
+   which the nixpkgs-pinned quickshell 0.2.1 does not recognise. The
+   shell exited 255 × 5 → systemd start-limit-hit.
+
+Both failures are structural — three independently-pinned upstreams
+with different release cadences. The operator's stance after triage:
+retract DMS rather than continue incremental remediation.
+
+**Retracted from this ADR:**
+- §Decision item 3 ("DMS theming is decoupled from Stylix") —
+  superseded; DMS removed entirely, not merely decoupled.
+- §Implementation slice 4 — formally closed.
+
+**Preserved from this ADR:**
+- §Decision items 1 and 2 stand unchanged (Stylix in foundation;
+  metis as the first desktop host via additive bundle composition).
+- The niri compositor + foot terminal + greetd session entry remain
+  the desktop stack. Stylix targets continue to cover the TUI
+  surface, foot, GTK/Qt apps, and niri focus-ring/cursor.
+
+**New direction:** per-tool selection. Each component (application
+launcher, notification daemon, status bar, browser, IDE) lands with
+its own selection rationale in `docs/desktop/<tool>.md`. The first
+two living documents (`docs/desktop/keybinds.md`,
+`docs/desktop/fonts.md`) landed during issue #69's close-out
+(PRs #79 + #80 + #81 + #82). Per-tool follow-on work is tracked in
+issues #72–#77.
+
+The corresponding code change — deleting `home/core/nixos/dms.nix`,
+`modules/core/nixos/dms-home-bridge.nix`, the `dank-material-shell`
+flake input, and the bundle imports from both `desktop-env` bundles
+— ships in a separate follow-up PR under issue #70. This amendment
+is docs-only.
