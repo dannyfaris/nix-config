@@ -77,5 +77,16 @@ in
       executable = true;
     };
     ".claude/statusline-colours.sh".source = statuslineColours;
+
+    # Same script and palette derivation as the personal store — the
+    # per-identity split lives in settings.json (operator-state), not
+    # in the script. Each store's settings.json must point its
+    # statusLine.command at its own copy. See docs/identities.md and
+    # #137.
+    ".claude-work/statusline.sh" = {
+      source = ./claude-statusline.sh;
+      executable = true;
+    };
+    ".claude-work/statusline-colours.sh".source = statuslineColours;
   };
 }
