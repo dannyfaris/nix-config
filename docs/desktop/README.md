@@ -30,8 +30,8 @@ rather than creating a new artifact.
 selection doc — Cursor is a foregone install across all the
 operator's hosts, not a selection weighed against alternatives.
 Rationale + Wayland-enablement notes live in the module head
-comments at [`home/core/nixos/cursor-ide.nix`](../../home/core/nixos/cursor-ide.nix)
-and [`modules/core/nixos/electron-wayland.nix`](../../modules/core/nixos/electron-wayland.nix).
+comments at [`home/nixos/cursor-ide.nix`](../../home/nixos/cursor-ide.nix)
+and [`modules/nixos/electron-wayland.nix`](../../modules/nixos/electron-wayland.nix).
 This is the documented exception to the §"Doc precedes
 implementation" rule in [workflow.md](../workflow.md): it
 applies to *selections*, not to foregone installs where no

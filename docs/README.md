@@ -20,9 +20,10 @@ truth, eliminating drift between AI memory and in-repo reference.
 ## Contents
 
 - **[nix-config-prd.md](./nix-config-prd.md)** — the design document for the
-  multi-host rebuild: roles, module organisation, stability tiers, the
-  cross-platform contract, structural invariants, and bootstrap. The
-  canonical specification of *what we're building and why*.
+  multi-host configuration: composition model (foundation + bundles +
+  standalone modules), module organisation, the cross-platform contract,
+  structural invariants, and bootstrap. The canonical specification of
+  *what we're building and why*.
 
 - **[philosophy.md](./philosophy.md)** — the operating principles that shape
   every decision in this repo (tight from the start, declarative > imperative,

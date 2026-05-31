@@ -7,11 +7,11 @@ the macOS Spotlight pattern.
 
 ## Selection
 
-**fuzzel** on metis. Enabled via `home/core/nixos/fuzzel.nix` (HM
+**fuzzel** on metis. Enabled via `home/nixos/fuzzel.nix` (HM
 module `programs.fuzzel.enable = true`). Bound to `Mod+Space` in
-`home/core/nixos/niri.nix`. Stylix integration via
+`home/nixos/niri.nix`. Stylix integration via
 `stylix.targets.fuzzel.enable = true` in
-`home/core/shared/stylix-targets.nix`.
+`home/shared/stylix-targets.nix`.
 
 ## Rationale
 
@@ -61,7 +61,7 @@ to do what fuzzel does in one — extra moving part for no win.
 
 ## Configuration
 
-**HM module** — `home/core/nixos/fuzzel.nix`:
+**HM module** — `home/nixos/fuzzel.nix`:
 
 ```nix
 { ... }:
@@ -77,10 +77,10 @@ to do what fuzzel does in one — extra moving part for no win.
 }
 ```
 
-Lives under `home/core/nixos/` because fuzzel is Wayland-only and
+Lives under `home/nixos/` because fuzzel is Wayland-only and
 doesn't compile off Linux — there is no cross-platform variant to
-share. Same placement reasoning as `home/core/nixos/foot.nix`; the
-shared-purity rule (ADR-027) gates `home/core/shared/` on packages
+share. Same placement reasoning as `home/nixos/foot.nix`; the
+shared-purity rule (ADR-027) gates `home/shared/` on packages
 that build on both NixOS and Darwin, which fuzzel doesn't. Imported
 into the desktop-env HM bundle.
 
@@ -88,7 +88,7 @@ Visible-line count, width, padding, and other layout values use
 fuzzel's defaults — explicitly not tuned for pixel-Spotlight parity.
 See Sharp edges if visual footprint reads wrong later.
 
-**Stylix integration** — `home/core/shared/stylix-targets.nix`:
+**Stylix integration** — `home/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.fuzzel.enable = true;
@@ -108,7 +108,7 @@ We deliberately don't override Stylix's font/colour writes. The
 operator-facing settings above (layer/anchor/terminal) are about
 *behaviour*, not theming.
 
-**Keybind** — `home/core/nixos/niri.nix`:
+**Keybind** — `home/nixos/niri.nix`:
 
 ```nix
 "Mod+Space".action.spawn = "fuzzel";
@@ -155,20 +155,20 @@ affects icon glyph rendering inside the launcher overlay. Separate
 follow-up if/when icon-theme integration matters.
 
 **Wayland-only; Linux-only build.** Fuzzel doesn't compile off
-Linux — same constraint as foot. Hence the `home/core/nixos/`
+Linux — same constraint as foot. Hence the `home/nixos/`
 placement (per Configuration). If a Darwin host ever imports the
 desktop-env HM bundle directly, eval will fail on `pkgs.fuzzel`.
-Mac side gets its own launcher when `home/core/darwin/` lands
+Mac side gets its own launcher when `home/darwin/` lands
 (per the mac-mini onboarding epic #11) — likely Raycast or
 Alfred via nix-darwin's app management, not a port of fuzzel.
 
 ## References
 
-- [`home/core/nixos/fuzzel.nix`](../../home/core/nixos/fuzzel.nix)
+- [`home/nixos/fuzzel.nix`](../../home/nixos/fuzzel.nix)
   — the HM module enabling fuzzel.
-- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
+- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
   — `stylix.targets.fuzzel.enable = true`.
-- [`home/core/nixos/niri.nix`](../../home/core/nixos/niri.nix) —
+- [`home/nixos/niri.nix`](../../home/nixos/niri.nix) —
   `Mod+Space` → fuzzel bind.
 - [keybinds.md](./keybinds.md) — modifier-namespace philosophy;
   Implementation status's "interim deviations" section captures the

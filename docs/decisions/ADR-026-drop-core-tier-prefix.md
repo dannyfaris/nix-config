@@ -1,7 +1,7 @@
 # ADR-026: Drop the `core/` tier prefix (walk back ADR-015)
 
 **Date**: 2026-05-31
-**Status**: Accepted, Implementation pending
+**Status**: Accepted, Implemented
 
 > This ADR **supersedes [ADR-015](./ADR-015-tier-as-directory.md)** in full and **further amends [ADR-013](./ADR-013-composition-framework.md)** by retracting its directory-grid sub-claim (the `core/`-vs-`experimental/` axis only — the platform split `shared/`-vs-`nixos/`-vs-`darwin/` survives). The tier-as-directory pattern is retracted; module trees flatten to `modules/<platform>/...` and `home/<platform>/...`. The `tier-deps` lint (PRD §8.1 #2), the promotion/removal procedures (PRD §6.4 with `scripts/promote.sh` and `scripts/remove.sh`), and the entire "Stability tiers" PRD section (§6) become moot and are removed. No other ADR is affected — the platform split, foundation-and-bundles ([ADR-027](./ADR-027-foundation-and-bundles.md)), and host identity ([ADR-016](./ADR-016-host-identity.md)) all stand.
 

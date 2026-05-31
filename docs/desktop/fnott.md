@@ -6,11 +6,11 @@ maintainer with consistent design idioms.
 
 ## Selection
 
-**fnott** on metis. Enabled via `home/core/nixos/fnott.nix` (HM
+**fnott** on metis. Enabled via `home/nixos/fnott.nix` (HM
 service module `services.fnott.enable = true`). The HM service
 unit auto-starts via D-Bus activation — no `spawn-at-startup` hack
 required. Stylix integration via `stylix.targets.fnott.enable = true`
-in `home/core/shared/stylix-targets.nix`.
+in `home/shared/stylix-targets.nix`.
 
 ## Rationale
 
@@ -61,7 +61,7 @@ replacement for fnott + a separate notification-center add-on.
 
 ## Configuration
 
-**HM module** — `home/core/nixos/fnott.nix`:
+**HM module** — `home/nixos/fnott.nix`:
 
 ```nix
 _: {
@@ -79,11 +79,11 @@ a different position is ever wanted, set
 `top-center`, `top-right`, `bottom-left`, `bottom-center`, or
 `bottom-right`.
 
-Lives under `home/core/nixos/` because fnott is Wayland-only —
+Lives under `home/nixos/` because fnott is Wayland-only —
 same placement reasoning as foot.nix and fuzzel.nix; same shared-
 purity rule (ADR-027) gating.
 
-**Stylix integration** — `home/core/shared/stylix-targets.nix`:
+**Stylix integration** — `home/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.fnott.enable = true;
@@ -154,10 +154,10 @@ service.
 
 **Wayland-only; Linux-only build.** Fnott doesn't compile off
 Linux — same constraint as foot and fuzzel. Hence the
-`home/core/nixos/` placement. If a Darwin host ever imports the
+`home/nixos/` placement. If a Darwin host ever imports the
 desktop-env HM bundle directly, eval will fail on `pkgs.fnott`. Mac
 side notifications come from macOS Notification Center natively when
-`home/core/darwin/` lands (per the mac-mini onboarding epic #11);
+`home/darwin/` lands (per the mac-mini onboarding epic #11);
 no fnott port needed.
 
 **In-memory only; no cross-reboot persistence.** Fnott holds
@@ -169,11 +169,11 @@ Currently fine: day-to-day notifications are ephemeral by intent.
 
 ## References
 
-- [`home/core/nixos/fnott.nix`](../../home/core/nixos/fnott.nix) —
+- [`home/nixos/fnott.nix`](../../home/nixos/fnott.nix) —
   the HM service module enabling fnott.
-- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
+- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
   — `stylix.targets.fnott.enable = true`.
-- [`home/core/nixos/bundles/desktop-env.nix`](../../home/core/nixos/bundles/desktop-env.nix)
+- [`home/nixos/bundles/desktop-env.nix`](../../home/nixos/bundles/desktop-env.nix)
   — bundle import.
 - [foot.md](./foot.md) — sibling dnkl-family terminal.
 - [fuzzel.md](./fuzzel.md) — sibling dnkl-family launcher.

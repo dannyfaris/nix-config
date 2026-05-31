@@ -93,7 +93,7 @@ Roles — as a single-word categorical label for a host's purpose — are not pa
 
 ### 3.2 Foundation
 
-Each platform has a `foundation.nix` at `modules/core/<platform>/foundation.nix` (and, where applicable, `home/core/<platform>/foundation.nix`). Its contents are whatever modules are unconditionally true of every host the platform serves — typically:
+Each platform has a `foundation.nix` at `modules/<platform>/foundation.nix` (and, where applicable, `home/<platform>/foundation.nix`). Its contents are whatever modules are unconditionally true of every host the platform serves — typically:
 
 - **Identity** — the user(s) the host runs as, the host's secrets-decryption wiring, and other "this host is one of ours" attributes.
 - **Administration** — Nix daemon settings, locale/timezone, the unfree-package whitelist, baseline admin packages.
@@ -105,7 +105,7 @@ Structurally, foundation is a bundle. The `bundle-purity` rule (§8.1) applies t
 
 ### 3.3 Capability bundles
 
-A bundle is a file at `modules/core/<platform>/bundles/<name>.nix` (or `home/core/<platform>/bundles/<name>.nix`). Its body is an `imports` list naming two or more modules toward a coherent named capability.
+A bundle is a file at `modules/<platform>/bundles/<name>.nix` (or `home/<platform>/bundles/<name>.nix`). Its body is an `imports` list naming two or more modules toward a coherent named capability.
 
 Bundle names describe what is in the bundle, not what kind of host imports it. Illustrative examples (final decomposition lives in slice 2 of the role-removal migration):
 
@@ -124,7 +124,7 @@ Bundles are flat: they import modules, not other bundles. A bundle-of-bundles is
 A host file declares:
 
 - Identifying metadata: hostname, platform tuple, hardware configuration (for NixOS hosts).
-- An `imports` list naming `foundation.nix`, plus the bundles and standalone modules the host composes. Experimental modules (under `modules/experimental/` or `home/experimental/`) opted into for this instance appear in the same `imports` list, distinguished by their path prefix.
+- An `imports` list naming `foundation.nix`, plus the bundles and standalone modules the host composes.
 - Instance-specific option overrides where genuinely host-specific (see below).
 
 A host file may contain inline option overrides where the override is genuinely instance-specific and would be a category mistake to place in a shared module. The test: would moving this override into foundation or a bundle apply it to hosts that shouldn't have it? If yes, the host file is the right home. Concrete examples from current hosts:
@@ -143,15 +143,15 @@ The exact attribute shape for a host declaration is defined in §5 (Module organ
 
 ## 4. Architectural principles
 
-The configuration is built on four load-bearing principles. Each is specified in detail in the section noted; the summary here exists for quick reference.
+The configuration is built on three load-bearing principles. Each is specified in detail in the section noted; the summary here exists for quick reference.
 
-**4.1 Explicit composition (§5).** Hosts and bundles explicitly list the modules they include. Module bodies are pure configuration — applicability is not declared inside modules. The directory structure (`core/`-vs-`experimental/` × `shared/`-vs-`nixos/`-vs-`darwin/`) is a project-level organisational convention enforced by lint, not a framework feature.
+**4.1 Explicit composition (§5).** Hosts and bundles explicitly list the modules they include. Module bodies are pure configuration — applicability is not declared inside modules. The directory structure (`shared/`-vs-`nixos/`-vs-`darwin/`) is a project-level organisational convention enforced by lint, not a framework feature.
 
 **4.2 Foundation, bundles, and hosts (§3).** A host's configuration is composed from bundles (aggregator files importing two or more modules toward a coherent capability) and standalone modules (capability modules without a bundle home yet). One bundle per platform, named `foundation.nix` and placed at the top of the platform's module tree, is imported by every host of that platform by convention; structurally it is a bundle like any other. Host files contain identifying data, an `imports` list naming the foundation, bundles, and standalone modules they compose, and instance-specific option overrides where genuinely host-specific (see §3.4 for the test).
 
-**4.3 Stability tiers (§6).** Modules occupy one of two tiers: `core` (stable, available to foundation and bundles) or `experimental` (under evaluation, scoped to individual hosts). Tier is encoded in directory structure. Core must not depend on experimental.
+**4.3 Cross-platform purity (§7).** Shared modules work identically on all supported platforms by construction. Platform-specific behaviour lives in platform-specific modules. There are no platform conditionals in shared modules.
 
-**4.4 Cross-platform purity (§7).** Shared modules work identically on all supported platforms by construction. Platform-specific behaviour lives in platform-specific modules. There are no platform conditionals in shared modules.
+A fourth principle once lived here — *stability tiers*, encoding `core` and `experimental` as separate directories. Walked back by [ADR-026](./decisions/ADR-026-drop-core-tier-prefix.md); the directory grid is now platform-only. §6 below carries the retraction marker; cross-references elsewhere in this PRD that pointed at the tier model have been removed.
 
 ---
 
@@ -176,35 +176,25 @@ hosts/
     disko.nix                # declarative disk layout (NixOS hosts; see ADR-023)
     hardware-configuration.nix  # auto-generated NixOS hardware probe (see ADR-023)
 modules/
-  core/
-    shared/                  # cross-platform system modules
-      foundation.nix         # (if cross-platform foundation emerges)
-      bundles/               # cross-platform bundles
-    nixos/                   # NixOS-specific system modules
-      foundation.nix         # unconditional baseline for every NixOS host
-      bundles/               # NixOS-specific bundles
-    darwin/                  # nix-darwin-specific system modules
-      foundation.nix         # unconditional baseline for every macOS host
-      bundles/               # Darwin-specific bundles
-  experimental/
-    shared/
-    nixos/
-    darwin/
+  shared/                    # cross-platform system modules
+    foundation.nix           # (if cross-platform foundation emerges)
+    bundles/                 # cross-platform bundles
+  nixos/                     # NixOS-specific system modules
+    foundation.nix           # unconditional baseline for every NixOS host
+    bundles/                 # NixOS-specific bundles
+  darwin/                    # nix-darwin-specific system modules
+    foundation.nix           # unconditional baseline for every macOS host
+    bundles/                 # Darwin-specific bundles
 home/
-  core/
-    shared/                  # cross-platform Home Manager modules
-      foundation.nix
-      bundles/
-    nixos/                   # Home Manager modules used only on NixOS hosts
-      foundation.nix
-      bundles/
-    darwin/                  # Home Manager modules used only on macOS hosts
-      foundation.nix
-      bundles/
-  experimental/
-    shared/
-    nixos/
-    darwin/
+  shared/                    # cross-platform Home Manager modules
+    foundation.nix
+    bundles/
+  nixos/                     # Home Manager modules used only on NixOS hosts
+    foundation.nix
+    bundles/
+  darwin/                    # Home Manager modules used only on macOS hosts
+    foundation.nix
+    bundles/
 lib/
   mk-host.nix                # host construction helper
 scripts/
@@ -215,19 +205,17 @@ scripts/
 
 **`modules/` vs. `home/`** — separated because they target different evaluation contexts with different option schemas. Files in `modules/` declare NixOS or nix-darwin modules (system-level: services, packages, system settings). Files in `home/` declare Home Manager modules (user-level: dotfiles, user environment, user services). A file in the wrong tree will fail evaluation.
 
-**`core/` vs. `experimental/`** — separated to encode stability tier in the file path. Core modules are stable and may be imported anywhere. Experimental modules are under evaluation and have restricted dependency rules (see §6).
-
 **`shared/` vs. `nixos/` vs. `darwin/`** — separated to encode platform applicability. Modules in `shared/` must work identically on all supported platforms (see §7 for the cross-platform contract). Modules in `nixos/` or `darwin/` may use platform-specific constructs freely.
 
-This three-axis split (system vs. user, core vs. experimental, shared vs. platform-specific) makes every module's purpose visible from its path, and makes structural rules enforceable by path-based linting.
+This two-axis split (system vs. user; shared vs. platform-specific) makes every module's purpose visible from its path, and makes structural rules enforceable by path-based linting. An earlier draft carried a third axis (`core/` vs. `experimental/`); walked back by ADR-026 since no module was ever classified experimental.
 
 ### 5.3 Bundles and standalone modules
 
-**Bundles** are aggregator files whose body is an `imports` list naming two or more modules toward one coherent named capability. They live under `modules/core/<platform>/bundles/` (and the parallel home tree). Bundle filenames describe the capability (`remote-access.nix`, `cli-tooling.nix`, `desktop-env.nix`). Bundle files contain no inline configuration — logic lives in the modules they import.
+**Bundles** are aggregator files whose body is an `imports` list naming two or more modules toward one coherent named capability. They live under `modules/<platform>/bundles/` (and the parallel home tree). Bundle filenames describe the capability (`remote-access.nix`, `cli-tooling.nix`, `desktop-env.nix`). Bundle files contain no inline configuration — logic lives in the modules they import.
 
-**Foundation** is the bundle that hosts of a given platform conventionally always import. It lives at `modules/core/<platform>/foundation.nix` (and the parallel home tree), one level above `bundles/`. Placement at the top of the platform tree is a discoverability convention reflecting its universal-import status. Structurally it is governed by the same `bundle-purity` rule as any other bundle.
+**Foundation** is the bundle that hosts of a given platform conventionally always import. It lives at `modules/<platform>/foundation.nix` (and the parallel home tree), one level above `bundles/`. Placement at the top of the platform tree is a discoverability convention reflecting its universal-import status. Structurally it is governed by the same `bundle-purity` rule as any other bundle.
 
-**Standalone modules** sit at the top of their platform directory (e.g. `modules/core/nixos/btrfs-scrub.nix`) and are imported directly by the hosts that want them. A standalone module graduates to a bundle when a second module joins it under a coherent capability label.
+**Standalone modules** sit at the top of their platform directory (e.g. `modules/nixos/btrfs-scrub.nix`) and are imported directly by the hosts that want them. A standalone module graduates to a bundle when a second module joins it under a coherent capability label.
 
 The bundles-vs-standalone-modules distinction is mechanical (bundles aggregate ≥ 2 modules; standalone modules don't aggregate at all). The foundation-vs-other-bundles distinction is purely conventional (foundation is the one bundle every host imports; placement and name signal that). One structural rule — `bundle-purity` (§8.1) — covers all aggregator files; modules are just modules.
 
@@ -246,20 +234,17 @@ A host's `default.nix` is a thin module: identifying data plus an `imports` list
     inputs.disko.nixosModules.disko
 
     # Foundation — every NixOS host imports this.
-    ../../modules/core/nixos/foundation.nix
+    ../../modules/nixos/foundation.nix
 
     # Capability bundles this host opts into.
-    ../../modules/core/nixos/bundles/remote-access.nix
-    ../../modules/core/nixos/bundles/local-linux-platform.nix
-    ../../modules/core/nixos/bundles/container-runtime.nix
-    ../../home/core/shared/bundles/cli-tooling.nix
-    ../../home/core/shared/bundles/agent-clis-extras.nix
+    ../../modules/nixos/bundles/remote-access.nix
+    ../../modules/nixos/bundles/local-linux-platform.nix
+    ../../modules/nixos/bundles/container-runtime.nix
+    ../../home/shared/bundles/cli-tooling.nix
+    ../../home/shared/bundles/agent-clis-extras.nix
 
     # Standalone modules (no bundle home yet).
-    ../../modules/core/nixos/btrfs-scrub.nix
-
-    # Optional: experimental modules opted into for this instance.
-    # ../../modules/experimental/nixos/<name>.nix
+    ../../modules/nixos/btrfs-scrub.nix
   ];
 
   networking.hostName = "mothership";
@@ -272,7 +257,7 @@ A host's `default.nix` is a thin module: identifying data plus an `imports` list
 
 The flake's host-construction logic (in `lib/mk-host.nix`) is a thin wrapper around `nixpkgs.lib.nixosSystem` (or the nix-darwin equivalent): it wires `inputs` as a `specialArg` and imports the third-party flake-modules (home-manager, sops-nix). The user's modules — foundation, bundles, standalone modules — are imported explicitly by the host file itself, where they can be read top-to-bottom as a manifest of what the host is doing.
 
-**On module merging.** The Nix module system does not "layer" modules in import order — option values are merged via priority (`mkDefault`, `mkForce`, `mkOverride`). Core modules set option values at default priority. Where a host or experimental module needs to override a value already set by a foundation or bundle module, it uses `lib.mkForce` (for a hard override) or `lib.mkOverride <priority>` with an explicit priority lower than the default. Experimental modules are not implicitly higher-priority than core; an experiment that needs to win must say so explicitly. This avoids silent merge failures where an experimental module's value loses to a default-priority core value.
+**On module merging.** The Nix module system does not "layer" modules in import order — option values are merged via priority (`mkDefault`, `mkForce`, `mkOverride`). Modules set option values at default priority unless they explicitly weaken them via `lib.mkDefault`. Where a host needs to override a value already set by a foundation or bundle module, it uses `lib.mkForce` (for a hard override) or `lib.mkOverride <priority>` with an explicit priority lower than the default. Import order is not a priority signal; an override that needs to win must say so explicitly. This avoids silent merge failures where one default-priority value loses to another by accident.
 
 Hosts must not contain inline module *logic* (helper definitions, `let`-bound logic, derivations). Instance-specific option overrides are permitted where the override is genuinely host-specific per §3.4's test. If a host needs reusable behaviour beyond what foundation + its imported bundles provide, that behaviour belongs in a module — imported directly (if standalone) or added to a bundle (if it shares a coherent capability with an existing module).
 
@@ -282,7 +267,7 @@ For NixOS hosts installed via `nixos-anywhere` (ADR-022), the per-host directory
 
 **Files:** kebab-case. `fish.nix`, `git-signing.nix`, `niri-keybindings.nix`. No camelCase or snake_case for filenames.
 
-**Module attributes:** match the filename. A module at `modules/core/shared/fish.nix` declares behaviour into the attribute path corresponding to `fish`. Mismatches are caught by lint.
+**Module attributes:** match the filename. A module at `modules/shared/fish.nix` declares behaviour into the attribute path corresponding to `fish`. Mismatches are caught by lint.
 
 **Bundles:** kebab-case, named after the capability they group (`remote-access.nix`, `cli-tooling.nix`, `desktop-env.nix`). Do not name bundles after the kind of host that imports them — that's the role-shaped category claim that ADR-027 walked back. A bundle name should describe what is *in* the bundle, not what kind of host *uses* it.
 
@@ -302,7 +287,7 @@ These names are accepted under the rule: each refers unambiguously to a specific
 
 **`lib/`** contains Nix helper functions used across the configuration. The host-construction helper, `mk-host.nix`, lives here. Additional helpers are added when concrete need arises.
 
-**`scripts/`** contains non-Nix shell scripts implementing the structural lint checks defined in §8, plus operational scripts that automate multi-step procedures — notably `promote.sh` and `remove.sh` for the experimental-to-core lifecycle (§6.4). Additional scripts are added when concrete need arises.
+**`scripts/`** contains non-Nix shell scripts implementing the structural lint checks defined in §8. Additional scripts are added when concrete need arises.
 
 ### 5.7 Decision log
 
@@ -340,79 +325,13 @@ Earlier ADRs (`ADR-001` through `ADR-012`) record decisions made during the prio
 
 ---
 
-## 6. Stability tiers
+## 6. Stability tiers — retracted
 
-### 6.1 The two tiers
+This section originally described a two-tier system (`core/` and `experimental/`) encoded as directories, with promotion and removal procedures (`scripts/promote.sh`, `scripts/remove.sh`) for moving modules between tiers.
 
-**Core.** Stable, proven modules. Eligible for import by foundation, bundles, or directly by hosts. Changes to core are deliberate.
+**Walked back by [ADR-026](./decisions/ADR-026-drop-core-tier-prefix.md).** With the project mature enough to evaluate the structure, the data was unambiguous: no module had ever been classified experimental, the `core/` directory contrasted with nothing, and the `tier-deps` lint had no inputs to flag. The categorical split anticipated a sibling that never arrived — the same forecast-driven pattern ADR-027 walked back for the role taxonomy.
 
-**Experimental.** Modules under evaluation. Scoped to individual host instances by being imported (under `modules/experimental/` or `home/experimental/` paths) directly in a host's `imports` list. Never imported by foundation or bundles. May be promoted to core or removed at any time, both via explicit decision (see §6.4).
-
-A `deprecated/` tier is not part of the current design. Failed experiments are removed; superseded core modules are replaced or deleted directly. The tier can be added later if a phase-out path is ever needed.
-
-### 6.2 Dependency rules
-
-- Core modules MUST NOT import experimental modules.
-- Experimental modules MAY import core modules.
-- Foundation files and bundles import only core modules. Experimental modules are opted into at the host level by appearing in the host's `imports` list under an `experimental/` path.
-
-These rules are enforced by the `tier-deps` invariant (§8.1).
-
-### 6.3 Scoping
-
-Experimental modules are scoped to specific host instances. A host opts in by adding the experimental module's path (under `modules/experimental/` or `home/experimental/`) to its `imports` list (see §5.4).
-
-This means:
-- A new host of similar shape does not inherit the in-flight experiments of any other host.
-- An experiment can be tried on one machine without affecting any other.
-- Promotion to core is what makes a module eligible for foundation or bundle membership, and therefore (when promoted into a bundle most hosts import) for fleet-wide rollout.
-
-### 6.4 Promotion and removal
-
-Both promotion and removal are explicit, deliberate decisions made through a review. They are never the result of drift, inaction, or accumulation.
-
-The review is conducted by Dan. Its cadence, format, and triggers are at his discretion.
-
-Both procedures are scripted to keep the action atomic — a partial promotion (file moved but no consumers updated) is the failure mode to design against.
-
-#### Promotion procedure
-
-`scripts/promote.sh <module-path>` performs:
-
-1. Move the file from `modules/experimental/<platform>/` to `modules/core/<platform>/` (or the equivalent for `home/`).
-2. Add the module to the appropriate consumer — a bundle (existing or new), the platform's `foundation.nix`, or one or more host `imports` lists — depending on the scope decided at promotion time.
-3. Remove the experimental-path entries from any host's `imports` list (the experimental opt-in path is no longer valid; the new core path is what the consumer references).
-
-The author then commits the result with a message that captures the promotion and the rationale:
-
-```
-promote: <module-name> from experimental to core
-
-<brief rationale: what was being evaluated, why it earned promotion>
-```
-
-#### Removal procedure
-
-`scripts/remove.sh <module-path>` performs:
-
-1. Delete the file from `modules/experimental/<platform>/` (or `home/experimental/<platform>/`).
-2. Remove the experimental-path entries from any host's `imports` list.
-
-The author then commits the result with a message that captures the removal and what was learned:
-
-```
-remove: <module-name> from experimental
-
-<brief rationale: what was tried, why it didn't earn promotion, what was learned>
-```
-
-The "what was learned" matters. A failed experiment is a learning artefact. The commit message is where that learning is recorded.
-
-### 6.5 Records
-
-Experiments and their outcomes are recorded in commit history. The combination of file location (promotion = file move, removal = file deletion) and commit message captures what was tried, when, on which hosts, and how it resolved.
-
-Experiments do not generate ADRs by default. ADRs are reserved for architectural decisions; most experiments are not architectural in nature. An experiment whose outcome *is* architectural — for example, replacing a foundational tool across the fleet — would generate an ADR for that decision, but the ADR is about the architectural shift, not the experimental process that led to it.
+The `tier-deps` structural invariant (originally row 2 of §8.1) is dropped. The `promote.sh` and `remove.sh` operational scripts (referenced in §5.6) were planned but never written; nothing concrete is removed by retraction. Section numbering is preserved (§7+ unchanged) per ADR-026's "least churn" guidance.
 
 ---
 
@@ -422,7 +341,7 @@ Experiments do not generate ADRs by default. ADRs are reserved for architectural
 
 A module under `modules/*/shared/` or `home/*/shared/` MUST work identically on all supported platforms (`x86_64-linux`, `aarch64-linux`, `aarch64-darwin`, and `x86_64-darwin` if used) by construction. The shared module's behaviour does not depend on which platform it is evaluated for.
 
-This is enforced by the `shared-purity` invariant (§8.1). The lint catches platform conditionals (the most common violation), but it is necessary, not sufficient: references to platform-specific package attributes (e.g., `pkgs.linuxPackages.something`) are not detected by the lint. These would still fail at build time on the affected platform via the `hosts-build` invariant (§8.1 #7).
+This is enforced by the `shared-purity` invariant (§8.1). The lint catches platform conditionals (the most common violation), but it is necessary, not sufficient: references to platform-specific package attributes (e.g., `pkgs.linuxPackages.something`) are not detected by the lint. These would still fail at build time on the affected platform via the `hosts-build` invariant (§8.1 #6).
 
 ### 7.2 What "shared" means in practice
 
@@ -460,7 +379,7 @@ Modules under `modules/*/nixos/`, `modules/*/darwin/`, `home/*/nixos/`, and `hom
 
 Some differences between hosts look platform-shaped but are not, and must not be treated as such:
 
-- **Capability differences.** A NixOS host with a graphical environment and a NixOS host without one are both NixOS; the difference is which bundles each host imports (a desktop host adds `desktop-env`, `desktop-apps`, etc.). Similarly, a macOS host with `linux-builder` configured can build Linux derivations, and one without it cannot. These are capabilities of the specific instance, expressed by composition (bundle selection + standalone module imports), not by platform conditionals. `modules/core/<platform>/foundation.nix` does not branch on whether the host has any particular capability; capabilities live in bundles and standalone modules that hosts opt into.
+- **Capability differences.** A NixOS host with a graphical environment and a NixOS host without one are both NixOS; the difference is which bundles each host imports (a desktop host adds `desktop-env`, `desktop-apps`, etc.). Similarly, a macOS host with `linux-builder` configured can build Linux derivations, and one without it cannot. These are capabilities of the specific instance, expressed by composition (bundle selection + standalone module imports), not by platform conditionals. `modules/<platform>/foundation.nix` does not branch on whether the host has any particular capability; capabilities live in bundles and standalone modules that hosts opt into.
 - **Hardware differences.** Architecture (`aarch64` vs `x86_64`) is part of the platform tuple, but within a single platform family (e.g., both `aarch64-linux` and `x86_64-linux` are NixOS) the architecture is rarely a module-level concern. Hardware-specific configuration lives in the host's `hardware-configuration.nix` (auto-generated; see ADR-023) and `disko.nix` (disk layout), not in module trees.
 
 The `shared/`-vs-`nixos/`-vs-`darwin/` split is about the *operating system the module's options target*. Other axes of variation are handled by bundle selection and host-level composition (§3, §5.4), not by the cross-platform contract.
@@ -476,19 +395,18 @@ Every convention that admits a deterministic test is encoded as an automated che
 | # | Rule name | Invariant | Enforcement |
 |---|-----------|-----------|-------------|
 | 1 | `shared-purity` | No platform conditionals (`isDarwin`, `isLinux`, `stdenv.is*`, platform-keyed `optionals`, references to platform-specific paths) appear in any file under `modules/*/shared/` or `home/*/shared/`. Necessary but not sufficient — see §7.1. | `scripts/lint-shared-purity.sh` |
-| 2 | `tier-deps` | No file under `modules/core/` or `home/core/` imports from `modules/experimental/` or `home/experimental/`. | `scripts/lint-tier-deps.sh` |
-| 3 | `filename-kebab-case` | All `.nix` filenames are kebab-case (no camelCase, no snake_case). | `scripts/lint-filename-kebab-case.sh` |
-| 4 | `bundle-purity` | Aggregator files — `modules/core/<platform>/foundation.nix`, `home/core/<platform>/foundation.nix`, and any file under `modules/core/<platform>/bundles/` or `home/core/<platform>/bundles/` — contain only an `imports` list at the top level. No `mkDefault` selections, no inline option setting. Each entry in `imports` resolves to a distinct module under `modules/core/` or `home/core/` (post-path-resolution; the same module referenced via two relative-path spellings counts once). Aggregator files must import **two or more distinct modules** — single-module "bundles" are forbidden, and the underlying capability stays a standalone module until a sibling joins it. Bundles do not import other bundles (the model is flat per ADR-027). | `scripts/lint-bundle-purity.sh` |
-| 5 | `host-purity` | Host `default.nix` files contain: identifying data (`networking.hostName`, `system.stateVersion`, `nixpkgs.hostPlatform` when applicable); per-host wiring (`_module.args.hostContext`); an `imports` list resolving to paths under `modules/core/`, `home/core/`, `modules/experimental/`, `home/experimental/`, or `./hardware-configuration.nix` / `./disko.nix` in the same directory; and instance-specific option overrides where the override is genuinely host-specific and would be a category mistake to place in a shared module (e.g., AWS-image conflicts, hardware-specific swap sizing, oomd policy, module-conflict resolution via `lib.mkForce`, host-tuned kernel parameters). Forbidden: inline conditional logic on host attributes, helper function definitions, derivation definitions, or any construct that would belong in a reusable module. Lint enforces the *structural* envelope (no helper definitions, no `let` bindings introducing logic, no derivation syntax) rather than judging each option assignment — the test of "genuinely host-specific" is left to author and reviewer per PRD §3.4. | `scripts/lint-host-purity.sh` |
-| 6 | `flake-evaluates` | The flake evaluates without errors. A module placed under the wrong tree (a Home Manager module under `modules/`, a NixOS module under `home/`) fails evaluation here. Errors from this invariant come from Nix directly and do not follow the `[<rule-name>]` format. | `nix flake check` |
-| 7 | `hosts-build` | Every host configuration that the current machine can build natively, builds. Cross-platform builds may run via `linux-builder` on macOS hosts but are not required. | `nix build .#<host>` per applicable host |
-| 8 | `format` | All Nix code is formatted. | `nixfmt` (RFC 166 official) |
-| 9 | `lint-statix` | No Nix anti-patterns. | `statix` |
-| 10 | `lint-deadnix` | No dead Nix code. | `deadnix` |
+| 2 | `filename-kebab-case` | All `.nix` filenames are kebab-case (no camelCase, no snake_case). | `scripts/lint-filename-kebab-case.sh` |
+| 3 | `bundle-purity` | Aggregator files — `modules/<platform>/foundation.nix`, `home/<platform>/foundation.nix`, and any file under `modules/<platform>/bundles/` or `home/<platform>/bundles/` — contain only an `imports` list at the top level. No `mkDefault` selections, no inline option setting. Each entry in `imports` resolves to a distinct module under `modules/` or `home/` (post-path-resolution; the same module referenced via two relative-path spellings counts once). Aggregator files must import **two or more distinct modules** — single-module "bundles" are forbidden, and the underlying capability stays a standalone module until a sibling joins it. Bundles do not import other bundles (the model is flat per ADR-027). | `scripts/lint-bundle-purity.sh` |
+| 4 | `host-purity` | Host `default.nix` files contain: identifying data (`networking.hostName`, `system.stateVersion`, `nixpkgs.hostPlatform` when applicable); per-host wiring (`_module.args.hostContext`); an `imports` list resolving to paths under `modules/` or `home/` (or `./hardware-configuration.nix` / `./disko.nix` in the same directory); and instance-specific option overrides where the override is genuinely host-specific and would be a category mistake to place in a shared module (e.g., AWS-image conflicts, hardware-specific swap sizing, oomd policy, module-conflict resolution via `lib.mkForce`, host-tuned kernel parameters). Forbidden: inline conditional logic on host attributes, helper function definitions, derivation definitions, or any construct that would belong in a reusable module. Lint enforces the *structural* envelope (no helper definitions, no `let` bindings introducing logic, no derivation syntax) rather than judging each option assignment — the test of "genuinely host-specific" is left to author and reviewer per PRD §3.4. | `scripts/lint-host-purity.sh` |
+| 5 | `flake-evaluates` | The flake evaluates without errors. A module placed under the wrong tree (a Home Manager module under `modules/`, a NixOS module under `home/`) fails evaluation here. Errors from this invariant come from Nix directly and do not follow the `[<rule-name>]` format. | `nix flake check` |
+| 6 | `hosts-build` | Every host configuration that the current machine can build natively, builds. Cross-platform builds may run via `linux-builder` on macOS hosts but are not required. | `nix build .#<host>` per applicable host |
+| 7 | `format` | All Nix code is formatted. | `nixfmt` (RFC 166 official) |
+| 8 | `lint-statix` | No Nix anti-patterns. | `statix` |
+| 9 | `lint-deadnix` | No dead Nix code. | `deadnix` |
 
 Three invariants from earlier drafts were dropped after review:
 
-- `path-applicability`: the path encodes tier and platform compatibility; the module body has no separate applicability declaration to cross-check. The `shared-purity` invariant already enforces the only meaningful path-vs-content rule (see ADR-013).
+- `path-applicability`: the path encodes platform compatibility; the module body has no separate applicability declaration to cross-check. The `shared-purity` invariant already enforces the only meaningful path-vs-content rule (see ADR-013). (Originally this also covered tier compatibility; the tier axis was walked back by ADR-026.)
 - `module-headers`: the structured header was duplicating information already encoded in the path. Authors may optionally lead a module with a single-line purpose comment as a soft convention, not a lint rule.
 - `tree-purity`: collapsed into `flake-evaluates` — a misplaced module is itself an evaluation failure, and the two are caught by the same `nix flake check` invocation. Pretending they're separate invariants suggested distinct error formats that don't exist in practice.
 
@@ -528,12 +446,12 @@ Conventions that cannot be deterministically tested — module naming descriptiv
 
 ### 9.1 Formatter
 
-`nixfmt` (the official RFC 166 formatter) is the canonical Nix formatter for this configuration. All `.nix` files are formatted with `nixfmt` and the formatting is enforced as an invariant (§8.1 #8). Alternative formatters (notably `alejandra`) were considered; nixfmt was chosen for its status as the official, RFC-tracked tool — the cost of being on the official formatter is near-zero, and "officially canonical" is preferable for a configuration designed for long-horizon stability.
+`nixfmt` (the official RFC 166 formatter) is the canonical Nix formatter for this configuration. All `.nix` files are formatted with `nixfmt` and the formatting is enforced as an invariant (§8.1 #7). Alternative formatters (notably `alejandra`) were considered; nixfmt was chosen for its status as the official, RFC-tracked tool — the cost of being on the official formatter is near-zero, and "officially canonical" is preferable for a configuration designed for long-horizon stability.
 
 ### 9.2 Linters
 
-- **`statix`** flags Nix anti-patterns. Enforced as invariant §8.1 #9.
-- **`deadnix`** flags dead Nix code (unused bindings, unused function arguments). Enforced as invariant §8.1 #10.
+- **`statix`** flags Nix anti-patterns. Enforced as invariant §8.1 #8.
+- **`deadnix`** flags dead Nix code (unused bindings, unused function arguments). Enforced as invariant §8.1 #9.
 
 Both are run as part of the pre-commit hook chain.
 
@@ -549,7 +467,7 @@ The two stages execute as defined in §8.2: pre-commit runs fast checks plus eva
 
 ### 9.5 Continuous integration
 
-CI is deferred. The local hook chain, combined with builds via `linux-builder` on macOS hosts (§8.1 #7), provides the verification needed during initial build-out.
+CI is deferred. The local hook chain, combined with builds via `linux-builder` on macOS hosts (§8.1 #6), provides the verification needed during initial build-out.
 
 CI may be added later, once multiple machines are in active use, to provide cross-platform coverage that local hooks cannot. The decision and configuration are not part of this PRD.
 
@@ -560,7 +478,6 @@ CI may be added later, once multiple machines are in active use, to provide cros
 - The architectural principles (§4)
 - The cross-platform contract (§7)
 - Every structural invariant (§8.1) with its rule name, what it enforces, and how to satisfy it
-- The stability tier workflow (§6.4)
 - Judgment-based conventions that inform authoring decisions (§8.4)
 - Pointers to this PRD and ADRs for deeper rationale
 
@@ -576,8 +493,6 @@ The design-level workflow for routine changes:
 4. **Push.** Pre-push runs `nix flake check` (evaluation) then `nix build .#<host>` for each host the current machine can build natively. Any failure aborts the push.
 5. **Rebuild** the machine (`darwin-rebuild switch` or `nixos-rebuild switch` against the flake) to apply the change.
 6. **Verify** the change behaves as expected.
-
-For experimental modules: the workflow includes adding the experimental module's path (under `modules/experimental/` or `home/experimental/`) to the host's `imports` list before rebuild. For promotion or removal: use `scripts/promote.sh` or `scripts/remove.sh` (§6.4).
 
 Operational detail — exact commands, troubleshooting steps, recovery from failed activations — lives in `CLAUDE.md` and the repository README, not in this PRD.
 

@@ -6,13 +6,13 @@ terminal.
 
 ## Selection
 
-**foot** on metis. Enabled via `home/core/nixos/foot.nix` (HM module
+**foot** on metis. Enabled via `home/nixos/foot.nix` (HM module
 `programs.foot.enable = true`). Stylix integration via
 `stylix.targets.foot.enable = true` in
-`home/core/shared/stylix-targets.nix`.
+`home/shared/stylix-targets.nix`.
 
 The cross-platform terminfo entry `xterm-ghostty` ships on every host
-via `modules/core/shared/ghostty-terminfo.nix` so SSH'ing from a
+via `modules/shared/ghostty-terminfo.nix` so SSH'ing from a
 Ghostty-on-Mac terminal into any Linux host renders cleanly. Foot's
 own terminfo is in the standard ncurses database — no shared module
 required.
@@ -31,7 +31,7 @@ own GPU rendering.
 deliberate Linux/Mac split, not a downgrade. ADR-028 §History
 2026-05-28 records the original swap from Ghostty to Foot on Linux
 desktop; Ghostty stays the chosen terminal for macOS clients (where
-its features earn their weight) via the future `home/core/darwin/`
+its features earn their weight) via the future `home/darwin/`
 tree.
 
 ## Alternatives considered
@@ -53,7 +53,7 @@ aren't earning their keep for a single-OS, single-user desktop.
 
 ## Configuration
 
-**HM module** — `home/core/nixos/foot.nix`:
+**HM module** — `home/nixos/foot.nix`:
 
 ```nix
 _: {
@@ -63,7 +63,7 @@ _: {
 
 Minimal — all real configuration flows through Stylix targets.
 
-**Stylix integration** — `home/core/shared/stylix-targets.nix`:
+**Stylix integration** — `home/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.foot.enable = true;
@@ -90,7 +90,7 @@ foot 1.15.0's upstream default change (the toggle flipped from
 points value is multiplied by the compositor scale rather than the
 monitor DPI; on a scale-1 output, the historical sizing reads
 smaller. Mitigated by `stylix.fonts.sizes.terminal = 11` in
-`modules/core/nixos/desktop-fonts.nix` (PR #63). On a HiDPI external
+`modules/nixos/desktop-fonts.nix` (PR #63). On a HiDPI external
 display the operator may want to retune. The lever is Stylix's font
 surface, NOT `programs.foot.settings.main` (which would conflict
 with the Stylix-set values). Full story in [fonts.md](./fonts.md)
@@ -109,7 +109,7 @@ Durable fix lives in fonts.md.
 
 **Cross-platform SSH context.** SSHing from a Ghostty-on-Mac
 terminal into metis triggers `TERM=xterm-ghostty`; Linux hosts
-recognise this only because `modules/core/shared/ghostty-terminfo.nix`
+recognise this only because `modules/shared/ghostty-terminfo.nix`
 ships the entry universally. If that module ever gets removed, SSH
 from Ghostty clients into this host falls back to `xterm-256color`
 with reduced rendering fidelity. The module is "shared" because it's
@@ -123,11 +123,11 @@ client-side terminfo (no Wayland dependency).
   retention on macOS.
 - [ADR-029](../decisions/ADR-029-niri-only-desktop.md) — Stylix/foot
   integration preserved through DMS retraction.
-- [`home/core/nixos/foot.nix`](../../home/core/nixos/foot.nix) — the
+- [`home/nixos/foot.nix`](../../home/nixos/foot.nix) — the
   HM module enabling foot.
-- [`modules/core/shared/ghostty-terminfo.nix`](../../modules/core/shared/ghostty-terminfo.nix)
+- [`modules/shared/ghostty-terminfo.nix`](../../modules/shared/ghostty-terminfo.nix)
   — cross-platform terminfo for the Ghostty-on-Mac SSH path.
-- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
+- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
   — `stylix.targets.foot.enable = true`.
 - [fonts.md](./fonts.md) — font configuration that affects foot's
   appearance + the DejaVu fallback warning that surfaced + the

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Enforces platform-purity for modules/core/shared/ and home/core/shared/.
+# Enforces platform-purity for modules/shared/ and home/shared/.
 #
 # Wired into the pre-commit framework via parts/checks.nix; the framework
 # filters tracked files through the configured `files` regex
-# (^(modules|home)/core/shared/.*\.nix$) and passes the matches as
+# (^(modules|home)/shared/.*\.nix$) and passes the matches as
 # positional args.
 #
 # Files under shared/ must be platform-agnostic: cross-platform Nix
 # expressions that evaluate identically on every system. Platform-
 # conditional code belongs in the per-platform sibling trees
-# (modules/core/{nixos,darwin}/, home/core/{nixos,darwin}/). Today
+# (modules/{nixos,darwin}/, home/{nixos,darwin}/). Today
 # (2026-05-28) both shared/ trees are clean; this lint is preventative
 # — it protects against drift once Darwin hosts onboard and the
 # temptation to short-circuit "just one stdenv.isDarwin check" arises.
@@ -51,7 +51,7 @@ for file in "$@"; do
   if matches=$(grep -nE "$PATTERNS" "$file" 2>/dev/null); then
     echo "ERROR: $file contains platform-conditional code (shared/ must be platform-agnostic)." >&2
     echo "$matches" | sed 's/^/  /' >&2
-    echo "  → Move platform-specific code to modules/core/<platform>/ or home/core/<platform>/." >&2
+    echo "  → Move platform-specific code to modules/<platform>/ or home/<platform>/." >&2
     failures=$((failures + 1))
   fi
 done

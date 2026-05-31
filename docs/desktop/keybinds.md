@@ -170,12 +170,12 @@ This is a living document. Conventions for evolution:
 - **Doc precedes implementation.** Each new bind lands first as a
   table row here; the implementing commit follows in the same PR.
 - **No silent additions.** If a binding appears in
-  `home/core/nixos/niri.nix` that is not in this document, that is a
+  `home/nixos/niri.nix` that is not in this document, that is a
   bug in cadence — fix the doc.
 
 ## See also
 
-- `home/core/nixos/niri.nix` — the implementation surface.
+- `home/nixos/niri.nix` — the implementation surface.
 - `docs/desktop/niri.md` — niri compositor selection rationale.
 - #69 — the foundational close-out under which this document was
   created.

@@ -44,7 +44,7 @@ Run once per fresh clone of this repo on the operator machine:
   this, the bootstrap pre-flight will refuse to proceed.
 - An `~/.ssh/config.local` entry for the host being bootstrapped, so
   the operator can `ssh <host>` without typing the full target string.
-  `home/core/shared/ssh.nix` includes this file at file scope; entries
+  `home/shared/ssh.nix` includes this file at file scope; entries
   there survive `nh os switch` (unlike `~/.ssh/config`, which
   home-manager owns). Example for an AWS host:
 
@@ -59,7 +59,7 @@ Run once per fresh clone of this repo on the operator machine:
   `nixos` account is gone post-install and `root` SSH is disabled;
   you'll SSH as `dbf` from your Mac afterwards). You can leave the
   entry in place or remove it post-bootstrap — either is fine.
-- Daniel's Mac SSH key in `modules/core/nixos/users.nix` matches the
+- Daniel's Mac SSH key in `modules/nixos/users.nix` matches the
   private key on the laptop you'll SSH from. Once `nixos-anywhere`
   completes, that key is the sole inbound credential — get it right
   before, not after.
@@ -116,7 +116,7 @@ Run once per fresh clone of this repo on the operator machine:
      (Mercury-class) sidestep this via an AMI keypair (`mercury.pem`)
      referenced from `~/.ssh/config.local`; bare metal has no
      equivalent and the operator key must be seeded by hand.
-  2. **The Mac SSH key from `modules/core/nixos/users.nix`.** This
+  2. **The Mac SSH key from `modules/nixos/users.nix`.** This
      is the *post-install* credential — once `nixos-anywhere`
      completes and `users.mutableUsers = false` activates, the Mac
      key becomes `dbf`'s sole inbound credential. The operator key
@@ -254,7 +254,7 @@ hand-edit this file — re-run `just bootstrap` to regenerate.
 
 SSH in as `dbf` (your Mac key is now the sole inbound credential
 — the original `ubuntu` / `root` / `nixos` user is gone, replaced
-declaratively by `modules/core/nixos/users.nix`):
+declaratively by `modules/nixos/users.nix`):
 
 ```bash
 ssh dbf@<host>
@@ -318,8 +318,8 @@ Run from the new host's `dbf` shell unless noted otherwise.
 - Periodic scrub: `systemctl list-timers btrfs-scrub-*` shows the
   monthly timer armed.
 - Macchina login banner shows the Tailscale interface (per the
-  interface-detection logic in `home/core/nixos/macchina.nix`,
-  shipped to all hosts by `modules/core/nixos/home-manager.nix`).
+  interface-detection logic in `home/nixos/macchina.nix`,
+  shipped to all hosts by `modules/nixos/home-manager.nix`).
 - Power-loss recovery test (do this once — it's the reason there's
   no LUKS): pull the power, wait 10 s, plug back in. The box should
   boot unattended and Tailscale should rejoin within a minute or two.

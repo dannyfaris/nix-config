@@ -45,7 +45,7 @@ for the configured monospace / serif / sansSerif / emoji) from
 the operator wiring Stylix's intent into NixOS's surfaces — neither
 is automatic.
 
-Two wires, both in `modules/core/nixos/desktop-fonts.nix`:
+Two wires, both in `modules/nixos/desktop-fonts.nix`:
 
 ```nix
 stylix.targets.fontconfig.enable = true;
@@ -131,14 +131,14 @@ model), so the cadence is lighter than for keybinds.
 
 ## See also
 
-- `modules/core/nixos/desktop-fonts.nix` — Stylix font config + install
+- `modules/nixos/desktop-fonts.nix` — Stylix font config + install
   wiring for desktop hosts.
-- `modules/core/nixos/stylix-palette.nix` — Stylix base config: the
+- `modules/nixos/stylix-palette.nix` — Stylix base config: the
   module enable + per-host base16 palette (no font selections;
   deliberately). Imported by foundation, so it reaches every host.
-- `home/core/nixos/foot.nix` — foot terminal config; consumes
+- `home/nixos/foot.nix` — foot terminal config; consumes
   `stylix.fonts.monospace.name` via Stylix's foot target.
-- `home/core/shared/stylix-targets.nix` — Stylix target enablement
+- `home/shared/stylix-targets.nix` — Stylix target enablement
   whitelist.
 - `docs/desktop/keybinds.md` — companion living document, same cadence.
 - #69 — the foundational close-out under which this document was

@@ -26,13 +26,13 @@ parts/                             # flake-parts modules (nixosConfigurations, e
 lib/mk-host.nix                    # host constructor — thin wrapper over lib.nixosSystem
 hosts/<hostname>/                  # host instance: hardware, hostname, stateVersion,
                                    # _module.args, imports of foundation + bundles
-modules/core/nixos/foundation.nix  # bundle every NixOS host imports by convention
-modules/core/nixos/bundles/        # NixOS-specific capability bundles (system-level)
-modules/core/nixos/                # NixOS-specific standalone modules
-modules/core/shared/               # cross-platform standalone system modules
-home/core/shared/bundles/          # capability bundles (home-level, cross-platform)
-home/core/shared/                  # cross-platform standalone home-manager modules
-home/core/nixos/                   # NixOS-specific home-manager modules (e.g. macchina)
+modules/nixos/foundation.nix  # bundle every NixOS host imports by convention
+modules/nixos/bundles/        # NixOS-specific capability bundles (system-level)
+modules/nixos/                # NixOS-specific standalone modules
+modules/shared/               # cross-platform standalone system modules
+home/shared/bundles/          # capability bundles (home-level, cross-platform)
+home/shared/                  # cross-platform standalone home-manager modules
+home/nixos/                   # NixOS-specific home-manager modules (e.g. macchina)
 ```
 
 Composition follows the foundation + bundles model (ADR-027): every host
@@ -42,7 +42,7 @@ capabilities that don't yet have a bundle home. A new host is a new
 directory under `hosts/` that composes these directly — no role layer.
 Per-host values (e.g. flake path, hostname for nixd) flow from each host's
 `_module.args.hostContext` into home-manager modules via the wiring in
-`modules/core/nixos/home-manager.nix`; see ADR-019.
+`modules/nixos/home-manager.nix`; see ADR-019.
 
 ## Philosophy
 
@@ -75,7 +75,7 @@ In all cases: log in, fix the config, and `sudo nixos-rebuild switch`
 
 ```bash
 # Rebuild and switch — canonical command, runs anywhere thanks to NH_FLAKE
-# (set in home/core/shared/nix-tooling.nix from hostContext.flakePath).
+# (set in home/shared/nix-tooling.nix from hostContext.flakePath).
 # nh wraps nixos-rebuild with integrated nom tree-view progress and a
 # generation diff at the end.
 nh os switch

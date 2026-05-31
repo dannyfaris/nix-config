@@ -58,7 +58,7 @@ B below is a belt-and-braces extension.
       References: sodiboo/system (niri-flake idioms),
       eduardofuncao/nixferatu (Niri+Stylix end-to-end).
 - [ ] **`mba`, `mac-mini`** — macOS hosts via nix-darwin. Will need
-      a `modules/core/darwin/` tree mirroring the NixOS one (with its
+      a `modules/darwin/` tree mirroring the NixOS one (with its
       own `foundation.nix`). See also GH issue #8 for the three
       system modules (mosh, nix-daemon, sshd) deferred pending Darwin
       onboarding.
