@@ -49,12 +49,15 @@
 
   networking.hostName = "mercury";
 
-  # NixOS release the bootstrap targets. lib.mkDefault as defensive
-  # convention; at the pinned nixpkgs revision, neither amazon-image.nix
-  # nor ec2-data.nix sets system.stateVersion, so the 25.11 default
-  # applies. Operator updates this to match the nixos-anywhere installer
-  # image's NixOS release if it differs.
-  system.stateVersion = lib.mkDefault "25.11";
+  # Set once at install; never change, even after upgrading. Bare
+  # assignment, matching metis and nixos-vm — at the pinned nixpkgs
+  # revision neither amazon-image.nix nor ec2-data.nix sets
+  # system.stateVersion, so there is nothing to defer to with mkDefault.
+  # If a future nixpkgs bump ever makes an AWS image module set it, the
+  # bare assignment surfaces the conflict loudly for the operator to
+  # resolve (fail-loud > silent override). Operator updates this to match
+  # the nixos-anywhere installer image's NixOS release if it differs.
+  system.stateVersion = "25.11";
 
   # 4 GiB t3.medium: zram absorbs hot pressure via compression; disk
   # swap on the ext4 root provides true overflow when working set

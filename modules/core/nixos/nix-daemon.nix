@@ -12,6 +12,15 @@
 
     # Active dev repos are dirty most of the time; the warning is noise.
     warn-dirty = false;
+
+    # Whitelist > blanket: a transitive flake input's nixConfig block
+    # can't silently add a substituter or change daemon settings (nix
+    # prompts interactively, then accepts — this makes the answer "no" by
+    # default). Symmetric with CI's runner setting in
+    # .github/workflows/ci.yaml; the host is where that stance originates.
+    # Also a second layer under niri.nix's explicit niri-flake.cache.enable
+    # = false: that opt-out is the belt, this is the braces.
+    accept-flake-config = false;
   };
 
   nix.gc = {
