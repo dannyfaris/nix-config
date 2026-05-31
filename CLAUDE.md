@@ -5,10 +5,10 @@
 Evergreen NixOS configuration. Three hosts: `nixos-vm` (UTM/aarch64
 refinement target), `mercury` (AWS EC2/x86_64 work-only headless), and
 `metis` (HP ProDesk/x86_64 personal dev box). Metis is the first
-desktop host (niri-only after ADR-028's DMS portion was retracted per
-[ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md)); see also
-[ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)
-for the Stylix-foundation + bundle-composition basis that stands.
+desktop host, running niri per
+[ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends
+[ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)).
+The Stylix-foundation + bundle-composition basis from ADR-028 stands.
 
 ## Reference documentation
 
@@ -111,8 +111,8 @@ sudo nixos-rebuild switch --flake .#<hostname>
   auto-merge" for rationale.
 - Desktop environment lands on metis (x86_64) per ADR-028
   (Stylix-foundation + bundle composition), amended by
-  [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (DMS
-  retracted; niri-only direction). Stack: niri + foot + greetd,
+  [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only
+  direction; per-tool selections). Stack: niri + foot + greetd,
   with Stylix as the theme source-of-truth across TUI, foot, GTK/Qt,
   and niri's focus-ring/cursor chrome. Per-tool selections
   (application launcher, notification daemon, status bar, browser,

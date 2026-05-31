@@ -72,6 +72,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [027](./ADR-027-foundation-and-bundles.md) | Composition model (replaces roles) | foundation + capability bundles | `roles/` removed; each host imports `foundation.nix` + opt-in bundles. Supersedes ADR-014; amends ADR-013 |
 | [028](./ADR-028-stylix-foundation-and-desktop-env.md) | Theming + desktop env | Stylix in foundation; desktop arrives on metis | **Amended by ADR-029** (item 3 retracted; items 1–2 stand and are implemented). Niri + Foot + greetd; Stylix-canonical for TUI / foot / GTK / Qt / niri chrome. |
 | [029](./ADR-029-niri-only-desktop.md) | Desktop after DMS retraction | niri-only; per-tool selection model | Retracts ADR-028 §Decision item 3 (DMS) + §Implementation slice 4. Preserves ADR-028 §Decision items 1–2. Per-tool selections (#72–#77) land as `docs/desktop/<tool>.md` per issue; first two living documents (`keybinds.md`, `fonts.md`) landed during #69. |
+| [030](./ADR-030-nixpkgs-channel.md) | nixpkgs channel | `nixos-unstable`, weekly flake-lock | Records the existing choice; weekly bump PR with manual merge after green CI. Aligns with Stylix + niri-flake + home-manager all tracking unstable. Migration triggers named for Darwin onboarding and repeated Stylix breakage. |
 
 ## Conventions
 
