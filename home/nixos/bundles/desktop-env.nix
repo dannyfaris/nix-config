@@ -25,6 +25,10 @@
 #   - cursor-ide.nix — home.packages addition for pkgs.code-cursor
 #     (AI-coding-focused vscode fork; Wayland via host-wide
 #     NIXOS_OZONE_WL set in modules/nixos/electron-wayland.nix).
+#   - portal-color-scheme.nix — bridges `stylix.polarity` to the
+#     xdg-desktop-portal `color-scheme` interface via dconf so
+#     portal-querying apps (Firefox, Zen, libadwaita) follow the
+#     host's polarity. Closes the gap #141 left unresolved.
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + fuzzel + fnott + waybar
@@ -47,5 +51,6 @@
     ../firefox.nix
     ../zen-browser.nix
     ../cursor-ide.nix
+    ../portal-color-scheme.nix
   ];
 }
