@@ -64,10 +64,11 @@ _: {
   # of the 50% right column lands yazi at 30% and terminal at 20% of the
   # screen (the split #5 asked for). No `cwd` anywhere — every pane
   # inherits the directory `zellij --layout agent` was launched from, so
-  # `za` opens the workspace *here*. The two
-  # `swap_tiled_layout`s give Alt+[ / Alt+] monocle toggles (full-screen
-  # agent or full-screen yazi); they hold bare panes — not tabs — matching
-  # zellij's own default.swap.kdl grammar.
+  # `za` opens the workspace *here*. The two `swap_tiled_layout`s give
+  # Alt+[ / Alt+] monocle toggles (full-screen agent or full-screen yazi);
+  # per zellij's swap-layouts grammar, each holds a `tab` wrapping the
+  # bare pane — a bare `pane` directly under `swap_tiled_layout` fails to
+  # parse ("Unknown layout node: 'pane'").
   xdg.configFile."zellij/layouts/agent.kdl".text = ''
     layout {
         tab name="agent" {
@@ -83,12 +84,16 @@ _: {
         }
 
         swap_tiled_layout name="agent-monocle" {
-            pane focus=true name="agent"
+            tab {
+                pane focus=true name="agent"
+            }
         }
 
         swap_tiled_layout name="yazi-monocle" {
-            pane name="yazi" {
-                command "yazi"
+            tab {
+                pane name="yazi" {
+                    command "yazi"
+                }
             }
         }
     }
