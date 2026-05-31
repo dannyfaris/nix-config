@@ -51,16 +51,17 @@ The second `gitdir:~/nix-config/` condition is an explicit carve-out for this ve
 
 **Asymmetric leak severity.** The proposed flip trades a higher-severity leak (personal email into employer git history) for a lower-severity one (work email into a personal repo cloned to an unconventional path). Issue #122's tradeoff table captures the calculus: the high-visibility-low-recoverability leak is the one worth designing against.
 
-**Pre-flight audit closes the migration risk.** Before applying, an operator-side find ran:
+**Migration risk is bounded by operator discipline.** On hosts that have always been NixOS-from-inception, the only repo expected to sit outside `~/work/` or `~/personal/` is `~/nix-config/` itself — and it has the explicit carve-out above. A `find` over `~/` ran on metis (2026-05-31) before activation and confirmed exactly that single expected match:
 
 ```sh
 find ~ -maxdepth 4 -name .git -type d \
   -not -path '*/work/*' -not -path '*/personal/*' \
   -not -path '*/.cache/*' -not -path '*/.local/*' \
   -not -path '*/.cargo/*' -not -path '*/.rustup/*' 2>/dev/null
+# → /home/dbf/nix-config/.git
 ```
 
-On metis (2026-05-31) the only match was `~/nix-config/.git` — handled by the explicit carve-out above. On future hosts (mercury, nixos-vm, mac-mini onboarding) the audit needs to be re-run before `nh os switch`; matches relocate into `~/personal/` or `~/work/` (or earn their own carve-out condition, with a comment explaining why relocation isn't right).
+The recipe is recorded here as the verification artifact and as a tool to reach for if a future host ever turns up with surprising state (a migration from a non-NixOS history, exploratory clones outside conventions). It is not promised as a per-host onboarding step — on disciplined hosts the find returns only `~/nix-config/` which the carve-out already covers, and ritualising the check adds no value.
 
 **Single carve-out is acceptable special-casing.** The "no carve-outs" stance from ADR-027 is about *aggregator-file purity*, not about git config. `gitdir:`-conditional includes are git's native mechanism for exactly this — a deliberate per-directory override. One conditional per non-conventional location is the smaller of two evils versus "relocate every personal project for the sake of the rule".
 
@@ -70,8 +71,8 @@ On metis (2026-05-31) the only match was `~/nix-config/.git` — handled by the 
 - ✓ Default matches the majority workload; the carve-out applies to the minority.
 - ✓ The `~/nix-config/` carve-out preserves the existing `NH_FLAKE` / flake-path wiring across all three hosts.
 - ✗ A personal repo cloned outside `~/personal/` (or `~/nix-config/`) silently inherits the work identity — the inverse of the leak we closed. This is the price of any directionally-rooted default. The audit gotcha (below) is the mitigation.
-- ⚠ **Audit on each new host before activation.** The find above is a one-time pre-flight check per host. Any orphan personal repos must be relocated or earn their own carve-out before `nh os switch`. TODO.md tracks this gotcha for the remaining hosts.
 - ⚠ Migration trigger: if employer policy ever changes such that `Daniel Faris <daniel.faris@gotaxi.co.nz>` is not the right work identity (rename, employer change), the default changes here — and the `gitdir:~/work/` conditional from the old shape is gone. ADR-009 + this ADR both need updating.
+- ⚠ Migration trigger: if a future host turns up with surprising filesystem state (migrated from a non-NixOS history, accumulated exploratory clones outside `~/work/` and `~/personal/`), the audit recipe in §Rationale is the diagnostic. Not promised as a routine onboarding step — added only if a host actually has surprising state.
 - ⚠ Migration trigger: if a personal forge (GitHub Action, Codeberg, etc.) starts requiring DCO sign-offs or commits-to-be-by-Real-Name, the personal identity may need to mirror the work shape (`Daniel Faris` real name). Today, GitHub's `dannyfaris` handle is fine.
 
 ## Implementation
