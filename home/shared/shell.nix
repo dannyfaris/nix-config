@@ -49,6 +49,9 @@ _: {
     shellAbbrs = {
       g = "git";
       nos = "nh os switch";
+      # Open the 3-pane agentic workspace (agent.kdl) in the current dir.
+      # See home/shared/multiplexer.nix and GH #5.
+      za = "zellij --layout agent";
     };
   };
 }
