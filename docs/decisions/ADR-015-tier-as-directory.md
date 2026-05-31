@@ -1,7 +1,9 @@
 # ADR-015: Stability tier — encoded as directory structure
 
+> **Superseded by [ADR-026](./ADR-026-drop-core-tier-prefix.md) on 2026-05-31.** The tier-as-directory pattern is retracted. With the project mature enough to evaluate, no module had ever been classified experimental, and the enforceability rationale (a `tier-deps` lint that reduces to a path-based grep) was structural overhead with no inputs to enforce against. Module trees flatten to `modules/<platform>/...` and `home/<platform>/...`; the `tier-deps` lint, the promotion/removal procedures, and the experimental-vocabulary all fall out as a unit. The platform split (`shared/`-vs-`nixos/`-vs-`darwin/`) and the `philosophy.md` stability commitments survive. See ADR-026 for the full rationale and migration trigger.
+
 **Date**: 2026-05-14
-**Status**: Accepted
+**Status**: Superseded by ADR-026
 
 ## Context
 
