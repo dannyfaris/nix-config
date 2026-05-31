@@ -1,7 +1,7 @@
 # ADR-009: Git — dual identity, HTTPS+token auth
 
 **Date**: 2026-05-06
-**Status**: Accepted
+**Status**: Amended by [ADR-031](./ADR-031-git-identity-default-flip.md) (default direction flipped to work; personal becomes the gitdir-conditional)
 
 ## Context
 
