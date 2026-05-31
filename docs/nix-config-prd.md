@@ -112,7 +112,7 @@ Bundle names describe what is in the bundle, not what kind of host imports it. I
 - `remote-access` — sshd + mosh + ghostty.terminfo
 - `cli-tooling` — shell + prompt + direnv + multiplexer + editor + cli-utils + nix-tooling
 - `agent-clis-base` — claude-code + cursor-cli
-- `desktop-env` — niri + DMS + foot + greetd
+- `desktop-env` — niri + greetd + desktop-fonts + electron-wayland + libsecret (system side); foot + niri user-config + the per-tool selections from `docs/desktop/` (home side)
 - `container-runtime` — rootless docker daemon + CLI
 
 A bundle exists when it groups two or more modules. Single-module "bundles" are forbidden; the underlying capability stays a standalone module (§3.1, second bullet) until a sibling joins it. The pre-wrapping trap is the same forecast-driven abstraction the role layer fell into and is rejected for the same reason.
