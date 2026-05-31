@@ -13,6 +13,14 @@ let
   desktopGlyph = builtins.fromJSON ''"\uf108"''; # nf-fa-desktop — local
   sshGlyph = builtins.fromJSON ''"\uf489"''; # nf-mdi-console_network — SSH
   chev = builtins.fromJSON ''"❯"''; # ❯ — reading-flow separator
+
+  # SSH detection that survives sudo -i / su -. Both strip $SSH_CONNECTION
+  # from the elevated environment; who -m's origin-host-in-parens field is
+  # the fallback. Mirrors is_ssh() in claude-statusline.sh (pure.zsh trick).
+  # Negating it for host_local keeps the two modules exact complements. The
+  # `when` runs under POSIX sh, so the case-glob + `! { …; }` are portable.
+  # See GH #45.
+  sshDetect = ''[ -n "$SSH_CONNECTION" ] || case "$(who -m 2>/dev/null)" in (*\(*\)*) true ;; (*) false ;; esac'';
 in
 {
   programs.starship = {
@@ -20,8 +28,8 @@ in
 
     settings = {
       # Leading host segment via two mutually-exclusive custom modules
-      # (one fires based on $SSH_CONNECTION). See ADR-002 history block
-      # and GH issue #17.
+      # (one fires based on SSH state — see `sshDetect` above, which
+      # survives sudo -i / su -). See ADR-002 history block, GH #17, #45.
       #
       # `$nix_shell` slots between `$directory` and `$git_branch` so the
       # `(❄️)` renders as path-metadata (matches the statusline). See
@@ -93,14 +101,14 @@ in
       # HOST_COLOUR derivation.
       custom.host_local = {
         description = "Hostname marker — local (no SSH connection)";
-        when = ''[ -z "$SSH_CONNECTION" ]'';
+        when = "! { ${sshDetect}; }";
         command = "hostname -s";
         format = "[${desktopGlyph}  $output]($style) ${chev} ";
         style = "green";
       };
       custom.host_ssh = {
         description = "Hostname marker — over SSH";
-        when = ''[ -n "$SSH_CONNECTION" ]'';
+        when = sshDetect;
         command = "hostname -s";
         format = "[${sshGlyph}  $output]($style) ${chev} ";
         style = "purple";

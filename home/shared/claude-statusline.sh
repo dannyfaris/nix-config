@@ -30,15 +30,29 @@ SSH_GLYPH=$'\xef\x92\x89'             # U+F489 nf-mdi-console_network (SSH host 
 CLOCK_GLYPH=$'\xef\x80\x97'           # U+F017 nf-fa-clock_o (rate-limit marker)
 NIX_GLYPH=$'\xe2\x9d\x84\xef\xb8\x8f' # ❄️ U+2744 + U+FE0F (nix-shell marker)
 
+# SSH detection that survives sudo -i / su -. sudo/su strip $SSH_CONNECTION
+# from the elevated environment, so a bare env-var check silently reverts the
+# host marker to its local glyph + colour precisely during break-glass admin
+# on a remote box — when host context matters most. who -m's origin-host-in-
+# parens field is the fallback Pure prompt has used for years (pure.zsh). See
+# GH #45.
+is_ssh() {
+  [ -n "$SSH_CONNECTION" ] && return 0
+  case "$(who -m 2>/dev/null)" in
+  *\(*\)*) return 0 ;; # who -m shows the origin host in parens over SSH
+  *) return 1 ;;
+  esac
+}
+
 # Host marker — glyph + colour swap based on SSH state, mirroring the
-# starship prompt (ADR-002 history). $SSH_CONNECTION is set by sshd on
-# login and inherited into the Claude Code subprocess; same env-at-spawn
-# caveat applies for detached zellij sessions reattached from a different
-# context. GREEN/MAUVE map to base0B/base0E via Stylix; the prompt uses
-# the matching palette aliases (`green`/`purple`).
+# starship prompt (ADR-002 history). is_ssh() checks $SSH_CONNECTION first,
+# then falls back to who -m so the SSH signal survives sudo -i / su -. The
+# env-at-spawn caveat still applies for detached zellij sessions reattached
+# from a different context. GREEN/MAUVE map to base0B/base0E via Stylix; the
+# prompt uses the matching palette aliases (`green`/`purple`).
 HOST_GLYPH=$DESKTOP_GLYPH
 HOST_COLOUR=$GREEN
-if [ -n "$SSH_CONNECTION" ]; then
+if is_ssh; then
   HOST_GLYPH=$SSH_GLYPH
   HOST_COLOUR=$MAUVE
 fi
