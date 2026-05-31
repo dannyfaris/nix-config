@@ -27,7 +27,16 @@
 #
 # eza and lazydocker have no Stylix target upstream. eza uses
 # LS_COLORS; lazydocker uses its own colour defaults.
-_: {
+{ config, lib, ... }:
+let
+  # `programs.foot.enable` is `true` only on hosts that pick up the
+  # desktop-env bundle (currently just metis). Used as the desktop-session
+  # proxy below to gate the toolkit-level (gtk + qt) targets — matches the
+  # inert-on-non-desktop behaviour foot/fuzzel/fnott/waybar/firefox get
+  # for free from upstream Stylix's own `programs.<X>.enable` gating.
+  desktopSession = config.programs.foot.enable or false;
+in
+{
   stylix.targets = {
     helix.enable = true;
     bat.enable = true;
@@ -85,5 +94,27 @@ _: {
       enable = true;
       profileNames = [ "default" ];
     };
+    # gtk + qt — toolkit-level theming, no per-app gating upstream
+    # (unlike foot/fuzzel/fnott/waybar/firefox above, which gate on
+    # `programs.<X>.enable` and become inert on non-desktop hosts). Gated
+    # locally on `desktopSession` so mercury and nixos-vm don't pull
+    # adw-gtk3, gtk+3 (~42 MiB), CUPS, or the Qt5 stack (qtbase +
+    # qtdeclarative + qttools + … ~118 MiB) for theming they can't
+    # render — measured +585 MiB closure on mercury without the gate.
+    # On metis the gate fires and GTK/Qt app chrome (file pickers,
+    # settings dialogs, GTK/Qt apps generally) follows the base16
+    # palette instead of default Adwaita-light. Closes the documented-
+    # vs-deployed gap in CLAUDE.md's "across … GTK/Qt" claim (cross-ref
+    # #95); folded into #65 per its 2026-05-31 amendment.
+    gtk.enable = lib.mkIf desktopSession true;
+    qt.enable = lib.mkIf desktopSession true;
   };
+
+  # Silence the home-manager `gtk.gtk4.theme` legacy-default deprecation
+  # warning that surfaces whenever `config.gtk.theme` is set (which Stylix
+  # does when `targets.gtk` fires above). Keeps legacy behaviour — GTK4
+  # inherits the same theme as GTK3 — until home.stateVersion crosses
+  # 26.05 and the default flips to `null` upstream. Same gate as the
+  # target enable above so the option only resolves on desktop hosts.
+  gtk.gtk4.theme = lib.mkIf desktopSession config.gtk.theme;
 }
