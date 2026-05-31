@@ -78,4 +78,36 @@ jobs:
             extra-substituters = https://niri.cachix.org
             extra-trusted-public-keys = niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964=
 
+      # Store-path cache across cold runs (ADR-028 slice-3 follow-up, #61).
+      # This is `actions/cache`-shaped storage for build *outputs* — it is
+      # NOT a substituter, and is orthogonal to the niri.cachix.org trust
+      # lines above (#59). It amortises the non-niri half of the desktop
+      # closure that a fresh runner otherwise rebuilds every cold run:
+      # Quickshell + Qt6 + matugen + DMS + xwayland-satellite + foot and
+      # their transitive deps.
+      #
+      # Why this and not Cachix/FlakeHub/Attic: those are larger trust or
+      # operational delegations than a one-operator / three-host project
+      # warrants today. `cache-nix-action` first; revisit Cachix/Attic only
+      # if hit rate stays below ~60% over a month or a second major
+      # source-built dep arrives (#61 "Triggers to revisit").
+      #
+      # Key semantics: keyed on os × arch × flake.lock hash, so a lock bump
+      # invalidates cleanly. PR branches restore from the os×arch prefix
+      # seeded on main — the squash-auto-merge flow reseeds the cache after
+      # each PR lands. GC before save (5G ceiling) keeps x86_64 + aarch64
+      # entries coexisting under the 10 GB per-repo limit; a 7-day
+      # last-accessed purge sweeps dead prefix entries without ever purging
+      # the run's own primary key.
+      - uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
+          gc-max-store-size-linux: 5G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
+          purge-created: 0 # no created-age gate; last-accessed is the real filter
+          purge-last-accessed: 604800
+          purge-primary-key: never
+
       - run: nix flake check --print-build-logs
