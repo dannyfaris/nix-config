@@ -46,7 +46,7 @@ in
   # autoEnable = false is the whitelist stance per CLAUDE.md "Deliberate
   # stances" — every Stylix target we want is enabled deliberately, not
   # auto-detected. HM-side target enables live in
-  # home/core/shared/bundles/theming.nix.
+  # home/core/shared/stylix-targets.nix.
   stylix = {
     enable = true;
     autoEnable = false;

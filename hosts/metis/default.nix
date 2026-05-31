@@ -75,7 +75,7 @@
     extraHomeModules = [
       ../../home/core/shared/bundles/cli-tooling.nix
       ../../home/core/shared/bundles/git-personal.nix
-      ../../home/core/shared/bundles/theming.nix
+      ../../home/core/shared/stylix-targets.nix
       ../../home/core/nixos/bundles/desktop-env.nix
       ../../home/core/shared/ssh.nix
       ../../home/core/nixos/macchina.nix

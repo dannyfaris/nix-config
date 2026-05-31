@@ -2,7 +2,7 @@
 #
 # Stylix theming is wired centrally via
 # `stylix.targets.firefox = { enable = true; profileNames = [ "default" ]; }`
-# in home/core/shared/bundles/theming.nix. Both fields are required:
+# in home/core/shared/stylix-targets.nix. Both fields are required:
 # `enable` because our foundation sets `stylix.autoEnable = false`
 # (whitelist stance per CLAUDE.md); `profileNames` because Stylix's
 # Firefox module cannot auto-detect profile names without infinite

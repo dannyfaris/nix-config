@@ -1,15 +1,24 @@
 # Stylix HM-side target enables for the TUI stack. Stylix's palette
 # propagation comes from modules/core/nixos/foundation.nix (the
 # NixOS-side module sets stylix.enable = true and auto-wires HM via
-# homeManagerIntegration). This bundle is the explicit whitelist of
+# homeManagerIntegration). This module is the explicit whitelist of
 # which HM-managed tools cede their theming to Stylix.
+#
+# Standalone module, not a bundle — despite the plural filename. It is a
+# single coherent capability (the Stylix-target whitelist) expressed as a
+# flat list of `enable` toggles, so it sets options inline and lives
+# directly under home/core/shared/ rather than in bundles/. Bundles are
+# pure `imports` aggregations of >= 2 modules (bundle-purity, PRD §8.1
+# #4); a whitelist of toggles is not an aggregation. It was mis-filed
+# under bundles/ at birth (PR #30, pre-lint) and reclassified here per
+# #65 — see ADR-027 §History for the rationale.
 #
 # Foundation sets autoEnable = false at the NixOS layer (whitelist
 # stance per CLAUDE.md), and that propagates to HM, so each target
 # must opt in here. Matches docs/philosophy.md's "explicit > implicit"
 # stance.
 #
-# If you import this bundle on a host whose foundation doesn't enable
+# If you import this module on a host whose foundation doesn't enable
 # Stylix, the option paths below don't exist and eval fails loudly.
 #
 # btop deliberately omitted — programs.btop isn't enabled anywhere in
@@ -18,7 +27,16 @@
 #
 # eza and lazydocker have no Stylix target upstream. eza uses
 # LS_COLORS; lazydocker uses its own colour defaults.
-_: {
+{ config, lib, ... }:
+let
+  # `programs.foot.enable` is `true` only on hosts that pick up the
+  # desktop-env bundle (currently just metis). Used as the desktop-session
+  # proxy below to gate the toolkit-level (gtk + qt) targets — matches the
+  # inert-on-non-desktop behaviour foot/fuzzel/fnott/waybar/firefox get
+  # for free from upstream Stylix's own `programs.<X>.enable` gating.
+  desktopSession = config.programs.foot.enable or false;
+in
+{
   stylix.targets = {
     helix.enable = true;
     bat.enable = true;
@@ -76,5 +94,27 @@ _: {
       enable = true;
       profileNames = [ "default" ];
     };
+    # gtk + qt — toolkit-level theming, no per-app gating upstream
+    # (unlike foot/fuzzel/fnott/waybar/firefox above, which gate on
+    # `programs.<X>.enable` and become inert on non-desktop hosts). Gated
+    # locally on `desktopSession` so mercury and nixos-vm don't pull
+    # adw-gtk3, gtk+3 (~42 MiB), CUPS, or the Qt5 stack (qtbase +
+    # qtdeclarative + qttools + … ~118 MiB) for theming they can't
+    # render — measured +585 MiB closure on mercury without the gate.
+    # On metis the gate fires and GTK/Qt app chrome (file pickers,
+    # settings dialogs, GTK/Qt apps generally) follows the base16
+    # palette instead of default Adwaita-light. Closes the documented-
+    # vs-deployed gap in CLAUDE.md's "across … GTK/Qt" claim (cross-ref
+    # #95); folded into #65 per its 2026-05-31 amendment.
+    gtk.enable = lib.mkIf desktopSession true;
+    qt.enable = lib.mkIf desktopSession true;
   };
+
+  # Silence the home-manager `gtk.gtk4.theme` legacy-default deprecation
+  # warning that surfaces whenever `config.gtk.theme` is set (which Stylix
+  # does when `targets.gtk` fires above). Keeps legacy behaviour — GTK4
+  # inherits the same theme as GTK3 — until home.stateVersion crosses
+  # 26.05 and the default flips to `null` upstream. Same gate as the
+  # target enable above so the option only resolves on desktop hosts.
+  gtk.gtk4.theme = lib.mkIf desktopSession config.gtk.theme;
 }

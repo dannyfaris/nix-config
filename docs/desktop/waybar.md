@@ -12,7 +12,7 @@ module `programs.waybar.enable = true` + `programs.waybar.systemd.enable
 = true` for auto-start). Top of screen, minimal day-1 module set
 (niri/workspaces on the left; network + tray + clock on the right).
 Stylix integration via `stylix.targets.waybar.enable = true` in
-`home/core/shared/bundles/theming.nix`.
+`home/core/shared/stylix-targets.nix`.
 
 ## Rationale
 
@@ -90,7 +90,7 @@ tray. No audio module (deliberate; volume control happens via
 hardware keys or `wpctl` from a terminal as needed). Clock sits in
 the rightmost slot, macOS top-right convention.
 
-**Stylix integration** — `home/core/shared/bundles/theming.nix`:
+**Stylix integration** — `home/core/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.waybar.enable = true;
@@ -169,7 +169,7 @@ consistency.
 
 - [`home/core/nixos/waybar.nix`](../../home/core/nixos/waybar.nix) —
   the HM module enabling waybar.
-- [`home/core/shared/bundles/theming.nix`](../../home/core/shared/bundles/theming.nix)
+- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
   — `stylix.targets.waybar.enable = true`.
 - [`home/core/nixos/bundles/desktop-env.nix`](../../home/core/nixos/bundles/desktop-env.nix)
   — bundle import.
