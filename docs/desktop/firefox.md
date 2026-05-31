@@ -6,14 +6,14 @@ chosen browser on metis and the default URL handler for
 
 ## Selection
 
-**Firefox** on metis. Enabled via `home/core/nixos/firefox.nix`
+**Firefox** on metis. Enabled via `home/nixos/firefox.nix`
 (HM module `programs.firefox.enable = true` + a `default` profile
 so Stylix has somewhere to write its prefs). Registered as the
 default handler for HTTP/HTTPS + HTML MIME types via HM's
 `xdg.mimeApps.defaultApplications`. Stylix integration via
 `stylix.targets.firefox.enable = true` +
 `stylix.targets.firefox.profileNames = [ "default" ]` in
-`home/core/shared/stylix-targets.nix` — font prefs only on day 1;
+`home/shared/stylix-targets.nix` — font prefs only on day 1;
 chrome-theming opt-ins (`colorTheme.enable`,
 `firefoxGnomeTheme.enable`) deferred.
 
@@ -107,7 +107,7 @@ grounds alone.
 
 ## Configuration
 
-**HM module** — `home/core/nixos/firefox.nix`:
+**HM module** — `home/nixos/firefox.nix`:
 
 ```nix
 _: {
@@ -133,14 +133,14 @@ _: {
 }
 ```
 
-Lives under `home/core/nixos/` because the desktop registration
+Lives under `home/nixos/` because the desktop registration
 (`xdg.mimeApps`, the wider niri/foot-spawned `xdg-open` chain) is
 Linux-only. **Unlike foot/fuzzel/fnott** (which don't build on
 Darwin at all), `pkgs.firefox` does build on Darwin —
 placement here is gated by `xdg.mimeApps` being a Linux-only
 HM module surface, not by package portability. The macOS browser
 selection (Safari / Arc / Brave / etc.) is a separate decision
-deferred to the `home/core/darwin/` tree per epic #11.
+deferred to the `home/darwin/` tree per epic #11.
 
 The `default` profile is declared with both fields set explicitly
 for clarity, though both have appropriate defaults
@@ -157,7 +157,7 @@ verification path is `about:support` → "Window Protocol" =
 the lever is `MOZ_ENABLE_WAYLAND=0` (forces X11); the historical
 opt-in `MOZ_ENABLE_WAYLAND=1` is now a no-op.
 
-**Stylix integration** — `home/core/shared/stylix-targets.nix`:
+**Stylix integration** — `home/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.firefox = {
@@ -258,11 +258,11 @@ Firefox UI.
 
 ## References
 
-- [`home/core/nixos/firefox.nix`](../../home/core/nixos/firefox.nix)
+- [`home/nixos/firefox.nix`](../../home/nixos/firefox.nix)
   — the HM module enabling Firefox + `xdg.mimeApps` registration.
-- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
+- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
   — `stylix.targets.firefox.profileNames`.
-- [`home/core/nixos/bundles/desktop-env.nix`](../../home/core/nixos/bundles/desktop-env.nix)
+- [`home/nixos/bundles/desktop-env.nix`](../../home/nixos/bundles/desktop-env.nix)
   — bundle import.
 - [fonts.md](./fonts.md) — `stylix.fonts.*` selections that
   flow into Firefox's per-profile font prefs.

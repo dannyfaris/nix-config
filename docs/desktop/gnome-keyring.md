@@ -132,7 +132,7 @@ not here. This doc records the live state and the cross-reference;
 | **1Password as the provider** | 1Password does **not** implement `org.freedesktop.secrets`; it is pull/retrieve, not a libsecret push target. It cannot catch Cursor's auto-store writes. Complementary, not a substitute (see below). |
 | **On-demand unlock via gcr prompter** | Needs a running `gcr-prompter` on the session bus, which niri does not provide; clunky and failure-prone. PAM auto-unlock is strictly better here. |
 | **No keyring — Cursor `--password-store=basic`** | Stores secrets in a file encrypted with a hardcoded key (obfuscation, not security). Rejected against the repo's security posture. |
-| **Explicit ownership module (initially proposed)** | An earlier attempt to add `modules/core/nixos/gnome-keyring.nix` that set the two options the inheritance already sets. Rejected after measurement: derivation-level no-op (drvPath byte-identical to main), and the file's "SSH_AUTH_SOCK left free" comment was factually wrong about gcr-ssh-agent. The niri.cachix.org pattern of explicit-ownership applies to trust delegations (substituters/keys), not service activations — and the `xdg.portal.enable = true` precedent (also inherited from niri-flake, also not explicitly owned) shows the repo doesn't apply explicit-ownership as a blanket rule. |
+| **Explicit ownership module (initially proposed)** | An earlier attempt to add `modules/nixos/gnome-keyring.nix` that set the two options the inheritance already sets. Rejected after measurement: derivation-level no-op (drvPath byte-identical to main), and the file's "SSH_AUTH_SOCK left free" comment was factually wrong about gcr-ssh-agent. The niri.cachix.org pattern of explicit-ownership applies to trust delegations (substituters/keys), not service activations — and the `xdg.portal.enable = true` precedent (also inherited from niri-flake, also not explicitly owned) shows the repo doesn't apply explicit-ownership as a blanket rule. |
 
 ## Relationship to sops and 1Password
 
@@ -154,7 +154,7 @@ Three secret layers, deliberately kept distinct:
 What this repo actually configures:
 
 - **`pkgs.libsecret` in `environment.systemPackages`** — installed via
-  `modules/core/nixos/libsecret.nix`, imported by the system
+  `modules/nixos/libsecret.nix`, imported by the system
   desktop-env bundle so it only fires on desktop hosts. This puts
   `secret-tool` on PATH for the verification round-trip below and for
   any future scripts that want to talk to the Secret Service from the
@@ -235,17 +235,17 @@ ownership](#ssh_auth_sock-ownership).
 
 ## References
 
-- [`modules/core/nixos/libsecret.nix`](../../modules/core/nixos/libsecret.nix)
+- [`modules/nixos/libsecret.nix`](../../modules/nixos/libsecret.nix)
   — the only actual addition for this slice; installs the `secret-tool`
   CLI.
-- [`modules/core/nixos/bundles/desktop-env.nix`](../../modules/core/nixos/bundles/desktop-env.nix)
+- [`modules/nixos/bundles/desktop-env.nix`](../../modules/nixos/bundles/desktop-env.nix)
   — the system desktop-env bundle that imports libsecret.nix.
-- [`modules/core/nixos/niri.nix`](../../modules/core/nixos/niri.nix)
+- [`modules/nixos/niri.nix`](../../modules/nixos/niri.nix)
   — the import of niri-flake's nixosModule that transitively enables
   gnome-keyring.
-- [`modules/core/nixos/greetd.nix`](../../modules/core/nixos/greetd.nix)
+- [`modules/nixos/greetd.nix`](../../modules/nixos/greetd.nix)
   — the greetd/tuigreet service whose PAM stack carries the auto-unlock.
-- [`modules/core/nixos/users.nix`](../../modules/core/nixos/users.nix)
+- [`modules/nixos/users.nix`](../../modules/nixos/users.nix)
   — sops-managed, immutable login password the keyring keys against.
 - #104 — this slice (secure credential storage).
 - #112 — 1Password adoption (human-facing PM + SSH agent); will resolve

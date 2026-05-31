@@ -13,7 +13,7 @@
 #
 # pkgs.nixfmt is the canonical RFC-style formatter (nixfmt 1.2+). Don't
 # swap with pkgs.nixfmt-rfc-style (deprecated alias) or pkgs.nixfmt-classic
-# (pre-RFC Serokell style). See home/core/shared/nix-tooling.nix for the
+# (pre-RFC Serokell style). See home/shared/nix-tooling.nix for the
 # comment block that's the source of truth.
 { inputs, ... }:
 

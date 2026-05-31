@@ -56,12 +56,12 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
           # `accept-flake-config = false` carries the whitelist-over-blanket
-          # stance from modules/core/nixos/nix-daemon.nix into CI: a
+          # stance from modules/nixos/nix-daemon.nix into CI: a
           # transitive input's nixConfig block can't silently add a
           # substituter or change settings here.
           #
           # niri.cachix.org is whitelisted explicitly below — mirrors the
-          # nix.settings in modules/core/nixos/niri.nix (ADR-028 slice 3b.5).
+          # nix.settings in modules/nixos/niri.nix (ADR-028 slice 3b.5).
           # Without this, CI's daemon doesn't trust the cache, niri builds
           # from source, and the build hits the in-flight nixpkgs Rust
           # crate fetcher 403 (rust-lang/crates.io#13482,

@@ -1,5 +1,5 @@
 # Single source of truth for "what colour is each host". Looked up by
-# modules/core/nixos/stylix-palette.nix via hostContext.hostName.
+# modules/nixos/stylix-palette.nix via hostContext.hostName.
 # Missing-host lookups fail loudly at eval (no default fallback —
 # Nix's `attr.X` on a missing X throws a clear error).
 #

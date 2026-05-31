@@ -1,19 +1,20 @@
 # Taxonomy: how files and modules are named
 
 This document captures the naming convention applied across the
-home-manager module trees (`home/core/shared/` and `home/core/nixos/`)
-and the system module trees (`modules/core/nixos/` and
-`modules/core/shared/`), and by extension any future module trees. The
+home-manager module trees (`home/shared/` and `home/nixos/`)
+and the system module trees (`modules/nixos/` and
+`modules/shared/`), and by extension any future module trees. The
 decision itself is recorded in
 [ADR-012](./decisions/ADR-012-taxonomy.md); this document is the
 applied principle with examples.
 
-> **Note:** some of the examples below reference the pre-refactor
-> directories `modules/home/` and `modules/system/` because the rule
-> was articulated against that tree. The current trees are
-> `home/core/{shared,nixos}/` and `modules/core/{nixos,shared}/` per
-> the PRD §5 directory grid. The naming rule itself applies unchanged;
-> only the directories moved.
+> **Note:** some of the examples below reference earlier directory
+> shapes (`modules/home/` and `modules/system/` from a pre-foundation
+> refactor; `modules/core/...` and `home/core/...` from the pre-ADR-026
+> tier-prefix era) because the rule was articulated against those trees.
+> The current trees are `home/{shared,nixos}/` and `modules/{nixos,shared}/`
+> per the PRD §5 directory grid (post-[ADR-026](./decisions/ADR-026-drop-core-tier-prefix.md)).
+> The naming rule itself applies unchanged; only the directories moved.
 
 ## The rule
 
@@ -134,9 +135,9 @@ bundle every host imports.
 **Location:** under a `bundles/` subdirectory per platform layer:
 
 ```
-modules/core/nixos/bundles/remote-access.nix
-home/core/shared/bundles/cli-tooling.nix
-home/core/shared/bundles/git-personal.nix
+modules/nixos/bundles/remote-access.nix
+home/shared/bundles/cli-tooling.nix
+home/shared/bundles/git-personal.nix
 ```
 
 **The naming rule (load-bearing):** **bundle names describe what is in
@@ -174,12 +175,12 @@ convention. It is structurally a bundle (same `bundle-purity` rule, same
   above `bundles/`:
 
   ```
-  modules/core/nixos/foundation.nix
-  modules/core/darwin/foundation.nix      # when Darwin lands
-  modules/core/shared/foundation.nix      # if a cross-platform foundation emerges
-  home/core/nixos/foundation.nix
-  home/core/darwin/foundation.nix
-  home/core/shared/foundation.nix
+  modules/nixos/foundation.nix
+  modules/darwin/foundation.nix      # when Darwin lands
+  modules/shared/foundation.nix      # if a cross-platform foundation emerges
+  home/nixos/foundation.nix
+  home/darwin/foundation.nix
+  home/shared/foundation.nix
   ```
 
   Placement at the top of the tree rather than inside `bundles/` is a
@@ -201,7 +202,7 @@ belongs *inside* foundation, not a structural rule.
 
 ### Standalone modules
 
-A module that lives directly at `modules/core/<platform>/<name>.nix` (or
+A module that lives directly at `modules/<platform>/<name>.nix` (or
 the home equivalent) without a `bundles/` parent. Naming follows the
 existing module-naming rule (role-based, tool/protocol, or collective
 category — pick the most communicative term for the module's contents).

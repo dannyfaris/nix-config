@@ -108,7 +108,7 @@ are right by construction — they exist because something specific demanded
 them.
 
 **How it shows up.**
-- `home/core/{shared,nixos}/` files don't expose `enable` flags. The day a host wants
+- `home/{shared,nixos}/` files don't expose `enable` flags. The day a host wants
   to disable, say, the editor, that's when the flag earns its place.
 - Module decomposition matches actual size and concern boundaries, not
   hypothetical future shape.

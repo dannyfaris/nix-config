@@ -8,8 +8,8 @@ into view.
 
 **niri 25.08** (the `niri-stable` channel from
 [`niri-flake`](https://github.com/sodiboo/niri-flake)) on metis.
-Enabled at the system layer via `modules/core/nixos/niri.nix`; user
-settings (binds, layout) at `home/core/nixos/niri.nix` via niri-flake's
+Enabled at the system layer via `modules/nixos/niri.nix`; user
+settings (binds, layout) at `home/nixos/niri.nix` via niri-flake's
 auto-injected `homeModules.config`.
 
 ## Rationale
@@ -50,7 +50,7 @@ polish for our use.
 
 ## Configuration
 
-**System layer** — `modules/core/nixos/niri.nix`:
+**System layer** — `modules/nixos/niri.nix`:
 - Imports `inputs.niri-flake.nixosModules.niri` and enables
   `programs.niri.enable = true`.
 - Owns the cachix trust delegation explicitly
@@ -62,7 +62,7 @@ polish for our use.
   — without it, niri.service is invisible to systemd-user. See sharp
   edges.
 
-**User layer** — `home/core/nixos/niri.nix`:
+**User layer** — `home/nixos/niri.nix`:
 - Sets `programs.niri.settings.binds` directly. Full bind taxonomy +
   modifier-namespace philosophy lives in [keybinds.md](./keybinds.md).
 - Other niri settings (layout, input, cursor) flow from niri-flake's
@@ -112,7 +112,7 @@ source, dated, and revokable in one place. The substituter is
 necessary in practice — without it, niri rebuilds from source on every
 niri-flake bump (~10–30 min on metis-class hardware), and the nixpkgs
 Rust-crate fetcher has been unreliable with crates.io 403 cascades.
-See `modules/core/nixos/niri.nix:7-32` for the inline rationale.
+See `modules/nixos/niri.nix:7-32` for the inline rationale.
 
 ## References
 

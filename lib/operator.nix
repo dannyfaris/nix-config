@@ -4,11 +4,11 @@
 # operator record is plain data that any module needs at any phase.
 #
 # Consumed by (today):
-#   - modules/core/nixos/users.nix         — user declaration + SSH keys
-#   - modules/core/nixos/home-manager.nix  — HM attr-name + homeDirectory
-#   - modules/core/nixos/host-context.nix  — flakePath default
+#   - modules/nixos/users.nix         — user declaration + SSH keys
+#   - modules/nixos/home-manager.nix  — HM attr-name + homeDirectory
+#   - modules/nixos/host-context.nix  — flakePath default
 #
-# When Darwin lands (epic #11), a sibling `modules/core/darwin/users.nix`
+# When Darwin lands (epic #11), a sibling `modules/darwin/users.nix`
 # consumes the same record with the `darwinHome` field. The deliberate
 # split between `linuxHome` and `darwinHome` records the platform-rooted
 # home location once; consumers pick the right one for their layer.

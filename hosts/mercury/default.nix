@@ -36,15 +36,15 @@
     "${modulesPath}/virtualisation/amazon-image.nix"
 
     # Foundation — bundle every NixOS host imports by convention.
-    ../../modules/core/nixos/foundation.nix
+    ../../modules/nixos/foundation.nix
 
     # Capability bundles.
-    ../../modules/core/nixos/bundles/remote-access.nix
+    ../../modules/nixos/bundles/remote-access.nix
 
     # Standalone system modules.
     # Rootless Docker — resolves ADR-006's deferred daemon decision.
     # Mercury opts in; the VM doesn't run containers. See ADR-021.
-    ../../modules/core/nixos/docker.nix
+    ../../modules/nixos/docker.nix
   ];
 
   networking.hostName = "mercury";
@@ -117,12 +117,12 @@
   hostContext = {
     hostName = "mercury";
     extraHomeModules = [
-      ../../home/core/shared/bundles/cli-tooling.nix
-      ../../home/core/shared/bundles/git-work.nix
-      ../../home/core/shared/stylix-targets.nix
-      ../../home/core/shared/ssh.nix
-      ../../home/core/nixos/macchina.nix
-      ../../home/core/shared/agent-clis.nix
+      ../../home/shared/bundles/cli-tooling.nix
+      ../../home/shared/bundles/git-work.nix
+      ../../home/shared/stylix-targets.nix
+      ../../home/shared/ssh.nix
+      ../../home/nixos/macchina.nix
+      ../../home/shared/agent-clis.nix
     ];
   };
 }
