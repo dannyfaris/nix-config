@@ -1,7 +1,7 @@
 # fuzzel — Wayland-native application launcher.
 #
 # Stylix theming is wired centrally via `stylix.targets.fuzzel.enable
-# = true` in home/core/shared/bundles/theming.nix; Stylix writes
+# = true` in home/core/shared/stylix-targets.nix; Stylix writes
 # `programs.fuzzel.settings.main.font` (Inter at popups size),
 # `programs.fuzzel.settings.colors.*` (full base16 palette across 11
 # slots), and `programs.fuzzel.settings.main.icon-theme` (polarity-

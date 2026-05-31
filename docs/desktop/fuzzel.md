@@ -11,7 +11,7 @@ the macOS Spotlight pattern.
 module `programs.fuzzel.enable = true`). Bound to `Mod+Space` in
 `home/core/nixos/niri.nix`. Stylix integration via
 `stylix.targets.fuzzel.enable = true` in
-`home/core/shared/bundles/theming.nix`.
+`home/core/shared/stylix-targets.nix`.
 
 ## Rationale
 
@@ -88,7 +88,7 @@ Visible-line count, width, padding, and other layout values use
 fuzzel's defaults — explicitly not tuned for pixel-Spotlight parity.
 See Sharp edges if visual footprint reads wrong later.
 
-**Stylix integration** — `home/core/shared/bundles/theming.nix`:
+**Stylix integration** — `home/core/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.fuzzel.enable = true;
@@ -166,7 +166,7 @@ Alfred via nix-darwin's app management, not a port of fuzzel.
 
 - [`home/core/nixos/fuzzel.nix`](../../home/core/nixos/fuzzel.nix)
   — the HM module enabling fuzzel.
-- [`home/core/shared/bundles/theming.nix`](../../home/core/shared/bundles/theming.nix)
+- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
   — `stylix.targets.fuzzel.enable = true`.
 - [`home/core/nixos/niri.nix`](../../home/core/nixos/niri.nix) —
   `Mod+Space` → fuzzel bind.

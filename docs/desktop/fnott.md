@@ -10,7 +10,7 @@ maintainer with consistent design idioms.
 service module `services.fnott.enable = true`). The HM service
 unit auto-starts via D-Bus activation — no `spawn-at-startup` hack
 required. Stylix integration via `stylix.targets.fnott.enable = true`
-in `home/core/shared/bundles/theming.nix`.
+in `home/core/shared/stylix-targets.nix`.
 
 ## Rationale
 
@@ -83,7 +83,7 @@ Lives under `home/core/nixos/` because fnott is Wayland-only —
 same placement reasoning as foot.nix and fuzzel.nix; same shared-
 purity rule (ADR-027) gating.
 
-**Stylix integration** — `home/core/shared/bundles/theming.nix`:
+**Stylix integration** — `home/core/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.fnott.enable = true;
@@ -171,7 +171,7 @@ Currently fine: day-to-day notifications are ephemeral by intent.
 
 - [`home/core/nixos/fnott.nix`](../../home/core/nixos/fnott.nix) —
   the HM service module enabling fnott.
-- [`home/core/shared/bundles/theming.nix`](../../home/core/shared/bundles/theming.nix)
+- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
   — `stylix.targets.fnott.enable = true`.
 - [`home/core/nixos/bundles/desktop-env.nix`](../../home/core/nixos/bundles/desktop-env.nix)
   — bundle import.

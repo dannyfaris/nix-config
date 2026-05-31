@@ -2,7 +2,7 @@
 #
 # Slice 3 enables foot with its defaults. Stylix theming is wired
 # centrally via `stylix.targets.foot.enable = true` in
-# home/core/shared/bundles/theming.nix; Stylix writes
+# home/core/shared/stylix-targets.nix; Stylix writes
 # `programs.foot.settings.main.{font,dpi-aware,initial-color-theme}`
 # plus per-polarity colour palette. If we ever set our own
 # `programs.foot.settings` here, watch for option conflicts — Stylix

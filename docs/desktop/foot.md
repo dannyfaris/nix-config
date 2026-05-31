@@ -9,7 +9,7 @@ terminal.
 **foot** on metis. Enabled via `home/core/nixos/foot.nix` (HM module
 `programs.foot.enable = true`). Stylix integration via
 `stylix.targets.foot.enable = true` in
-`home/core/shared/bundles/theming.nix`.
+`home/core/shared/stylix-targets.nix`.
 
 The cross-platform terminfo entry `xterm-ghostty` ships on every host
 via `modules/core/shared/ghostty-terminfo.nix` so SSH'ing from a
@@ -63,7 +63,7 @@ _: {
 
 Minimal — all real configuration flows through Stylix targets.
 
-**Stylix integration** — `home/core/shared/bundles/theming.nix`:
+**Stylix integration** — `home/core/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.foot.enable = true;
@@ -127,7 +127,7 @@ client-side terminfo (no Wayland dependency).
   HM module enabling foot.
 - [`modules/core/shared/ghostty-terminfo.nix`](../../modules/core/shared/ghostty-terminfo.nix)
   — cross-platform terminfo for the Ghostty-on-Mac SSH path.
-- [`home/core/shared/bundles/theming.nix`](../../home/core/shared/bundles/theming.nix)
+- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
   — `stylix.targets.foot.enable = true`.
 - [fonts.md](./fonts.md) — font configuration that affects foot's
   appearance + the DejaVu fallback warning that surfaced + the

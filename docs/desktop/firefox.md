@@ -13,7 +13,7 @@ default handler for HTTP/HTTPS + HTML MIME types via HM's
 `xdg.mimeApps.defaultApplications`. Stylix integration via
 `stylix.targets.firefox.enable = true` +
 `stylix.targets.firefox.profileNames = [ "default" ]` in
-`home/core/shared/bundles/theming.nix` — font prefs only on day 1;
+`home/core/shared/stylix-targets.nix` — font prefs only on day 1;
 chrome-theming opt-ins (`colorTheme.enable`,
 `firefoxGnomeTheme.enable`) deferred.
 
@@ -157,7 +157,7 @@ verification path is `about:support` → "Window Protocol" =
 the lever is `MOZ_ENABLE_WAYLAND=0` (forces X11); the historical
 opt-in `MOZ_ENABLE_WAYLAND=1` is now a no-op.
 
-**Stylix integration** — `home/core/shared/bundles/theming.nix`:
+**Stylix integration** — `home/core/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.firefox = {
@@ -260,7 +260,7 @@ Firefox UI.
 
 - [`home/core/nixos/firefox.nix`](../../home/core/nixos/firefox.nix)
   — the HM module enabling Firefox + `xdg.mimeApps` registration.
-- [`home/core/shared/bundles/theming.nix`](../../home/core/shared/bundles/theming.nix)
+- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
   — `stylix.targets.firefox.profileNames`.
 - [`home/core/nixos/bundles/desktop-env.nix`](../../home/core/nixos/bundles/desktop-env.nix)
   — bundle import.

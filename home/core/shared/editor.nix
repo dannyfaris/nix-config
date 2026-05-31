@@ -26,7 +26,7 @@ in
 
     settings = {
       # `programs.helix.settings.theme` is owned by Stylix's helix target
-      # (enabled via home/core/shared/bundles/theming.nix per ADR-028).
+      # (enabled via home/core/shared/stylix-targets.nix per ADR-028).
       # Stylix writes the theme name here at default priority.
 
       editor = {

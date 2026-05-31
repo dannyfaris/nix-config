@@ -137,7 +137,7 @@ model), so the cadence is lighter than for keybinds.
   selections; deliberately).
 - `home/core/nixos/foot.nix` — foot terminal config; consumes
   `stylix.fonts.monospace.name` via Stylix's foot target.
-- `home/core/shared/bundles/theming.nix` — Stylix target enablement
+- `home/core/shared/stylix-targets.nix` — Stylix target enablement
   whitelist.
 - `docs/desktop/keybinds.md` — companion living document, same cadence.
 - #69 — the foundational close-out under which this document was
