@@ -38,6 +38,15 @@
 let
   palettes = import ../../lib/host-palettes.nix;
   palette = palettes.${hostContext.hostName};
+  # Polarity drives scheme selection — a single host-side toggle flips
+  # both the base16 palette and the cross-app dark/light signal,
+  # eliminating the lockstep-by-convention coupling the previous
+  # interim shape (#123 / #141) carried. Fails loudly with a clear
+  # message if a host's polarity is set to a variant it hasn't declared
+  # (e.g., a dark-only host flipped to light).
+  scheme =
+    palette.schemes.${palette.polarity}
+      or (throw "host-palettes: ${hostContext.hostName} has no `${palette.polarity}` scheme declared");
 in
 {
   imports = [ inputs.stylix.nixosModules.stylix ];
@@ -45,14 +54,10 @@ in
   stylix = {
     enable = true;
     autoEnable = false;
-    base16Scheme = "${pkgs.base16-schemes}/share/themes/${palette.scheme}.yaml";
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/${scheme}.yaml";
     # Per-host polarity so dark-aware apps (Firefox web content, Zen
     # chrome, GTK file pickers, Qt platform theme) follow the host's
-    # actual visual intent. Without this, Stylix defaults to
-    # `polarity = "either"` and writes no dark/light signal anywhere
-    # (no gtk-application-prefer-dark-theme, no portal color-scheme),
-    # so apps render in their light defaults even on a dark palette.
-    # See #123.
+    # actual visual intent. Also drives the scheme selection above.
     inherit (palette) polarity;
   };
 }
