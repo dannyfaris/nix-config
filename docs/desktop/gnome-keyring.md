@@ -1,4 +1,4 @@
-# keyring — Secret Service for desktop app credentials
+# gnome-keyring — Secret Service for desktop app credentials
 
 ## Selection
 
