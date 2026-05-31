@@ -19,7 +19,7 @@ Concurrently, where Stylix should live in the module tree has been an open quest
 
 Adopt a coordinated three-part decision, scoped to land as one ADR because the three parts are inseparable in motivation:
 
-**1. Stylix is promoted to foundation, with per-host base16 palettes as the single source of truth for theming.** `inputs.stylix.nixosModules.stylix` is imported by `modules/core/nixos/foundation.nix`. A new `lib/host-palettes.nix` maps `hostName → base16-scheme-name`; foundation reads this map keyed on `hostContext.hostName` (the field name set by ADR-019). Missing-host lookups fail loudly at eval. Stylix governs all colour/font surfaces across both the TUI surface (helix, bat, zellij, starship, lazygit, yazi, btop, fish) and — via the wiring below — the desktop shell.
+**1. Stylix is promoted to foundation, with per-host base16 palettes as the single source of truth for theming.** `inputs.stylix.nixosModules.stylix` is imported by `modules/core/nixos/foundation.nix`. A new `lib/host-palettes.nix` maps `hostName → { scheme; polarity; }`; foundation reads this map keyed on `hostContext.hostName` (the field name set by ADR-019). Missing-host lookups fail loudly at eval. Stylix governs all colour/font surfaces across both the TUI surface (helix, bat, zellij, starship, lazygit, yazi, btop, fish) and — via the wiring below — the desktop shell. (Polarity was added in a later amendment — see §History.)
 
 **2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/core/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/core/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Foot, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
 
@@ -288,3 +288,25 @@ stylix-palette.nix), and the per-host base16 palette from
 imports-list aggregator. Full rationale and the alternatives weighed are
 in ADR-027 §History (2026-05-31). This amendment is docs-only; the code
 change ships under #54.
+
+### Amendment (2026-05-31, #123) — Per-host polarity added to the palette entry shape
+
+`lib/host-palettes.nix` entries grew from `hostName → "scheme-string"`
+to `hostName → { scheme; polarity; }`. `modules/core/nixos/stylix-palette.nix`
+now passes `palette.polarity` through to `stylix.polarity`.
+
+Before: Stylix's `polarity` was unset, so it defaulted to `"either"` and
+wrote no dark/light signal — no `gtk-application-prefer-dark-theme`,
+no xdg-desktop-portal color-scheme via the GTK/dconf surfaces, no
+adw-gtk3 dark-variant selection. Dark-aware apps (Firefox web content,
+Zen chrome, GTK file pickers, Qt platform theme) rendered in their
+light defaults despite the host's palette being visually dark
+(rose-pine on metis).
+
+After: every host declares its polarity explicitly. Per-host > a global
+`polarity = "dark"` in foundation on whitelist-not-blanket grounds
+(matches the `autoEnable = false` stance) — every dark/light
+declaration is explicit at the entry, and a future light-palette host
+gets a knob without retrofitting the foundation. All three current
+hosts declare `polarity = "dark"`. This amendment is docs-only; the
+code change ships under #123.
