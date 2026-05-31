@@ -1,4 +1,4 @@
-# Home-manager NixOS-module wrapper for user dbf.
+# Home-manager NixOS-module wrapper for the operator (per lib/operator.nix).
 #
 # Owns the NixOS-side wiring (useGlobalPkgs, backup extension, news
 # display, stateVersion) and forwards `hostContext` into the home-manager
@@ -14,8 +14,13 @@
 # layer to fn-arg consumption — avoids the imports-evaluation-timing
 # trap of reading `config.hostContext` to compute home-manager imports).
 # Each host sets the value via `hostContext = { ... };` at the top of its
-# default.nix. See ADR-019.
+# default.nix. See ADR-019. Operator identity (HM attr-name + homeDirectory)
+# comes from lib/operator.nix per #49 so the same record will feed a
+# Darwin equivalent when mac-mini lands (epic #11).
 { hostContext, ... }:
+let
+  operator = import ../../../lib/operator.nix;
+in
 {
   home-manager = {
     # useGlobalPkgs propagates the system's nixpkgs.config (including the
@@ -30,12 +35,12 @@
 
     extraSpecialArgs = { inherit hostContext; };
 
-    users.dbf = _: {
+    users.${operator.name} = _: {
       imports = hostContext.extraHomeModules or [ ];
 
       home = {
-        username = "dbf";
-        homeDirectory = "/home/dbf";
+        username = operator.name;
+        homeDirectory = operator.linuxHome;
 
         # Match the NixOS stateVersion — set once, never change.
         stateVersion = "25.11";

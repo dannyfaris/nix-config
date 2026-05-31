@@ -88,6 +88,9 @@ ones where two records disagree and you don't know which is correct.
   the only source of user state.
 - Hashed user passwords come from sops-encrypted files referenced by the
   module; they're not duplicated in `/etc/shadow` outside of nix's control.
+- Operator identity (username, home paths, authorised SSH keys) lives in
+  `lib/operator.nix` and is imported by every module that needs it. Was
+  scattered as duplicated literals across four files until #49.
 - After Tier 3, `docs/` is canonical for design rationale. AI memory files
   point here rather than duplicating content.
 

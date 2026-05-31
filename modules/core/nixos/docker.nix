@@ -1,13 +1,18 @@
-# Rootless Docker — per-user dockerd for dbf. Imported per-host (Mercury
-# and Metis); NOT in the headless role because the UTM VM doesn't run
-# containers and pulling docker into its closure for nothing would be
-# wasteful.
+# Rootless Docker — per-user dockerd for the operator. Imported per-host
+# (Mercury and Metis); NOT in the headless role because the UTM VM
+# doesn't run containers and pulling docker into its closure for nothing
+# would be wasteful.
 #
 # Resolves the deferred decision in ADR-006 § "Tool-vs-runtime split"
 # ("docker daemon: deferred until the first project needs it"). See
 # ADR-021 for the rootless-over-rootful rationale and the system-wide
-# CLI deviation from ADR-006's per-project devShells stance.
+# CLI deviation from ADR-006's per-project devShells stance. Operator
+# identity (the `users.users.<name>` attr key) comes from
+# lib/operator.nix per #49.
 { pkgs, ... }:
+let
+  operator = import ../../../lib/operator.nix;
+in
 {
   virtualisation.docker.rootless = {
     enable = true;
@@ -17,7 +22,7 @@
     setSocketVariable = true;
   };
 
-  users.users.dbf = {
+  users.users.${operator.name} = {
     # Rootless containers need subordinate uid/gid mappings declared in
     # /etc/subuid + /etc/subgid for newuidmap/newgidmap. The NixOS
     # rootless docker module does NOT auto-configure these — verified

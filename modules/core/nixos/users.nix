@@ -1,16 +1,18 @@
 # User declaration. Fully declarative — mutableUsers = false makes this the
-# sole source of truth for user state.
+# sole source of truth for user state. Identity attributes (name,
+# description, SSH keys) come from lib/operator.nix per #49 so the same
+# record will feed a sibling modules/core/darwin/users.nix when Darwin
+# lands (epic #11).
 { config, pkgs, ... }:
 
 let
-  # Public key from the Mac dev machine. Sole SSH credential for dbf.
-  macSshKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@mac";
+  operator = import ../../../lib/operator.nix;
 in
 {
   users.mutableUsers = false;
-  users.users.dbf = {
+  users.users.${operator.name} = {
     isNormalUser = true;
-    description = "Daniel";
+    inherit (operator) description;
     extraGroups = [
       "wheel"
       "networkmanager"
@@ -18,7 +20,7 @@ in
 
     hashedPasswordFile = config.sops.secrets.dbf-password.path;
 
-    openssh.authorizedKeys.keys = [ macSshKey ];
+    openssh.authorizedKeys.keys = operator.authorizedKeys;
 
     # fish as the login shell. Requires programs.fish.enable below — the
     # system-side enable is what registers fish in /etc/shells, which is
