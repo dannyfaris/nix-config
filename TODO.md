@@ -73,6 +73,22 @@ new host comes up.
       `~/.config/git/config` (XDG, nix-managed) and defeats the
       gitdir-conditional personal-identity. Verify the file does not
       exist before declaring identity setup correct.
+- [ ] **git-identity pre-flight audit** (per ADR-031): the dual
+      identity defaults to work; personal repos cloned outside
+      `~/personal/` (or the `~/nix-config/` carve-out) silently
+      inherit the work identity. Before `nh os switch` on each new
+      host, run:
+
+      ```sh
+      find ~ -maxdepth 4 -name .git -type d \
+        -not -path '*/work/*' -not -path '*/personal/*' \
+        -not -path '*/.cache/*' -not -path '*/.local/*' \
+        -not -path '*/.cargo/*' -not -path '*/.rustup/*' 2>/dev/null
+      ```
+
+      Any matches must be relocated into `~/personal/` (or `~/work/`)
+      before activation, or earn their own gitdir carve-out in
+      `home/shared/git-identity-dual.nix`.
 - [ ] **`home.sessionVariables` freshness**: a freshly-set env var
       from home-manager needs a *truly fresh* shell to land —
       `exec fish` inherits exported state from the parent and triggers
