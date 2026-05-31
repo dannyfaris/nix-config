@@ -19,7 +19,7 @@ Concurrently, where Stylix should live in the module tree has been an open quest
 
 Adopt a coordinated three-part decision, scoped to land as one ADR because the three parts are inseparable in motivation:
 
-**1. Stylix is promoted to foundation, with per-host base16 palettes as the single source of truth for theming.** `inputs.stylix.nixosModules.stylix` is imported by `modules/core/nixos/foundation.nix`. A new `lib/host-palettes.nix` maps `hostName → { scheme; polarity; }`; foundation reads this map keyed on `hostContext.hostName` (the field name set by ADR-019). Missing-host lookups fail loudly at eval. Stylix governs all colour/font surfaces across both the TUI surface (helix, bat, zellij, starship, lazygit, yazi, btop, fish) and — via the wiring below — the desktop shell. (Polarity was added in a later amendment — see §History.)
+**1. Stylix is promoted to foundation, with per-host base16 palettes as the single source of truth for theming.** `inputs.stylix.nixosModules.stylix` is imported by `modules/nixos/foundation.nix`. A new `lib/host-palettes.nix` maps `hostName → { polarity; schemes = { dark; light; }; }`; foundation reads this map keyed on `hostContext.hostName` (the field name set by ADR-019). Missing-host lookups fail loudly at eval. Stylix governs all colour/font surfaces across both the TUI surface (helix, bat, zellij, starship, lazygit, yazi, btop, fish) and — via the wiring below — the desktop shell. (Polarity + paired schemes added in later amendments — see §History.)
 
 **2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/core/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/core/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Foot, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
 
@@ -310,3 +310,28 @@ declaration is explicit at the entry, and a future light-palette host
 gets a knob without retrofitting the foundation. All three current
 hosts declare `polarity = "dark"`. This amendment is docs-only; the
 code change ships under #123.
+
+### Amendment (2026-05-31, follow-up to #123) — Paired schemes per host, polarity drives selection
+
+The #123 interim shape (`{ scheme; polarity; }` as co-declared
+fields) carried a fragility — scheme name and polarity could drift
+apart silently (declare `scheme = "rose-pine"` with
+`polarity = "light"` and Stylix happily writes a dark base16 palette
+while telling apps to prefer-light). Two declarations that must stay
+in lockstep is the implicit-coupling anti-pattern the repo's
+"explicit > implicit" / "single source of truth" stances argue
+against.
+
+Restructured to a *theme family* shape:
+`{ polarity; schemes = { dark; light; }; }`. Polarity drives scheme
+selection in `stylix-palette.nix`
+(`palette.schemes.${palette.polarity}`), so flipping polarity is a
+single edit and the scheme follows automatically. Dark-only hosts can
+omit `schemes.light`; eval throws loudly if polarity is later flipped
+to a variant the host hasn't declared.
+
+All three current hosts declare both variants from the same base16
+family: metis (rose-pine + rose-pine-dawn), mercury (tokyo-night-dark
++ tokyo-night-light), nixos-vm (catppuccin-mocha + catppuccin-latte).
+This amendment is docs-only; the code change ships under the
+follow-up to #141.
