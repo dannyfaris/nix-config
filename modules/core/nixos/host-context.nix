@@ -15,6 +15,9 @@
 # reading `config.hostContext` to compute home-manager imports would
 # otherwise create.
 { lib, config, ... }:
+let
+  operator = import ../../../lib/operator.nix;
+in
 {
   options.hostContext = lib.mkOption {
     type = lib.types.submodule {
@@ -25,7 +28,7 @@
         };
         flakePath = lib.mkOption {
           type = lib.types.str;
-          default = "/home/dbf/nix-config";
+          default = "${operator.linuxHome}/${operator.flakeRepoDirname}";
           description = "Filesystem path to this flake on the host. Used by nh + nixd.";
         };
         extraHomeModules = lib.mkOption {
