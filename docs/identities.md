@@ -40,45 +40,56 @@ the box is operator-personal-by-default in practice.
 own idiom but observes the same direction and trigger. New tools that
 grow per-identity state (credentials, transcripts, caches, profiles)
 should adopt the same pattern: personal default, work conditional
-under `~/work/`.
+under `~/work/`. Before wiring, verify end-to-end that the tool's
+per-tree mechanism actually controls *identity* state — not just
+settings, caches, or session histories.
 
 ## Mechanism layer
 
 For tools whose identity selection runs off environment variables or
 config-path lookups, the standard activation primitive is direnv (per
 [ADR-003](./decisions/ADR-003-direnv.md)): an `.envrc` at `~/work/`
-sets the per-identity variables, and Nix-managed direnv ensures
-activation happens on `cd`. Tools that have a native conditional
-mechanism — git's `includeIf gitdir:` is the canonical case — should
-use it directly rather than route through direnv.
+sets per-identity variables and Nix-managed direnv activates them on
+`cd`. Tools that have a native conditional mechanism — git's
+`includeIf gitdir:` is the canonical case — should use it directly
+rather than route through direnv.
 
 ## Participating tools
 
 | Tool | Mechanism | Reference |
 |---|---|---|
 | **git** | `includeIf gitdir:~/work/` in user-level config | [ADR-009](./decisions/ADR-009-git.md), `home/shared/git-identity-dual.nix` |
-| **Claude Code** | per-tree env var (resolution in progress) | [#137](https://github.com/dannyfaris/nix-config/issues/137) |
+
+## Tools that opted out
+
+- **Claude Code** ([#137](https://github.com/dannyfaris/nix-config/issues/137)) —
+  the intended mechanism (`CLAUDE_CONFIG_DIR`) does not control identity
+  in Claude Code 2.1.121. The `oauthAccount` value that `/status`
+  reports lives in `$HOME/.claude.json` regardless of the env var, and
+  `/login` writes the default store regardless of cwd; `CLAUDE_CONFIG_DIR`
+  only steers `.credentials.json`, `settings.json`, `projects/`, and
+  `statusline.sh`. Settled on single identity (personal default); use
+  `/logout` + `/login` on the rare occasion the work account is needed
+  inside `claude`.
 
 ## Failure modes
 
 The split is best-effort, not enforced. Known modes:
 
-- **Tool-specific staleness within a session.** Most tools snapshot
-  the active identity at session start (e.g. Claude Code reads
-  `CLAUDE_CONFIG_DIR` once when `claude` launches). Changing
-  directory mid-session does not switch identity for an already-
-  running tool. New terminal / session required.
-- **Silent overwrite on identity-write actions.** A tool's "log in"
-  or "set identity" command writes to whichever store is currently
-  active. Running `/login` in Claude Code from the wrong tree
-  silently overwrites that tree's stored credentials; running
+- **Tool-specific staleness within a session.** Tools that snapshot
+  the active identity at session start do not switch identity if the
+  working directory changes mid-session — new terminal / session
+  required. No current participating tool exhibits this (git re-reads
+  config every invocation), but it remains the standard concern for
+  any future env-var-driven tool.
+- **Silent overwrite on identity-write actions.** A tool's "set
+  identity" command writes to whichever store is currently active.
   `git config --global user.email ...` from anywhere overwrites the
   default. Recoverable, but invisible at the time it happens.
 - **No after-the-fact audit for non-git tools.** Git has
   `git log --author=daniel.faris@gotaxi.co.nz` (and the inverse
   `--author=daniel@faris.co.nz`) to retroactively catch identity
-  leaks across a tree's history. Most other tools have no equivalent;
-  for Claude Code the only check is `/status` in-session.
+  leaks across a tree's history. Most other tools have no equivalent.
 
 Mitigations are tool-specific and tracked under each tool's own
 issues rather than centrally. The general posture is "rely on
@@ -99,5 +110,6 @@ added per tool only if leaks actually occur.
   prior art for any future "should we flip the direction?" question;
   the on-disk ADR record was cleared, so issues / PRs are the trail.
 - [#137](https://github.com/dannyfaris/nix-config/issues/137) — Claude
-  Code per-tree auth, second tool to adopt the pattern.
+  Code per-tree auth investigation (declined; see "Tools that opted
+  out").
 - [docs/workflow.md](./workflow.md) — process conventions.

@@ -249,6 +249,8 @@ Notes:
 ## See also
 
 - [docs/identities.md](../identities.md) — the cross-tool generalisation
-  of the dual-identity pattern. ADR-009 is the canonical git instance;
-  Claude Code (#137) is the second adopter, in progress. New tools that
-  grow per-identity state should refer there before wiring their split.
+  of the dual-identity pattern. ADR-009 is the canonical git instance
+  and currently the sole participating tool; Claude Code (#137) was
+  investigated as the second adopter and declined (see identities.md
+  §"Tools that opted out"). New tools that grow per-identity state
+  should refer there before wiring their split.
