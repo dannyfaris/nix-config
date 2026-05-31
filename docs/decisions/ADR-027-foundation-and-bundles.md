@@ -9,7 +9,7 @@
 
 ADRs 013 and 014 introduced a three-role taxonomy — `headless`, `linux-workstation`, `macos-workstation` — with **independent** (non-inherited) role composition. The PRD §3 was written around the same model.
 
-Eight months and three hosts in, the data is sharper than the forecast:
+Three hosts in, with the role taxonomy mature enough to evaluate, the data is sharper than the forecast:
 
 - Only one role has been implemented: `headless`. All three hosts (nixos-vm, mercury, metis) adopt it.
 - Of the nine modules `roles/headless.nix` imports, **zero are headless-specific**. Every entry (locale, nix-daemon, sshd, firewall, sops, users, system-packages, mosh, home-manager) is universal to every NixOS host the operator runs. The role name asserts a property — *absence of graphical environment* — that none of its contents actually depend on.
