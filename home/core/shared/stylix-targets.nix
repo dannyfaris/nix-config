@@ -1,8 +1,9 @@
 # Stylix HM-side target enables for the TUI stack. Stylix's palette
-# propagation comes from modules/core/nixos/foundation.nix (the
-# NixOS-side module sets stylix.enable = true and auto-wires HM via
-# homeManagerIntegration). This module is the explicit whitelist of
-# which HM-managed tools cede their theming to Stylix.
+# propagation comes from modules/core/nixos/stylix-palette.nix (the
+# system-side module imported by foundation, which sets stylix.enable
+# = true and auto-wires HM via homeManagerIntegration). This module is
+# the explicit whitelist of which HM-managed tools cede their theming
+# to Stylix.
 #
 # Standalone module, not a bundle — despite the plural filename. It is a
 # single coherent capability (the Stylix-target whitelist) expressed as a
