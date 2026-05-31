@@ -17,7 +17,7 @@
 # default.nix. See ADR-019. Operator identity (HM attr-name + homeDirectory)
 # comes from lib/operator.nix per #49 so the same record will feed a
 # Darwin equivalent when mac-mini lands (epic #11).
-{ hostContext, ... }:
+{ hostContext, inputs, ... }:
 let
   operator = import ../../lib/operator.nix;
 in
@@ -33,7 +33,11 @@ in
     # write them.
     backupFileExtension = "hm-bak";
 
-    extraSpecialArgs = { inherit hostContext; };
+    # `inputs` is forwarded so HM modules can import flake-provided HM
+    # modules internally (e.g. `inputs.zen-browser.homeModules.default`
+    # in home/nixos/zen-browser.nix). Repo-local HM modules that don't
+    # need flake-input access can ignore the arg.
+    extraSpecialArgs = { inherit hostContext inputs; };
 
     users.${operator.name} = _: {
       imports = hostContext.extraHomeModules or [ ];
