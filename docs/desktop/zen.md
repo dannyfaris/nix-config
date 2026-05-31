@@ -14,13 +14,14 @@ theming and Zen's intra-browser context model (workspaces /
 essentials / sidebar / pinned tabs / split-view) displace Firefox.
 See #127 for the revisit context.
 
-Enabled via `home/core/nixos/zen-browser.nix` (HM module
+Enabled via `home/nixos/zen-browser.nix` (HM module
 `programs.zen-browser.enable = true` + a `default` profile so Stylix
 has somewhere to write its prefs). The home-manager module ships
-from a community flake input (chosen during the wiring PR per #127).
-Stylix integration via `stylix.targets.zen-browser.enable = true` +
+from the `0xc000022070/zen-browser-flake` community flake input
+(`homeModules.default` = the `beta` release stream). Stylix
+integration via `stylix.targets.zen-browser.enable = true` +
 `stylix.targets.zen-browser.profileNames = [ "default" ]` in
-`home/core/shared/stylix-targets.nix` — `enableCss = true` is
+`home/shared/stylix-targets.nix` — `enableCss = true` is
 upstream-default so chrome + content theming run from day 1, unlike
 Firefox's stock-chrome posture.
 
@@ -65,26 +66,40 @@ intra-browser context model) justify replacing Firefox.
 
 ## Configuration
 
-**Flake input** — `flake.nix` carries the community-flake input for
-Zen. Concrete flake selection deferred to the wiring PR per #127.
-The eventual shape:
+**Flake input** — `flake.nix` carries the `0xc000022070/zen-browser-flake`
+community-flake input. Selected from the available Zen-browser flakes
+in the ecosystem for: active maintenance verified by commit content
+across recent history (not just timestamp churn from auto-update
+bots), larger community (~890 stars at selection), multi-track
+`homeModules` (`beta`, `twilight`, `twilight-official`; `default`
+aliases `beta`), and follows-clauses for both `nixpkgs` and
+`home-manager` so the flake inherits our pins rather than
+duplicating them. The shape:
 
 ```nix
 inputs.zen-browser = {
-  url = "github:OWNER/zen-browser-flake";  # owner settled per #127
+  url = "github:0xc000022070/zen-browser-flake";
   inputs.nixpkgs.follows = "nixpkgs";
+  inputs.home-manager.follows = "home-manager";
 };
 ```
 
 The flake's home-manager module reaches the HM scope via the
-project's home-manager wiring (likely
-`modules/core/nixos/home-manager.nix`'s `sharedModules` surface);
-exact shape lands per #127.
+`extraSpecialArgs = { inherit hostContext inputs; }` wiring in
+`modules/nixos/home-manager.nix`. That makes `inputs` available to
+HM modules; `home/nixos/zen-browser.nix` then imports
+`inputs.zen-browser.homeModules.default` internally (see the HM
+module block below). This pattern is new with the Zen wiring — the
+first HM module sourced from a flake input rather than a repo-local
+path — and the same shape will serve future flake-input HM modules.
 
-**HM module** — `home/core/nixos/zen-browser.nix`:
+**HM module** — `home/nixos/zen-browser.nix`:
 
 ```nix
-_: {
+{ inputs, ... }:
+{
+  imports = [ inputs.zen-browser.homeModules.default ];
+
   programs.zen-browser = {
     enable = true;
     profiles.default = {
@@ -95,7 +110,7 @@ _: {
 }
 ```
 
-Lives under `home/core/nixos/` because the audit is metis-only.
+Lives under `home/nixos/` because the audit is metis-only.
 firefox.md's "gated by `xdg.mimeApps` being Linux-only, not package
 portability" framing doesn't apply here because zen-browser.nix
 doesn't register `xdg.mimeApps` during the audit; the placement is
@@ -109,27 +124,23 @@ Stylix has a profile name to target; settings, bookmarks, extensions,
 workspaces, essentials can land here later (though most of Zen's
 distinguishing state is non-declarative — see Sharp edges).
 
-The HM submodule shape above (`id`, `isDefault`) assumes the chosen
-flake exposes `programs.zen-browser.profiles.<name>` with keys
-identical to home-manager's `programs.firefox.profiles.<name>`. This
-is the structure Stylix's Zen target writes into (via
-`programs.zen-browser.profiles.<name>.{settings,userChrome,userContent}`),
-so the chosen flake must expose at least those keys; verify against
-the flake at the wiring PR.
+The HM submodule shape (`id`, `isDefault`,
+`profiles.<name>.{settings,userChrome,userContent}`) is confirmed
+against the `0xc000022070` flake's HM module — matches home-manager's
+`programs.firefox.profiles.<name>` shape, which is the structure
+Stylix's Zen target writes into.
 
 **Wayland enablement** — none required, expected. Zen is expected to
 inherit Firefox's runtime `WAYLAND_DISPLAY` auto-detection given the
-shared Gecko lineage; the wrapper-script shape from the chosen flake
-confirms this at wiring time. Niri sets `WAYLAND_DISPLAY` for
-session-spawned processes; launching Zen from fuzzel inside niri
-should run Zen in Wayland mode. The verification path is
-`about:support` → "Window Protocol" row reads `wayland`; no XWayland
-fallback needed. If a future regression forces a downgrade to
-XWayland, the same lever Firefox uses — `MOZ_ENABLE_WAYLAND=0` — is
-expected to work for Zen given the shared Gecko/wrapper lineage; not
-verified for Zen specifically at this writing.
+shared Gecko lineage. Niri sets `WAYLAND_DISPLAY` for session-spawned
+processes; launching Zen from fuzzel inside niri should run Zen in
+Wayland mode. The verification path is `about:support` → "Window
+Protocol" row reads `wayland` — to confirm during the audit, not
+verified at this writing. If a future regression forces a downgrade
+to XWayland, the same lever Firefox uses — `MOZ_ENABLE_WAYLAND=0` —
+is expected to work for Zen given the shared Gecko/wrapper lineage.
 
-**Stylix integration** — `home/core/shared/stylix-targets.nix`:
+**Stylix integration** — `home/shared/stylix-targets.nix`:
 
 ```nix
 stylix.targets.zen-browser = {
@@ -206,7 +217,7 @@ firefox.md's `xdg.mimeApps.defaultApplications` continues to register
 `firefox.desktop` as the default URL handler. If Zen displaces
 Firefox at #127's decision point, the practical move is to migrate
 the `xdg.mimeApps.defaultApplications` block from
-`home/core/nixos/firefox.nix` into `home/core/nixos/zen-browser.nix`
+`home/nixos/firefox.nix` into `home/nixos/zen-browser.nix`
 (replacing `firefox.desktop` with the chosen flake's Zen desktop
 entry) alongside removing `firefox.nix` — not a rename in place.
 
@@ -313,15 +324,30 @@ its own directory tree (per the chosen flake's expectations; commonly
 two browsers; the shared name is a Stylix-target-readability
 convenience, not a coupling.
 
+**Flake-input HM modules are flake-coupled by construction.** The
+`extraSpecialArgs = { inherit hostContext inputs; }` wiring in
+`modules/nixos/home-manager.nix` makes `inputs` available to HM
+modules, which is how `home/nixos/zen-browser.nix` reaches
+`inputs.zen-browser.homeModules.default`. This couples that HM
+module to flake-parts evaluation — it can't be reused outside this
+flake without rewriting the `inputs.X` references. Acceptable
+tradeoff for this repo (flake-only), but worth knowing before
+adding more flake-input HM modules: repo-local HM modules stay
+portable; flake-input ones don't. If a non-flake HM consumer ever
+becomes a requirement, the pattern needs revisiting.
+
 ## References
 
-- [`home/core/nixos/zen-browser.nix`](../../home/core/nixos/zen-browser.nix)
+- [`home/nixos/zen-browser.nix`](../../home/nixos/zen-browser.nix)
   — the HM module enabling Zen + stub profile.
-- [`home/core/shared/stylix-targets.nix`](../../home/core/shared/stylix-targets.nix)
+- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
   — `stylix.targets.zen-browser.profileNames`.
-- [`home/core/nixos/bundles/desktop-env.nix`](../../home/core/nixos/bundles/desktop-env.nix)
+- [`home/nixos/bundles/desktop-env.nix`](../../home/nixos/bundles/desktop-env.nix)
   — bundle import.
-- [`flake.nix`](../../flake.nix) — community flake input for Zen.
+- [`modules/nixos/home-manager.nix`](../../modules/nixos/home-manager.nix)
+  — `extraSpecialArgs` threading `inputs` into HM modules.
+- [`flake.nix`](../../flake.nix) — `0xc000022070/zen-browser-flake`
+  community flake input.
 - [firefox.md](./firefox.md) — sibling selection doc; live alternative
   under this audit.
 - [fonts.md](./fonts.md) — `stylix.fonts.*` selections that flow into

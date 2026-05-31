@@ -18,6 +18,10 @@
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
+#   - zen-browser.nix — programs.zen-browser.enable + stub default
+#     profile. Audit-phase parallel installation alongside Firefox
+#     per #127; HM module sourced from the 0xc000022070 community
+#     flake. See docs/desktop/zen.md.
 #   - cursor-ide.nix — home.packages addition for pkgs.code-cursor
 #     (AI-coding-focused vscode fork; Wayland via host-wide
 #     NIXOS_OZONE_WL set in modules/nixos/electron-wayland.nix).
@@ -41,6 +45,7 @@
     ../fnott.nix
     ../waybar.nix
     ../firefox.nix
+    ../zen-browser.nix
     ../cursor-ide.nix
   ];
 }

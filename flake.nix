@@ -45,6 +45,18 @@
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Community flake for the Zen browser. Tracks the `beta` release
+    # stream by default via `homeModules.default`; `homeModules.twilight`
+    # and `homeModules.twilight-official` are available for pre-release
+    # tracks (not used). nixpkgs has open-but-stalled re-init PR for Zen
+    # (NixOS/nixpkgs#496647); we use this flake until that lands.
+    # Audit-phase wiring per #127; see docs/desktop/zen.md.
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
   };
 
   outputs =

@@ -95,6 +95,32 @@ in
       enable = true;
       profileNames = [ "default" ];
     };
+    # zen-browser — desktop-host-only (metis). Audit-phase parallel
+    # installation alongside Firefox per #127. Stylix's
+    # `targets.zen-browser` *option* is always declared via the
+    # autoload mechanism, so setting `enable = true` here doesn't
+    # fail on mercury / nixos-vm. What gates is the target's *config*
+    # emission, which is wrapped in
+    # `lib.optionals (options.programs ? zen-browser) [ … ]` inside
+    # `modules/zen-browser/hm.nix` upstream — and `programs.zen-browser`
+    # only exists where the flake HM module is imported (metis, via
+    # `home/nixos/zen-browser.nix`). Net: a no-op on non-desktop hosts,
+    # writes prefs on metis. profileNames must match the profile
+    # declared in home/nixos/zen-browser.nix.
+    # Stylix writes font name prefs, reader-mode colours,
+    # userChrome.css (full base16 mapping into Zen's own --zen-*
+    # variable surface), and userContent.css (about:-page chrome
+    # styling). `enableCss = true` is the upstream default and
+    # intentionally not restated — disabling it would defeat the
+    # audit. Unlike Firefox's Stylix target, Zen's target does NOT
+    # write font.size — Zen falls back to its built-in font sizing;
+    # see docs/desktop/zen.md §Sharp edges. The two surfaces (the
+    # profile name here and `programs.zen-browser.profiles.default`
+    # in zen-browser.nix) must stay in lockstep.
+    zen-browser = {
+      enable = true;
+      profileNames = [ "default" ];
+    };
     # gtk + qt — toolkit-level theming, no per-app gating upstream
     # (unlike foot/fuzzel/fnott/waybar/firefox above, which gate on
     # `programs.<X>.enable` and become inert on non-desktop hosts). Gated
