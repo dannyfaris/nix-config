@@ -41,6 +41,12 @@ truth, eliminating drift between AI memory and in-repo reference.
   repo. The "most-communicative term" rule and how it's applied. When role
   names win, when tool names win, when collective category names win.
 
+- **[identities.md](./identities.md)** — the cross-tool convention for the
+  operator's personal / work identity split: direction (personal default,
+  work conditional under `~/work/`), trigger boundary, participating tools,
+  failure modes. Where future tools that grow per-identity state should
+  refer when wiring their split.
+
 - **[decisions/](./decisions/)** — Architecture Decision Records (ADRs), one
   per major decision. Light-format: Context / Decision / Rationale /
   Consequences / Implementation. See
