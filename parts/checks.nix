@@ -31,7 +31,7 @@
   # parts/formatter.nix builds (config.treefmt.build.wrapper) — flake-parts
   # merges every perSystem module, so the formatter's config resolves here.
   perSystem =
-    { config, ... }:
+    { config, pkgs, ... }:
     {
       pre-commit.settings.hooks =
         let
@@ -95,6 +95,27 @@
             files = "^(modules|home)/shared/.*\\.nix$";
             language = "system";
             pass_filenames = true;
+          };
+
+          # Enforces ADR-027 §Decision / PRD §8.1 #4 bundle-purity on
+          # foundation.nix and every bundles/<X>.nix file: an aggregator
+          # must contain `{ imports = [ ≥ 2 distinct entries ]; }` and
+          # nothing else — no inline option setting, no extra top-level
+          # attributes. Replaces the retired role-purity rule.
+          bundle-purity = {
+            enable = true;
+            name = "bundle-purity";
+            entry = "bash ${../scripts/lint-bundle-purity.sh}";
+            files = "^(modules|home)/[^/]+/(bundles/.*|foundation)\\.nix$";
+            language = "system";
+            pass_filenames = true;
+            # git-hooks.nix's `run` derivation scrubs PATH; the lint
+            # uses `nix-instantiate --parse` for canonicalisation and
+            # needs the binary injected explicitly. `pkgs.nix` pins
+            # the parser to the same Nix the flake itself uses, so the
+            # lint's parsed-AST shape can't drift from what other tools
+            # in the dev-shell see.
+            extraPackages = [ pkgs.nix ];
           };
         };
     };
