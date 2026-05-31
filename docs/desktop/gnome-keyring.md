@@ -83,8 +83,9 @@ PAM token) and its `session` phase (to unlock with it). The greetd +
 `useTextGreeter` + tuigreet path is exactly the combination where that
 auth→session hand-off is known to be fragile. The PAM stack on metis
 today *does* carry `pam_gnome_keyring` in all three phases (`auth`,
-`password`, `session auto_start`) — verify empirically per [Sharp
-edges](#sharp-edges).
+`password`, `session auto_start`), and the auth→session hand-off has
+been **verified to fire on metis** (2026-05-31, post-#116 merge — see
+[Sharp edges](#sharp-edges) for the test record).
 
 ### SSH_AUTH_SOCK ownership
 
@@ -173,32 +174,38 @@ ownership](#ssh_auth_sock-ownership).
 
 ## Sharp edges
 
-- **(Primary) PAM auto-unlock under tuigreet — verify empirically.**
-  `pam_gnome_keyring` unlocks only if greetd's PAM service runs both its
-  `auth` phase (capturing the password into the PAM token) and its
-  `session` phase (unlocking with it). The greetd + `useTextGreeter` +
-  tuigreet combination is the known-fragile case for that hand-off — the
-  token does not always propagate from auth to session the way
-  `login`/GDM/SDDM stacks do. The PAM stack on metis today carries
-  `pam_gnome_keyring` in all three phases (`auth`, `password`,
-  `session auto_start`), so the wiring is in place; whether the
-  auth→session hand-off actually fires under tuigreet is the empirical
-  question. Verification: after login, with no manual unlock, run
+- **PAM auto-unlock under tuigreet — verified working on metis
+  (2026-05-31).** `pam_gnome_keyring` only unlocks if greetd's PAM
+  service runs both its `auth` phase (capturing the password into the
+  PAM token) and its `session` phase (unlocking with it). The greetd +
+  `useTextGreeter` + tuigreet combination is the known-fragile case for
+  that hand-off — the token does not always propagate from auth to
+  session the way `login`/GDM/SDDM stacks do. The PAM stack on metis
+  carries `pam_gnome_keyring` in all three phases (`auth`, `password`,
+  `session auto_start`), and a post-#116 verification run from a fresh
+  tuigreet login showed:
 
   ```
-  secret-tool store --label=verify attr1 testvalue
-  # type any string, press Enter
-  secret-tool lookup attr1 testvalue
-  # should print the string with no prompt
-  secret-tool clear attr1 testvalue
+  $ busctl --user get-property org.freedesktop.secrets \
+      /org/freedesktop/secrets/collection/login \
+      org.freedesktop.Secret.Collection Locked
+  b false                                            # ← unlocked
+
+  $ printf 'fresh-login-payload' | secret-tool store \
+      --label=verify claude-fresh metis-2026-05-31          # exit 0, no prompt
+  $ secret-tool lookup claude-fresh metis-2026-05-31
+  fresh-login-payload                                # ← round-trip OK
+  $ secret-tool clear claude-fresh metis-2026-05-31         # exit 0
   ```
 
-  A round-trip with no prompt confirms unlock fired. `busctl --user list
-  | grep secrets` should also show the `org.freedesktop.secrets` name (it
-  already does on metis today — the daemon is live). If auto-unlock
-  fails, the fallbacks are (a) ensure `pam_gnome_keyring` is on the
-  session phase as well as auth, or (b) accept a one-time interactive
-  unlock on first secret access.
+  **Re-verify whenever any of the load-bearing pieces change**: the
+  greetd module's PAM wiring, the
+  tuigreet/useTextGreeter path, niri-flake's keyring activation, or the
+  sops-managed login password (see "First-login bootstrap" below). If a
+  future change ever breaks the hand-off, the fallbacks are (a) confirm
+  `pam_gnome_keyring` is still on the `session` phase as well as `auth`,
+  or (b) accept a one-time interactive unlock on first secret access (no
+  prompter on niri — would break Cursor's silent token push).
 - **`gcr-ssh-agent` claims `SSH_AUTH_SOCK`.** See [SSH_AUTH_SOCK
   ownership](#ssh_auth_sock-ownership). Resolution lives in #112.
 - **First-login bootstrap.** The login keyring is created with the
