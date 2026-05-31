@@ -1,7 +1,9 @@
 # Continuous-integration outputs: per-host system.build.toplevel checks
-# plus git-hooks.nix pre-commit hooks. nixfmt lives in parts/formatter.nix
-# (treefmt-managed), not here, so each .nix file gets exactly one nixfmt
-# pass per `nix flake check`.
+# plus git-hooks.nix pre-commit hooks. The formatter list (nixfmt + shfmt)
+# and its exclude globs are defined once in parts/formatter.nix; the
+# treefmt pre-commit hook below reuses that same wrapper rather than
+# re-declaring the tools, so format enforcement at commit-time and at
+# `nix flake check`/CI-time share a single source of truth.
 #
 # See docs/decisions/ADR-025-ci-in-flake.md for the framework rationale.
 { inputs, self, ... }:
@@ -24,58 +26,78 @@
   # Pre-commit hooks. git-hooks.nix lifts these to checks.<system>.pre-commit
   # automatically; the local hook is installed by config.pre-commit.shellHook
   # from parts/dev-shells.nix on `nix develop`.
-  perSystem = _: {
-    pre-commit.settings.hooks =
-      let
-        # Auto-generated hardware-configuration.nix files (per ADR-023) have
-        # inherent statix/deadnix violations that can't be refactored
-        # without breaking the regenerate-via-nixos-anywhere contract. The
-        # nixos-vm legacy two-file shape (hardware.nix) is the same story.
-        # Deadnix consumes this as its per-file filter. Statix runs
-        # whole-tree (pass_filenames = false in git-hooks.nix), so the
-        # load-bearing exclude lives in ./statix.toml; this list only
-        # spares pre-commit from invoking statix when a commit touches
-        # *only* the listed files.
-        autoGenExcludes = [
-          "^hosts/[^/]+/hardware-configuration\\.nix$"
-          "^hosts/nixos-vm/hardware\\.nix$"
-        ];
-      in
-      {
-        statix = {
-          enable = true;
-          excludes = autoGenExcludes;
-        };
-        deadnix = {
-          enable = true;
-          excludes = autoGenExcludes;
-        };
-        actionlint.enable = true;
+  #
+  # `config` is in scope so the treefmt hook can reuse the wrapper that
+  # parts/formatter.nix builds (config.treefmt.build.wrapper) — flake-parts
+  # merges every perSystem module, so the formatter's config resolves here.
+  perSystem =
+    { config, ... }:
+    {
+      pre-commit.settings.hooks =
+        let
+          # Auto-generated hardware-configuration.nix files (per ADR-023) have
+          # inherent statix/deadnix violations that can't be refactored
+          # without breaking the regenerate-via-nixos-anywhere contract. The
+          # nixos-vm legacy two-file shape (hardware.nix) is the same story.
+          # Deadnix consumes this as its per-file filter. Statix runs
+          # whole-tree (pass_filenames = false in git-hooks.nix), so the
+          # load-bearing exclude lives in ./statix.toml; this list only
+          # spares pre-commit from invoking statix when a commit touches
+          # *only* the listed files.
+          autoGenExcludes = [
+            "^hosts/[^/]+/hardware-configuration\\.nix$"
+            "^hosts/nixos-vm/hardware\\.nix$"
+          ];
+        in
+        {
+          statix = {
+            enable = true;
+            excludes = autoGenExcludes;
+          };
+          deadnix = {
+            enable = true;
+            excludes = autoGenExcludes;
+          };
+          actionlint.enable = true;
 
-        # Enforces ADR-023's "do not hand-edit hardware-configuration.nix"
-        # rule. Regex excludes hosts/nixos-vm/hardware.nix (legacy two-file
-        # shape) — intentional carve-out per ADR-023.
-        hardware-config-banner = {
-          enable = true;
-          name = "hardware-config-banner";
-          entry = "bash ${../scripts/hardware-config-banner.sh}";
-          files = "^hosts/[^/]+/hardware-configuration\\.nix$";
-          language = "system";
-          pass_filenames = true;
-        };
+          # Format enforcement at commit-time. Reuses the treefmt wrapper
+          # built by parts/formatter.nix (config.treefmt.build.wrapper)
+          # rather than re-declaring nixfmt/shfmt or their exclude globs,
+          # so the formatter list and carve-outs stay single-source. Before
+          # this hook, format violations were caught only at
+          # `nix flake check`/CI-time (via checks.<system>.treefmt), which
+          # stays in place as the belt-and-braces CI gate — a multiline
+          # string mis-format in greetd.nix slipped past a local commit and
+          # only failed in CI (#54 P5.5). Per #64.
+          treefmt = {
+            enable = true;
+            packageOverrides.treefmt = config.treefmt.build.wrapper;
+          };
 
-        # Enforces platform-purity in shared/ trees: code under
-        # modules/core/shared/ and home/core/shared/ must be platform-
-        # agnostic (no stdenv.isDarwin etc.). Preventative — both trees
-        # are clean today; lint protects against drift as Darwin onboards.
-        shared-purity = {
-          enable = true;
-          name = "shared-purity";
-          entry = "bash ${../scripts/lint-shared-purity.sh}";
-          files = "^(modules|home)/core/shared/.*\\.nix$";
-          language = "system";
-          pass_filenames = true;
+          # Enforces ADR-023's "do not hand-edit hardware-configuration.nix"
+          # rule. Regex excludes hosts/nixos-vm/hardware.nix (legacy two-file
+          # shape) — intentional carve-out per ADR-023.
+          hardware-config-banner = {
+            enable = true;
+            name = "hardware-config-banner";
+            entry = "bash ${../scripts/hardware-config-banner.sh}";
+            files = "^hosts/[^/]+/hardware-configuration\\.nix$";
+            language = "system";
+            pass_filenames = true;
+          };
+
+          # Enforces platform-purity in shared/ trees: code under
+          # modules/core/shared/ and home/core/shared/ must be platform-
+          # agnostic (no stdenv.isDarwin etc.). Preventative — both trees
+          # are clean today; lint protects against drift as Darwin onboards.
+          shared-purity = {
+            enable = true;
+            name = "shared-purity";
+            entry = "bash ${../scripts/lint-shared-purity.sh}";
+            files = "^(modules|home)/core/shared/.*\\.nix$";
+            language = "system";
+            pass_filenames = true;
+          };
         };
-      };
-  };
+    };
 }
