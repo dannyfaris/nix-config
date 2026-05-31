@@ -51,7 +51,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [006](./ADR-006-cli-utilities.md) | CLI utilities | rg, fd, fzf, bat, eza, zoxide, lazygit, lazydocker, yazi, htop, dust, jq | Modern Unix replacements |
 | [007](./ADR-007-nix-tooling.md) | Nix tooling | nh, nom, nixd, nixfmt, statix, deadnix | Modern overlay on nix UX |
 | [008](./ADR-008-agent-clis.md) | AI coding agents | Claude Code + Cursor (base), Codex + Gemini (extras) | OAuth login flows; extras opt-in per host |
-| [009](./ADR-009-git.md) | Git | dual identity, HTTPS+token | personal/work split via gitdir; HTTPS via gh/glab credential helpers |
+| [009](./ADR-009-git.md) | Git | dual identity, HTTPS+token | personal/work split via gitdir; HTTPS via gh/glab credential helpers. **Amended by ADR-031** (default direction flipped from personal+work-conditional to work+personal-conditional) |
 | [010](./ADR-010-ssh.md) | SSH | defaults only | Outbound key generation deferred (HTTPS git removes the need) |
 | [011](./ADR-011-remote-dev-qol.md) | Remote-dev QoL | mosh + OSC52 | Session resilience; cross-machine clipboard |
 | [012](./ADR-012-taxonomy.md) | Module taxonomy | Most-communicative term | The naming rule itself, as a meta-decision |
@@ -73,6 +73,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [028](./ADR-028-stylix-foundation-and-desktop-env.md) | Theming + desktop env | Stylix in foundation; desktop arrives on metis | **Amended by ADR-029** (item 3 retracted; items 1–2 stand and are implemented). Niri + Foot + greetd; Stylix-canonical for TUI / foot / GTK / Qt / niri chrome. |
 | [029](./ADR-029-niri-only-desktop.md) | Desktop after DMS retraction | niri-only; per-tool selection model | Retracts ADR-028 §Decision item 3 (DMS) + §Implementation slice 4. Preserves ADR-028 §Decision items 1–2. Per-tool selections (#72–#77) land as `docs/desktop/<tool>.md` per issue; first two living documents (`keybinds.md`, `fonts.md`) landed during #69. |
 | [030](./ADR-030-nixpkgs-channel.md) | nixpkgs channel | `nixos-unstable`, weekly flake-lock | Records the existing choice; weekly bump PR with manual merge after green CI. Aligns with Stylix + niri-flake + home-manager all tracking unstable. Migration triggers named for Darwin onboarding and repeated Stylix breakage. |
+| [031](./ADR-031-git-identity-default-flip.md) | Git identity default | work as default, personal as gitdir-conditional | Flips ADR-009's direction; closes the personal-email-in-work-history leak. Explicit `gitdir:~/nix-config/` carve-out preserves the flake checkout's location and `NH_FLAKE` wiring. |
 
 ## Conventions
 
