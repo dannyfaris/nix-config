@@ -4,10 +4,12 @@
 # docs/decisions/ADR-022 (host install via nixos-anywhere + disko) and
 # enforces the per-host file structure described in ADR-023.
 #
-# `just` itself is not yet a home-manager package in this repo. Install
-# ad-hoc via `nix shell nixpkgs#just -c just <recipe>`, or run via
-# `nix run nixpkgs#just -- <recipe>`. Adding `just` to home-manager is
-# a separate question.
+# `just` is provided by the repo's `devShells.default` (parts/dev-shells.nix),
+# so it is on PATH automatically whenever direnv loads this repo's flake
+# (`.envrc` = `use flake`) or you run `nix develop`. It is deliberately not a
+# home-manager package: nix-config is the only justfile consumer in the fleet,
+# so a global install would put `just` on every host (headless ones included)
+# for a tool only ever invoked here. See #40 for the closed rationale.
 #
 # Recipes with multi-line prose comments put the one-line docstring
 # (the bit `just --list` shows) on the line directly above the recipe,
