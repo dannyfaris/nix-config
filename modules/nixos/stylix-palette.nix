@@ -37,7 +37,7 @@
 }:
 let
   palettes = import ../../lib/host-palettes.nix;
-  scheme = palettes.${hostContext.hostName};
+  palette = palettes.${hostContext.hostName};
 in
 {
   imports = [ inputs.stylix.nixosModules.stylix ];
@@ -45,6 +45,14 @@ in
   stylix = {
     enable = true;
     autoEnable = false;
-    base16Scheme = "${pkgs.base16-schemes}/share/themes/${scheme}.yaml";
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/${palette.scheme}.yaml";
+    # Per-host polarity so dark-aware apps (Firefox web content, Zen
+    # chrome, GTK file pickers, Qt platform theme) follow the host's
+    # actual visual intent. Without this, Stylix defaults to
+    # `polarity = "either"` and writes no dark/light signal anywhere
+    # (no gtk-application-prefer-dark-theme, no portal color-scheme),
+    # so apps render in their light defaults even on a dark palette.
+    # See #123.
+    inherit (palette) polarity;
   };
 }
