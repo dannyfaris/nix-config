@@ -112,18 +112,21 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - Desktop environment lands on metis (x86_64) per ADR-028
   (Stylix-foundation + bundle composition), amended by
   [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only
-  direction; per-tool selections). Stack: niri + foot + greetd,
-  with Stylix as the theme source-of-truth across TUI, foot, GTK/Qt,
-  and niri's focus-ring/cursor chrome. Per-tool selections
-  (application launcher, notification daemon, status bar, browser,
-  IDE) land deliberately as `docs/desktop/<tool>.md` selection
-  rationale per issue (#72–#77). The previously-recorded "do not
-  resurrect waybar/fuzzel/mako" guidance is inverted by ADR-029 —
-  those components are the expected direction via the per-tool
-  issues. First two living documents (`docs/desktop/keybinds.md`,
-  `docs/desktop/fonts.md`) landed during #69's close-out (PRs
-  #80 + #81). Desktop modules are not installed on nixos-vm —
-  UTM's Apple Virtualization Framework lacks `EGL_EXT_device_drm`
+  direction; per-tool selections). Stack: niri + foot + greetd, with
+  Stylix as the theme source-of-truth for the TUI surface, foot,
+  fuzzel, fnott, waybar, firefox, and GTK/Qt toolkit theming.
+  Pointer + icon cohesion (`stylix.cursor`, `stylix.icons`, niri
+  focus-ring) is tracked separately under #110 — promised by ADR-028
+  but not yet wired. Per-tool selections (application launcher,
+  notification daemon, status bar, browser, IDE) land deliberately
+  as `docs/desktop/<tool>.md` selection rationale per issue
+  (#72–#77). The previously-recorded "do not resurrect waybar /
+  fuzzel / mako" guidance is inverted by ADR-029 — waybar and fuzzel
+  are now the chosen status bar and launcher; fnott (not mako) is
+  the chosen notification daemon. Living documents under
+  [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each
+  per-tool selection. Desktop modules are not installed on nixos-vm
+  — UTM's Apple Virtualization Framework lacks `EGL_EXT_device_drm`
   and cannot render Wayland compositors.
 
 ## Open work
