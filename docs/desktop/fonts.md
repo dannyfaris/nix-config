@@ -133,8 +133,9 @@ model), so the cadence is lighter than for keybinds.
 
 - `modules/core/nixos/desktop-fonts.nix` — Stylix font config + install
   wiring for desktop hosts.
-- `modules/core/nixos/foundation.nix` — Stylix base config (no font
-  selections; deliberately).
+- `modules/core/nixos/stylix-palette.nix` — Stylix base config: the
+  module enable + per-host base16 palette (no font selections;
+  deliberately). Imported by foundation, so it reaches every host.
 - `home/core/nixos/foot.nix` — foot terminal config; consumes
   `stylix.fonts.monospace.name` via Stylix's foot target.
 - `home/core/shared/stylix-targets.nix` — Stylix target enablement

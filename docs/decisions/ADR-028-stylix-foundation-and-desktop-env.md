@@ -268,3 +268,23 @@ The corresponding code change — deleting `home/core/nixos/dms.nix`,
 flake input, and the bundle imports from both `desktop-env` bundles
 — ships in a separate follow-up PR under issue #70. This amendment
 is docs-only.
+
+### Stylix palette moved from foundation into stylix-palette.nix (2026-05-31)
+
+Decision item 1 above placed Stylix in foundation by importing
+`inputs.stylix.nixosModules.stylix` *and setting the per-host palette
+inline* in `modules/core/nixos/foundation.nix`. That inline block
+violated ADR-027's `bundle-purity` rule (foundation must be a pure
+`imports` list), a contradiction that surfaced when #54 P5.1 went to
+build the enforcing lint.
+
+The stylix module import and the per-host `base16Scheme` lookup now live
+in a dedicated `modules/core/nixos/stylix-palette.nix`, which foundation
+imports. **Decision items 1 and 2 are unchanged in substance** — Stylix
+is still foundation-wide (every host imports foundation, which imports
+stylix-palette.nix), and the per-host base16 palette from
+`lib/host-palettes.nix` is still the single source of truth. Only the
+*placement* of the wiring moved, so foundation stays a uniform
+imports-list aggregator. Full rationale and the alternatives weighed are
+in ADR-027 §History (2026-05-31). This amendment is docs-only; the code
+change ships under #54.
