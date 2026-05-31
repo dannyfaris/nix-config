@@ -26,8 +26,29 @@ in
       # `$nix_shell` slots between `$directory` and `$git_branch` so the
       # `(❄️)` renders as path-metadata (matches the statusline). See
       # ADR-002's `(…)`-as-metadata convention.
-      format = "\${custom.host_local}\${custom.host_ssh}$directory$nix_shell$git_branch$git_status$character";
+      #
+      # `$line_break` before `$character` puts metadata on line 1 and
+      # the prompt chevron on its own line 2 — Pure-style two-line shape.
+      # Trades one vertical line per active prompt for an unbounded
+      # typing area, and pairs with `transient_prompt` below so executed
+      # prompts collapse to a bare chevron in scrollback (net negative
+      # vertical chrome vs the previous single-line layout).
+      format = "\${custom.host_local}\${custom.host_ssh}$directory$nix_shell$git_branch$git_status$line_break$character";
+      # `add_newline` controls the blank line *between* commands, not
+      # within a prompt. Compact spacing stays.
       add_newline = false;
+
+      # Transient prompt — once a command executes, the prompt-just-
+      # executed is redrawn as a bare `$character` chevron. Scrollback
+      # holds `❯ <cmd>` lines only; the full two-line metadata block
+      # exists only at the active prompt. `$character` inherits its
+      # styling from starship's defaults (`[❯](bold green)` on success,
+      # `[❯](bold red)` on error), and those `green`/`red` names resolve
+      # through Stylix's injected starship palette to base0B/base08 of
+      # the active scheme — so failed commands stay visibly red in
+      # scrollback for free. Activation is fish-side via
+      # `enable_transience` (see shell.nix).
+      transient_prompt.format = "$character ";
 
       # Per-module styles — match the role-based palette mapping in the
       # Claude statusline. Stylix exposes both base16-slot names (base0D

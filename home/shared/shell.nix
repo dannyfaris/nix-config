@@ -7,7 +7,21 @@
 _: {
   programs.fish = {
     enable = true;
-    interactiveShellInit = "set -g fish_greeting";
+    interactiveShellInit = ''
+      set -g fish_greeting
+
+      # Activate starship's transient-prompt collapse — executed prompts
+      # redraw as a bare `$character` so scrollback chrome stays minimal.
+      # `enable_transience` is defined by starship's own fish init, which
+      # home-manager places *after* this block in the generated config.
+      # We hook the first `fish_prompt` event (fires once all init has
+      # settled), call it, and self-erase. See prompt.nix for the
+      # transient format and the rationale for the two-line shape.
+      function __enable_transience_once --on-event fish_prompt
+        functions -q enable_transience; and enable_transience
+        functions --erase __enable_transience_once
+      end
+    '';
 
     # Terminal title — surfaces SSH context in the emulator's tab/window
     # chrome (Ghostty etc.). Lives above the shell layer; complements the
