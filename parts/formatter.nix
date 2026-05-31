@@ -5,9 +5,11 @@
 # The assembled wrapper (config.treefmt.build.wrapper) is also consumed by
 # the treefmt pre-commit hook in parts/checks.nix, so format-checking runs
 # at commit-time as well as at `nix flake check`-time off this single
-# config. This file stays the source of truth for the formatter list and
-# its exclude globs; the hook re-declares neither (see #64, ADR-025
-# §History).
+# config. This file stays the source of truth for the formatter list
+# (nixfmt + shfmt); the hook re-declares neither (see #64, ADR-025
+# §History). The auto-generated-hardware-config excludes are sourced from
+# statix.toml via lib/auto-gen-paths.nix — one list, every consumer (see
+# #50, that helper's head comment for the rationale).
 #
 # pkgs.nixfmt is the canonical RFC-style formatter (nixfmt 1.2+). Don't
 # swap with pkgs.nixfmt-rfc-style (deprecated alias) or pkgs.nixfmt-classic
@@ -28,12 +30,10 @@
       # their entirety by `nixos-anywhere --generate-hardware-config` on
       # regenerate; nixos-generate-config's output shape would diff
       # against the formatter on every regenerate. Excluding here keeps
-      # the drop-in property intact. Same carve-out as statix.toml /
-      # parts/checks.nix's autoGenExcludes.
-      settings.global.excludes = [
-        "hosts/*/hardware-configuration.nix"
-        "hosts/nixos-vm/hardware.nix"
-      ];
+      # the drop-in property intact. Canonical list lives in statix.toml;
+      # lib/auto-gen-paths.nix reads it and exposes the glob form here
+      # (same list parts/checks.nix consumes in regex form).
+      settings.global.excludes = (import ../lib/auto-gen-paths.nix).globs;
     };
   };
 }

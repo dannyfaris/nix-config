@@ -40,14 +40,12 @@
           # without breaking the regenerate-via-nixos-anywhere contract. The
           # nixos-vm legacy two-file shape (hardware.nix) is the same story.
           # Deadnix consumes this as its per-file filter. Statix runs
-          # whole-tree (pass_filenames = false in git-hooks.nix), so the
-          # load-bearing exclude lives in ./statix.toml; this list only
+          # whole-tree (pass_filenames = false in git-hooks.nix) and reads
+          # statix.toml at run-time for its own ignore set; this list only
           # spares pre-commit from invoking statix when a commit touches
-          # *only* the listed files.
-          autoGenExcludes = [
-            "^hosts/[^/]+/hardware-configuration\\.nix$"
-            "^hosts/nixos-vm/hardware\\.nix$"
-          ];
+          # *only* the listed files. Canonical list lives in statix.toml;
+          # lib/auto-gen-paths.nix reads it and exposes the regex form.
+          autoGenExcludes = (import ../lib/auto-gen-paths.nix).regexes;
         in
         {
           statix = {

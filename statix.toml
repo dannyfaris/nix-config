@@ -6,6 +6,13 @@
 # inherent statix W20 (repeated-key) warnings from nixos-generate-config's
 # output shape that can't be refactored without breaking ADR-023's
 # regenerate-via-nixos-anywhere contract.
+#
+# CANONICAL LIST for the ADR-023 carve-out. `lib/auto-gen-paths.nix` parses
+# this file and exposes the `ignore` array to the Nix-side consumers
+# (`parts/checks.nix`'s pre-commit excludes in regex form;
+# `parts/formatter.nix`'s treefmt excludes in glob form) so the same set
+# governs every layer. Adding a new auto-generated file: append one glob
+# here; the rest cascades. See #50.
 ignore = [
   "hosts/*/hardware-configuration.nix",
   "hosts/nixos-vm/hardware.nix",
