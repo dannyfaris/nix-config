@@ -245,3 +245,10 @@ Notes:
   produce an `https://...` URL, not `git@github.com:...`. If it does the
   latter, `git_protocol = "https"` isn't applied — investigate before
   declaring the slice done.
+
+## See also
+
+- [docs/identities.md](../identities.md) — the cross-tool generalisation
+  of the dual-identity pattern. ADR-009 is the canonical git instance;
+  Claude Code (#137) is the second adopter, in progress. New tools that
+  grow per-identity state should refer there before wiring their split.
