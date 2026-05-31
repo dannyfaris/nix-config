@@ -71,8 +71,8 @@ new host comes up.
 - [ ] **`~/.gitconfig` precedence trap** (per ADR-009): a legacy
       `~/.gitconfig` from any pre-nix setup silently overrides
       `~/.config/git/config` (XDG, nix-managed) and defeats the
-      gitdir-conditional personal-identity. Verify the file does not
-      exist before declaring identity setup correct.
+      gitdir-conditional work-identity. Verify the file does not exist
+      before declaring identity setup correct.
 - [ ] **`home.sessionVariables` freshness**: a freshly-set env var
       from home-manager needs a *truly fresh* shell to land —
       `exec fish` inherits exported state from the parent and triggers
