@@ -62,8 +62,11 @@ truth, eliminating drift between AI memory and in-repo reference.
   pasteable steps for tasks that aren't (and shouldn't be) declarative.
   Currently:
   [headless-bootstrap.md](./runbooks/headless-bootstrap.md) —
-  bringing up a new headless host (AWS or bare-metal) from clean OS to
-  `nh os switch` via `nixos-anywhere` + `disko`.
+  bringing up a new headless NixOS host (AWS or bare-metal) from
+  clean OS to `nh os switch` via `nixos-anywhere` + `disko`. And
+  [darwin-bootstrap.md](./runbooks/darwin-bootstrap.md) — bringing up
+  a new macOS host from clean state to `nh darwin switch` via the
+  Determinate Systems installer + `nix run nix-darwin -- switch`.
 
 ## Reading order
 

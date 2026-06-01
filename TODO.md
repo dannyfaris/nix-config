@@ -37,7 +37,9 @@ B below is a belt-and-braces extension.
 - [ ] **One-shot, do once on the Mac**: install the age identity at
       `~/.config/sops/age/keys.txt` so the Mac can run `sops` /
       `sops updatekeys` directly. The recipient is already on
-      `.sops.yaml`; this is just the matching private key:
+      `.sops.yaml`; this is just the matching private key. Folded
+      into [docs/runbooks/darwin-bootstrap.md](./docs/runbooks/darwin-bootstrap.md)
+      step 4 — closes when mac-mini's first activation lands.
 
       ```sh
       mkdir -m 700 -p ~/.config/sops/age
@@ -57,11 +59,26 @@ B below is a belt-and-braces extension.
       notifications, status bar, browser, IDE via `docs/desktop/`).
       References: sodiboo/system (niri-flake idioms),
       eduardofuncao/nixferatu (Niri+Stylix end-to-end).
-- [ ] **`mba`, `mac-mini`** — macOS hosts via nix-darwin. Will need
-      a `modules/darwin/` tree mirroring the NixOS one (with its
-      own `foundation.nix`). See also GH issue #8 for the three
-      system modules (mosh, nix-daemon, sshd) deferred pending Darwin
-      onboarding.
+- [ ] **`mac-mini`** — macOS host via nix-darwin (epic #11). Darwin
+      scaffolding landed in stages: `nix-darwin` input + flake
+      plumbing (`parts/darwin.nix`, `lib/mk-darwin-host.nix`);
+      `modules/darwin/` foundation + leaf modules (users, sops,
+      firewall, sshd, mosh, nix-daemon-darwin, host-context,
+      home-manager, stylix-palette); `modules/darwin/linux-builder.nix`
+      (pending merge — see open PR list); `modules/darwin/bundles/remote-access.nix`;
+      `home/darwin/macchina-shell-init.nix`; the per-host palette
+      entry in `lib/host-palettes.nix`. **Outstanding**: the host
+      file itself (`hosts/mac-mini/default.nix` + `mkDarwinHost`
+      invocation in `parts/darwin.nix`), and the operator-side
+      pre-bootstrap + first `nix run nix-darwin -- switch --flake .#mac-mini`
+      on the actual Mac. See [docs/runbooks/darwin-bootstrap.md](./docs/runbooks/darwin-bootstrap.md).
+      Once activated, the host-list updates in CLAUDE.md / PRD §11.3
+      and the project-memory "live fleet" entry follow as a sweep.
+- [ ] **`mba`** — MacBook Air via nix-darwin. Follows mac-mini's
+      bring-up; the Darwin scaffolding is shared. Filed as a
+      placeholder once mac-mini's activation sequence is documented
+      and any host-shape divergences (laptop power/lid, Wi-Fi-only
+      networking) surface.
 
 ## Carryover when new hosts land
 
