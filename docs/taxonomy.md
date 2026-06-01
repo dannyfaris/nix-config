@@ -176,7 +176,7 @@ convention. It is structurally a bundle (same `bundle-purity` rule, same
 
   ```
   modules/nixos/foundation.nix
-  modules/darwin/foundation.nix      # when Darwin lands
+  modules/darwin/foundation.nix
   modules/shared/foundation.nix      # if a cross-platform foundation emerges
   home/nixos/foundation.nix
   home/darwin/foundation.nix
