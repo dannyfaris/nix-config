@@ -11,6 +11,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # nix-darwin — declarative configuration for macOS hosts. Mirrors
+    # the NixOS module system at the system level; consumes home-manager
+    # via its `darwinModules.home-manager` and sops-nix via its
+    # `darwinModules.sops` (sibling to the respective `nixosModules.*`).
+    # Wired into the flake by parts/darwin.nix; instantiated via the
+    # mk-darwin-host constructor at lib/mk-darwin-host.nix. Adopted as
+    # part of the mac-mini onboarding epic (#11).
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -63,13 +75,18 @@
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       # Systems this flake targets. Needed by flake-parts perSystem.
+      # aarch64-darwin lands as part of the mac-mini onboarding epic (#11);
+      # the Darwin host is Apple Silicon, so x86_64-darwin is intentionally
+      # omitted until a real x86_64 Mac arrives.
       systems = [
         "aarch64-linux"
         "x86_64-linux"
+        "aarch64-darwin"
       ];
 
       imports = [
         ./parts/nixos.nix
+        ./parts/darwin.nix
         ./parts/checks.nix
         ./parts/formatter.nix
         ./parts/dev-shells.nix
