@@ -52,5 +52,9 @@
     ../zen-browser.nix
     ../cursor-ide.nix
     ../portal-color-scheme.nix
+    # Desktop-only Stylix targets — co-located with the bundle that
+    # enables them, so desktop hosts pick them up transitively. The
+    # cross-platform TUI targets stay in `home/shared/stylix-targets.nix`.
+    ../stylix-targets-desktop.nix
   ];
 }

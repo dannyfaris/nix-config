@@ -16,7 +16,8 @@
 # (gnome-shell user-themes extension, gnome-shell.css derivation,
 # wallpaper dconf write requiring `stylix.image`) are inappropriate
 # on a niri host that doesn't run gnome-shell, so we leave the
-# target disabled in home/shared/stylix-targets.nix. This module
+# target absent from the desktop whitelist in
+# home/nixos/stylix-targets-desktop.nix. This module
 # writes the polarity-driven dconf key directly without dragging in
 # the gnome-shell-adjacent surface.
 #
