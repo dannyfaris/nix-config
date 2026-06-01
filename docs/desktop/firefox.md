@@ -232,7 +232,8 @@ in lockstep.
 **Firefox profile state is not declarative.** Bookmarks, history,
 cookies, sessions, login DB, extension prefs that aren't
 explicitly set via Nix — all live in
-`$XDG_CONFIG_HOME/mozilla/firefox/default/` as a stateful blob.
+`~/.mozilla/firefox/default/` (the legacy path; see "Profile-config
+XDG path" below for why we pin this) as a stateful blob.
 This is by design (Firefox is a stateful application). The
 declarative HM module writes a small subset of `prefs.js`-equivalents
 and lays down extension packages; everything else is mutable
@@ -240,13 +241,21 @@ runtime state. If `default/` is deleted, Firefox recreates it on
 next launch and Stylix re-writes the declarative prefs on next
 HM-switch; user state (bookmarks, sessions) is lost in that path.
 
-**Profile-config XDG path moved in HM 26.05.** The default
-`configPath` in the HM Firefox module migrated from `.mozilla/firefox`
-to `$XDG_CONFIG_HOME/mozilla/firefox` in HM release 26.05. The
-migration warning in `modules/programs/firefox/default.nix` calls
-this out and points at the move. Our `home.stateVersion` is 26.05
-(set per host), so the new path is what we get; not an issue
-unless we ever step back to an older `stateVersion`.
+**Profile-config XDG path moved in HM 26.05; we pin legacy.** The
+default `configPath` in the HM Firefox module migrated from
+`.mozilla/firefox` to `$XDG_CONFIG_HOME/mozilla/firefox` in HM
+release 26.05. Our `home.stateVersion` is `"25.11"` (set once,
+never change, per `modules/nixos/home-manager.nix`), so the legacy
+path is what HM picks — but HM also emits a per-rebuild warning
+asking us to choose explicitly. We pin
+`programs.firefox.configPath = ".mozilla/firefox"` in
+`home/nixos/firefox.nix` to silence the warning while preserving
+the current on-disk layout. Same pattern as
+`stylix-targets.nix`'s `gtk.gtk4.theme` pin. Migrating to the
+XDG path would require physically moving `~/.mozilla/firefox` →
+`~/.config/mozilla/firefox` (Firefox profile state is not
+declarative — see above); that's a deliberate future move, not
+something to do implicitly via a stateVersion bump.
 
 **Stylix font prefs override Firefox's own font picker UI.** The
 per-profile font.name and font.size prefs that Stylix writes are

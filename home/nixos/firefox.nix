@@ -38,6 +38,13 @@
 _: {
   programs.firefox = {
     enable = true;
+    # Pin the legacy profile-config path. HM 26.05 flipped the default to
+    # `$XDG_CONFIG_HOME/mozilla/firefox`; our `home.stateVersion` is
+    # `"25.11"` (set once, never change) so we still get the legacy path,
+    # but HM warns on every rebuild until we declare intent explicitly.
+    # Same pattern as `gtk.gtk4.theme` in stylix-targets.nix. See
+    # docs/desktop/firefox.md for the migration rationale.
+    configPath = ".mozilla/firefox";
     profiles.default = {
       id = 0;
       isDefault = true;
