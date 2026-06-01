@@ -121,7 +121,8 @@
       ../../home/shared/bundles/git-work.nix
       ../../home/shared/stylix-targets.nix
       ../../home/shared/ssh.nix
-      ../../home/nixos/macchina.nix
+      ../../home/shared/macchina.nix
+      ../../home/nixos/macchina-shell-init.nix
       ../../home/shared/agent-clis.nix
     ];
   };

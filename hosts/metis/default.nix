@@ -78,7 +78,8 @@
       ../../home/shared/stylix-targets.nix
       ../../home/nixos/bundles/desktop-env.nix
       ../../home/shared/ssh.nix
-      ../../home/nixos/macchina.nix
+      ../../home/shared/macchina.nix
+      ../../home/nixos/macchina-shell-init.nix
       ../../home/shared/agent-clis.nix
       ../../home/shared/agent-clis-extras.nix
     ];

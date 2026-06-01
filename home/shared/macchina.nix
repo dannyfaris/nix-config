@@ -1,19 +1,23 @@
-# System info display on login — Macchina with a customised Hydrogen
-# theme that swaps the upstream ASCII for the two-tone NixOS snowflake
-# defined below. Imported by every NixOS host via hostContext.extraHomeModules
-# (the per-host wiring in modules/nixos/home-manager.nix); see ADR-027
-# for the foundation+bundles model that replaced the earlier "role" layer.
+# System info display — Macchina with a customised Hydrogen theme that
+# swaps the upstream ASCII for the two-tone NixOS snowflake defined below.
+#
+# Platform-pure half of the macchina wiring (package + theme + ASCII
+# art). The shell-init half lives in platform-specific siblings —
+# `home/nixos/macchina-shell-init.nix` (Linux: iproute2) and
+# `home/darwin/macchina-shell-init.nix` (Darwin: `route`) — because
+# interface-detection uses platform-specific CLI tools. Each host's
+# extraHomeModules imports BOTH this file and the matching sibling.
+# See ADR-027 for the foundation+bundles model.
 { pkgs, config, ... }:
 let
   esc = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
   # Per-host two-tone NixOS-snowflake from the Stylix palette (ADR-028).
   # base0D = primary accent (blue/cyan family in most base16 schemes);
-  # base0C = secondary accent (cyan/teal family). Replaces the original
-  # hardcoded NixOS-brand RGB(82,119,195) + RGB(127,183,255) — the
-  # silhouette still reads as NixOS regardless of hue; the per-host
-  # SSH-context signal at login time is the win. `inherit (...)` doesn't
-  # work for these attrs because hyphens aren't valid in identifiers,
-  # so we read them off the colours attrset directly.
+  # base0C = secondary accent (cyan/teal family). The silhouette still
+  # reads as NixOS regardless of hue; the per-host SSH-context signal at
+  # shell launch is the win. `inherit (...)` doesn't work for these attrs
+  # because hyphens aren't valid in identifiers, so we read them off the
+  # colours attrset directly.
   c = config.lib.stylix.colors;
   dark = "${esc}[38;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
   light = "${esc}[38;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
@@ -112,28 +116,4 @@ in
       + "${dark}       ◢███◤◥███◣${light}   ◥███◣\n"
       + "${dark}       ◥██◤  ◥███◣${light}   ◥██◤${reset}\n";
   };
-
-  # loginShellInit runs once on SSH login, not on every zellij pane open.
-  # Guard prevents a startup error if macchina is transiently missing from PATH.
-  # Interface priority: tailscale0 when present with an assigned IPv4,
-  # otherwise the interface the kernel would actually use for outbound
-  # traffic (queried via `ip route get`, which respects metric, policy,
-  # and multi-default-route precedence; `ip route show default | first`
-  # is unreliable on multi-homed hosts). Runs without --interface if
-  # neither resolves — Local IP readout is simply absent.
-  programs.fish.loginShellInit = ''
-    if command -q macchina
-        if ip addr show tailscale0 2>/dev/null | string match --quiet --regex 'inet '
-            macchina --interface tailscale0
-        else
-            set -l _iface (ip -o route get 192.0.2.1 2>/dev/null \
-                | string replace --regex --filter '.*\bdev\s+(\S+).*' '$1')[1]
-            if test -n "$_iface"
-                macchina --interface $_iface
-            else
-                macchina
-            end
-        end
-    end
-  '';
 }
