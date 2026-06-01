@@ -1,7 +1,7 @@
 # fnott — Wayland-native notification daemon.
 #
 # Stylix theming is wired centrally via `stylix.targets.fnott.enable
-# = true` in home/shared/stylix-targets.nix; Stylix writes
+# = true` in home/nixos/stylix-targets-desktop.nix; Stylix writes
 # three fonts (title/summary/body all Inter at popups size), full
 # base16 colour palette including per-urgency-level border accents
 # (low → base03, normal → base0D, critical → base08), and the

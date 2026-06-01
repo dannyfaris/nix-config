@@ -1,7 +1,7 @@
 # waybar — GTK3 Wayland status bar.
 #
 # Stylix theming is wired centrally via `stylix.targets.waybar.enable
-# = true` in home/shared/stylix-targets.nix; Stylix writes the
+# = true` in home/nixos/stylix-targets-desktop.nix; Stylix writes the
 # CSS (programs.waybar.style) with the full base16 palette as
 # @define-color variables, default background (@base00 with desktop
 # opacity), text (@base05), tooltips, and per-state workspace-button

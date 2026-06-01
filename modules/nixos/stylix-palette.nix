@@ -1,9 +1,11 @@
 # stylix-palette — the per-host base16 palette, and the Stylix module that
 # consumes it.
 #
-# This is the *system half* of the repo's theming wiring; the home half is
-# home/shared/stylix-targets.nix (the whitelist of which HM-managed
-# tools cede their theming to Stylix). This module owns the upstream:
+# This is the *system half* of the repo's theming wiring; the home half
+# is split across home/shared/stylix-targets.nix (cross-platform TUI
+# targets) and home/nixos/stylix-targets-desktop.nix (desktop-only
+# targets, picked up via the desktop-env bundle). This module owns the
+# upstream:
 #   - imports inputs.stylix.nixosModules.stylix (the engine), and
 #   - sets the per-host base16 scheme that every Stylix target downstream
 #     reads from.
@@ -14,7 +16,8 @@
 #
 # autoEnable = false is the whitelist stance per CLAUDE.md "Deliberate
 # stances" — every Stylix target is enabled deliberately, not auto-
-# detected. The HM-side target enables live in stylix-targets.nix.
+# detected. The HM-side target enables live in the two files above
+# (TUI in shared, desktop in nixos).
 #
 # No font configuration here — there is no universal font intent. Headless
 # hosts (mercury, nixos-vm) don't render fonts; SSH clients use their own.

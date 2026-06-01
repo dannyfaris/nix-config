@@ -2,7 +2,7 @@
 #
 # Stylix theming is wired centrally via
 # `stylix.targets.firefox = { enable = true; profileNames = [ "default" ]; }`
-# in home/shared/stylix-targets.nix. Both fields are required:
+# in home/nixos/stylix-targets-desktop.nix. Both fields are required:
 # `enable` because our foundation sets `stylix.autoEnable = false`
 # (whitelist stance per CLAUDE.md); `profileNames` because Stylix's
 # Firefox module cannot auto-detect profile names without infinite
@@ -42,7 +42,7 @@ _: {
     # `$XDG_CONFIG_HOME/mozilla/firefox`; our `home.stateVersion` is
     # `"25.11"` (set once, never change) so we still get the legacy path,
     # but HM warns on every rebuild until we declare intent explicitly.
-    # Same pattern as `gtk.gtk4.theme` in stylix-targets.nix. See
+    # Same pattern as `gtk.gtk4.theme` in stylix-targets-desktop.nix. See
     # docs/desktop/firefox.md for the migration rationale.
     configPath = ".mozilla/firefox";
     profiles.default = {

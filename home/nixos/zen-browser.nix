@@ -10,7 +10,7 @@
 #
 # Stylix theming is wired centrally via
 # `stylix.targets.zen-browser = { enable = true; profileNames = [ "default" ]; }`
-# in home/shared/stylix-targets.nix. Both fields are required:
+# in home/nixos/stylix-targets-desktop.nix. Both fields are required:
 # `enable` because foundation sets `stylix.autoEnable = false`
 # (whitelist stance per CLAUDE.md); `profileNames` because Stylix's
 # Zen module cannot auto-detect profile names without infinite
