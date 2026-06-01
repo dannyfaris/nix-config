@@ -14,7 +14,7 @@
 # /run/secrets/<name>, sourced by fish shellInit) is the documented
 # fallback.
 #
-# Unfree: cursor-cli is whitelisted in modules/nixos/nix-daemon.nix's
+# Unfree: cursor-cli is whitelisted in modules/shared/nix-daemon.nix's
 # allowUnfreePredicate (alongside claude-code).
 { pkgs, config, ... }:
 let

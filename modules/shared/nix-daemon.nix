@@ -1,4 +1,18 @@
-# Nix daemon settings, garbage collection, and unfree whitelist.
+# Nix daemon settings, garbage collection, and unfree whitelist — the
+# cross-platform kernel. NixOS-only knobs (`programs.command-not-found`
+# and the GC calendar-string syntax) live in the platform-specific
+# sibling `modules/nixos/nix-daemon-nixos.nix`. Darwin's GC scheduling
+# uses the launchd `nix.gc.interval` submodule shape and lives in
+# `modules/darwin/nix-daemon-darwin.nix`.
+#
+# Closure-identical to the pre-split single-file module (see git history)
+# for every NixOS host — verified via `nix store diff-closures` empty
+# across nixos-vm, mercury, and metis at the PR landing this split.
+#
+# On Darwin: nix-darwin owns `/etc/nix/nix.conf`; first activation
+# overwrites whatever the Determinate Systems installer wrote. The flake
+# is source of truth post-install. See ADR-027 + the Darwin foundation
+# header.
 { lib, ... }:
 {
   nix.settings = {
@@ -25,12 +39,8 @@
 
   nix.gc = {
     automatic = true;
-    dates = "weekly";
     options = "--delete-older-than 30d";
   };
-
-  # Flakes don't generate programs.sqlite; leaving this on silently fails.
-  programs.command-not-found.enable = false;
 
   # Whitelist unfree packages by name. Do NOT replace with allowUnfree = true.
   nixpkgs.config.allowUnfreePredicate =
