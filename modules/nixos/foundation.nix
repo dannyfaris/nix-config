@@ -18,7 +18,8 @@
 {
   imports = [
     ./locale.nix
-    ./nix-daemon.nix
+    ../shared/nix-daemon.nix
+    ./nix-daemon-nixos.nix
     ./firewall.nix
     ./sops.nix
     ./users.nix

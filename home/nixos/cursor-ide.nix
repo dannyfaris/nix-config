@@ -14,7 +14,7 @@
 # should report as a native Wayland client, not XWayland.
 #
 # License gating: code-cursor is unfree; the package name `cursor` is
-# whitelisted in modules/nixos/nix-daemon.nix's
+# whitelisted in modules/shared/nix-daemon.nix's
 # allowUnfreePredicate.
 #
 # Lives under nixos/ because the launcher integration (xdg-open,

@@ -56,7 +56,7 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
           # `accept-flake-config = false` carries the whitelist-over-blanket
-          # stance from modules/nixos/nix-daemon.nix into CI: a
+          # stance from modules/shared/nix-daemon.nix into CI: a
           # transitive input's nixConfig block can't silently add a
           # substituter or change settings here.
           #

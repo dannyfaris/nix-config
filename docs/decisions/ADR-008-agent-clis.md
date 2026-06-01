@@ -29,7 +29,7 @@ sops-nix integration is needed for these tools.
   not `cursor`).
 
 Cursor CLI is the only unfree package; it's added to the
-`allowUnfreePredicate` whitelist in `modules/core/nixos/nix-daemon.nix`. Codex and
+`allowUnfreePredicate` whitelist in `modules/shared/nix-daemon.nix`. Codex and
 Gemini CLI are both Apache-licensed; no whitelist entries needed.
 
 ## Rationale
@@ -137,7 +137,7 @@ only on hosts that include the file in `hostContext.extraHomeModules`:
 is preferred.)
 
 Cursor CLI is the only unfree package among the new additions. The
-unfree whitelist in `modules/core/nixos/nix-daemon.nix` extends to include it
+unfree whitelist in `modules/shared/nix-daemon.nix` extends to include it
 alongside the existing `claude-code` entry:
 
 ```nix
