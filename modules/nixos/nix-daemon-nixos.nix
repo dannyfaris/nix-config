@@ -10,14 +10,24 @@
 #   the Darwin sibling `modules/darwin/nix-daemon-darwin.nix` sets its
 #   own equivalent. Putting "weekly" in the shared kernel would fail
 #   eval on Darwin.
+# - `nix.settings.auto-optimise-store` — at-write hardlink dedupe of
+#   /nix/store. NixOS accepts the setting at face value; nix-darwin
+#   asserts a narrow nix/lix version window (guards against
+#   race-condition data-corruption bugs in older nix versions). Kept
+#   NixOS-only here to preserve at-write dedupe on NixOS hosts without
+#   pinning the assertion-satisfying nix versions on Darwin. The
+#   Darwin sibling uses the scheduled `nix.optimise.automatic` equivalent.
 #
 # Imported by `modules/nixos/foundation.nix` alongside
 # `modules/shared/nix-daemon.nix`. The `-nixos` suffix parallels the
-# planned `nix-daemon-darwin.nix` Darwin sibling.
+# `nix-daemon-darwin.nix` Darwin sibling.
 _: {
   # Flakes don't generate programs.sqlite; leaving this on silently fails.
   programs.command-not-found.enable = false;
 
   # NixOS GC schedule. Darwin uses `nix.gc.interval` in its own sibling.
   nix.gc.dates = "weekly";
+
+  # Hardlink-dedupe /nix/store on write. NixOS-only — see header.
+  nix.settings.auto-optimise-store = true;
 }

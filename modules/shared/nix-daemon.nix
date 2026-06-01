@@ -1,13 +1,13 @@
 # Nix daemon settings, garbage collection, and unfree whitelist — the
-# cross-platform kernel. NixOS-only knobs (`programs.command-not-found`
-# and the GC calendar-string syntax) live in the platform-specific
-# sibling `modules/nixos/nix-daemon-nixos.nix`. Darwin's GC scheduling
-# uses the launchd `nix.gc.interval` submodule shape and lives in
-# `modules/darwin/nix-daemon-darwin.nix`.
-#
-# Closure-identical to the pre-split single-file module (see git history)
-# for every NixOS host — verified via `nix store diff-closures` empty
-# across nixos-vm, mercury, and metis at the PR landing this split.
+# cross-platform kernel. Platform-specific knobs live in siblings:
+#   - modules/nixos/nix-daemon-nixos.nix — `programs.command-not-found`,
+#     calendar-string GC syntax, and the at-write
+#     `nix.settings.auto-optimise-store` (kept NixOS-only because
+#     nix-darwin's matching assertion guards against race-condition
+#     data-corruption bugs in older nix versions).
+#   - modules/darwin/nix-daemon-darwin.nix — the launchd `nix.gc.interval`
+#     submodule and `nix.optimise.automatic` (the scheduled equivalent
+#     of auto-optimise-store, sidestepping the at-write assertion).
 #
 # On Darwin: nix-darwin owns `/etc/nix/nix.conf`; first activation
 # overwrites whatever the Determinate Systems installer wrote. The flake
@@ -20,9 +20,6 @@
       "nix-command"
       "flakes"
     ];
-
-    # Hardlink-dedupe /nix/store on write.
-    auto-optimise-store = true;
 
     # Active dev repos are dirty most of the time; the warning is noise.
     warn-dirty = false;

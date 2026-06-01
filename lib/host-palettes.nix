@@ -55,4 +55,14 @@
       light = "rose-pine-dawn";
     };
   };
+  # Visibly distinct from the existing three (catppuccin / tokyo-night /
+  # rose-pine) — gruvbox's warm-orange accent is the obvious shift when
+  # an SSH session moves between this Mac and any Linux host.
+  mac-mini = {
+    polarity = "dark";
+    schemes = {
+      dark = "gruvbox-dark-hard";
+      light = "gruvbox-light-hard";
+    };
+  };
 }
