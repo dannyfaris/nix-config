@@ -318,7 +318,7 @@ Run from the new host's `dbf` shell unless noted otherwise.
 - Periodic scrub: `systemctl list-timers btrfs-scrub-*` shows the
   monthly timer armed.
 - Macchina login banner shows the Tailscale interface (per the
-  interface-detection logic in `home/nixos/macchina.nix`,
+  interface-detection logic in `home/nixos/macchina-shell-init.nix`,
   shipped to all hosts by `modules/nixos/home-manager.nix`).
 - Power-loss recovery test (do this once — it's the reason there's
   no LUKS): pull the power, wait 10 s, plug back in. The box should
