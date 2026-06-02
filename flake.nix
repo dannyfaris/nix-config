@@ -23,6 +23,28 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # nix-homebrew + the two upstream taps pinned as flake inputs.
+    # Wired into modules/darwin/homebrew.nix per ADR-031: nix-homebrew
+    # bootstraps the Homebrew prefix and surfaces taps as flake inputs;
+    # nix-darwin's own `homebrew` module manages the declarative cask
+    # list. `mutableTaps = false` requires the taps to be inputs so brew
+    # never reaches out for them at runtime — combined with
+    # `HOMEBREW_NO_AUTO_UPDATE=1`, no surprise tap refreshes during
+    # activation or interactive use.
+    # nix-homebrew has no nixpkgs input to override — brew is loaded
+    # via the `brew-src` GitHub source pinned in nix-homebrew's own
+    # flake.lock. No follows directive needed (and nix warns if one
+    # is set for a non-existent input).
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
+
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";

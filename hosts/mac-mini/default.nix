@@ -19,6 +19,12 @@ _: {
 
     # Standalone system modules.
     ../../modules/darwin/linux-builder.nix
+    # nix-homebrew + declarative cask list per ADR-031. Owns Ghostty,
+    # Tailscale (`tailscale-app`), and 1Password on Darwin, plus the
+    # Sparkle silent-update keys for the two Sparkle-driven apps. See
+    # docs/desktop/{ghostty,tailscale,1password}.md for per-app
+    # rationale + fallback recipes.
+    ../../modules/darwin/homebrew.nix
   ];
 
   networking.hostName = "mac-mini";
@@ -62,6 +68,9 @@ _: {
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix
       ../../home/darwin/macchina-shell-init.nix
+      # Ghostty user config (~/.config/ghostty/config). Cask owns the
+      # .app — see modules/darwin/homebrew.nix and docs/desktop/ghostty.md.
+      ../../home/darwin/ghostty.nix
       ../../home/shared/agent-clis.nix
       ../../home/shared/agent-clis-extras.nix
     ];
