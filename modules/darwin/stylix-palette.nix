@@ -50,5 +50,20 @@ in
     autoEnable = false;
     base16Scheme = "${pkgs.base16-schemes}/share/themes/${scheme}.yaml";
     inherit (palette) polarity;
+
+    # Carve-out: silence Stylix's release-check warning on Darwin until
+    # LnL7/nix-darwin master bumps its version.json from "26.05" to
+    # "26.11". The same flake.lock commit that introduced this line
+    # bumped Stylix from release 26.05 → 26.11 to match the nixpkgs
+    # 26.11 codename that #189 landed; the NixOS-side warning
+    # (Stylix-vs-Home-Manager) is genuinely resolved by that bump, but
+    # nix-darwin upstream still declares 26.05 and Stylix's release
+    # check then warns Stylix-vs-nix-darwin. The drv hash is unchanged
+    # — this is a warning, not an error — but suppression is cleaner
+    # than leaving a known-knock-on warning printing on every Darwin
+    # activation. Remove this line in a one-line PR when
+    # https://github.com/LnL7/nix-darwin/blob/master/version.json
+    # flips to "26.11".
+    enableReleaseChecks = false;
   };
 }
