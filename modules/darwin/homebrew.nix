@@ -1,10 +1,11 @@
-# nix-homebrew layer + nix-darwin homebrew cask list, per
+# nix-homebrew layer + nix-darwin homebrew cask + MAS app list, per
 # ADR-031 (docs/decisions/ADR-031-nix-homebrew-boundary.md).
 #
 # Two layers compose: nix-homebrew bootstraps the Homebrew prefix and
 # pins taps as flake inputs; nix-darwin's own `homebrew` module
-# manages the declarative cask list, activation behaviour, and the
-# Sparkle silent-update keys via system.defaults.CustomUserPreferences.
+# manages the declarative cask list, the `masApps` Mac App Store list
+# (installed via mas-cli per ADR-031 clause 3), activation behaviour,
+# and the Sparkle silent-update keys via system.defaults.CustomUserPreferences.
 #
 # Configuration stance (per ADR-031 §Configuration stance):
 #   - mutableTaps = false  — taps fully declarative; injects
@@ -31,6 +32,15 @@
 #     suppression fallback (updates.autoUpdate = false) is documented
 #     in docs/desktop/1password.md §Update behaviour for the day the
 #     prompts become intolerable.
+#   - Slack (MAS): updates flow through Apple's mechanism — no
+#     Sparkle/CustomUserPreferences keys apply per ADR-031 clause 3.
+#     See docs/desktop/slack.md.
+#
+# `masApps` cleanup asymmetry (per ADR-031 §Configuration stance):
+# `homebrew.onActivation.cleanup = "uninstall"` does NOT extend to
+# `homebrew.masApps` — Homebrew Bundle limitation. Dropping a masApps
+# entry leaves the app installed; `mas uninstall <id>` is required.
+# Per-tool docs for MAS apps record the uninstall recipe.
 #
 # Standalone module per ADR-027 (single-module — does not satisfy
 # bundle-purity; no coherent sibling yet to graduate into a bundle).
@@ -66,6 +76,13 @@ in
       "tailscale-app" # docs/desktop/tailscale.md  (NOT `tailscale`)
       "1password" # docs/desktop/1password.md
     ];
+    # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
+    # Keys are display-only; the numeric ID is the load-bearing
+    # identifier. Cleanup asymmetry callout in the header — dropping
+    # an entry requires `mas uninstall <id>` manually.
+    masApps = {
+      "Slack" = 803453959; # docs/desktop/slack.md
+    };
     # Mirror the taps declared by nix-homebrew so the nix-darwin module
     # knows which taps to expect — per zhaofengli/nix-homebrew README.
     taps = builtins.attrNames taps;

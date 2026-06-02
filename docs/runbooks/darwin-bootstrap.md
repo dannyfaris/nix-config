@@ -223,7 +223,27 @@ sudo mv /etc/zshrc  /etc/zshrc.before-nix-darwin
 (The Determinate installer doesn't touch these files, which is why
 the old runbook didn't list this step.)
 
-### 8 — Expect TCC prompts on first activation
+### 8 — One-time interactive App Store sign-in (if the host declares `masApps`)
+
+`homebrew.masApps` apps are installed via `mas-cli` at activation, and
+`mas install` can only fetch apps already associated with the
+signed-in Apple ID — `mas signin` was removed from mas-cli in late
+2025 (PR #1167) after Apple's account-flow changes broke the
+headless path.
+
+Before the first activation that adds a `masApps` entry — whether
+that's a fresh-Mac `nix run nix-darwin -- switch` or a later
+`nh darwin switch` on an already-bootstrapped host — open the
+App Store app and sign in with the Apple ID that owns the apps
+in question. One-time per machine.
+
+If you skip this step, activation surfaces an authentication error
+from `mas install`; the fix is to sign in and re-activate.
+
+(Currently relevant only on hosts whose modules declare
+`homebrew.masApps` — see `modules/darwin/homebrew.nix`.)
+
+### 9 — Expect TCC prompts on first activation
 
 When nix-darwin writes to `/Library/LaunchDaemons/`, macOS may
 prompt for Full Disk Access for the activation process. Approve via
@@ -295,9 +315,11 @@ Host metis-lan
 ```
 
 Entries depend on what's reachable from the Mac. `mercury` (public
-AWS DNS) works from anywhere. `metis` via tailnet resolves only once
-the Mac runs tailscale (gated on issue #13 — see "What this runbook
-does NOT cover" below); use the `metis-lan` LAN entry until then.
+AWS DNS) works from anywhere. `metis` via tailnet resolves once
+the Mac is signed into Tailscale — the `tailscale-app` cask is
+installed via `modules/darwin/homebrew.nix` per ADR-031, but the
+operator still has to sign the Mac into the tailnet on first
+launch; use the `metis-lan` LAN entry until then.
 
 ## Verification
 
@@ -367,11 +389,12 @@ If a future operator prefers strict revert, the fix is a
 `fish_postexec` hook that re-runs the local Stylix palette OSC
 block.
 
-**Signal 3 on Darwin hosts is deferred until issue #13 (nix-homebrew
-cask bundle) lands** — Ghostty (the target terminal for tab-title
-verification) distributes as a native `.app` on macOS, not via
-nixpkgs (see issue #167 root cause). Until then, signal 3 is "not
-verifiable on Darwin"; signals 1, 2, 4, 5 remain in scope.
+**Signal 3 on Darwin hosts** — Ghostty distributes as a native
+`.app` on macOS, not via nixpkgs (see issue #167 root cause); it
+is installed via the `ghostty` cask declared in
+`modules/darwin/homebrew.nix` per ADR-031. With the cask in place,
+tab-title verification works the same as on Linux Ghostty (signals
+1, 2, 4, 5 also in scope).
 
 ### Phase 3 — linux-builder
 
@@ -554,14 +577,22 @@ explicit allow may be needed; observe at activation.
 - Migrating an existing macOS install with extensive pre-nix-darwin
   state. Best path: snapshot, then run this runbook on top — the
   generations system lets you back out.
-- Mac App Store apps, declarative iCloud/Apple-service state, Mosyle
-  MDM interactions — all explicitly out of scope per PRD §2.2.
-- `nix-homebrew` integration. Deferred to issue
-  [#13](https://github.com/dannyfaris/nix-config/issues/13). Until
-  that lands, macOS-native apps that don't ship in nixpkgs
-  (Ghostty, Tailscale, 1Password, etc.) are operator-installed by
-  hand. Signal 3 of Phase 2 verification (terminal tab title) is
-  gated on the Ghostty cask landing under #13.
+- Declarative iCloud / Apple-service state, Mosyle MDM
+  interactions — out of scope per PRD §2.2. Mac App Store apps
+  *are* covered now: declarative install via `homebrew.masApps`
+  per ADR-031 clause 3. The cleanup asymmetry (entries dropped
+  from `masApps` are not auto-uninstalled) means retirement is a
+  two-step operation:
+
+  ```bash
+  # 1. Remove the entry from modules/darwin/homebrew.nix and
+  #    activate. The app remains installed.
+  # 2. Run by hand to actually uninstall:
+  mas uninstall <numeric-id>
+  ```
+
+  Per-tool docs under `docs/desktop/` record both the numeric ID
+  and the uninstall command for every managed MAS app.
 - Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is
   Linux-only in nixpkgs, so `modules/darwin/bundles/remote-access.nix`
   doesn't ship `xterm-ghostty` terminfo (the NixOS variant of the
