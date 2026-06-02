@@ -11,7 +11,13 @@ _:
     { config, pkgs, ... }:
     {
       devShells.default = pkgs.mkShell {
-        inherit (config.pre-commit) shellHook;
+        # macOS lacks the XDG path sops searches on Linux for the age key, so
+        # without this `sops --decrypt` errors with no-identity. Scoped to the
+        # devShell because secret editing only happens inside the repo.
+        shellHook = ''
+          ${config.pre-commit.shellHook}
+          export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
+        '';
         packages = with pkgs; [
           just
           nixfmt
