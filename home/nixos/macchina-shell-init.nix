@@ -1,4 +1,4 @@
-# Linux-side half of the macchina wiring — owns the NixOS-snowflake
+# Linux-side half of the macchina wiring — owns the NixOS-logo
 # `ascii.txt` (with Stylix-driven two-tone colouring) and the
 # interactive-shell init that prints the banner at every fish shell
 # launch (Ghostty tab, zellij pane, helix `:sh`, every login). The
@@ -33,7 +33,7 @@
 { config, lib, ... }:
 let
   esc = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
-  # Per-host two-tone NixOS snowflake from the Stylix palette (ADR-028).
+  # Per-host two-tone NixOS logo from the Stylix palette (ADR-028).
   # base0D = primary accent (blue/cyan family in most base16 schemes);
   # base0C = secondary accent (cyan/teal family). The silhouette still
   # reads as NixOS regardless of hue; the per-host SSH-context signal at
@@ -43,32 +43,35 @@ let
   c = config.lib.stylix.colors;
   dark = "${esc}[38;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
   light = "${esc}[38;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
-  bdark = "${esc}[48;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
-  blight = "${esc}[48;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
   reset = "${esc}[0m";
 in
 {
-  # NixOS snowflake — two-tone ANSI art displayed to the left of system info.
-  # Glyph layout adapted from https://github.com/4DBug/nix-ansi; colour
-  # escapes applied here. Written to the generic `ascii.txt` path the
-  # shared Hydrogen theme references.
+  # NixOS logo — two-tone pure-ASCII art displayed to the left of
+  # system info. Glyph layout is the `NixOS2` logo from
+  # fastfetch-cli/fastfetch (MIT), chosen for being 7-bit ASCII
+  # (` _/\` only) — every character is in JetBrainsMono Nerd Font
+  # natively, so foot never engages fontconfig fallback for this
+  # banner. Sidesteps issue #161. Colour escapes (base0D / base0C
+  # from the Stylix palette) applied here. Written to the generic
+  # `ascii.txt` path the shared Hydrogen theme references.
   xdg.configFile."macchina/ascii.txt".text =
-    "${dark}       ◢██◣${light}   ◥███◣  ◢██◣\n"
-    + "${dark}       ◥███◣${light}   ◥███◣◢███◤\n"
-    + "${dark}        ◥███◣${light}   ◥██████◤\n"
-    + "${dark}    ◢████████████${blight}◣${reset}${light}████◤${dark}   ◢◣\n"
-    + "${dark}   ◢██████████████${blight}◣${reset}${light}███◣${dark}  ◢██◣\n"
-    + "${light}        ◢███◤      ◥███◣${dark}◢███◤\n"
-    + "${light}       ◢███◤        ◥██${bdark}◤${reset}${dark}███◤\n"
-    + "${light}◢█████████◤          ◥${bdark}◤${reset}${dark}████████◣\n"
-    + "${light}◥████████${bdark}◤${reset}${dark}◣          ◢█████████◤\n"
-    + "${light}    ◢███${bdark}◤${reset}${dark}██◣        ◢███◤\n"
-    + "${light}   ◢███◤${dark}◥███◣      ◢███◤\n"
-    + "${light}   ◥██◤  ${dark}◥███${blight}◣${reset}${light}██████████████◤\n"
-    + "${light}    ◥◤   ${dark}◢████${blight}◣${reset}${light}████████████◤\n"
-    + "${dark}        ◢██████◣${light}   ◥███◣\n"
-    + "${dark}       ◢███◤◥███◣${light}   ◥███◣\n"
-    + "${dark}       ◥██◤  ◥███◣${light}   ◥██◤${reset}\n";
+    "${dark}        __    ${light}____    __\n"
+    + "${dark}       /  \\   ${light}\\   \\  /  \\\n"
+    + "${dark}       \\   \\   ${light}\\   \\/   /\n"
+    + "${dark}     ___\\   \\___${light}\\      /\n"
+    + "${dark}    /            ${light}\\    /   ${dark}/\\\n"
+    + "${dark}   /______________${light}\\   \\  ${dark}/  \\\n"
+    + "${light}        /   /      \\   \\${dark}/   /\n"
+    + "${light} ______/   /        \\  ${dark}/   /___\n"
+    + "${light}/         /          \\${dark}/        \\\n"
+    + "${light}\\____    /${dark}\\          /   ______/\n"
+    + "${light}    /   /${dark}  \\        /   /\n"
+    + "${light}   /   /${dark}\\   \\${light}______${dark}/${light}___${dark}/${light}_____\n"
+    + "${light}   \\  /${dark}  \\   \\${light}              /\n"
+    + "${light}    \\/${dark}   /    \\${light}____    ____/\n"
+    + "${light}       ${dark} /      \\${light}   \\   \\\n"
+    + "${light}       ${dark}/   /\\   \\${light}   \\   \\\n"
+    + "${light}       ${dark}\\__/  \\___\\${light}   \\__/${reset}\n";
 
   programs.fish.interactiveShellInit = lib.mkBefore ''
     if command -q macchina
