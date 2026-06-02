@@ -25,6 +25,22 @@ _: {
     # docs/desktop/{ghostty,tailscale,1password}.md for per-app
     # rationale + fallback recipes.
     ../../modules/darwin/homebrew.nix
+
+    # colima — container runtime per ADR-021's 2026-06-03 amendment.
+    # Adds pkgs.colima + pkgs.docker + pkgs.docker-compose to PATH and
+    # a `launchd.user.agents.colima` definition that auto-starts the
+    # Lima VM on GUI session establishment (Darwin parallel to
+    # `linger = true` on the Linux side). See docs/desktop/colima.md
+    # for the GUI-session dependency + auto-login caveat.
+    ../../modules/darwin/colima.nix
+
+    # UTM — virtualisation platform; second Darwin nixpkgs-installed
+    # runtime after colima. Hosts the nixos-vm fleet member. Adds
+    # pkgs.utm to PATH which surfaces both UTM.app (via nix-darwin's
+    # system-applications symlink) and `utmctl` (the CLI control tool,
+    # via the derivation's makeWrapper loop). See docs/desktop/utm.md
+    # for the ADR-031 walk + CLI-first rationale.
+    ../../modules/darwin/utm.nix
   ];
 
   networking.hostName = "mac-mini";

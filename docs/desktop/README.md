@@ -41,6 +41,20 @@ rather than creating a new artifact.
 | Doc | Subject | Landed |
 |---|---|---|
 | [ghostty.md](./ghostty.md) | Ghostty terminal (Mac-only; GPU-accelerated); nix-homebrew cask | #13 |
+| [slack.md](./slack.md) | Slack chat client (work daily-driver); MAS via `homebrew.masApps` — first managed MAS app | _pending_ |
+| [chrome.md](./chrome.md) | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone | _pending_ |
+| [microsoft-365.md](./microsoft-365.md) | Microsoft 365 — Word, Excel, PowerPoint, Outlook, Teams; MAS via `homebrew.masApps` | _pending_ |
+| [amphetamine.md](./amphetamine.md) | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution) | _pending_ |
+| [typora.md](./typora.md) | Typora markdown editor; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
+| [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | _pending_ |
+| [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | _pending_ |
+| [colima.md](./colima.md) | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021. | _pending_ |
+| [claude-desktop.md](./claude-desktop.md) | Anthropic Claude desktop client; Homebrew cask + custom in-app updater (clause-1) | _pending_ |
+| [chatgpt.md](./chatgpt.md) | OpenAI ChatGPT desktop client; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
+| [gemini.md](./gemini.md) | Google Gemini desktop client; Homebrew cask + Keystone (clause-1; SHARES Keystone agent with Chrome) | _pending_ |
+| [fellow.md](./fellow.md) | Fellow meeting agendas / notes / action items; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
+| [wispr-flow.md](./wispr-flow.md) | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
+| [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
 
@@ -48,6 +62,18 @@ rather than creating a new artifact.
 |---|---|---|
 | [tailscale.md](./tailscale.md) | Tailscale mesh-VPN (NixOS service + macOS cask) | #13 |
 | [1password.md](./1password.md) | 1Password password manager (macOS cask today; NixOS desktop adoption tracked separately) | #13 |
+
+**Naming gotcha — Anthropic's Claude desktop.** The per-tool doc
+is [`claude-desktop.md`](./claude-desktop.md), not `claude.md`,
+because Claude Code (the agentic CLI used to author this repo)
+treats files named `CLAUDE.md` as project-level instructions.
+On case-insensitive macOS filesystems (APFS default), a
+`claude.md` file resolves the same as a `CLAUDE.md` and gets
+loaded as instructions — surprising behaviour for what is meant
+to be a per-tool selection doc. The `-desktop` suffix
+disambiguates. Other docs in this directory can keep their
+short names because none of them collide with Claude Code's
+reserved filenames.
 
 **Deliberate no-doc:** #77 (Cursor IDE) landed without a per-tool
 selection doc — Cursor is a foregone install across all the
@@ -59,6 +85,13 @@ This is the documented exception to the §"Doc precedes
 implementation" rule in [workflow.md](../workflow.md): it
 applies to *selections*, not to foregone installs where no
 alternative was weighed.
+
+The Darwin install-path selection (cask vs. `pkgs.code-cursor`)
+*is* an ADR-031 selection-with-alternatives at a different
+layer, and it lives in [`cursor.md`](./cursor.md) — narrowly
+scoped to the install-path question, with the IDE-selection
+question explicitly out of scope. The "no-doc" precedent for
+IDE-vs-IDE remains intact.
 
 ## Document structure
 
