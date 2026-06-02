@@ -69,6 +69,21 @@
 #     docs/desktop/cursor.md — narrowly scoped per the README
 #     "Deliberate no-doc" precedent (IDE-selection rationale
 #     lives in home/nixos/cursor-ide.nix).
+#   - Claude desktop (cask, clause-1): no MAS, no Darwin nixpkgs
+#     equivalent. Anthropic's custom in-app updater — NOT Sparkle,
+#     no SU* keys. Suppression fallback is in-app toggle.
+#     See docs/desktop/claude-desktop.md.
+#   - ChatGPT (cask, clause-2): not on MAS. Nixpkgs path carved
+#     out because the immutable nix-store .app breaks ChatGPT's
+#     Sparkle auto-updater. SU* keys wired below under com.openai.chat.
+#     See docs/desktop/chatgpt.md.
+#   - Gemini (cask, clause-1): no MAS (the Cypress North "Gemini"
+#     on MAS is a Stellar wallet, not Google's AI). No Darwin
+#     nixpkgs equivalent at write-time. Update mechanism is
+#     Keystone — SHARED with Chrome's existing Keystone install
+#     (one launchd agent, both apps). Suppression fallback recipe
+#     in docs/desktop/chrome.md applies to both apps simultaneously.
+#     See docs/desktop/gemini.md.
 #   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
 #     vendor default and silently updates /Applications/Google
 #     Chrome.app. No CustomUserPreferences keys today — Keystone is
@@ -121,6 +136,9 @@ in
       "typora" # docs/desktop/typora.md
       "obsidian" # docs/desktop/obsidian.md
       "cursor" # docs/desktop/cursor.md  (Darwin install-path doc only — IDE selection is foregone, see README "Deliberate no-doc")
+      "claude" # docs/desktop/claude-desktop.md
+      "chatgpt" # docs/desktop/chatgpt.md
+      "google-gemini" # docs/desktop/gemini.md  (NOT the Cypress North MAS app — that's a crypto wallet)
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
@@ -149,12 +167,13 @@ in
     };
   };
 
-  # Sparkle silent-update keys for Ghostty, Tailscale, and Typora.
-  # See per-tool docs (docs/desktop/{ghostty,tailscale,typora}.md
-  # §Configuration) for the per-app rationale + verification commands.
-  # Bundle IDs are the *app* bundle IDs (not pkg installer IDs) —
-  # Tailscale's pkg ID is com.tailscale.ipn.macsys, the app ID is
-  # io.tailscale.ipn.macsys.
+  # Sparkle silent-update keys for Ghostty, Tailscale, Typora, and
+  # ChatGPT. See per-tool docs (docs/desktop/{ghostty,tailscale,
+  # typora,chatgpt}.md §Configuration) for the per-app rationale +
+  # verification commands. Bundle IDs are the *app* bundle IDs (not
+  # pkg installer IDs) — Tailscale's pkg ID is com.tailscale.ipn.macsys,
+  # the app ID is io.tailscale.ipn.macsys. ChatGPT's is `com.openai.chat`
+  # (singular "chat", not "chatgpt").
   system.defaults.CustomUserPreferences = {
     "com.mitchellh.ghostty" = {
       SUEnableAutomaticChecks = true;
@@ -165,6 +184,10 @@ in
       SUAutomaticallyUpdate = true;
     };
     "abnerworks.Typora" = {
+      SUEnableAutomaticChecks = true;
+      SUAutomaticallyUpdate = true;
+    };
+    "com.openai.chat" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };

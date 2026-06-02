@@ -124,6 +124,23 @@ updates on a security-load-bearing binary** — the operator must
 remember to run the brew command frequently enough to keep up
 with CVE cadence (Chrome ships patches weekly).
 
+**Shared-Keystone caveat.** Keystone is a single per-user
+launchd agent (`com.google.Keystone.Agent`) — not a per-app
+agent. Other Google Mac apps installed on this host
+(today: Gemini desktop per [gemini.md](./gemini.md); potentially
+future Google Drive / Earth / etc.) are managed by the *same*
+agent. Flipping `checkInterval = 0` here suppresses auto-updates
+**for every Google Mac app on the system simultaneously**, not
+just Chrome. The manual brew recipe would then take all the
+affected casks at once — currently:
+
+```bash
+brew update && brew upgrade --cask --greedy google-chrome google-gemini
+```
+
+Add any future Google cask to the same invocation if the
+suppression-mode fallback is in effect.
+
 Verify the fallback took effect:
 
 ```bash

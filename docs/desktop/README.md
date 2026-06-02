@@ -49,6 +49,9 @@ rather than creating a new artifact.
 | [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | _pending_ |
 | [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | _pending_ |
 | [colima.md](./colima.md) | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021. | _pending_ |
+| [claude-desktop.md](./claude-desktop.md) | Anthropic Claude desktop client; Homebrew cask + custom in-app updater (clause-1) | _pending_ |
+| [chatgpt.md](./chatgpt.md) | OpenAI ChatGPT desktop client; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
+| [gemini.md](./gemini.md) | Google Gemini desktop client; Homebrew cask + Keystone (clause-1; SHARES Keystone agent with Chrome) | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
 
@@ -56,6 +59,18 @@ rather than creating a new artifact.
 |---|---|---|
 | [tailscale.md](./tailscale.md) | Tailscale mesh-VPN (NixOS service + macOS cask) | #13 |
 | [1password.md](./1password.md) | 1Password password manager (macOS cask today; NixOS desktop adoption tracked separately) | #13 |
+
+**Naming gotcha — Anthropic's Claude desktop.** The per-tool doc
+is [`claude-desktop.md`](./claude-desktop.md), not `claude.md`,
+because Claude Code (the agentic CLI used to author this repo)
+treats files named `CLAUDE.md` as project-level instructions.
+On case-insensitive macOS filesystems (APFS default), a
+`claude.md` file resolves the same as a `CLAUDE.md` and gets
+loaded as instructions — surprising behaviour for what is meant
+to be a per-tool selection doc. The `-desktop` suffix
+disambiguates. Other docs in this directory can keep their
+short names because none of them collide with Claude Code's
+reserved filenames.
 
 **Deliberate no-doc:** #77 (Cursor IDE) landed without a per-tool
 selection doc — Cursor is a foregone install across all the
