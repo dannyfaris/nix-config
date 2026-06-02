@@ -19,8 +19,12 @@ let
   # from the elevated environment; who -m's origin-host-in-parens field is
   # the fallback. Mirrors is_ssh() in claude-statusline.sh (pure.zsh trick).
   # Negating it for host_local keeps the two modules exact complements. The
-  # `when` runs under POSIX sh, so the case-glob + `! { …; }` are portable.
-  # See GH #45.
+  # snippet uses `$(…)` and `case …;;` — POSIX sh, not fish — so the custom
+  # modules below set `shell = ["sh"]` to force evaluation under sh rather
+  # than the active interactive shell. Without that, fish rejects `$(…)` in
+  # command position ("command substitutions not allowed in command
+  # position") and both `when` clauses exit 127, silently dropping the
+  # host segment from the prompt. See GH #45.
   sshDetect = ''[ -n "$SSH_CONNECTION" ] || case "$(who -m 2>/dev/null)" in (*\(*\)*) true ;; (*) false ;; esac'';
 in
 {
@@ -108,6 +112,7 @@ in
         description = "Hostname marker — local (no SSH connection)";
         when = "! { ${sshDetect}; }";
         command = "hostname -s";
+        shell = [ "sh" ]; # see sshDetect comment in let block — fish chokes on `$(…)` in `when`
         format = "[${desktopGlyph}  $output]($style) ${chev} ";
         style = "green";
       };
@@ -115,6 +120,7 @@ in
         description = "Hostname marker — over SSH";
         when = sshDetect;
         command = "hostname -s";
+        shell = [ "sh" ]; # see sshDetect comment in let block — fish chokes on `$(…)` in `when`
         format = "[${sshGlyph}  $output]($style) ${chev} ";
         style = "purple";
       };
