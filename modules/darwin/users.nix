@@ -28,6 +28,14 @@ in
     inherit (operator) description;
     shell = pkgs.fish;
     home = operator.darwinHome;
+
+    # Load-bearing path for inbound SSH key auth on Darwin. nix-darwin's
+    # `services.openssh.enable` ships /etc/ssh/sshd_config.d/101-authorized-keys.conf,
+    # which sets `AuthorizedKeysCommand /bin/cat /etc/ssh/nix_authorized_keys.d/%u`
+    # (sshd won't follow ~/.ssh/authorized_keys when it's a /nix/store symlink,
+    # which is what home-manager's `home.file` produces). That command's source
+    # file is populated from this option. Mirrors modules/nixos/users.nix:23.
+    openssh.authorizedKeys.keys = operator.authorizedKeys;
   };
 
   # Identifies the macOS account that user-domain defaults
