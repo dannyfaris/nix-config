@@ -16,7 +16,12 @@
 #
 # Unfree: cursor-cli is whitelisted in modules/shared/nix-daemon.nix's
 # allowUnfreePredicate (alongside claude-code).
-{ pkgs, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   c = config.lib.stylix.colors;
 
@@ -62,27 +67,63 @@ let
   '';
 in
 {
-  home.packages = with pkgs; [
-    claude-code
-    cursor-cli
-  ];
+  home = {
+    packages = with pkgs; [
+      claude-code
+      cursor-cli
+    ];
 
-  # Custom statusline — see ADR-024 (Claude side) and
-  # docs/agents/cursor-statusline.md (Cursor side). Colours are
-  # palette-driven via Stylix (ADR-028 slice 6 / issue #7); both
-  # scripts source the same statusline-colours.sh derivation at
-  # startup — no second palette source. DIM and RST (style codes, not
-  # colours) remain hardcoded in the scripts.
-  home.file = {
-    ".claude/statusline.sh" = {
-      source = ./claude-statusline.sh;
-      executable = true;
+    # Custom statusline — see ADR-024 (Claude side) and
+    # docs/agents/cursor-statusline.md (Cursor side). Colours are
+    # palette-driven via Stylix (ADR-028 slice 6 / issue #7); both
+    # scripts source the same statusline-colours.sh derivation at
+    # startup — no second palette source. DIM and RST (style codes,
+    # not colours) remain hardcoded in the scripts.
+    file = {
+      ".claude/statusline.sh" = {
+        source = ./claude-statusline.sh;
+        executable = true;
+      };
+      ".claude/statusline-colours.sh".source = statuslineColours;
+      ".cursor/statusline.sh" = {
+        source = ./cursor-statusline.sh;
+        executable = true;
+      };
+      ".cursor/statusline-colours.sh".source = statuslineColours;
     };
-    ".claude/statusline-colours.sh".source = statuslineColours;
-    ".cursor/statusline.sh" = {
-      source = ./cursor-statusline.sh;
-      executable = true;
-    };
-    ".cursor/statusline-colours.sh".source = statuslineColours;
+
+    # Non-destructively merge the .statusLine block into each tool's
+    # config file. Both ~/.claude/settings.json and
+    # ~/.cursor/cli-config.json are written-back at runtime by their
+    # respective tools (auth tokens, model selection, accepted
+    # permission decisions, theme prefs) so home-manager cannot fully
+    # own them via home.file.text. jq sets only the .statusLine key
+    # and preserves every other field; repeated runs produce identical
+    # output. The `~` in the command is left literal — both tools
+    # resolve it at invocation time, so the same string works on
+    # Linux ($HOME=/home/dbf) and Darwin ($HOME=/Users/dbf).
+    #
+    # Race window: if the tool is actively running and writes a fresh
+    # snapshot between our jq read and the atomic rename, that write is
+    # lost. nh switch is operator-driven and rare; accepting the window
+    # over more complex coordination. See GH #172 and ADR-024.
+    activation.agentStatuslineSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      for pair in \
+        "$HOME/.claude/settings.json:~/.claude/statusline.sh" \
+        "$HOME/.cursor/cli-config.json:~/.cursor/statusline.sh"
+      do
+        file="''${pair%%:*}"
+        script="''${pair#*:}"
+        run mkdir -p "$(dirname "$file")"
+        if [[ -v DRY_RUN ]]; then
+          echo "would set .statusLine in $file"
+        else
+          [ -f "$file" ] || echo '{}' > "$file"
+          ${pkgs.jq}/bin/jq --arg cmd "$script" \
+            '.statusLine = {type: "command", command: $cmd}' \
+            "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+        fi
+      done
+    '';
   };
 }
