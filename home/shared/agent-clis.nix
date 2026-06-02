@@ -67,15 +67,22 @@ in
     cursor-cli
   ];
 
-  # Custom statusline — see ADR-024. Colours are palette-driven via
-  # Stylix (ADR-028 slice 6 / issue #7); the script sources
-  # statusline-colours.sh at startup. DIM and RST (style codes, not
-  # colours) remain hardcoded in the script.
+  # Custom statusline — see ADR-024 (Claude side) and
+  # docs/agents/cursor-statusline.md (Cursor side). Colours are
+  # palette-driven via Stylix (ADR-028 slice 6 / issue #7); both
+  # scripts source the same statusline-colours.sh derivation at
+  # startup — no second palette source. DIM and RST (style codes, not
+  # colours) remain hardcoded in the scripts.
   home.file = {
     ".claude/statusline.sh" = {
       source = ./claude-statusline.sh;
       executable = true;
     };
     ".claude/statusline-colours.sh".source = statuslineColours;
+    ".cursor/statusline.sh" = {
+      source = ./cursor-statusline.sh;
+      executable = true;
+    };
+    ".cursor/statusline-colours.sh".source = statuslineColours;
   };
 }
