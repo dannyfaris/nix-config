@@ -199,7 +199,7 @@ for ((i = 0; i < E; i++)); do BAR+="░"; done
 # No rate-limit segment — cursor's billing model has no rolling-window
 # analogue to Claude's .rate_limits.five_hour.*. See
 # docs/agents/cursor-statusline.md §Selection.
-printf '%s✦ %s%s%s%s%s %s%s%s %d%%\n' \
+printf '%s✦ %s%s%s%s%s%s%s%s %d%%\n' \
   "$MODEL_COL" "$MODEL" "$MAX_MODE_SUFFIX" "$RST" \
   "$EFFORT_SEG" "$SEP" \
   "$BC" "$BAR" "$RST" \
