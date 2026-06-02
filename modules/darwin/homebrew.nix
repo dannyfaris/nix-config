@@ -59,6 +59,16 @@
 #     Obsidian's updater is not Sparkle. Suppression fallback is
 #     the in-app Settings → About → Automatic updates toggle, not
 #     a `defaults`-domain key. See docs/desktop/obsidian.md.
+#   - Cursor (cask, clause-2): not on MAS. Nixpkgs path carved out
+#     because the immutable nix-store .app breaks Cursor's
+#     ToDesktop auto-updater (Anysphere ships point releases
+#     multiple times per week; flake-bump cadence is a feature-
+#     delivery cost). No Sparkle keys — ToDesktop-generated
+#     `com.todesktop.*` bundle ID, in-IDE Update Mode toggle is
+#     the suppression fallback. The Darwin install-path doc is
+#     docs/desktop/cursor.md — narrowly scoped per the README
+#     "Deliberate no-doc" precedent (IDE-selection rationale
+#     lives in home/nixos/cursor-ide.nix).
 #   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
 #     vendor default and silently updates /Applications/Google
 #     Chrome.app. No CustomUserPreferences keys today — Keystone is
@@ -110,6 +120,7 @@ in
       "google-chrome" # docs/desktop/chrome.md  (NOT `google-chrome-for-testing`)
       "typora" # docs/desktop/typora.md
       "obsidian" # docs/desktop/obsidian.md
+      "cursor" # docs/desktop/cursor.md  (Darwin install-path doc only — IDE selection is foregone, see README "Deliberate no-doc")
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing

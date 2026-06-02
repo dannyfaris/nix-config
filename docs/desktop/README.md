@@ -47,6 +47,7 @@ rather than creating a new artifact.
 | [amphetamine.md](./amphetamine.md) | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution) | _pending_ |
 | [typora.md](./typora.md) | Typora markdown editor; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
 | [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | _pending_ |
+| [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
 
@@ -65,6 +66,13 @@ This is the documented exception to the §"Doc precedes
 implementation" rule in [workflow.md](../workflow.md): it
 applies to *selections*, not to foregone installs where no
 alternative was weighed.
+
+The Darwin install-path selection (cask vs. `pkgs.code-cursor`)
+*is* an ADR-031 selection-with-alternatives at a different
+layer, and it lives in [`cursor.md`](./cursor.md) — narrowly
+scoped to the install-path question, with the IDE-selection
+question explicitly out of scope. The "no-doc" precedent for
+IDE-vs-IDE remains intact.
 
 ## Document structure
 
