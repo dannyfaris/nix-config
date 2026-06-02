@@ -42,6 +42,7 @@ rather than creating a new artifact.
 |---|---|---|
 | [ghostty.md](./ghostty.md) | Ghostty terminal (Mac-only; GPU-accelerated); nix-homebrew cask | #13 |
 | [slack.md](./slack.md) | Slack chat client (work daily-driver); MAS via `homebrew.masApps` — first managed MAS app | _pending_ |
+| [chrome.md](./chrome.md) | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
 

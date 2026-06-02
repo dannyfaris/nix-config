@@ -35,6 +35,14 @@
 #   - Slack (MAS): updates flow through Apple's mechanism — no
 #     Sparkle/CustomUserPreferences keys apply per ADR-031 clause 3.
 #     See docs/desktop/slack.md.
+#   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
+#     vendor default and silently updates /Applications/Google
+#     Chrome.app. No CustomUserPreferences keys today — Keystone is
+#     allowed to run because browsers are security-load-bearing
+#     (Chrome ships weekly CVE patches). Suppression fallback
+#     (checkInterval = 0) is documented in docs/desktop/chrome.md
+#     §Update behaviour for the day Mosyle escalates /Applications/
+#     writes.
 #
 # `masApps` cleanup asymmetry (per ADR-031 §Configuration stance):
 # `homebrew.onActivation.cleanup = "uninstall"` does NOT extend to
@@ -75,6 +83,7 @@ in
       "ghostty" # docs/desktop/ghostty.md
       "tailscale-app" # docs/desktop/tailscale.md  (NOT `tailscale`)
       "1password" # docs/desktop/1password.md
+      "google-chrome" # docs/desktop/chrome.md  (NOT `google-chrome-for-testing`)
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
