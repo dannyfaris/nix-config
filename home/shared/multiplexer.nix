@@ -11,7 +11,28 @@
 # The `agent` layout (agent.kdl below) plus the `za` abbreviation in
 # home/shared/shell.nix are the only path into the 3-pane agentic
 # workspace; plain `zellij` stays a vanilla single-pane session.
-_: {
+{
+  inputs,
+  pkgs,
+  config,
+  ...
+}:
+let
+  # zjstatus WASM plugin path. Pulled from the upstream flake (see
+  # rationale on the `zjstatus` input in flake.nix); the package output
+  # is a directory containing `bin/{zjstatus,zjframes}.wasm`. Resolved
+  # per-host via stdenv.hostPlatform.system so each host's xdg.configFile
+  # references the store path for its own arch.
+  zjstatusWasm = "${
+    inputs.zjstatus.packages.${pkgs.stdenv.hostPlatform.system}.default
+  }/bin/zjstatus.wasm";
+
+  # Stylix base16 palette accessor — same shape used in
+  # home/shared/agent-clis.nix:21. Slots are hex strings without the
+  # leading `#`, so format strings interpolate as `#${c.base0D}`.
+  c = config.lib.stylix.colors;
+in
+{
   programs.zellij = {
     enable = true;
 
@@ -69,8 +90,55 @@ _: {
   # per zellij's swap-layouts grammar, each holds a `tab` wrapping the
   # bare pane — a bare `pane` directly under `swap_tiled_layout` fails to
   # parse ("Unknown layout node: 'pane'").
+  #
+  # `default_tab_template` restores chrome that a custom top-level-tab
+  # layout otherwise skips entirely (the stock tab-bar + status-bar live
+  # in the default template, not the global UI). The `tab` contents land
+  # where `children` sits in the template.
+  #
+  # Status-bar tail: stock `zellij:status-bar` is one WASM rendering
+  # both rows; the rotating "Tip:" line on row 2 can't be replaced
+  # without forking. zjstatus is the configurable replacement — two
+  # `size=1` panes reconstruct (a) a mode-indicator strip and (b) a
+  # static training-wheels row for this repo's custom binds
+  # (Alt+arrows / Alt+g / Alt+d / Alt+e — see `extraConfig` above).
+  #
+  # Mode badge colours follow the repo's base16 semantic convention (see
+  # home/shared/agent-clis.nix:36-37): 08=red, 09=orange, 0A=yellow,
+  # 0B=green, 0C=cyan, 0D=blue, 0E=magenta. RESIZE+MOVE share 09 and
+  # TAB+SEARCH share 0C — modes are mutually exclusive so the visual
+  # collision is acceptable; both pairs are grouped semantically
+  # (layout-altering / navigation-by-selection). The training-wheels row
+  # uses base04 (mid-grey) so it reads as ambient guidance, not primary
+  # content.
   xdg.configFile."zellij/layouts/agent.kdl".text = ''
     layout {
+        default_tab_template {
+            pane size=1 borderless=true {
+                plugin location="zellij:tab-bar"
+            }
+            children
+            pane size=1 borderless=true {
+                plugin location="file:${zjstatusWasm}" {
+                    format_left  "{mode}"
+                    mode_normal  "#[bg=#${c.base0B},fg=#${c.base00},bold] NORMAL "
+                    mode_locked  "#[bg=#${c.base08},fg=#${c.base00},bold] LOCKED "
+                    mode_pane    "#[bg=#${c.base0D},fg=#${c.base00},bold] PANE "
+                    mode_tab     "#[bg=#${c.base0C},fg=#${c.base00},bold] TAB "
+                    mode_resize  "#[bg=#${c.base09},fg=#${c.base00},bold] RESIZE "
+                    mode_scroll  "#[bg=#${c.base0A},fg=#${c.base00},bold] SCROLL "
+                    mode_search  "#[bg=#${c.base0C},fg=#${c.base00},bold] SEARCH "
+                    mode_session "#[bg=#${c.base0E},fg=#${c.base00},bold] SESSION "
+                    mode_move    "#[bg=#${c.base09},fg=#${c.base00},bold] MOVE "
+                }
+            }
+            pane size=1 borderless=true {
+                plugin location="file:${zjstatusWasm}" {
+                    format_left "#[fg=#${c.base04}] Alt+←↑↓→ navigate panes   Alt+g lazygit   Alt+d lazydocker   Alt+e capture scrollback "
+                }
+            }
+        }
+
         tab name="agent" {
             pane split_direction="vertical" {
                 pane size="50%" focus=true name="agent"
