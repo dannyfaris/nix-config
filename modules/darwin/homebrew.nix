@@ -35,6 +35,16 @@
 #   - Slack (MAS): updates flow through Apple's mechanism — no
 #     Sparkle/CustomUserPreferences keys apply per ADR-031 clause 3.
 #     See docs/desktop/slack.md.
+#   - Microsoft 365 — Word/Excel/PowerPoint/Outlook/Teams (MAS):
+#     same Apple-mechanism update path as Slack. Named clause-3
+#     advantage is bypassing Microsoft's installer/updater stack
+#     end-to-end — both the .pkg installer's /Applications/ writes
+#     and Microsoft AutoUpdate (MAU, com.microsoft.autoupdate2).
+#     The Homebrew casks DO deselect MAU via their pkg `choices`
+#     block, but the cask path still triggers the Microsoft pkg's
+#     /Applications/ writes, and Office apps may re-install MAU on
+#     first launch when missing. MAS sandboxing prevents MAU
+#     structurally. See docs/desktop/microsoft-365.md.
 #   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
 #     vendor default and silently updates /Applications/Google
 #     Chrome.app. No CustomUserPreferences keys today — Keystone is
@@ -91,6 +101,14 @@ in
     # an entry requires `mas uninstall <id>` manually.
     masApps = {
       "Slack" = 803453959; # docs/desktop/slack.md
+      # Microsoft 365 suite per docs/desktop/microsoft-365.md. All-MAS
+      # keeps Microsoft AutoUpdate (com.microsoft.autoupdate2) off the
+      # system — mixed-channel installs would re-introduce it.
+      "Microsoft Word" = 462054704;
+      "Microsoft Excel" = 462058435;
+      "Microsoft PowerPoint" = 462062816;
+      "Microsoft Outlook" = 985367838;
+      "Microsoft Teams" = 1113153706; # NOT the legacy `teams` bundle
     };
     # Mirror the taps declared by nix-homebrew so the nix-darwin module
     # knows which taps to expect — per zhaofengli/nix-homebrew README.
