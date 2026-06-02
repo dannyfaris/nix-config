@@ -80,19 +80,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # zjstatus — configurable third-party zellij status bar (WASM plugin).
-    # Pinned upstream because `zellijPlugins.zjstatus` was only added to
-    # nixpkgs after 2026-05-23, ahead of the repo's pinned nixpkgs and
-    # the weekly bumper's candidate. Adopting the upstream flake here
-    # decouples this surface from nixpkgs-cadence; revisit only when the
-    # nixpkgs route is reliably in our pinned revision. Consumed by
-    # home/shared/multiplexer.nix as the status-bar swap for the `agent`
-    # layout (mode strip + custom training-wheels row).
-    zjstatus = {
-      url = "github:dj95/zjstatus";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Community flake for the Zen browser. Tracks the `beta` release
     # stream by default via `homeModules.default`; `homeModules.twilight`
     # and `homeModules.twilight-official` are available for pre-release
