@@ -84,6 +84,14 @@
 #     (one launchd agent, both apps). Suppression fallback recipe
 #     in docs/desktop/chrome.md applies to both apps simultaneously.
 #     See docs/desktop/gemini.md.
+#   - Fellow (cask, clause-1): no MAS, no nixpkgs Darwin. Electron-
+#     style in-app updater (no Sparkle keys). Bundle ID
+#     `com.electron.fellow`. See docs/desktop/fellow.md.
+#   - Wispr Flow (cask, clause-1): no MAS, no nixpkgs Darwin.
+#     Electron-style in-app updater. Bundle ID
+#     `com.electron.wispr-flow`. macOS Monterey+; needs
+#     Accessibility + Microphone TCC prompts on first run. See
+#     docs/desktop/wispr-flow.md.
 #   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
 #     vendor default and silently updates /Applications/Google
 #     Chrome.app. No CustomUserPreferences keys today — Keystone is
@@ -139,6 +147,8 @@ in
       "claude" # docs/desktop/claude-desktop.md
       "chatgpt" # docs/desktop/chatgpt.md
       "google-gemini" # docs/desktop/gemini.md  (NOT the Cypress North MAS app — that's a crypto wallet)
+      "fellow" # docs/desktop/fellow.md
+      "wispr-flow" # docs/desktop/wispr-flow.md
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
