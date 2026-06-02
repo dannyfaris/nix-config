@@ -30,6 +30,16 @@ in
     home = operator.darwinHome;
   };
 
+  # Identifies the macOS account that user-domain defaults
+  # (system.defaults.NSGlobalDomain.*, system.defaults.dock.*,
+  # system.defaults.CustomUserPreferences.*) are written for at
+  # activation. nix-darwin refuses to evaluate any option marked
+  # `requiresPrimaryUser` without this being set — touched first by
+  # modules/darwin/homebrew.nix's Sparkle keys (ADR-031). Identity
+  # comes from the same lib/operator.nix record as the user
+  # declaration above.
+  system.primaryUser = operator.name;
+
   # System-side fish enable. On nix-darwin this is a PATH-safety check
   # for fish-aware modules (it does NOT populate /etc/shells — that's
   # `environment.shells` below). nix-darwin's user-shell change uses
