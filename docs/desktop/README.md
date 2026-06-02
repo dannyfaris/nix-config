@@ -48,6 +48,7 @@ rather than creating a new artifact.
 | [typora.md](./typora.md) | Typora markdown editor; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
 | [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | _pending_ |
 | [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | _pending_ |
+| [colima.md](./colima.md) | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021. | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
 

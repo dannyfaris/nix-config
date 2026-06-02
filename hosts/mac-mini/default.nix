@@ -25,6 +25,14 @@ _: {
     # docs/desktop/{ghostty,tailscale,1password}.md for per-app
     # rationale + fallback recipes.
     ../../modules/darwin/homebrew.nix
+
+    # colima — container runtime per ADR-021's 2026-06-03 amendment.
+    # Adds pkgs.colima + pkgs.docker + pkgs.docker-compose to PATH and
+    # a `launchd.user.agents.colima` definition that auto-starts the
+    # Lima VM on GUI session establishment (Darwin parallel to
+    # `linger = true` on the Linux side). See docs/desktop/colima.md
+    # for the GUI-session dependency + auto-login caveat.
+    ../../modules/darwin/colima.nix
   ];
 
   networking.hostName = "mac-mini";
