@@ -24,9 +24,13 @@
 # also writes the same keys to /etc/ssh/authorized_keys.d/<user> via
 # users.users.dbf.openssh.authorizedKeys.keys — sshd reads both
 # locations, so the home-managed file is redundant-but-harmless on
-# NixOS. On Darwin (mac-mini), this is the only path that wires keys
-# into ~/.ssh/authorized_keys, since macOS owns user creation and
-# nix-darwin doesn't manage user dot-files.
+# NixOS. On Darwin (mac-mini), sshd is configured by nix-darwin to read
+# keys via /etc/ssh/sshd_config.d/101-authorized-keys.conf's
+# `AuthorizedKeysCommand` (which cats /etc/ssh/nix_authorized_keys.d/<user>,
+# populated from users.users.<name>.openssh.authorizedKeys.keys in
+# modules/darwin/users.nix). The home-managed ~/.ssh/authorized_keys is
+# a /nix/store symlink and is NOT consulted by Darwin sshd — it's
+# cosmetic-only on Darwin, kept for cross-platform parity at this layer.
 #
 # No matchBlocks declared here, no identity files, no key generation. Git
 # auth uses HTTPS + token via gh/glab (see ADR-009), so SSH keys aren't
