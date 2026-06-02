@@ -1,9 +1,17 @@
 # Desktop environment selections
 
-Living documents for the Wayland desktop environment on metis (and any
-future Linux desktop host). Each per-tool document captures a
-selection, the rationale, alternatives considered, configuration
-choices, sharp edges, and references.
+Living documents for the operator's desktop tools — primarily the
+Wayland desktop environment on metis (and any future Linux desktop
+host), and also the per-tool selections on macOS clients (mac-mini
+and any future Mac) where a tool is the operator's daily-driver
+GUI for that platform. Each per-tool document captures a selection,
+the rationale, alternatives considered, configuration choices,
+sharp edges, and references.
+
+The per-tool doc shape transfers cleanly across the platform line:
+selections that span Linux desktop and macOS (e.g., a terminal where
+one variant ships on each side, or a cross-platform GUI app like
+Tailscale) land here as a single doc covering both platforms.
 
 This directory complements `docs/decisions/` (Architecture Decision
 Records). Where ADRs record *decisions at a moment in time* (immutable
@@ -13,6 +21,8 @@ binding, a new font, a new sharp edge — those amend the doc in-place
 rather than creating a new artifact.
 
 ## Index
+
+### Linux desktop (metis)
 
 | Doc | Subject | Landed |
 |---|---|---|
@@ -25,6 +35,19 @@ rather than creating a new artifact.
 | [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) | #75 |
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
+
+### macOS clients (mac-mini)
+
+| Doc | Subject | Landed |
+|---|---|---|
+| [ghostty.md](./ghostty.md) | Ghostty terminal (Mac-only; GPU-accelerated); nix-homebrew cask | #13 |
+
+### Cross-platform (NixOS desktop + macOS)
+
+| Doc | Subject | Landed |
+|---|---|---|
+| [tailscale.md](./tailscale.md) | Tailscale mesh-VPN (NixOS service + macOS cask) | #13 |
+| [1password.md](./1password.md) | 1Password password manager (macOS cask today; NixOS desktop adoption tracked separately) | #13 |
 
 **Deliberate no-doc:** #77 (Cursor IDE) landed without a per-tool
 selection doc — Cursor is a foregone install across all the
