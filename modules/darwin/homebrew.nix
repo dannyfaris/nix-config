@@ -45,6 +45,20 @@
 #     /Applications/ writes, and Office apps may re-install MAU on
 #     first launch when missing. MAS sandboxing prevents MAU
 #     structurally. See docs/desktop/microsoft-365.md.
+#   - Amphetamine (MAS): MAS is the only channel — no direct .dmg,
+#     no cask, no nixpkgs package. Clause 3 by absence of
+#     alternative, not by weigh-up. See docs/desktop/amphetamine.md.
+#   - Typora (cask, clause-2): Sparkle silent via the SU* keys
+#     below under abnerworks.Typora. Nixpkgs path carved out
+#     because the immutable nix-store .app breaks Sparkle's
+#     in-place update flow. See docs/desktop/typora.md.
+#   - Obsidian (cask, clause-2): MAS vendor-disrecommended
+#     (sandbox restrictions break vault filesystem access).
+#     Nixpkgs path carved out because the immutable nix-store .app
+#     breaks Obsidian's electron-builder updater. No Sparkle keys —
+#     Obsidian's updater is not Sparkle. Suppression fallback is
+#     the in-app Settings → About → Automatic updates toggle, not
+#     a `defaults`-domain key. See docs/desktop/obsidian.md.
 #   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
 #     vendor default and silently updates /Applications/Google
 #     Chrome.app. No CustomUserPreferences keys today — Keystone is
@@ -94,6 +108,8 @@ in
       "tailscale-app" # docs/desktop/tailscale.md  (NOT `tailscale`)
       "1password" # docs/desktop/1password.md
       "google-chrome" # docs/desktop/chrome.md  (NOT `google-chrome-for-testing`)
+      "typora" # docs/desktop/typora.md
+      "obsidian" # docs/desktop/obsidian.md
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
@@ -109,6 +125,7 @@ in
       "Microsoft PowerPoint" = 462062816;
       "Microsoft Outlook" = 985367838;
       "Microsoft Teams" = 1113153706; # NOT the legacy `teams` bundle
+      "Amphetamine" = 937984704; # docs/desktop/amphetamine.md
     };
     # Mirror the taps declared by nix-homebrew so the nix-darwin module
     # knows which taps to expect — per zhaofengli/nix-homebrew README.
@@ -121,17 +138,22 @@ in
     };
   };
 
-  # Sparkle silent-update keys for Ghostty + Tailscale's macOS app.
-  # See per-tool docs (docs/desktop/{ghostty,tailscale}.md §Configuration)
-  # for the per-app rationale + verification commands. Bundle IDs are
-  # the *app* bundle IDs (not pkg installer IDs) — Tailscale's pkg ID
-  # is com.tailscale.ipn.macsys, the app ID is io.tailscale.ipn.macsys.
+  # Sparkle silent-update keys for Ghostty, Tailscale, and Typora.
+  # See per-tool docs (docs/desktop/{ghostty,tailscale,typora}.md
+  # §Configuration) for the per-app rationale + verification commands.
+  # Bundle IDs are the *app* bundle IDs (not pkg installer IDs) —
+  # Tailscale's pkg ID is com.tailscale.ipn.macsys, the app ID is
+  # io.tailscale.ipn.macsys.
   system.defaults.CustomUserPreferences = {
     "com.mitchellh.ghostty" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
     "io.tailscale.ipn.macsys" = {
+      SUEnableAutomaticChecks = true;
+      SUAutomaticallyUpdate = true;
+    };
+    "abnerworks.Typora" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };

@@ -44,6 +44,9 @@ rather than creating a new artifact.
 | [slack.md](./slack.md) | Slack chat client (work daily-driver); MAS via `homebrew.masApps` — first managed MAS app | _pending_ |
 | [chrome.md](./chrome.md) | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone | _pending_ |
 | [microsoft-365.md](./microsoft-365.md) | Microsoft 365 — Word, Excel, PowerPoint, Outlook, Teams; MAS via `homebrew.masApps` | _pending_ |
+| [amphetamine.md](./amphetamine.md) | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution) | _pending_ |
+| [typora.md](./typora.md) | Typora markdown editor; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
+| [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
 
