@@ -8,11 +8,9 @@ foundation + bundles composition model the Darwin tree mirrors and the
 [`#11` epic](https://github.com/dannyfaris/nix-config/issues/11) for
 the broader mac-mini onboarding context.
 
-> This runbook is initially a forecast — written before first activation
-> against the staged Darwin scaffolding (`modules/darwin/`,
-> `lib/mk-darwin-host.nix`, the per-host palette entry). It will be
-> refined post first activation with whatever the real sequence
-> surfaces. Update freely as you learn.
+> The initial forecast version of this runbook (PR #164) was retired
+> after the live mac-mini bootstrap on 2026-06-02 surfaced the real
+> sequence. This document is the operational pass.
 
 ## Operator prerequisites
 
@@ -21,7 +19,11 @@ Run once per fresh clone of this repo on the operator machine (the
 metis, since the Mac being bootstrapped doesn't yet have a working
 sops decryption identity):
 
-- `nix` with flakes enabled. The repo cloned, devShell entered once.
+- `nix` with flakes enabled. Repo cloned. devShell entered once
+  (`nix develop`, or direnv-reload via the repo's `.envrc`). The
+  devShell's `shellHook` installs the pre-commit hooks (ADR-025) and
+  exports `SOPS_AGE_KEY_FILE` so `sops --decrypt` works in-repo
+  without env-var ceremony.
 - An existing age decryption identity for `secrets/secrets.yaml`. On
   Linux operator hosts this comes from `just setup-sops-identity`
   (see [`headless-bootstrap.md`](./headless-bootstrap.md) §Operator
@@ -31,13 +33,24 @@ sops decryption identity):
   pre-bootstrap step 1 below). If you're minting a brand-new key on
   the Mac instead, plan to update `modules/nixos/users.nix` and
   re-key sops *before* attempting first activation — both `dbf@mac`
-  in `.sops.yaml` and the inbound-SSH whitelist on every Linux host
+  in `.sops.yaml` and the inbound-SSH whitelist on every NixOS host
   derive from the same keypair.
 
 ## Pre-bootstrap (operator-side, on the Mac)
 
 The Mac Mini and MacBook Air both follow the same sequence. Steps
 must run in order — each depends on the previous.
+
+### 0 — macOS Setup Assistant
+
+Walk through Setup Assistant. The only setting that matters downstream
+is **Account Name** (the Unix short name shown under "Username" /
+"Account Name" — Setup Assistant auto-derives one from the Full Name).
+It **must** be `dbf` exactly. `lib/operator.nix:24` is the single source
+of truth; `users.users.dbf`, `home-manager.users.dbf`, `/Users/dbf`,
+and the `&mac` sops recipient pathway all key off this string.
+
+The Full Name (the display name) can be anything.
 
 ### 1 — Carry over the operator SSH keypair
 
@@ -52,15 +65,43 @@ ends silently**:
 - `ssh dbf@<linux-host>` from the new Mac will be refused because the
   whitelisted key doesn't match.
 
-Copy the existing keypair (private + public) onto the new Mac at
-`~/.ssh/`:
+Identify the right keypair on the source machine. **Filename is not
+authoritative** — `id_ed25519` / `id_ed25519_personal` / etc. may
+coexist, and the key comment (`dbf@mac`) is not an identity guarantee.
+The keypair-of-record is identified by public-key body. Disambiguate:
 
 ```bash
-# From the source Mac (or a USB key, or 1Password):
-scp ~/.ssh/id_ed25519{,.pub} dbf@<new-mac>:~/.ssh/
-chmod 600 ~/.ssh/id_ed25519
-chmod 644 ~/.ssh/id_ed25519.pub
+# On the source machine, find the .pub whose key body matches the
+# `&mac` recipient's public key from lib/operator.nix:
+grep -l "AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI" \
+  ~/.ssh/*.pub
 ```
+
+Transfer to the new Mac via Remote Login + `scp` (the canonical path):
+
+1. On the new Mac: System Settings → General → Sharing → Remote Login
+   on. Restrict access to "Only these users: dbf".
+2. From the source machine:
+
+   ```bash
+   scp ~/.ssh/<the-right-key>{,.pub} dbf@<new-mac>:~/.ssh/
+   ```
+
+3. On the new Mac, fix permissions (`scp` doesn't preserve them):
+
+   ```bash
+   chmod 700 ~/.ssh
+   chmod 600 ~/.ssh/id_ed25519
+   chmod 644 ~/.ssh/id_ed25519.pub
+   ```
+
+   Rename the private key to `id_ed25519` if it had a non-default name
+   on the source — every downstream step (age derivation, ssh defaults)
+   assumes that filename.
+
+AirDrop and USB-stick variants work and may be more convenient if
+Remote Login can't reach the source. Either way, end state must be the
+same two files at `~/.ssh/id_ed25519{,.pub}` with the perms above.
 
 If you've genuinely lost the old keypair, the recovery path is:
 generate a new key, update `modules/nixos/users.nix:authorizedKeys`,
@@ -73,25 +114,39 @@ continuing.
 
 ### 2 — Install Nix
 
-Determinate Systems installer, **upstream Nix variant** (not
-Determinate Nix), per PRD §11.2:
+The canonical path is the **NixOS official installer**:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf -L \
-    https://install.determinate.systems/nix \
-  | sh -s -- install --determinate=false
+sh <(curl -L https://nixos.org/nix/install) --daemon
 ```
 
 Restart your terminal to pick up the new PATH.
 
-> Determinate's installer writes its own `/etc/nix/nix.conf`. After
-> first `nix run nix-darwin -- switch` lands, nix-darwin owns that
-> file and overwrites it with the flake's settings (`nix.enable =
-> true` in `modules/darwin/foundation.nix`). The Determinate
-> installer's content is discarded; the flake becomes source of truth
-> for the daemon config.
+> The Determinate Systems installer was the prior recommendation per
+> PRD §11.2 ("upstream Nix variant, not Determinate Nix"). The
+> `--determinate=false` flag was removed upstream and its replacement
+> `--prefer-upstream-nix` is past its documented availability cutoff;
+> on the live mac-mini bootstrap the Determinate installer aborted
+> with a marketing nudge. The NixOS official installer produces
+> upstream Nix unambiguously and is now the canonical entry point.
+
+Enable flake features (the NixOS installer doesn't set them by default):
+
+```bash
+mkdir -p ~/.config/nix
+echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+```
+
+Without this step, every subsequent `nix shell` / `nix flake`
+invocation fails with `experimental Nix feature 'nix-command' is
+disabled`. This is per-user config; nix-darwin's foundation enables
+the same flags at system level after first activation, at which point
+the per-user file becomes redundant-but-harmless.
 
 ### 3 — Clone the repo
+
+macOS ships without `git`. First `git` invocation triggers Xcode
+Command Line Tools install — a GUI prompt and 5–10 minutes of download:
 
 ```bash
 git clone https://github.com/dannyfaris/nix-config.git ~/nix-config
@@ -101,6 +156,15 @@ cd ~/nix-config
 The expected path is `/Users/dbf/nix-config` — this matches
 `hostContext.flakePath`'s Darwin default in
 `modules/darwin/host-context.nix` (`${operator.darwinHome}/${operator.flakeRepoDirname}`).
+
+If you want to skip the CLT install, the `nix shell` alternative
+works (CLT is otherwise nix-darwin-unmanaged Apple state per PRD §2.2,
+but provides useful `cc`/`clang`/headers as a side-effect — keeping
+it isn't a problem):
+
+```bash
+nix shell nixpkgs#git -c git clone https://github.com/dannyfaris/nix-config.git ~/nix-config
+```
 
 ### 4 — Install the operator age identity
 
@@ -130,42 +194,62 @@ key, or update `.sops.yaml` per the step 1 recovery path.
 
 ### 6 — Collect the operator UID for the host file
 
-This step runs *after* macOS's first-boot setup has created the
-`dbf` user account — without that, `id -u dbf` returns nothing.
+This step runs *after* macOS Setup Assistant has created the `dbf`
+user account — without that, `id -u dbf` returns nothing.
 
 ```bash
 id -u dbf
 ```
 
-Pin this value in `hosts/<host>/default.nix` as `users.users.dbf.uid
-= <value>;` *and* `users.knownUsers = [ "dbf" ];` (see
-`modules/darwin/users.nix` — the foundation declares the rest, but
-the UID is host-specific and must match what macOS assigned during
-first-boot setup; nix-darwin refuses to manage a user with a
-mismatched UID).
+macOS's first-user default is 501. Pin this value in
+`hosts/<host>/default.nix` as `users.users.dbf.uid = <value>;` *and*
+`users.knownUsers = [ "dbf" ];` (see `modules/darwin/users.nix` — the
+foundation declares the rest, but the UID is host-specific and must
+match what macOS assigned during first-boot setup; nix-darwin refuses
+to manage a user with a mismatched UID).
 
-### 7 — Expect TCC prompts on first activation
+### 7 — Move aside `/etc/{bashrc,zshrc}` (NixOS-installer safety guard)
+
+The NixOS official installer modifies `/etc/bashrc` and `/etc/zshrc`
+to source `/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh`.
+nix-darwin refuses to overwrite these files on first activation as a
+safety check. Move them aside so nix-darwin can write its own:
+
+```bash
+sudo mv /etc/bashrc /etc/bashrc.before-nix-darwin
+sudo mv /etc/zshrc  /etc/zshrc.before-nix-darwin
+```
+
+(The Determinate installer doesn't touch these files, which is why
+the old runbook didn't list this step.)
+
+### 8 — Expect TCC prompts on first activation
 
 When nix-darwin writes to `/Library/LaunchDaemons/`, macOS may
 prompt for Full Disk Access for the activation process. Approve via
 System Settings → Privacy & Security as the prompts surface. None of
 the steps below auto-dismiss the prompt; first activation pauses
-until you confirm.
+until you confirm. (On the 2026-06-02 mac-mini bootstrap no TCC
+prompt surfaced; treat this as "may appear, may not".)
 
 ## First activation
 
-> The `mac-mini` (and eventually `mba`) darwinConfiguration is a
-> separate PR — the host file at `hosts/<host>/default.nix` plus the
-> mkDarwinHost invocation in `parts/darwin.nix`. This runbook lands
-> ahead of that work so the operator can read the sequence before
-> authoring the host file. If `nix flake show .#darwinConfigurations`
-> returns an empty attrset, the host PR hasn't landed yet — finish
-> that first.
+> The `mac-mini` (and eventually `mba`) darwinConfiguration is its
+> own PR — the host file at `hosts/<host>/default.nix` plus the
+> mkDarwinHost invocation in `parts/darwin.nix`. If `nix flake show
+> .#darwinConfigurations` returns an empty attrset for your host, the
+> host PR hasn't landed yet — `git pull` the merge before continuing.
+
+The first activation needs `sudo` because `nix run nix-darwin -- switch`
+doesn't escalate on its own:
 
 ```bash
 cd ~/nix-config
-nix run nix-darwin -- switch --flake .#<host>
+sudo nix run nix-darwin -- switch --flake .#<host>
 ```
+
+(If the run errors part-way through with a `/etc/bashrc` /
+`/etc/zshrc` safety message, you skipped step 7 — fix it and re-run.)
 
 After this, `darwin-rebuild` is on PATH. Subsequent activations use
 either:
@@ -176,73 +260,146 @@ darwin-rebuild switch --flake .#<host>
 nh darwin switch
 ```
 
-`nh darwin switch` is the canonical command (parallel to `nh os
-switch` on NixOS); `NH_FLAKE` is set from `hostContext.flakePath` per
-ADR-019.
+`nh darwin switch` is the canonical command going forward (parallel
+to `nh os switch` on NixOS); `NH_FLAKE` is set from
+`hostContext.flakePath` per ADR-019.
+
+## Post-activation — author `~/.ssh/config.local`
+
+`home/shared/ssh.nix` declares `programs.ssh.includes = [
+"~/.ssh/config.local" ]`. The Include target is operator-maintained
+and survives every activation. Author it with a self-describing
+header so a future operator opening it understands the nix-managed
+vs operator-maintained boundary:
+
+```sshconfig
+# ~/.ssh/config.local — operator-maintained, NOT managed by nix-config.
+#
+# The parent ~/.ssh/config is a home-manager-generated symlink into the
+# nix store (source: home/shared/ssh.nix), and contains only
+# `Include ~/.ssh/config.local`. THIS file is where one-off Host blocks
+# live so they survive `nh darwin switch` without being clobbered.
+# See docs/decisions/ADR-010-ssh.md.
+
+Host mercury
+  User dbf
+  HostName <mercury's current AWS DNS>
+
+Host metis
+  HostName metis.<tailnet>.ts.net
+  User dbf
+
+Host metis-lan
+  HostName <metis's LAN IP>
+  User dbf
+```
+
+Entries depend on what's reachable from the Mac. `mercury` (public
+AWS DNS) works from anywhere. `metis` via tailnet resolves only once
+the Mac runs tailscale (gated on issue #13 — see "What this runbook
+does NOT cover" below); use the `metis-lan` LAN entry until then.
 
 ## Verification
 
+### Phase 1 — local on the new Mac
+
 Run from the new Mac's user shell.
 
-### Shared (all Darwin hosts)
-
-- `echo $SHELL` → fish at the operator's expected path. `chsh -s
+- `echo $SHELL` → fish at `/run/current-system/sw/bin/fish`. `chsh -s
   $(which fish)` should be a no-op (the shell is already declared via
   `users.users.dbf.shell` in `modules/darwin/users.nix`, and
   `environment.shells` carries the entry).
-- `sops --decrypt secrets/secrets.yaml` succeeds (age identity wired
-  end-to-end).
+- `cd ~/nix-config && sops --decrypt secrets/secrets.yaml | head -3`
+  prints `dbf-password:` + hash. The repo's devShell auto-activates
+  via direnv and exports `SOPS_AGE_KEY_FILE`, so no env-var
+  ceremony is needed. (If you see "no identity found", verify you
+  `cd`d into the repo — outside it, the env var is not set.)
 - macchina banner renders at every new interactive fish shell — every
-  Ghostty tab, every zellij pane. The Apple-logo ASCII should display
+  terminal tab, every zellij pane. The Apple-logo ASCII should display
   with colour. **If the `$2`/`$3`/etc. characters render literally
   rather than as colour escapes**, see Troubleshooting below.
-- `helix` opens a `.nix` file with `nixd` LSP working — hover over
-  `programs.git` shows the option's type. `:lsp-restart` if uncertain.
+- `hx` opens a `.nix` file with `nixd` LSP working — hover over
+  `programs.git` shows the option's type. `:lsp-restart` if
+  uncertain. (The binary is `hx`, not `helix` — `which helix`
+  returns "not found"; that's expected.)
 - `which claude` and `which cursor-agent` both resolve — the base
   agent set is on every host (ADR-008).
 - `which codex` and `which gemini` both resolve (mac-mini imports
   `agent-clis-extras.nix` for the full agent set).
-- `programs.fish.interactiveShellInit` honours the operator's
-  every-shell trigger — every new shell sees the macchina banner
-  (login or otherwise).
 
-### SSH-context stack from the Mac into the Linux fleet
+### Phase 2 — SSH-context stack into the Linux fleet
 
-For each of `nixos-vm`, `mercury`, `metis`, `ssh dbf@<host>` and
-verify five signals visible and distinct:
+For each reachable Linux host (`mercury`, `metis`, `nixos-vm`),
+`ssh dbf@<host>` and verify the five signals visible and distinct.
 
-1. Per-host palette in helix, bat, zellij, fish — the Mac uses
-   gruvbox-dark-hard; each Linux host uses its own family
-   (catppuccin-mocha / tokyo-night-dark / rose-pine).
-2. Starship hostname segment in the prompt.
-3. Ghostty tab title reflects the host name (via
-   `programs.fish.functions.fish_title` in `home/shared/shell.nix`,
-   which Ghostty reads at title-update time — there's no
-   Ghostty-specific module).
-4. macchina banner on shell launch shows the NixOS logo (each
-   host's two-tone palette derived from its Stylix base16 entries).
-5. Claude Code statusline colours derived from the host's palette.
+There are **two verification modes**, with different coverage:
 
-### linux-builder
+| Signal | Interactive `ssh mercury` | Capture via `ssh -t mercury 'fish -ic exit'` |
+|---|---|---|
+| 1. Palette shift (per-host base16) | visual | OSC palette escapes (`]4;0;rgb:…`) emitted to stdout |
+| 2. Starship hostname segment | visual | starship `[custom]` over-SSH block fires in `~/.config/starship.toml` |
+| 3. Terminal tab title reflects the host | visual; **deferred on Darwin** | not observable without terminal-frontend support |
+| 4. macchina banner with NixOS logo + two-tone Stylix palette | visual | full banner emitted, escapes intact |
+| 5. Claude Code statusline colours | visual; requires `claude` over SSH | not observable without launching the agent |
+
+The interactive mode is the canonical full check. The capture mode
+is useful for smoke-testing 1+2+4 without operator eyeballing
+(handy for CI or AI-assisted bootstrap); `interactiveShellInit` fires
+regardless of TTY presence so macchina's banner and the palette OSC
+escapes round-trip cleanly into stdout.
+
+Per-host palettes are defined in `lib/host-palettes.nix`:
+`nixos-vm` → catppuccin-mocha, `mercury` → tokyo-night-dark,
+`metis` → rose-pine, `mac-mini` → gruvbox-dark-hard.
+
+**Signal 3 on Darwin hosts is deferred until issue #13 (nix-homebrew
+cask bundle) lands** — Ghostty (the target terminal for tab-title
+verification) distributes as a native `.app` on macOS, not via
+nixpkgs (see issue #167 root cause). Until then, signal 3 is "not
+verifiable on Darwin"; signals 1, 2, 4, 5 remain in scope.
+
+### Phase 3 — linux-builder
 
 If the host imports `modules/darwin/linux-builder.nix`, the launchd
-job provisions a Linux VM (persistent at `/var/lib/linux-builder/`)
-on first activation. The VM image is built on first invocation.
+plist `org.nixos.linux-builder.plist` is registered and
+`/var/lib/linux-builder/{keys,nixos.qcow2}` is created at first
+activation. The VM image expands on first invocation.
 
 ```bash
-nix build .#nixosConfigurations.nixos-vm.config.system.build.toplevel
+nix build .#nixosConfigurations.nixos-vm.config.system.build.toplevel \
+  --no-link --print-out-paths --print-build-logs 2>&1 | tee /tmp/phase3.log
 ```
 
-This should succeed and produce a closure path in `/nix/store/`. The
-build runs inside the VM; the Mac's daemon offloads via SSH at
-`/etc/nix/builder_ed25519`. The module declares
-`nix.settings.trusted-users` for `@admin` so `nix build` invoked from
-the operator shell can drive the remote build — without it, the
-build silently falls back to local-only.
+Expected: succeeds and produces a closure path in `/nix/store/`.
+**First-build baseline on a fresh aarch64-darwin host: ~30 minutes**
+from a substitute-cache-warm starting point. Subsequent builds are
+much faster (cache reuse).
+
+The failure mode that's invisible without active verification is
+**silent local fallback** — if `trusted-users` isn't wired correctly,
+`nix build` succeeds without offloading to the VM and you get an
+empty positive signal. Grep the log to confirm the remote builder
+was actually used:
+
+```bash
+grep -c "on 'ssh-ng://builder@linux-builder'" /tmp/phase3.log
+```
+
+A non-zero count is the positive-evidence check. Zero count means
+the build ran locally despite the linux-builder being available
+— investigate `trusted-users` in `/etc/nix/nix.conf` (should
+contain `@admin`) and `builders-use-substitutes = true`.
+
+The VM listens on `:31022` for SSH. IPv4 may return
+"connection refused" while IPv6 accepts; harmless. Verify:
+
+```bash
+nc -zv localhost 31022
+```
 
 `x86_64` hosts (mercury, metis) need a follow-up that adds the
-second builder package; today only `aarch64-linux` is in
-`nix.linux-builder.systems`.
+second builder system to `nix.linux-builder.systems` — today only
+`aarch64-linux` is declared.
 
 ## Subsequent updates
 
@@ -285,13 +442,33 @@ itself is always the substrate.
 
 ## Troubleshooting
 
+### `experimental Nix feature 'nix-command' is disabled`
+
+You skipped step 2's experimental-features enablement. Apply the
+single-line fix and reopen the shell:
+
+```bash
+mkdir -p ~/.config/nix
+echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+```
+
+### First activation errors with a `/etc/bashrc` or `/etc/zshrc` safety message
+
+You skipped step 7. Move them aside and re-run:
+
+```bash
+sudo mv /etc/bashrc /etc/bashrc.before-nix-darwin 2>/dev/null
+sudo mv /etc/zshrc  /etc/zshrc.before-nix-darwin  2>/dev/null
+sudo nix run nix-darwin -- switch --flake .#<host>
+```
+
 ### Determinate's `/etc/nix/nix.conf` vs nix-darwin's
 
-After first activation, `/etc/nix/nix.conf` is owned by nix-darwin
-(written from `modules/shared/nix-daemon.nix` + sibling Darwin
-overrides). Determinate's installer settings are discarded. If you
-need to add daemon settings, edit the Nix module — not the file
-directly.
+If you used the Determinate installer (not the canonical path),
+post-activation `/etc/nix/nix.conf` is owned by nix-darwin (written
+from `modules/shared/nix-daemon.nix` + sibling Darwin overrides).
+Determinate's installer settings are discarded. If you need to add
+daemon settings, edit the Nix module — not the file directly.
 
 ### `users.users.dbf.uid` mismatch
 
@@ -299,6 +476,30 @@ If first activation errors with "user `dbf` exists but is not managed
 by nix-darwin" or similar, the host file's `users.users.dbf.uid`
 doesn't match the value macOS assigned. Re-run `id -u dbf`, update
 the host file, re-stage, re-activate.
+
+### `which helix` returns "not found"
+
+The helix binary is named `hx`, not `helix`. The package is
+installed; the verification check is `which hx` (returns
+`/etc/profiles/per-user/dbf/bin/hx`) and `hx --version`.
+
+### sops "no identity found" outside the repo
+
+The devShell exports `SOPS_AGE_KEY_FILE`, but the env var only
+exists inside `~/nix-config` (direnv auto-activation). Running
+`sops` from elsewhere needs an explicit `SOPS_AGE_KEY_FILE=…`
+prefix, or `cd ~/nix-config` first.
+
+### Determinate installer marketing noise / abort
+
+If you tried the Determinate installer (not the canonical path),
+note that:
+- It prints "use our macOS package instead" nudges both pre- and
+  post-install regardless of the flag passed. Not an error.
+- If it reports failure, run `which nix` before retrying — partial
+  installs sometimes report failure on a late step despite Nix being
+  functional. If `nix` resolves to a path, try a fresh terminal and
+  `nix --version` before falling back to the NixOS-installer path.
 
 ### Stylix Darwin gaps
 
@@ -340,6 +541,16 @@ explicit allow may be needed; observe at activation.
   generations system lets you back out.
 - Mac App Store apps, declarative iCloud/Apple-service state, Mosyle
   MDM interactions — all explicitly out of scope per PRD §2.2.
-- `nix-homebrew` integration. Deferred indefinitely per the epic
-  scope; if a future PR adopts it, document the boundary alongside
-  the module.
+- `nix-homebrew` integration. Deferred to issue
+  [#13](https://github.com/dannyfaris/nix-config/issues/13). Until
+  that lands, macOS-native apps that don't ship in nixpkgs
+  (Ghostty, Tailscale, 1Password, etc.) are operator-installed by
+  hand. Signal 3 of Phase 2 verification (terminal tab title) is
+  gated on the Ghostty cask landing under #13.
+- Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is
+  Linux-only in nixpkgs (issue
+  [#167](https://github.com/dannyfaris/nix-config/issues/167));
+  `modules/darwin/bundles/remote-access.nix` omits ghostty-terminfo
+  as a workaround until upstream parity or a nix-homebrew Ghostty
+  cask (also gated on #13) resolves it. Operator uses Darwin hosts
+  primarily as SSH clients, not servers — acceptable interim posture.
