@@ -120,14 +120,25 @@ case in `claude-statusline.sh:175-183`:
 | no effort suffix | (none rendered) | — |
 | `*-high*` | `▲ high` | YELLOW |
 | `*-xhigh*` | `▲ xhigh` | RED |
-| `*-max*` | `⬆ max` | RED |
 
 Match order: `-xhigh` before `-high` (substring containment);
-`-low` is unambiguous. `-fast` and `-thinking` modifiers are not
-surfaced on day 1 — both are real signals (latency tier and
-extended thinking) but neither has an obvious glyph and the visual
-budget of line 1 is already dense. Revisit if the operator finds
-themselves wanting them.
+`-low` is unambiguous.
+
+**`-max` left unmapped.** Surfaced during implementation: `-max`
+appears in cursor's lineup as a quality-tier modifier, not as an
+effort level — `claude-opus-4-7-max`, `claude-opus-4-7-max-fast`,
+`claude-opus-4-7-thinking-max` are "Max tier" variants of Opus 4.7;
+`gpt-5.1-codex-max-low` / `-max-medium` / `-max-high` / `-max-xhigh`
+are "Codex 5.1 Max" with explicit effort suffixes. Mapping `*-max*`
+to effort would mis-categorise the tier as effort and clobber the
+real effort suffix on the 5.1-codex Max variants. Left unmapped
+until the semantic separation between tier and effort is clearer in
+upstream conventions.
+
+`-fast` and `-thinking` modifiers are not surfaced on day 1 — both
+are real signals (latency tier and extended thinking) but neither
+has an obvious glyph and the visual budget of line 1 is already
+dense. Revisit if the operator finds themselves wanting them.
 
 **Sharp edges around the model-id parse.** Both family-tier and
 effort-tier come from the same string (`gpt-5.3-codex-xhigh`), so
