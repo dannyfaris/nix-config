@@ -3,8 +3,8 @@
 # Truly-platform-pure half of the macchina wiring: the package, the
 # `macchina.toml` theme-selector, and the Hydrogen theme TOML. The
 # theme references a generic `ascii.txt` art path; each platform owns
-# the `ascii.txt` content (NixOS-snowflake on Linux,
-# Apple-logo on Darwin) plus its interactive-shell init, in a
+# the `ascii.txt` content (NixOS logo on Linux, Apple logo on
+# Darwin) plus its interactive-shell init, in a
 # `macchina-shell-init.nix` sibling under `home/<platform>/`.
 #
 # Hosts of either platform import this file *and* the matching
@@ -27,7 +27,7 @@
     #
     # The `[custom_ascii].path` points at a per-platform file written by
     # the matching `home/<platform>/macchina-shell-init.nix` sibling
-    # (NixOS: Stylix-coloured snowflake; Darwin: macchina-coloured
+    # (NixOS: Stylix-coloured NixOS logo; Darwin: macchina-coloured
     # Apple logo).
     "macchina/themes/Hydrogen.toml".text = ''
       # Hydrogen

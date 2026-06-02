@@ -219,7 +219,7 @@ verify five signals visible and distinct:
    `programs.fish.functions.fish_title` in `home/shared/shell.nix`,
    which Ghostty reads at title-update time — there's no
    Ghostty-specific module).
-4. macchina banner on shell launch shows the NixOS snowflake (each
+4. macchina banner on shell launch shows the NixOS logo (each
    host's two-tone palette derived from its Stylix base16 entries).
 5. Claude Code statusline colours derived from the host's palette.
 
