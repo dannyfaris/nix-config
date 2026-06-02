@@ -279,7 +279,7 @@ Examples drawn from the current and planned set of hosts:
 - `metis` — personal x86_64 dev box, transitioning from headless to the first desktop host (ADR-028)
 - `mothership` — second Linux desktop host (planned; pending hardware)
 - `mba` — MacBook Air (planned via nix-darwin)
-- `mac-mini` — Mac mini (planned via nix-darwin)
+- `mac-mini` — Mac mini (aarch64-darwin, nix-darwin, live as of 2026-06-02)
 
 These names are accepted under the rule: each refers unambiguously to a specific physical machine. A replacement (e.g., upgrading the MacBook Air to a MacBook Pro) gets its own host directory and a fresh name.
 
@@ -561,7 +561,7 @@ For any host, bootstrap consists of the same conceptual phases:
 
 ### 11.3 Per-host-shape notes
 
-**macOS hosts (managed via `nix-darwin`):** Install Nix on the existing macOS install, clone, activate via `nix run nix-darwin -- switch`. After first activation, `darwin-rebuild` is available on `PATH`. Homebrew components are activated as part of the flake. Mac App Store applications, if used, are installed manually after bootstrap — they are out of scope for declarative management in current design.
+**macOS hosts (managed via `nix-darwin`):** Install Nix on the existing macOS install, clone, activate via `nix run nix-darwin -- switch`. After first activation, `darwin-rebuild` is available on `PATH` and the canonical command is `nh darwin switch`. The operational sequence — including the SSH-keypair carry-over, age-identity derivation, and post-activation `~/.ssh/config.local` authoring — is captured in [`docs/runbooks/darwin-bootstrap.md`](./runbooks/darwin-bootstrap.md). Mac App Store applications, if used, are installed manually after bootstrap — they are out of scope for declarative management in current design. `nix-homebrew` integration (for casks Ghostty, Tailscale, etc.) is deferred to [issue #13](https://github.com/dannyfaris/nix-config/issues/13).
 
 **NixOS workstation hosts (with desktop environment bundles):** Bootstrap from a fresh NixOS install (via ISO). In-place migration from non-NixOS Linux distributions is not supported by this configuration; existing non-NixOS machines must be reinstalled.
 
@@ -597,7 +597,7 @@ Data — Obsidian vault contents, photography libraries, project repositories �
 
 A successful design produces a configuration that another competent operator (familiar with Nix at a general level, given access to the repository and 1Password) can rebuild from in an afternoon. This is the operational standard the bootstrap design serves.
 
-The test holds today for NixOS headless hosts (via the nixos-anywhere + disko path resolved in ADR-022, demonstrated on Mercury and Metis). It will hold for NixOS workstation hosts once metis transitions to the desktop env (ADR-028), and for macOS hosts once the mac-mini onboarding completes.
+The test holds today for NixOS headless hosts (via the nixos-anywhere + disko path resolved in ADR-022, demonstrated on Mercury and Metis) and for macOS hosts (via the Darwin runbook validated by the mac-mini onboarding on 2026-06-02). It will hold for NixOS workstation hosts once metis transitions to the desktop env (ADR-028).
 
 ---
 

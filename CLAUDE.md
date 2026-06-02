@@ -2,10 +2,11 @@
 
 ## Purpose
 
-Evergreen NixOS configuration. Three hosts: `nixos-vm` (UTM/aarch64
-refinement target), `mercury` (AWS EC2/x86_64 work-only headless), and
-`metis` (HP ProDesk/x86_64 personal dev box). Metis is the first
-desktop host, running niri per
+Evergreen NixOS + nix-darwin configuration. Four live hosts: `nixos-vm`
+(UTM/aarch64 refinement target), `mercury` (AWS EC2/x86_64 work-only
+headless), `metis` (HP ProDesk/x86_64 personal dev box), and `mac-mini`
+(Apple Silicon, first nix-darwin host, onboarded 2026-06-02). Metis is
+the first desktop host, running niri per
 [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends
 [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)).
 The Stylix-foundation + bundle-composition basis from ADR-028 stands.
@@ -54,7 +55,7 @@ whitelist > blanket.
 | Stance | Rationale |
 |--------|-----------|
 | `users.mutableUsers = false` | This file is the sole source of truth for user state. `passwd` changes do not persist. |
-| SSH: key-only, no passwords, no root | Hardened from boot one. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis. |
+| SSH: key-only, no passwords, no root | Hardened from boot one on every NixOS host. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis. mac-mini doesn't run inbound sshd today (gated on issue #167); break-glass is the Apple keyboard at the local login. |
 | `allowUnfreePredicate` whitelist | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`. |
 | `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
 | `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
@@ -67,9 +68,13 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 - **mercury**: AWS EC2 Instance Connect from the AWS console.
 - **metis**: physical console (monitor + keyboard); once ADR-028 lands,
   the greetd login is the same entry point.
+- **mac-mini**: Apple keyboard + display at the local login. No inbound
+  sshd yet — gated on issue #167.
 
-In all cases: log in, fix the config, and `sudo nixos-rebuild switch`
-(or `nh os switch` when available).
+In all cases: log in, fix the config, and re-activate — `nh os switch`
+on NixOS, `nh darwin switch` on mac-mini (or the underlying
+`sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on
+PATH).
 
 ## Build & deploy
 
