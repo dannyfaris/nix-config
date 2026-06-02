@@ -58,6 +58,13 @@ truth, eliminating drift between AI memory and in-repo reference.
   the desktop grows. See [desktop/README.md](./desktop/README.md) for
   the index and conventions.
 
+- **[agents/](./agents/)** — living documents for the AI coding agents
+  (Claude Code + Cursor CLI per ADR-008) and their per-surface decisions
+  — model-tier colour mapping, statusline signal selection, behavioural
+  conventions. Parallel to `desktop/` for the agent-CLI surface; the
+  framing ADRs (ADR-008, ADR-024) stay in `decisions/`. See
+  [agents/README.md](./agents/README.md) for the index.
+
 - **[runbooks/](./runbooks/)** — operational procedures: ordered, copy-
   pasteable steps for tasks that aren't (and shouldn't be) declarative.
   Currently:
