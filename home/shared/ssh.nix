@@ -1,18 +1,32 @@
-# Outbound SSH — defaults only + one local Include for operator one-offs.
+# SSH — outbound config (client-side) + inbound authorized_keys.
 # See docs/decisions/ADR-010-ssh.md for the broader rationale.
 #
 # What this module generates on the filesystem:
 #
-#   ~/.ssh/config        nix-store symlink, rendered from this module.
-#                        Regenerated on every `nh darwin switch` / `nh os
-#                        switch` — direct edits get clobbered. Currently
-#                        contains just one line: `Include ~/.ssh/config.local`.
+#   ~/.ssh/config            nix-store symlink, rendered from this module.
+#                            Regenerated on every `nh darwin switch` /
+#                            `nh os switch` — direct edits get clobbered.
+#                            Currently contains just one line:
+#                            `Include ~/.ssh/config.local`.
 #
-#   ~/.ssh/config.local  operator-maintained plain file, NEVER touched by
-#                        nix. Home for one-off Host blocks (bootstrap
-#                        targets, temporary access, hosts that haven't
-#                        earned a place in this module yet). Sourced into
-#                        ~/.ssh/config via the Include declared below.
+#   ~/.ssh/config.local      operator-maintained plain file, NEVER touched
+#                            by nix. Home for one-off Host blocks
+#                            (bootstrap targets, temporary access, hosts
+#                            that haven't earned a place in this module
+#                            yet). Sourced into ~/.ssh/config via the
+#                            Include declared below.
+#
+#   ~/.ssh/authorized_keys   nix-store symlink, rendered from
+#                            lib/operator.nix's authorizedKeys list.
+#                            Regenerated on every nh switch.
+#
+# On NixOS hosts, the system-side foundation (modules/nixos/users.nix)
+# also writes the same keys to /etc/ssh/authorized_keys.d/<user> via
+# users.users.dbf.openssh.authorizedKeys.keys — sshd reads both
+# locations, so the home-managed file is redundant-but-harmless on
+# NixOS. On Darwin (mac-mini), this is the only path that wires keys
+# into ~/.ssh/authorized_keys, since macOS owns user creation and
+# nix-darwin doesn't manage user dot-files.
 #
 # No matchBlocks declared here, no identity files, no key generation. Git
 # auth uses HTTPS + token via gh/glab (see ADR-009), so SSH keys aren't
@@ -27,7 +41,11 @@
 # on this box, use a passphrase + ssh-agent, and add matchBlocks here
 # directly. Agent forwarding from the Mac stays explicitly OFF (standard
 # security best practice).
-_: {
+{ lib, ... }:
+let
+  operator = import ../../lib/operator.nix;
+in
+{
   programs.ssh = {
     enable = true;
     # Opt out of home-manager's deprecated "default match-block contents"
@@ -46,4 +64,12 @@ _: {
     # the scoping subtleties of putting Include inside a Host * block.
     includes = [ "~/.ssh/config.local" ];
   };
+
+  # Inbound authorization. Single source of truth: lib/operator.nix.
+  # Trailing newline because some sshd versions are fussy about EOF
+  # without one. The backup-extension on conflict is "hm-bak" (set
+  # in modules/{nixos,darwin}/home-manager.nix), so first activation
+  # on a host with an existing ~/.ssh/authorized_keys cleanly preserves
+  # the old file as ~/.ssh/authorized_keys.hm-bak.
+  home.file.".ssh/authorized_keys".text = lib.concatStringsSep "\n" operator.authorizedKeys + "\n";
 }
