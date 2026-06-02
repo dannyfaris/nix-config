@@ -3,27 +3,19 @@
 # primary SSH client into the Linux hosts (nixos-vm, mercury, metis)
 # and a cross-platform NixOS-builder via linux-builder (PRD §10, §11.6).
 #
-# Composes the Darwin foundation + linux-builder standalone, per
-# ADR-027. macOS owns disk and hardware, so there is no disko.nix /
-# hardware-configuration.nix sibling (ADR-023's three-file structure
-# applies to NixOS hosts only).
-#
-# The `remote-access` bundle is deliberately NOT imported in this
-# slice — it transitively pulls modules/shared/ghostty-terminfo.nix,
-# whose `pkgs.ghostty.terminfo` is unavailable on aarch64-darwin
-# (Ghostty ships as a native .app on macOS, not via nixpkgs). The bug
-# would have surfaced on first eval of any Darwin host that imported
-# the bundle, but no darwinConfiguration existed until this PR.
-# Tracked in #167; once resolved, this host adopts
-# `../../modules/darwin/bundles/remote-access.nix` to enable inbound
-# SSH + mosh. Functional impact for first activation is nil — the
-# runbook's SSH-context verification flow is outbound from this host.
+# Composes the Darwin foundation + remote-access bundle + linux-builder
+# standalone, per ADR-027. macOS owns disk and hardware, so there is no
+# disko.nix / hardware-configuration.nix sibling (ADR-023's three-file
+# structure applies to NixOS hosts only).
 #
 # Bootstrap runbook: docs/runbooks/darwin-bootstrap.md.
 _: {
   imports = [
     # Foundation — bundle every Darwin host imports by convention.
     ../../modules/darwin/foundation.nix
+
+    # Capability bundles.
+    ../../modules/darwin/bundles/remote-access.nix
 
     # Standalone system modules.
     ../../modules/darwin/linux-builder.nix
