@@ -352,6 +352,21 @@ Per-host palettes are defined in `lib/host-palettes.nix`:
 `nixos-vm` → catppuccin-mocha, `mercury` → tokyo-night-dark,
 `metis` → rose-pine, `mac-mini` → gruvbox-dark-hard.
 
+**Palette persistence after `exit` is expected, not a bug.** Signal 1's
+OSC palette escapes are stateful in the terminal: when the remote
+host's fish init emits `]4;…rgb:…` / `]11;…rgb:…` codes (via the
+`base16-<slug>` invocation from Stylix's fish target), the terminal
+repaints its runtime palette + background to the remote's base16.
+After `exit`, the local fish doesn't re-fire its `base16-<slug>`
+invocation on SSH return — no `fish_postexec` hook is wired today —
+so the terminal stays in the last-applied palette until something
+else emits OSC escapes (opening a new tab, SSHing somewhere else,
+restarting fish). Operators can read this as "lingering visual
+signal of last-touched host" — a feature in practice, not a defect.
+If a future operator prefers strict revert, the fix is a
+`fish_postexec` hook that re-runs the local Stylix palette OSC
+block.
+
 **Signal 3 on Darwin hosts is deferred until issue #13 (nix-homebrew
 cask bundle) lands** — Ghostty (the target terminal for tab-title
 verification) distributes as a native `.app` on macOS, not via
