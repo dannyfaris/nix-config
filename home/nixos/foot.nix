@@ -14,10 +14,12 @@
 # Lives under nixos/ because foot is Wayland-only and doesn't compile
 # off Linux — there is no cross-platform variant to share. macOS hosts
 # get Ghostty instead (via a future home/darwin/ module, per the
-# mac-mini onboarding epic #11); the shared client-side terminfo for
-# Ghostty (xterm-ghostty) lives at modules/shared/ghostty-terminfo.nix
-# and ships on every host so SSH'ing into any host from a
-# Ghostty-on-Mac terminal renders cleanly.
+# mac-mini onboarding epic #11); the server-side terminfo for
+# Ghostty (xterm-ghostty) lives at modules/nixos/ghostty-terminfo.nix
+# and ships on every NixOS host so SSH'ing into any NixOS host from a
+# Ghostty-on-Mac terminal renders cleanly. (NixOS-only because
+# `pkgs.ghostty` doesn't ship on aarch64-darwin; Darwin SSH targets
+# rely on Ghostty's shell-integration ssh-terminfo push instead.)
 #
 # Per ADR-028 (Implementation amendment — terminal swapped from Ghostty
 # to Foot, 2026-05-28).

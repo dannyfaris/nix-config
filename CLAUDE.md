@@ -55,7 +55,7 @@ whitelist > blanket.
 | Stance | Rationale |
 |--------|-----------|
 | `users.mutableUsers = false` | This file is the sole source of truth for user state. `passwd` changes do not persist. |
-| SSH: key-only, no passwords, no root | Hardened from boot one on every NixOS host. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis. mac-mini doesn't run inbound sshd today (gated on issue #167); break-glass is the Apple keyboard at the local login. |
+| SSH: key-only, no passwords, no root | Hardened from boot one on every host. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis; Apple keyboard at the local login for mac-mini. |
 | `allowUnfreePredicate` whitelist | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`. |
 | `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
 | `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
@@ -68,8 +68,7 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 - **mercury**: AWS EC2 Instance Connect from the AWS console.
 - **metis**: physical console (monitor + keyboard); once ADR-028 lands,
   the greetd login is the same entry point.
-- **mac-mini**: Apple keyboard + display at the local login. No inbound
-  sshd yet — gated on issue #167.
+- **mac-mini**: Apple keyboard + display at the local login.
 
 In all cases: log in, fix the config, and re-activate — `nh os switch`
 on NixOS, `nh darwin switch` on mac-mini (or the underlying

@@ -11,11 +11,13 @@ terminal.
 `stylix.targets.foot.enable = true` in
 `home/shared/stylix-targets.nix`.
 
-The cross-platform terminfo entry `xterm-ghostty` ships on every host
-via `modules/shared/ghostty-terminfo.nix` so SSH'ing from a
-Ghostty-on-Mac terminal into any Linux host renders cleanly. Foot's
-own terminfo is in the standard ncurses database — no shared module
-required.
+The terminfo entry `xterm-ghostty` ships on every NixOS host via
+`modules/nixos/ghostty-terminfo.nix` so SSH'ing from a Ghostty-on-Mac
+terminal into any Linux host renders cleanly. Darwin hosts can't
+ship the entry from nixpkgs (`pkgs.ghostty` is Linux-only); inbound
+Ghostty SSH into mac-mini relies on Ghostty's shell-integration
+ssh-terminfo push or falls back to `xterm-256color`. Foot's own
+terminfo is in the standard ncurses database — no module required.
 
 ## Rationale
 
@@ -108,12 +110,14 @@ fontconfig-target wire (`stylix.targets.fontconfig.enable = true`).
 Durable fix lives in fonts.md.
 
 **Cross-platform SSH context.** SSHing from a Ghostty-on-Mac
-terminal into metis triggers `TERM=xterm-ghostty`; Linux hosts
-recognise this only because `modules/shared/ghostty-terminfo.nix`
-ships the entry universally. If that module ever gets removed, SSH
-from Ghostty clients into this host falls back to `xterm-256color`
-with reduced rendering fidelity. The module is "shared" because it's
-client-side terminfo (no Wayland dependency).
+terminal into metis triggers `TERM=xterm-ghostty`; NixOS hosts
+recognise this because `modules/nixos/ghostty-terminfo.nix` ships
+the entry on every NixOS host. If that module ever gets removed,
+SSH from Ghostty clients into this host falls back to
+`xterm-256color` with reduced rendering fidelity. The module lives
+under `modules/nixos/` (not `modules/shared/`) because
+`pkgs.ghostty.meta.platforms` is Linux-only — Darwin hosts can't
+ship the entry from nixpkgs (see #167 for the move rationale).
 
 ## References
 
@@ -125,8 +129,9 @@ client-side terminfo (no Wayland dependency).
   integration preserved through DMS retraction.
 - [`home/nixos/foot.nix`](../../home/nixos/foot.nix) — the
   HM module enabling foot.
-- [`modules/shared/ghostty-terminfo.nix`](../../modules/shared/ghostty-terminfo.nix)
-  — cross-platform terminfo for the Ghostty-on-Mac SSH path.
+- [`modules/nixos/ghostty-terminfo.nix`](../../modules/nixos/ghostty-terminfo.nix)
+  — terminfo for the Ghostty-on-Mac → NixOS SSH path. (NixOS-only;
+  Darwin hosts use Ghostty's client-side ssh-terminfo push instead.)
 - [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
   — `stylix.targets.foot.enable = true`.
 - [fonts.md](./fonts.md) — font configuration that affects foot's

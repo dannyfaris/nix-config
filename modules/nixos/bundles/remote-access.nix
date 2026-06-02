@@ -8,6 +8,6 @@
   imports = [
     ../sshd.nix
     ../mosh.nix
-    ../../shared/ghostty-terminfo.nix
+    ../ghostty-terminfo.nix
   ];
 }

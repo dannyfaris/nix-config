@@ -548,9 +548,12 @@ explicit allow may be needed; observe at activation.
   hand. Signal 3 of Phase 2 verification (terminal tab title) is
   gated on the Ghostty cask landing under #13.
 - Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is
-  Linux-only in nixpkgs (issue
-  [#167](https://github.com/dannyfaris/nix-config/issues/167));
-  `modules/darwin/bundles/remote-access.nix` omits ghostty-terminfo
-  as a workaround until upstream parity or a nix-homebrew Ghostty
-  cask (also gated on #13) resolves it. Operator uses Darwin hosts
-  primarily as SSH clients, not servers — acceptable interim posture.
+  Linux-only in nixpkgs, so `modules/darwin/bundles/remote-access.nix`
+  doesn't ship `xterm-ghostty` terminfo (the NixOS variant of the
+  bundle does, via `modules/nixos/ghostty-terminfo.nix`). Ghostty
+  clients SSHing into a Darwin host either rely on Ghostty's
+  shell-integration ssh-terminfo push (the client copies terminfo
+  over on connect), fall back to `TERM=xterm-256color` with reduced
+  rendering fidelity, or wait for a nix-homebrew Ghostty cask (#13)
+  that ships terminfo system-wide. Operator uses Darwin hosts
+  primarily as SSH clients, not servers — acceptable posture.
