@@ -24,11 +24,15 @@ SEP=" ${DIM}│${RST} " # line 1 status-bar separator (parallel segments)
 CHEV=" ❯ "            # line 2 reading-flow separator (sequential segments)
 # Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
 # putting raw Nerd Font bytes in the source file.
-BRANCH_GLYPH=$'\xee\x82\xa0'          # U+E0A0 Powerline branch
-DESKTOP_GLYPH=$'\xef\x84\x88'         # U+F108 nf-fa-desktop (local host marker)
-SSH_GLYPH=$'\xef\x92\x89'             # U+F489 nf-mdi-console_network (SSH host marker)
-CLOCK_GLYPH=$'\xef\x80\x97'           # U+F017 nf-fa-clock_o (rate-limit marker)
-NIX_GLYPH=$'\xe2\x9d\x84\xef\xb8\x8f' # ❄️ U+2744 + U+FE0F (nix-shell marker)
+BRANCH_GLYPH=$'\xee\x82\xa0'  # U+E0A0 Powerline branch
+DESKTOP_GLYPH=$'\xef\x84\x88' # U+F108 nf-fa-desktop (local host marker)
+SSH_GLYPH=$'\xef\x92\x89'     # U+F489 nf-mdi-console_network (SSH host marker)
+CLOCK_GLYPH=$'\xef\x80\x97'   # U+F017 nf-fa-clock_o (rate-limit marker)
+# NIX_GLYPH: picked U+F2DC over Unicode U+2744 to dodge VS16 width
+# disagreements in Zellij (emoji-presentation forces width 2, Zellij's
+# grid reads U+2744 as width 1) and stay consistent with the Nerd Font
+# glyphs above.
+NIX_GLYPH=$'\xef\x8b\x9c' # U+F2DC nf-fa-snowflake (nix-shell marker)
 
 # SSH detection that survives sudo -i / su -. sudo/su strip $SSH_CONNECTION
 # from the elevated environment, so a bare env-var check silently reverts the

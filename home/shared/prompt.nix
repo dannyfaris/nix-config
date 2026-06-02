@@ -12,6 +12,7 @@ let
   # matches the macchina recolour at home/nixos/macchina.nix:8.
   desktopGlyph = builtins.fromJSON ''"\uf108"''; # nf-fa-desktop — local
   sshGlyph = builtins.fromJSON ''"\uf489"''; # nf-mdi-console_network — SSH
+  snowGlyph = builtins.fromJSON ''"\uf2dc"''; # nf-fa-snowflake — nix-shell
   chev = builtins.fromJSON ''"❯"''; # ❯ — reading-flow separator
 
   # SSH detection that survives sudo -i / su -. Both strip $SSH_CONNECTION
@@ -90,7 +91,11 @@ in
       # See ADR-002's `(…)`-as-metadata convention.
       nix_shell = {
         format = "\\([$symbol]($style)\\) ";
-        symbol = "❄️";
+        # U+F2DC nf-fa-snowflake. Previously U+2744 + VS16, which forces
+        # emoji presentation (width 2) while Zellij's grid reads U+2744 as
+        # width 1 -- producing the phantom `( )` gap. The PUA codepoint
+        # has a stable width-1 cell. Matches the statusline's NIX_GLYPH.
+        symbol = snowGlyph;
         style = "blue"; # nix blue (base0D via Stylix palette)
       };
 
