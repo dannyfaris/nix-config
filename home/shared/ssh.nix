@@ -1,6 +1,19 @@
 # Outbound SSH — defaults only + one local Include for operator one-offs.
 # See docs/decisions/ADR-010-ssh.md for the broader rationale.
 #
+# What this module generates on the filesystem:
+#
+#   ~/.ssh/config        nix-store symlink, rendered from this module.
+#                        Regenerated on every `nh darwin switch` / `nh os
+#                        switch` — direct edits get clobbered. Currently
+#                        contains just one line: `Include ~/.ssh/config.local`.
+#
+#   ~/.ssh/config.local  operator-maintained plain file, NEVER touched by
+#                        nix. Home for one-off Host blocks (bootstrap
+#                        targets, temporary access, hosts that haven't
+#                        earned a place in this module yet). Sourced into
+#                        ~/.ssh/config via the Include declared below.
+#
 # No matchBlocks declared here, no identity files, no key generation. Git
 # auth uses HTTPS + token via gh/glab (see ADR-009), so SSH keys aren't
 # needed for git. The Include directive below lets the operator maintain
