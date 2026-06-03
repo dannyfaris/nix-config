@@ -240,6 +240,43 @@ in question. One-time per machine.
 If you skip this step, activation surfaces an authentication error
 from `mas install`; the fix is to sign in and re-activate.
 
+**Loosen Media & Purchases password requirements for the first
+activation.** Even with the App Store signed in, macOS by default
+prompts for the Apple ID password on *every* `mas install`
+invocation — that's at minimum one prompt per declared masApps
+entry, and re-prompts on any per-app retry. The first activation
+on a fresh Mac with the full app set easily surfaces a dozen
+prompts. Before kicking off the activation, navigate to
+**System Settings → Apple ID → Media & Purchases → Password
+Settings** and set:
+
+- **Free Downloads:** `Don't Require` — all of `homebrew.masApps`
+  today (Slack, the Microsoft 365 suite, Amphetamine) are free
+  downloads from MAS's perspective (Microsoft 365 features are
+  subscription-locked at runtime, not at download), so this
+  toggle eliminates the prompt for every one of them.
+- **Purchases and In-App Purchases:** `Never Require` (or the
+  loosest option available — exact label varies by macOS version;
+  some versions only offer `Require After 15 Minutes` as the
+  loosest non-`Always Require` choice, which is also acceptable).
+  This covers the edge case where a future paid `masApps` entry
+  is added and prevents the activation from stalling on its
+  prompt.
+
+Operator's experience on the 2026-06-03 mac-mini bring-up: even
+with the App Store signed in and `mas` declaratively installed,
+the activation will surface the FIRST `mas install`'s password
+prompt as a foregrounded macOS dialog the operator must
+type-in-and-dismiss. **Plan to sit with the App Store window
+open during the start of the first activation** — once the
+first prompt is dismissed, the loosened Media & Purchases
+settings carry the rest of the run.
+
+After the first activation completes cleanly, tighten the
+settings back to whatever the operator prefers as a steady-state
+posture. This carve-out exists for first-bootstrap-only; future
+incremental masApps additions trigger at most one prompt each.
+
 **The `mas` CLI itself is installed declaratively** via
 `homebrew.brews = [ "mas" ];` in `modules/darwin/homebrew.nix`.
 nix-darwin's `homebrew.masApps` option doesn't add the `mas`
