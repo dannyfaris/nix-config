@@ -1,13 +1,17 @@
-# Microsoft 365 — Word, Excel, PowerPoint, Outlook, Teams
+# Microsoft 365 — Word, Excel, PowerPoint, Outlook
 
 Operator's work-supplied productivity suite on `mac-mini`. Picked
 because it is the suite the operator's workplace runs on — work
-documents, work email, work calendar, work chat all live there.
+documents, work email, work calendar all live there.
 Selection-by-incumbency; no comparison weigh-up needed.
 
-Scope is Word, Excel, PowerPoint, Outlook, Teams. **OneDrive,
+Scope is Word, Excel, PowerPoint, Outlook. **Teams, OneDrive,
 OneNote, and any other Office app are intentionally out of
-scope** — adding one is a one-line `masApps` entry plus a doc
+scope.** Teams in particular is documented under §Sharp edges
+below — its MAS install failed on the 2026-06-03 mac-mini
+bring-up, and the operator chose to use the Chrome web client at
+teams.microsoft.com rather than chase a fix. Adding any of the
+out-of-scope apps is a one-line `masApps` entry plus a doc
 amendment recording the numeric ID and any per-app sandboxing
 note.
 
@@ -24,7 +28,6 @@ Darwin: Mac App Store via `homebrew.masApps`, declared in
 | Microsoft Excel | `462058435` |
 | Microsoft PowerPoint | `462062816` |
 | Microsoft Outlook | `985367838` |
-| Microsoft Teams | `1113153706` (verified against `apps.apple.com/app/microsoft-teams/id1113153706` — current "new Teams", not legacy) |
 
 The numeric ID is the load-bearing identifier; the display-name
 keys in `masApps` are cosmetic.
@@ -77,10 +80,9 @@ operator's work Microsoft 365 account, signed in inside each app
 on first launch (same flow as direct-download). MAS is not tied
 to a personal Apple ID for licensing purposes.
 
-**Sandboxing acceptable.** All five apps run sandboxed under MAS;
-chat, mail, calendar, file open/save, screen-share (Teams),
-print all work within macOS TCC. No integration we run depends
-on out-of-sandbox behaviour.
+**Sandboxing acceptable.** All four apps run sandboxed under MAS;
+mail, calendar, file open/save, print all work within macOS TCC.
+No integration we run depends on out-of-sandbox behaviour.
 
 **No CLI gap.** Office apps ship no companion CLIs on either
 channel.
@@ -122,9 +124,11 @@ homebrew.masApps = {
   "Microsoft Excel" = 462058435;
   "Microsoft PowerPoint" = 462062816;
   "Microsoft Outlook" = 985367838;
-  "Microsoft Teams" = 1113153706;
 };
 ```
+
+(Teams excluded — see §Sharp edges. Teams runs in Chrome at
+teams.microsoft.com as the operator's working substitute.)
 
 No `CustomUserPreferences` keys — MAS apps update through Apple's
 mechanism; Sparkle / MAU / vendor-updater suppression patterns
@@ -156,7 +160,6 @@ mas uninstall 462054704   # Word
 mas uninstall 462058435   # Excel
 mas uninstall 462062816   # PowerPoint
 mas uninstall 985367838   # Outlook
-mas uninstall 1113153706  # Teams
 ```
 
 ## Verification
@@ -164,18 +167,19 @@ mas uninstall 1113153706  # Teams
 After first activation:
 
 ```bash
-mas list | grep -E '462054704|462058435|462062816|985367838|1113153706'
+mas list | grep -E '462054704|462058435|462062816|985367838'
 ```
 
-Expect: five lines, one per app, each showing the numeric ID +
+Expect: four lines, one per app, each showing the numeric ID +
 display name + installed version + Microsoft Corporation.
 
 Functional check: open each app, sign in with the work
 Microsoft 365 account, confirm — Word/Excel/PowerPoint create +
 save a document to the local filesystem; Outlook fetches mail +
-calendar; Teams loads the work tenant and can launch a 1:1 call
-or screen-share. First-use TCC prompts (Files & Folders,
-camera, microphone, screen recording) are expected and one-time.
+calendar. First-use TCC prompts (Files & Folders, camera,
+microphone) are expected and one-time.
+
+Teams runs in Chrome at teams.microsoft.com (see §Sharp edges).
 
 ## Sharp edges
 
@@ -194,7 +198,7 @@ fresh window. **Caveat:** if any Office app surfaces a
 Mosyle-driven admin-permission prompt that Slack didn't, that
 is distinct per-app data — the affected app's window restarts
 and gets its own observation note here. If the joint window
-passes clean (zero unexpected prompts across all six MAS apps
+passes clean (zero unexpected prompts across all five MAS apps
 through ~2026-06-23), the prior is fleet-verified and ADR-031
 §History records the fleet-mechanism reading.
 
@@ -222,13 +226,30 @@ operator signs out of one app (e.g., to swap accounts), the
 other apps retain their sessions independently — no SSO across
 the suite on Mac.
 
-**Teams is the 2024 rebuild ("new Teams").** The MAS listing
-kept the same numeric ID (`1113153706`) through the
-2023–2024 Teams rebuild; the binary updated in place and the
-bundle ID shifted to `com.microsoft.teams2`. First-time screen-
-share and microphone TCC toggles are expected on first call —
-check macOS System Settings → Privacy & Security → Screen
-Recording / Microphone for Teams if anything misbehaves.
+**Teams excluded from the suite — runs in Chrome.** The
+2026-06-03 mac-mini activation surfaced an `mas install` failure
+on Teams (id `1113153706` — what was thought to be the current
+"new Teams" listing). The failure broke the entire `brew bundle`
+run, blocking Word and Slack (which were ordered after Teams
+alphabetically in the Brewfile) from installing on that
+activation. Investigation suggested the listing isn't reliably
+installable via mas-cli — possibly because Microsoft moved the
+Teams listing for work/school accounts to a different ID,
+removed it from MAS in the operator's region, or the listing
+requires an interactive purchase-history association that
+mas-cli can't drive. Rather than chase the right listing, the
+operator chose to **drop Teams from `homebrew.masApps` and use
+the web client at teams.microsoft.com in Chrome**. Functional
+parity is good — Teams's web client supports chat, calls,
+screen-share, meeting attendance, all the load-bearing work
+flows. If a future operator wants the desktop Teams back, the
+fix is: (1) verify the current MAS listing manually
+(`mas search teams` to find the live ID for your Apple ID's
+region; cross-check the listing at apps.apple.com points at a
+native Mac app, not iPad-on-Mac); (2) ensure the Apple ID has
+"Got" Teams via App Store at least once (mas-cli only installs
+apps already in the purchase history); (3) add the numeric ID
+back to `masApps` and re-run `nh darwin switch`.
 
 **Outlook is the "New Outlook for Mac".** Microsoft completed the
 rollout in 2024; the MAS listing now ships the new build by
@@ -244,19 +265,17 @@ Microsoft ever rebrands display names, the numeric IDs are
 stable.
 
 **Bundle IDs** (for any future `defaults` work, none needed
-today). The first four follow Microsoft's standard scheme;
-**verify the exact casing with `defaults domains | tr , '\n' |
-grep -i microsoft` on an activated host before using any of
-these in `system.defaults.CustomUserPreferences`** — Microsoft's
-domain casing has historically varied (`Powerpoint` vs
-`PowerPoint`), and an unverified key silently no-ops:
+today). These follow Microsoft's standard scheme; **verify the
+exact casing with `defaults domains | tr , '\n' | grep -i
+microsoft` on an activated host before using any of these in
+`system.defaults.CustomUserPreferences`** — Microsoft's domain
+casing has historically varied (`Powerpoint` vs `PowerPoint`),
+and an unverified key silently no-ops:
 - Word: `com.microsoft.Word` (typical)
 - Excel: `com.microsoft.Excel` (typical)
 - PowerPoint: `com.microsoft.Powerpoint` (lowercase `point` — the
   capitalisation gotcha is real; confirmed in the wild)
 - Outlook: `com.microsoft.Outlook` (typical)
-- Teams: `com.microsoft.teams2` (the 2024 rebuild's bundle ID,
-  distinct from the legacy `com.microsoft.teams`)
 - MAU (NOT installed on this config — listed for completeness so
   a future operator can grep for it if mixed-channel state
   surfaces): `com.microsoft.autoupdate2`
