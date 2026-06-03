@@ -133,6 +133,28 @@ in
 
   homebrew = {
     enable = true;
+    # mas-cli formula. Declarative dependency for `homebrew.masApps`
+    # — nix-darwin's `masApps` option emits `mas "<Name>", id: <id>`
+    # lines into the Brewfile, but `brew bundle` needs the `mas`
+    # binary on PATH to invoke them. brew bundle does have a lazy
+    # fallback that tries to install `mas` on-demand the first time
+    # it hits a `mas` entry without the binary present, but that
+    # path is fragile (raises if the on-demand install fails for any
+    # reason, and surfaces diagnostics inconsistently). Declaring
+    # `mas` here makes the dependency a deterministic, explicit step
+    # — brew bundle processes the Brewfile in strict file-line order
+    # with `--jobs=1` (verified against nix-darwin's homebrew module
+    # invocation), so `brew "mas"` is installed before any `mas`
+    # entry is reached on a single first activation; no second pass
+    # needed.
+    #
+    # The empirical 2026-06-03 mac-mini activation produced zero
+    # MAS installs without this entry; the failure mode was the
+    # lazy-fallback path interacting with mas-cli's auth-state
+    # requirements (App Store sign-in is a separate prerequisite,
+    # documented in docs/runbooks/darwin-bootstrap.md step 8).
+    brews = [ "mas" ];
+
     # The day-one cask list per ADR-031 §Day-one casks. Each cask has
     # a per-tool doc under docs/desktop/ recording justification,
     # configuration, fallback, and verification.

@@ -240,6 +240,25 @@ in question. One-time per machine.
 If you skip this step, activation surfaces an authentication error
 from `mas install`; the fix is to sign in and re-activate.
 
+**The `mas` CLI itself is installed declaratively** via
+`homebrew.brews = [ "mas" ];` in `modules/darwin/homebrew.nix`.
+nix-darwin's `homebrew.masApps` option doesn't add the `mas`
+formula to the brews list automatically — and although `brew
+bundle` has a lazy fallback that tries to install `mas`
+on-demand when it first hits a `mas "..."` entry, that path is
+fragile (it raises if the on-demand install fails for any
+reason, and surfaces diagnostics inconsistently when the failure
+is actually downstream in mas-cli's auth-state logic).
+Declaring `mas` in the brews list makes the dependency a
+deterministic explicit step; brew bundle processes the Brewfile
+in strict file-line order with `--jobs=1`, so `brew "mas"`
+installs ahead of every `mas` entry on a single first
+activation. The 2026-06-03 mac-mini activation surfaced this
+empirically: every cask installed cleanly, but the MAS section
+produced zero installs — root cause was the lazy-fallback path
+interacting with the App Store sign-in requirement (the
+prerequisite this very step covers).
+
 (Currently relevant only on hosts whose modules declare
 `homebrew.masApps` — see `modules/darwin/homebrew.nix`.)
 
