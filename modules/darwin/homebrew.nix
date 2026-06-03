@@ -35,7 +35,7 @@
 #   - Slack (MAS): updates flow through Apple's mechanism — no
 #     Sparkle/CustomUserPreferences keys apply per ADR-031 clause 3.
 #     See docs/desktop/slack.md.
-#   - Microsoft 365 — Word/Excel/PowerPoint/Outlook/Teams (MAS):
+#   - Microsoft 365 — Word/Excel/PowerPoint/Outlook (MAS):
 #     same Apple-mechanism update path as Slack. Named clause-3
 #     advantage is bypassing Microsoft's installer/updater stack
 #     end-to-end — both the .pkg installer's /Applications/ writes
@@ -44,7 +44,12 @@
 #     block, but the cask path still triggers the Microsoft pkg's
 #     /Applications/ writes, and Office apps may re-install MAU on
 #     first launch when missing. MAS sandboxing prevents MAU
-#     structurally. See docs/desktop/microsoft-365.md.
+#     structurally. Teams was originally scoped in but dropped
+#     after the 2026-06-03 mac-mini activation surfaced an
+#     `mas install` failure that broke the whole Brewfile run;
+#     operator chose the Chrome web client at teams.microsoft.com
+#     over chasing the right MAS listing. See
+#     docs/desktop/microsoft-365.md §Sharp edges.
 #   - Amphetamine (MAS): MAS is the only channel — no direct .dmg,
 #     no cask, no nixpkgs package. Clause 3 by absence of
 #     alternative, not by weigh-up. See docs/desktop/amphetamine.md.
@@ -185,7 +190,12 @@ in
       "Microsoft Excel" = 462058435;
       "Microsoft PowerPoint" = 462062816;
       "Microsoft Outlook" = 985367838;
-      "Microsoft Teams" = 1113153706; # NOT the legacy `teams` bundle
+      # Microsoft Teams intentionally NOT included — see
+      # docs/desktop/microsoft-365.md §Sharp edges. Teams's MAS
+      # listing surfaced an `mas install` failure on the 2026-06-03
+      # mac-mini bring-up that broke the entire activation; operator
+      # chose to drop the desktop client and use Teams via Chrome at
+      # teams.microsoft.com instead.
       "Amphetamine" = 937984704; # docs/desktop/amphetamine.md
     };
     # Mirror the taps declared by nix-homebrew so the nix-darwin module
