@@ -300,6 +300,22 @@ Run from the new host's `dbf` shell unless noted otherwise.
   `~/.config/glab-cli/`.
 - `boot.growPartition` filled the EBS volume:
   `df -h /` shows ~the full EBS size.
+- Tailscale (interim posture pre-Twingate; Mercury joins the personal
+  tailnet):
+  - First activation: `sudo tailscale up` over SSH (or EC2 Instance
+    Connect if SSH is wedged). The CLI prints a browser auth URL —
+    open it from the operator machine and complete the flow.
+  - Then: `tailscale status` lists `mercury` and its peers; the
+    macchina login banner shows the `tailscale0` interface (same
+    detection logic as Metis, in
+    `home/nixos/macchina-shell-init.nix`).
+  - No AWS Security Group change required. Tailscale falls back to
+    DERP relays when inbound UDP 41641 is blocked — adds latency but
+    is functionally correct. Open UDP 41641 inbound on the SG only
+    if direct peer-to-peer latency becomes a felt problem.
+  - Tailscale SSH (`tailscale up --ssh`) intentionally left **off** —
+    Mercury's SSH access continues to flow through OpenSSH (key-only,
+    no root per ADR-010), not through Tailscale identity.
 
 **Metis (personal dev box):**
 - Dual git identity:

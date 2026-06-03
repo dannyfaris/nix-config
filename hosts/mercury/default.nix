@@ -45,6 +45,14 @@
     # Rootless Docker — resolves ADR-006's deferred daemon decision.
     # Mercury opts in; the VM doesn't run containers. See ADR-021.
     ../../modules/nixos/docker.nix
+
+    # Tailscale daemon — same module nixos-vm and metis already use.
+    # Interim posture: Mercury joins the personal tailnet so the
+    # operator can reach it without going via the public EC2 endpoint.
+    # Supersede with Twingate when that lands. First activation needs
+    # an interactive `sudo tailscale up` (browser auth) — see the
+    # runbook's Mercury verification section.
+    ../../modules/nixos/tailscale.nix
   ];
 
   networking.hostName = "mercury";
