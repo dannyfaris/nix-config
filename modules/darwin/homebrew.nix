@@ -97,6 +97,13 @@
 #     `com.electron.wispr-flow`. macOS Monterey+; needs
 #     Accessibility + Microphone TCC prompts on first run. See
 #     docs/desktop/wispr-flow.md.
+#   - AltTab (cask, clause-2): not on MAS (GPL3+, upstream
+#     distributes via GitHub releases only). Nixpkgs path carved
+#     out because the immutable nix-store .app breaks AltTab's
+#     Sparkle auto-updater (no pre-disable safety like Chrome).
+#     SU* keys wired below under com.lwouis.alt-tab-macos.
+#     Needs Accessibility + Screen Recording TCC prompts on first
+#     run. See docs/desktop/alt-tab.md.
 #   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
 #     vendor default and silently updates /Applications/Google
 #     Chrome.app. No CustomUserPreferences keys today — Keystone is
@@ -176,6 +183,7 @@ in
       "google-gemini" # docs/desktop/gemini.md  (NOT the Cypress North MAS app — that's a crypto wallet)
       "fellow" # docs/desktop/fellow.md
       "wispr-flow" # docs/desktop/wispr-flow.md
+      "alt-tab" # docs/desktop/alt-tab.md
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
@@ -209,13 +217,15 @@ in
     };
   };
 
-  # Sparkle silent-update keys for Ghostty, Tailscale, Typora, and
-  # ChatGPT. See per-tool docs (docs/desktop/{ghostty,tailscale,
-  # typora,chatgpt}.md §Configuration) for the per-app rationale +
-  # verification commands. Bundle IDs are the *app* bundle IDs (not
-  # pkg installer IDs) — Tailscale's pkg ID is com.tailscale.ipn.macsys,
-  # the app ID is io.tailscale.ipn.macsys. ChatGPT's is `com.openai.chat`
-  # (singular "chat", not "chatgpt").
+  # Sparkle silent-update keys for Ghostty, Tailscale, Typora,
+  # ChatGPT, and AltTab. See per-tool docs (docs/desktop/{ghostty,
+  # tailscale,typora,chatgpt,alt-tab}.md §Configuration) for the
+  # per-app rationale + verification commands. Bundle IDs are the
+  # *app* bundle IDs (not pkg installer IDs) — Tailscale's pkg ID
+  # is com.tailscale.ipn.macsys, the app ID is io.tailscale.ipn.macsys.
+  # ChatGPT's is `com.openai.chat` (singular "chat", not "chatgpt").
+  # AltTab's is `com.lwouis.alt-tab-macos` (the upstream maintainer's
+  # GitHub handle is part of the reverse-DNS prefix).
   system.defaults.CustomUserPreferences = {
     "com.mitchellh.ghostty" = {
       SUEnableAutomaticChecks = true;
@@ -230,6 +240,10 @@ in
       SUAutomaticallyUpdate = true;
     };
     "com.openai.chat" = {
+      SUEnableAutomaticChecks = true;
+      SUAutomaticallyUpdate = true;
+    };
+    "com.lwouis.alt-tab-macos" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
