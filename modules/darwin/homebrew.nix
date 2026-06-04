@@ -104,6 +104,19 @@
 #     SU* keys wired below under com.lwouis.alt-tab-macos.
 #     Needs Accessibility + Screen Recording TCC prompts on first
 #     run. See docs/desktop/alt-tab.md.
+#   - Hammerspoon (cask, clause-1): not on MAS (sandboxed MAS
+#     cannot drive Accessibility-API window manipulation or
+#     global event taps). Not in nixpkgs Darwin
+#     (`pkgs.hammerspoon` returns "does not provide attribute" on
+#     aarch64-darwin / x86_64-darwin) — clause 1 fires; no
+#     degradation analysis needed. `.zip`-enclosure Sparkle so
+#     silent updates work (same shape as Ghostty). SU* keys wired
+#     below under `org.hammerspoon.Hammerspoon`. Needs Accessibility
+#     TCC prompt on first launch (one-time). Declarative init.lua
+#     managed by home/darwin/hammerspoon.nix (read-only symlink —
+#     UI / console edits do not survive activation). The macOS
+#     hotkey-binding layer that lives on top of Karabiner's Hyper
+#     modifier. See docs/desktop/hammerspoon.md.
 #   - Karabiner-Elements (cask, clause-2): not on MAS (DriverKit +
 #     sandbox structurally incompatible). Nixpkgs path carved out
 #     because Karabiner is a privileged-pkg-installed system
@@ -202,6 +215,7 @@ in
       "wispr-flow" # docs/desktop/wispr-flow.md
       "alt-tab" # docs/desktop/alt-tab.md
       "karabiner-elements" # docs/desktop/karabiner.md
+      "hammerspoon" # docs/desktop/hammerspoon.md
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
@@ -236,21 +250,23 @@ in
   };
 
   # Sparkle silent-update keys for Ghostty, Tailscale, Typora,
-  # ChatGPT, AltTab, and Karabiner-Elements. See per-tool docs
-  # (docs/desktop/{ghostty,tailscale,typora,chatgpt,alt-tab,karabiner}.md
-  # §Configuration) for the per-app rationale + verification
-  # commands. Bundle IDs are the *app* bundle IDs (not pkg
-  # installer IDs) — Tailscale's pkg ID is com.tailscale.ipn.macsys,
-  # the app ID is io.tailscale.ipn.macsys. ChatGPT's is `com.openai.chat`
-  # (singular "chat", not "chatgpt"). AltTab's is `com.lwouis.alt-tab-macos`
-  # (the upstream maintainer's GitHub handle is part of the
-  # reverse-DNS prefix). Karabiner's is `org.pqrs.Karabiner-Elements`
-  # (the main app — NOT the `org.pqrs.Karabiner-DriverKit-VirtualHIDDevice`
-  # system extension, NOT the `org.pqrs.Karabiner-EventViewer`
-  # companion). Karabiner is pkg-enclosure Sparkle so the keys are
-  # belt-and-braces only — Sparkle's package-updates path always
-  # prompts for admin auth and has no silent mode (per Sparkle's
-  # own docs).
+  # ChatGPT, AltTab, Karabiner-Elements, and Hammerspoon. See
+  # per-tool docs (docs/desktop/{ghostty,tailscale,typora,chatgpt,
+  # alt-tab,karabiner,hammerspoon}.md §Configuration) for the
+  # per-app rationale + verification commands. Bundle IDs are the
+  # *app* bundle IDs (not pkg installer IDs) — Tailscale's pkg ID
+  # is com.tailscale.ipn.macsys, the app ID is io.tailscale.ipn.macsys.
+  # ChatGPT's is `com.openai.chat` (singular "chat", not "chatgpt").
+  # AltTab's is `com.lwouis.alt-tab-macos` (the upstream maintainer's
+  # GitHub handle is part of the reverse-DNS prefix). Karabiner's
+  # is `org.pqrs.Karabiner-Elements` (the main app — NOT the
+  # `org.pqrs.Karabiner-DriverKit-VirtualHIDDevice` system extension,
+  # NOT the `org.pqrs.Karabiner-EventViewer` companion). Karabiner
+  # is pkg-enclosure Sparkle so the keys are belt-and-braces only —
+  # Sparkle's package-updates path always prompts for admin auth
+  # and has no silent mode (per Sparkle's own docs). Hammerspoon's
+  # is `org.hammerspoon.Hammerspoon`; `.zip`-enclosure Sparkle so
+  # the silent path applies (same shape as Ghostty).
   system.defaults.CustomUserPreferences = {
     "com.mitchellh.ghostty" = {
       SUEnableAutomaticChecks = true;
@@ -273,6 +289,10 @@ in
       SUAutomaticallyUpdate = true;
     };
     "org.pqrs.Karabiner-Elements" = {
+      SUEnableAutomaticChecks = true;
+      SUAutomaticallyUpdate = true;
+    };
+    "org.hammerspoon.Hammerspoon" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
