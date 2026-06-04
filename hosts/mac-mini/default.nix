@@ -131,7 +131,15 @@ _: {
       # in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix
       ../../home/shared/agent-clis.nix
-      ../../home/shared/agent-clis-extras.nix
+      # Darwin variant — overrides `codex` to the upstream-published
+      # prebuilt aarch64-darwin binary, sidestepping the heavy
+      # rustPlatform.buildRustPackage + librusty_v8 source build that
+      # cache.nixos.org doesn't substitute on aarch64-darwin. See
+      # home/darwin/agent-clis-extras.nix header for the trade-off
+      # framing and #220 for the alternatives analysis (this is
+      # "Option A"). Linux hosts continue to import
+      # home/shared/agent-clis-extras.nix unchanged.
+      ../../home/darwin/agent-clis-extras.nix
     ];
   };
 }
