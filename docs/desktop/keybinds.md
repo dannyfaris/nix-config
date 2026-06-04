@@ -59,7 +59,7 @@ write-time.
 |---|---|---|---|
 | `Super` (window management) | Active | n/a (macOS owns WM) | This document enumerates the metis bindings. |
 | `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
-| `Hyper` (personal system) | Reserved | **Modifier active**, no binds yet | metis awaits keyd-equivalent; macOS realized via Karabiner per [karabiner.md](./karabiner.md). |
+| `Hyper` (personal system) | Reserved | **Active** (modifier + binds) | metis awaits keyd-equivalent; macOS realized via Karabiner ([karabiner.md](./karabiner.md)) with binds via Hammerspoon ([hammerspoon.md](./hammerspoon.md)). |
 | `Super+Hyper` (extended WM) | Reserved | n/a | Same metis dependency as Hyper. |
 
 **Interim deviations** — knowingly accepted; would migrate if the
@@ -133,6 +133,39 @@ focused column.
 | `Mod+O` | toggle-overview | Birds-eye workspace view |
 | `Mod+Shift+/` (i.e. `Mod+?`) | show-hotkey-overlay | Live cheat sheet for currently-bound keys |
 
+## Active bindings — macOS clients
+
+Hyper (`⌘⌃⌥⇧`) is produced by Karabiner-Elements from `caps_lock`
+(see [karabiner.md](./karabiner.md)). Hammerspoon listens for the
+chord at the userspace event-tap layer and binds Lua actions to it
+via `~/.hammerspoon/init.lua`, managed declaratively by
+`home/darwin/hammerspoon.nix` (see [hammerspoon.md](./hammerspoon.md)).
+
+Apps in the Hammerspoon source carry both a bundle ID and a macOS
+display name — the two layers are used asymmetrically by
+Hammerspoon's APIs:
+
+- **Bundle ID** for `hs.application.get` and
+  `hs.application.launchOrFocusByBundleID` (robust against
+  display-name drift / multi-variant installs).
+- **Display name** for `hs.window.filter:setAppFilter`, which
+  keys per-app filters off `hs.application:name()` (passing a
+  bundle ID there silently registers a filter that never matches).
+
+The bind-relevant pairings:
+
+| App | Bundle ID | Display name |
+|---|---|---|
+| Ghostty | `com.mitchellh.ghostty` | `Ghostty` |
+| Chrome | `com.google.Chrome` | `Google Chrome` |
+
+### Spawn / focus
+
+| Key | Action | Notes |
+|---|---|---|
+| `Hyper+Return` | new fullscreen Ghostty window | always spawns a new window (`Cmd+N` to Ghostty), native-fullscreens it (new macOS Space), and focuses it |
+| `Hyper+B` | focus existing Chrome window, else new fullscreen Chrome window | prefers the most-recently-focused Chrome window; unminimizes if needed; switches Spaces if the window lives on another Space. If no Chrome window exists, spawns a new one and fullscreens it. |
+
 ## Reserved keys
 
 ### `Super+letter` (application-command namespace)
@@ -154,11 +187,10 @@ screen, and similar personal system commands.
 **Status by platform:**
 
 - **macOS clients** — modifier realized via Karabiner-Elements
-  (`caps_lock` → `⌘ + ⌃ + ⌥ + ⇧`). See
-  [karabiner.md](./karabiner.md) for the carve-out rationale and
-  the declarative config. No Hyper-modifier bindings have landed
-  yet — the foundation exists, the binds will follow per the
-  cadence rules.
+  (`caps_lock` → `⌘ + ⌃ + ⌥ + ⇧`); see
+  [karabiner.md](./karabiner.md). Binds layered via Hammerspoon
+  (see [hammerspoon.md](./hammerspoon.md)). Active bindings
+  enumerated above under §"Active bindings — macOS clients".
 - **metis (niri)** — modifier not yet realized; no keyd or
   equivalent layer in place. `Mod+Space` is bound to fuzzel as an
   interim deviation (see Implementation status §"Interim
