@@ -26,7 +26,7 @@ rather than creating a new artifact.
 
 | Doc | Subject | Landed |
 |---|---|---|
-| [keybinds.md](./keybinds.md) | Niri keybindings + three-namespace philosophy | #80 |
+| [keybinds.md](./keybinds.md) | Niri keybindings + three-namespace philosophy (philosophy now cross-platform: Hyper realized on macOS via Karabiner — see karabiner.md) | #80 |
 | [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
@@ -56,6 +56,7 @@ rather than creating a new artifact.
 | [wispr-flow.md](./wispr-flow.md) | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
 | [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
 | [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | _pending_ |
+| [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
 
