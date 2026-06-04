@@ -132,15 +132,26 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
           gc-max-store-size-linux: 5G
           # Darwin counterpart to gc-max-store-size-linux. mac-mini's
-          # closure is ~7.3 GiB at write-time (verified locally) — above
-          # this 5G ceiling, so caching is partial: cache-nix-action's
-          # GC evicts under the cap, the next cold run rebuilds the
-          # evicted slice from cache.nixos.org. Acceptable for first
-          # landing; bump rather than churn if hit rate degrades. The
-          # Linux niri.cachix substituter is irrelevant on Darwin —
-          # Nix only queries substituters for outputs it's trying to
-          # build, and the mac-mini closure doesn't include niri.
-          gc-max-store-size-macos: 5G
+          # closure is ~7.3 GiB at write-time (verified locally). PR
+          # #218 shipped this at 5G (matching the Linux ceiling)
+          # provisionally and observed cold Darwin runs at 38-55 min
+          # — the 5G ceiling forced ~2.3 GiB eviction on save, so
+          # warm-cache runs restored only ~5 GiB and re-fetched the
+          # rest from cache.nixos.org each time. 8G holds the full
+          # closure with ~700 MB headroom for growth (per #219).
+          #
+          # Repo-wide cache budget callout: GitHub Actions caps each
+          # repo's cache pool at 10 GB. With both Linux entries at
+          # 5G each + Darwin at 8G, the theoretical max is 18 GB and
+          # GitHub will LRU-evict across the pool. Linux closures
+          # are well under their 5G ceiling so this is more headroom
+          # than it looks. Worth knowing if future Linux closures
+          # grow.
+          #
+          # The Linux niri.cachix substituter is irrelevant on Darwin
+          # — Nix only queries substituters for outputs it's trying
+          # to build, and the mac-mini closure doesn't include niri.
+          gc-max-store-size-macos: 8G
           purge: true
           purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
           purge-created: 0 # no created-age gate; last-accessed is the real filter
