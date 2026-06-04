@@ -43,9 +43,10 @@ _: {
   system.defaults = {
     SoftwareUpdate.AutomaticallyInstallMacOSUpdates = true;
 
-    # CustomUserPreferences shape mirrors homebrew.nix:219–236
-    # (Sparkle keys keyed by bundle ID). Apple's commerce domain is a
-    # well-known stable surface; the GUI toggle writes the same keys.
+    # CustomUserPreferences shape mirrors the Sparkle silent-update
+    # block in homebrew.nix (keys keyed by bundle ID). Apple's commerce
+    # domain is a well-known stable surface; the GUI toggle writes the
+    # same keys.
     CustomUserPreferences."com.apple.commerce" = {
       AutoUpdate = true;
       AutoUpdateRestartRequired = true;
