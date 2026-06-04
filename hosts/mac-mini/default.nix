@@ -55,6 +55,13 @@ _: {
     # stance applied to per-app casks in homebrew.nix. See
     # docs/darwin/system-updates.md.
     ../../modules/darwin/system-updates.nix
+
+    # macOS user-facing system preferences — Dock, Finder, save/print
+    # dialog expansion, screensaver password-on-wake, boot chime.
+    # Bulk of the System Settings knobs the operator otherwise clicks
+    # through on every new Mac. Rationale per-knob lives in the
+    # module header.
+    ../../modules/darwin/system-prefs.nix
   ];
 
   networking.hostName = "mac-mini";
