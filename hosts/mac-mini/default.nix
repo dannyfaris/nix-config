@@ -115,6 +115,12 @@ _: {
       # Ghostty user config (~/.config/ghostty/config). Cask owns the
       # .app — see modules/darwin/homebrew.nix and docs/desktop/ghostty.md.
       ../../home/darwin/ghostty.nix
+      # Karabiner-Elements karabiner.json (~/.config/karabiner/karabiner.json).
+      # Cask owns the .app + DriverKit system extension + launchd jobs;
+      # this module owns the declarative remap config. Realizes the
+      # Hyper modifier from docs/desktop/keybinds.md (caps_lock → ⌘⌃⌥⇧).
+      # See docs/desktop/karabiner.md.
+      ../../home/darwin/karabiner.nix
       # Ensures ~/Screenshots exists; pairs with screencapture.location
       # in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix

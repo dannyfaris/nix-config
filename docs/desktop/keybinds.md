@@ -1,7 +1,11 @@
 # Keybindings
 
-Keybindings for the niri-only desktop on metis. Living document — updated
-with every new binding.
+Keybindings for the niri desktop on metis, with the **modifier-namespace
+philosophy now extended to macOS clients** via Karabiner-Elements (see
+[karabiner.md](./karabiner.md) for the Hyper-realization mechanics).
+The active-bindings tables below are metis-only at write-time; macOS
+clients realize Hyper as a modifier today but bind nothing on top yet.
+Living document — updated with every new binding.
 
 ## Philosophy
 
@@ -23,34 +27,40 @@ purpose:
 - **`Hyper`** — reserved namespace for personal system commands
   (launcher, clipboard, notifications, screenshots, lock screen).
   `Hyper` is the combined `Super+Ctrl+Alt+Shift` modifier;
-  conventionally bound to Caps Lock via `keyd` or equivalent. **Not
-  currently implemented.** Hyper-targeted commands either don't exist
-  yet (their underlying tools aren't installed) or live on interim
-  Super-side bindings until Hyper materialises.
+  conventionally bound to Caps Lock via `keyd` or equivalent.
+  **Realized on macOS via Karabiner-Elements (see
+  [karabiner.md](./karabiner.md)); still reserved on metis** —
+  metis-side Hyper-targeted commands either don't exist yet (their
+  underlying tools aren't installed) or live on interim Super-side
+  bindings until a keyd-equivalent lands.
 
 - **`Super+Hyper`** — reserved for extended window management
   (fullscreen, maximize-column, similar). Same dependency as Hyper.
 
-The framework is a way of thinking, not a roadmap. The unrealised layers
-(`keyd` translation, `Hyper`) may never be implemented. The shape of
-the bind composition below is nonetheless informed by the philosophy —
-reserved namespaces are deliberately left unbound — so that if any of
-the layers eventually land, migration is mechanical rather than
-disruptive.
+The framework is a way of thinking, not a roadmap. The metis-side
+unrealised layers (`keyd` translation, the local `Super+Hyper`) may
+never be implemented. The shape of the bind composition below is
+nonetheless informed by the philosophy — reserved namespaces are
+deliberately left unbound — so that if any of the layers eventually
+land, migration is mechanical rather than disruptive.
 
-Cross-platform portability is an aspiration the philosophy enables but
-does not require: the same bindings could in principle work on macOS
-(via Karabiner-Elements for Hyper, native Cmd for app commands) but no
-such macOS implementation is planned.
+Cross-platform portability is now partially realized: Karabiner on
+macOS produces the same Hyper modifier shape as the (still
+hypothetical) metis keyd remap would. The `Super+letter` app-command
+translation has no macOS parallel (macOS uses ⌘+letter natively, no
+remap needed); the `Hyper` namespace is the cross-platform layer
+the philosophy enables. Bindings on top of Hyper will land
+per-platform as they materialize — none exist on either side at
+write-time.
 
 ## Implementation status
 
-| Namespace | State | Notes |
-|---|---|---|
-| `Super` (window management) | Active | This document enumerates the bindings. |
-| `Super+letter` (app commands) | Reserved | Standard combos deliberately unbound. |
-| `Hyper` (personal system) | Reserved | Awaits keyd-equivalent if ever pursued. |
-| `Super+Hyper` (extended WM) | Reserved | Same dependency as Hyper. |
+| Namespace | metis (niri) | macOS clients | Notes |
+|---|---|---|---|
+| `Super` (window management) | Active | n/a (macOS owns WM) | This document enumerates the metis bindings. |
+| `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
+| `Hyper` (personal system) | Reserved | **Modifier active**, no binds yet | metis awaits keyd-equivalent; macOS realized via Karabiner per [karabiner.md](./karabiner.md). |
+| `Super+Hyper` (extended WM) | Reserved | n/a | Same metis dependency as Hyper. |
 
 **Interim deviations** — knowingly accepted; would migrate if the
 philosophy lands:
@@ -137,15 +147,26 @@ future keyd remap can pass them through to applications as
 
 ### `Hyper` namespace (personal system commands)
 
-`Hyper` (Caps Lock as modifier, hypothetical) is the philosophical
-home for launcher, clipboard manager, notification panel, screenshot,
-lock screen, and similar personal system commands. Currently
-unrealised. Any future bindings here are added to this document when
-implemented.
+`Hyper` (Caps Lock as modifier) is the philosophical home for
+launcher, clipboard manager, notification panel, screenshot, lock
+screen, and similar personal system commands.
 
-`Mod+Space` is bound to fuzzel as an interim deviation (see
-Implementation status §"Interim deviations" above). Philosophical
-target is `Hyper+Space` if a Hyper modifier is ever realised.
+**Status by platform:**
+
+- **macOS clients** — modifier realized via Karabiner-Elements
+  (`caps_lock` → `⌘ + ⌃ + ⌥ + ⇧`). See
+  [karabiner.md](./karabiner.md) for the carve-out rationale and
+  the declarative config. No Hyper-modifier bindings have landed
+  yet — the foundation exists, the binds will follow per the
+  cadence rules.
+- **metis (niri)** — modifier not yet realized; no keyd or
+  equivalent layer in place. `Mod+Space` is bound to fuzzel as an
+  interim deviation (see Implementation status §"Interim
+  deviations" above); philosophical target is `Hyper+Space` if a
+  Hyper modifier is ever realised on this side.
+
+Any future bindings here are added to this document when
+implemented, and tagged by the platform(s) on which they apply.
 
 ### `Super+Hyper` (extended WM)
 

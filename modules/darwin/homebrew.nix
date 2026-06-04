@@ -104,6 +104,23 @@
 #     SU* keys wired below under com.lwouis.alt-tab-macos.
 #     Needs Accessibility + Screen Recording TCC prompts on first
 #     run. See docs/desktop/alt-tab.md.
+#   - Karabiner-Elements (cask, clause-2): not on MAS (DriverKit +
+#     sandbox structurally incompatible). Nixpkgs path carved out
+#     because Karabiner is a privileged-pkg-installed system
+#     component — DriverKit system extension + 7+ launchd jobs at
+#     /Library/{LaunchDaemons,LaunchAgents}/ + privileged install
+#     at /Library/Application Support/org.pqrs/Karabiner-Elements/
+#     — that nix-store extraction cannot drive through macOS's
+#     systemextensionsctl approval flow. Same shape as Tailscale
+#     (pkg + system extension). Sparkle is pkg-enclosure so
+#     updates always prompt for admin auth (no silent path per
+#     Sparkle's docs); SU* keys below are belt-and-braces only.
+#     Bundle ID `org.pqrs.Karabiner-Elements`. Needs DriverKit
+#     extension approval (Login Items & Extensions → Driver
+#     Extensions) + Input Monitoring TCC on first run. Declarative
+#     karabiner.json managed by home/darwin/karabiner.nix
+#     (read-only symlink — UI edits do not survive activation).
+#     See docs/desktop/karabiner.md.
 #   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
 #     vendor default and silently updates /Applications/Google
 #     Chrome.app. No CustomUserPreferences keys today — Keystone is
@@ -184,6 +201,7 @@ in
       "fellow" # docs/desktop/fellow.md
       "wispr-flow" # docs/desktop/wispr-flow.md
       "alt-tab" # docs/desktop/alt-tab.md
+      "karabiner-elements" # docs/desktop/karabiner.md
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
@@ -218,14 +236,21 @@ in
   };
 
   # Sparkle silent-update keys for Ghostty, Tailscale, Typora,
-  # ChatGPT, and AltTab. See per-tool docs (docs/desktop/{ghostty,
-  # tailscale,typora,chatgpt,alt-tab}.md §Configuration) for the
-  # per-app rationale + verification commands. Bundle IDs are the
-  # *app* bundle IDs (not pkg installer IDs) — Tailscale's pkg ID
-  # is com.tailscale.ipn.macsys, the app ID is io.tailscale.ipn.macsys.
-  # ChatGPT's is `com.openai.chat` (singular "chat", not "chatgpt").
-  # AltTab's is `com.lwouis.alt-tab-macos` (the upstream maintainer's
-  # GitHub handle is part of the reverse-DNS prefix).
+  # ChatGPT, AltTab, and Karabiner-Elements. See per-tool docs
+  # (docs/desktop/{ghostty,tailscale,typora,chatgpt,alt-tab,karabiner}.md
+  # §Configuration) for the per-app rationale + verification
+  # commands. Bundle IDs are the *app* bundle IDs (not pkg
+  # installer IDs) — Tailscale's pkg ID is com.tailscale.ipn.macsys,
+  # the app ID is io.tailscale.ipn.macsys. ChatGPT's is `com.openai.chat`
+  # (singular "chat", not "chatgpt"). AltTab's is `com.lwouis.alt-tab-macos`
+  # (the upstream maintainer's GitHub handle is part of the
+  # reverse-DNS prefix). Karabiner's is `org.pqrs.Karabiner-Elements`
+  # (the main app — NOT the `org.pqrs.Karabiner-DriverKit-VirtualHIDDevice`
+  # system extension, NOT the `org.pqrs.Karabiner-EventViewer`
+  # companion). Karabiner is pkg-enclosure Sparkle so the keys are
+  # belt-and-braces only — Sparkle's package-updates path always
+  # prompts for admin auth and has no silent mode (per Sparkle's
+  # own docs).
   system.defaults.CustomUserPreferences = {
     "com.mitchellh.ghostty" = {
       SUEnableAutomaticChecks = true;
@@ -244,6 +269,10 @@ in
       SUAutomaticallyUpdate = true;
     };
     "com.lwouis.alt-tab-macos" = {
+      SUEnableAutomaticChecks = true;
+      SUAutomaticallyUpdate = true;
+    };
+    "org.pqrs.Karabiner-Elements" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
