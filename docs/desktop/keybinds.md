@@ -181,12 +181,14 @@ The bind-relevant pairings:
 | `Hyper+Return` | new fullscreen Ghostty window | Hammerspoon | always spawns a new window (`Cmd+N` to Ghostty), native-fullscreens it (new macOS Space), and focuses it |
 | `Hyper+B` | focus existing Chrome window, else new fullscreen Chrome window | Hammerspoon | prefers the most-recently-focused Chrome window; unminimizes if needed; switches Spaces if the window lives on another Space. If no Chrome window exists, spawns a new one and fullscreens it. |
 
-### Spaces
+### Mission Control
 
 | Key | Action | Implementation | Notes |
 |---|---|---|---|
 | `Hyper+Left`  | Move to space to the left  | Karabiner remap to `Ctrl+Left`  | macOS Mission Control's native "Move left a space" — `enabled = 1` by macOS default (symbolichotkey ID `79`); requires the binding to remain enabled at System Settings → Keyboard → Keyboard Shortcuts → Mission Control. |
 | `Hyper+Right` | Move to space to the right | Karabiner remap to `Ctrl+Right` | as above, "Move right a space" (ID `81`). |
+| `Hyper+Up`    | Mission Control overview (all windows + Spaces strip) | Karabiner remap to `Ctrl+Up` | macOS native "Mission Control" (symbolichotkey ID `32`); enabled by macOS default. Same toggle binding as a four-finger swipe up / F3 on the function row. |
+| `Hyper+Down`  | Application windows (current-app exposé) | Karabiner remap to `Ctrl+Down` | macOS native "Application windows" (symbolichotkey ID `33`); enabled by macOS default. Shows all windows belonging to the currently-focused app — useful for "give me every Chrome / Ghostty / IDE window I have open." |
 | `Hyper+1` … `Hyper+9` | Switch to Mission Control Desktop 1..9 | Karabiner remap to `Ctrl+1` … `Ctrl+9` | macOS Mission Control's "Switch to Desktop N" (symbolichotkey IDs `118`–`121` for Desktops 1–4, `190`–`194` for 5–9 — the full `190`–`197` block extends up through Desktop 12 but this bind targets 1–9). **Disabled by macOS default** — one-time operator setup required at System Settings → Keyboard → Keyboard Shortcuts → Mission Control → tick each "Switch to Desktop N" you want navigable. Per-Mac, manual. **Until enabled, the chord falls through to the focused app**: macOS's symbolichotkey intercept only fires when the entry is enabled, so an unset `Ctrl+N` is received by whatever app is foreground — VS Code / Cursor bind `Ctrl+1`–`9` to "Focus N-th editor group", JetBrains IDEs bind them to tool windows. Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds. |
 
 ## Reserved keys
