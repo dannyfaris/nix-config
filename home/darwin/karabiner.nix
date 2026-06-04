@@ -7,10 +7,11 @@
 #
 # See docs/desktop/karabiner.md for selection rationale, the
 # system-extension + Input Monitoring TCC ceremony, the pkg-enclosure
-# Sparkle update caveat, and verification commands. The single shipped
-# rule realizes the Hyper modifier from docs/desktop/keybinds.md by
-# remapping caps_lock to ⌘ + ⌃ + ⌥ + ⇧ (the macOS analogue of the
-# Linux Super + Ctrl + Alt + Shift Hyper).
+# Sparkle update caveat, and verification commands. The shipped rules
+# are enumerated in docs/desktop/keybinds.md §"Active bindings —
+# macOS clients"; this file's job is to realize them as
+# complex_modifications. The foundational rule is caps_lock → Hyper
+# (⌘⌃⌥⇧), the macOS analogue of the Linux Super + Ctrl + Alt + Shift.
 #
 # Symlinked into the nix store and therefore read-only — edit this
 # file to change the config; do not edit through the Karabiner-Elements
@@ -47,6 +48,94 @@ let
     ];
   };
 
+  # Helper: build the `from` half of a "Hyper + key" mandatory match.
+  # All four modifiers must be held (Karabiner consumes them on
+  # match, so the emitted `to` event carries only the modifiers we
+  # explicitly list there). The four-modifier state is produced by
+  # the capsLockToHyper rule above: emitting key_code = "left_shift"
+  # with cmd + ctrl + option as modifiers puts shift down on the
+  # active modifier state, satisfying the four-mandatory match.
+  fromHyper = keyCode: {
+    key_code = keyCode;
+    modifiers.mandatory = [
+      "left_command"
+      "left_control"
+      "left_option"
+      "left_shift"
+    ];
+  };
+
+  # Hyper + Arrow → Ctrl + Arrow, for macOS Mission Control's native
+  # "Move to space left/right." `mandatory` modifiers are consumed by
+  # the rule, so the emitted event is a clean Ctrl+Arrow — macOS sees
+  # its own shortcut and runs the native Space-switch animation. This
+  # piggybacks on the OS keybinding at System Settings → Keyboard →
+  # Keyboard Shortcuts → Mission Control → "Move left/right a space";
+  # disabling it there makes the chord a no-op. See docs/desktop/
+  # keybinds.md §Spaces for the bind-manifest entry.
+  hyperArrowSpaceNav = {
+    description = "Hyper + Arrow → Ctrl + Arrow (Mission Control Spaces)";
+    manipulators =
+      builtins.map
+        (arrow: {
+          type = "basic";
+          from = fromHyper "${arrow}_arrow";
+          to = [
+            {
+              key_code = "${arrow}_arrow";
+              modifiers = [ "left_control" ];
+            }
+          ];
+        })
+        [
+          "left"
+          "right"
+        ];
+  };
+
+  # Hyper + N → Ctrl + N, for macOS Mission Control's native "Switch
+  # to Desktop N" (N = 1..9). Same remap mechanism as the arrow rule
+  # above — `mandatory` modifiers are consumed and the emitted event
+  # is a clean Ctrl+N. Piggybacks on System Settings → Keyboard →
+  # Keyboard Shortcuts → Mission Control → "Switch to Desktop N";
+  # the operator must check those boxes for each N they want
+  # navigable (the macOS defaults disable them out of the box, and
+  # only expose slots for as many Spaces as currently exist).
+  # Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds.
+  # See docs/desktop/keybinds.md §Spaces.
+  hyperNumberSpaceJump = {
+    description = "Hyper + N → Ctrl + N (Mission Control Spaces 1-9)";
+    manipulators =
+      builtins.map
+        (
+          n:
+          let
+            k = toString n;
+          in
+          {
+            type = "basic";
+            from = fromHyper k;
+            to = [
+              {
+                key_code = k;
+                modifiers = [ "left_control" ];
+              }
+            ];
+          }
+        )
+        [
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+        ];
+  };
+
   karabinerConfig = {
     # Empty top-level `global` block neutralizes Karabiner-Elements'
     # first-launch config-normalization rewrite — Karabiner expects
@@ -69,7 +158,11 @@ let
           # `simultaneous` semantics has an obvious place to add
           # parameter overrides without changing the top-level shape.
           parameters = { };
-          rules = [ capsLockToHyper ];
+          rules = [
+            capsLockToHyper
+            hyperArrowSpaceNav
+            hyperNumberSpaceJump
+          ];
         };
       }
     ];

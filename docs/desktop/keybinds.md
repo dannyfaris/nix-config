@@ -136,10 +136,25 @@ focused column.
 ## Active bindings — macOS clients
 
 Hyper (`⌘⌃⌥⇧`) is produced by Karabiner-Elements from `caps_lock`
-(see [karabiner.md](./karabiner.md)). Hammerspoon listens for the
-chord at the userspace event-tap layer and binds Lua actions to it
-via `~/.hammerspoon/init.lua`, managed declaratively by
-`home/darwin/hammerspoon.nix` (see [hammerspoon.md](./hammerspoon.md)).
+(see [karabiner.md](./karabiner.md)). Two implementation layers
+bind actions to Hyper chords on this side, picked per bind:
+
+- **Karabiner remap** — same DriverKit layer as the modifier
+  production. Best when the chord should translate to a native
+  macOS shortcut transparently (the OS sees its own shortcut
+  and runs its native handling). Used for the Spaces nav binds
+  below: `Hyper+Arrow` is remapped to `Ctrl+Arrow`, which macOS
+  routes to Mission Control's "Move to space left/right." The
+  `mandatory` modifiers in Karabiner's `from` are consumed by
+  the rule, so the emitted event is cleanly `Ctrl+Arrow` —
+  macOS never sees the Hyper modifiers in this case.
+- **Hammerspoon binding** — userspace event-tap layer via
+  `~/.hammerspoon/init.lua`, managed declaratively by
+  `home/darwin/hammerspoon.nix` (see [hammerspoon.md](./hammerspoon.md)).
+  Best when the action requires Lua logic that has no native
+  macOS equivalent (window-management decisions, conditional
+  spawn-or-focus, app-aware actions). Used for the Spawn / focus
+  binds below.
 
 Apps in the Hammerspoon source carry both a bundle ID and a macOS
 display name — the two layers are used asymmetrically by
@@ -161,10 +176,18 @@ The bind-relevant pairings:
 
 ### Spawn / focus
 
-| Key | Action | Notes |
-|---|---|---|
-| `Hyper+Return` | new fullscreen Ghostty window | always spawns a new window (`Cmd+N` to Ghostty), native-fullscreens it (new macOS Space), and focuses it |
-| `Hyper+B` | focus existing Chrome window, else new fullscreen Chrome window | prefers the most-recently-focused Chrome window; unminimizes if needed; switches Spaces if the window lives on another Space. If no Chrome window exists, spawns a new one and fullscreens it. |
+| Key | Action | Implementation | Notes |
+|---|---|---|---|
+| `Hyper+Return` | new fullscreen Ghostty window | Hammerspoon | always spawns a new window (`Cmd+N` to Ghostty), native-fullscreens it (new macOS Space), and focuses it |
+| `Hyper+B` | focus existing Chrome window, else new fullscreen Chrome window | Hammerspoon | prefers the most-recently-focused Chrome window; unminimizes if needed; switches Spaces if the window lives on another Space. If no Chrome window exists, spawns a new one and fullscreens it. |
+
+### Spaces
+
+| Key | Action | Implementation | Notes |
+|---|---|---|---|
+| `Hyper+Left`  | Move to space to the left  | Karabiner remap to `Ctrl+Left`  | macOS Mission Control's native "Move left a space" — `enabled = 1` by macOS default (symbolichotkey ID `79`); requires the binding to remain enabled at System Settings → Keyboard → Keyboard Shortcuts → Mission Control. |
+| `Hyper+Right` | Move to space to the right | Karabiner remap to `Ctrl+Right` | as above, "Move right a space" (ID `81`). |
+| `Hyper+1` … `Hyper+9` | Switch to Mission Control Desktop 1..9 | Karabiner remap to `Ctrl+1` … `Ctrl+9` | macOS Mission Control's "Switch to Desktop N" (symbolichotkey IDs `118`–`121` for Desktops 1–4, `190`–`194` for 5–9 — the full `190`–`197` block extends up through Desktop 12 but this bind targets 1–9). **Disabled by macOS default** — one-time operator setup required at System Settings → Keyboard → Keyboard Shortcuts → Mission Control → tick each "Switch to Desktop N" you want navigable. Per-Mac, manual. **Until enabled, the chord falls through to the focused app**: macOS's symbolichotkey intercept only fires when the entry is enabled, so an unset `Ctrl+N` is received by whatever app is foreground — VS Code / Cursor bind `Ctrl+1`–`9` to "Focus N-th editor group", JetBrains IDEs bind them to tool windows. Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds. |
 
 ## Reserved keys
 

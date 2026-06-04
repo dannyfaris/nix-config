@@ -175,32 +175,32 @@ layering" for the full set.
 
 **Declarative config** — `home/darwin/karabiner.nix` writes
 `~/.config/karabiner/karabiner.json` via `home.file.<path>.text`
-with the JSON serialized from a Nix attrset. The single shipped
-rule today maps `caps_lock` to `left_shift` held with
-`left_command`, `left_control`, and `left_option` — i.e. the
-four-modifier Hyper chord:
+with the JSON serialized from a Nix attrset.
 
-```nix
-{
-  description = "Caps Lock → Hyper (⌘⌃⌥⇧)";
-  manipulators = [{
-    type = "basic";
-    from = {
-      key_code = "caps_lock";
-      modifiers.optional = [ "any" ];
-    };
-    to = [{
-      key_code = "left_shift";
-      modifiers = [ "left_command" "left_control" "left_option" ];
-    }];
-  }];
-}
-```
+Two rule classes live in the config:
 
-The `modifiers.optional = [ "any" ]` clause lets the remap fire
-regardless of which other modifier keys are held when caps_lock
-is pressed — defensive against future extensions where caps_lock
-might be chorded with another key.
+- **Modifier-production rules** — caps_lock → Hyper. The
+  foundational rule that makes Hyper exist as a chord this Mac
+  can emit. Owned by this doc because the choice of Karabiner
+  is in service of producing the modifier; the chord shape
+  (`caps_lock` source; `left_shift` + `cmd` + `ctrl` + `option`
+  target) is the load-bearing detail captured in the
+  carve-out's §Rationale.
+- **Bind rules** — `Hyper + X → <native macOS chord>` remaps
+  that translate Hyper-anchored bindings into existing macOS
+  shortcuts at the DriverKit layer (consuming Hyper's mandatory
+  modifiers in the process, so the emitted event is clean and
+  macOS routes it natively). These are *bindings* and live in
+  the bind manifest, not this doc; see
+  [`keybinds.md`](./keybinds.md) §"Active bindings — macOS
+  clients" for the enumeration.
+
+The `home/darwin/karabiner.nix` source carries both classes in
+its `complex_modifications.rules` list. The bind-rule entries
+each carry a short header comment cross-referencing the
+keybinds.md section they implement; the Nix source is the
+implementation, the keybinds.md manifest is the source of truth
+for *which* binds exist.
 
 The config is symlinked into the nix store (read-only). This is
 deliberate — see §Sharp edges "UI edits do not survive activation."
