@@ -1,4 +1,4 @@
-# SSH — outbound config (client-side) + inbound authorized_keys.
+# SSH — outbound config (client-side) only.
 # See docs/decisions/ADR-010-ssh.md for the broader rationale.
 #
 # What this module generates on the filesystem:
@@ -16,21 +16,28 @@
 #                            yet). Sourced into ~/.ssh/config via the
 #                            Include declared below.
 #
-#   ~/.ssh/authorized_keys   nix-store symlink, rendered from
-#                            lib/operator.nix's authorizedKeys list.
-#                            Regenerated on every nh switch.
+# Inbound key authorisation is owned entirely by the system layer:
 #
-# On NixOS hosts, the system-side foundation (modules/nixos/users.nix)
-# also writes the same keys to /etc/ssh/authorized_keys.d/<user> via
-# users.users.dbf.openssh.authorizedKeys.keys — sshd reads both
-# locations, so the home-managed file is redundant-but-harmless on
-# NixOS. On Darwin (mac-mini), sshd is configured by nix-darwin to read
-# keys via /etc/ssh/sshd_config.d/101-authorized-keys.conf's
-# `AuthorizedKeysCommand` (which cats /etc/ssh/nix_authorized_keys.d/<user>,
-# populated from users.users.<name>.openssh.authorizedKeys.keys in
-# modules/darwin/users.nix). The home-managed ~/.ssh/authorized_keys is
-# a /nix/store symlink and is NOT consulted by Darwin sshd — it's
-# cosmetic-only on Darwin, kept for cross-platform parity at this layer.
+#   - NixOS hosts: `users.users.dbf.openssh.authorizedKeys.keys` in
+#     modules/nixos/users.nix writes /etc/ssh/authorized_keys.d/dbf, which
+#     sshd consumes via its NixOS-default AuthorizedKeysFile. The single
+#     source of truth is lib/operator.nix.
+#
+#   - Darwin (mac-mini): nix-darwin's services.openssh.enable installs
+#     /etc/ssh/sshd_config.d/101-authorized-keys.conf with an
+#     AuthorizedKeysCommand that cats /etc/ssh/nix_authorized_keys.d/dbf,
+#     populated from `users.users.dbf.openssh.authorizedKeys.keys` in
+#     modules/darwin/users.nix. Same source of truth (lib/operator.nix).
+#
+# This module previously also wrote ~/.ssh/authorized_keys as a
+# home-managed file for cross-platform parity, but that path was a
+# /nix/store symlink, which sshd's StrictModes check rejects (because
+# /nix/store is mode 1775, considered world-writable). On NixOS that
+# produced three "Authentication refused: bad ownership or modes for
+# directory /nix/store" warnings before every successful login; on
+# Darwin the file wasn't read at all. Dropping it removes the chronic
+# warning and shrinks the inbound-keys surface to a single per-platform
+# system-side path. See #234.
 #
 # No matchBlocks declared here, no identity files, no key generation. Git
 # auth uses HTTPS + token via gh/glab (see ADR-009), so SSH keys aren't
@@ -45,11 +52,7 @@
 # on this box, use a passphrase + ssh-agent, and add matchBlocks here
 # directly. Agent forwarding from the Mac stays explicitly OFF (standard
 # security best practice).
-{ lib, ... }:
-let
-  operator = import ../../lib/operator.nix;
-in
-{
+_: {
   programs.ssh = {
     enable = true;
     # Opt out of home-manager's deprecated "default match-block contents"
@@ -68,12 +71,4 @@ in
     # the scoping subtleties of putting Include inside a Host * block.
     includes = [ "~/.ssh/config.local" ];
   };
-
-  # Inbound authorization. Single source of truth: lib/operator.nix.
-  # Trailing newline because some sshd versions are fussy about EOF
-  # without one. The backup-extension on conflict is "hm-bak" (set
-  # in modules/{nixos,darwin}/home-manager.nix), so first activation
-  # on a host with an existing ~/.ssh/authorized_keys cleanly preserves
-  # the old file as ~/.ssh/authorized_keys.hm-bak.
-  home.file.".ssh/authorized_keys".text = lib.concatStringsSep "\n" operator.authorizedKeys + "\n";
 }

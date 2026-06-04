@@ -8,11 +8,9 @@
 #   - modules/nixos/home-manager.nix  — HM attr-name + homeDirectory
 #   - modules/nixos/host-context.nix  — flakePath default
 #   - modules/darwin/users.nix        — user declaration (subset
-#                                       managed by nix-darwin)
+#                                       managed by nix-darwin) + SSH keys
 #   - modules/darwin/home-manager.nix — HM attr-name + homeDirectory
 #   - modules/darwin/host-context.nix — flakePath default
-#   - home/shared/ssh.nix             — ~/.ssh/authorized_keys content
-#                                       (cross-platform)
 #
 # When Darwin lands (epic #11), a sibling `modules/darwin/users.nix`
 # consumes the same record with the `darwinHome` field. The deliberate
@@ -43,11 +41,15 @@
   flakeRepoDirname = "nix-config";
 
   # SSH public keys authorised for inbound SSH on every host. Consumed
-  # by NixOS hosts via modules/nixos/users.nix → users.users.dbf.openssh
-  # .authorizedKeys.keys, and by all hosts (Linux + Darwin) via
-  # home/shared/ssh.nix → home.file.".ssh/authorized_keys". Today the
-  # Mac is the sole operator key; a backup key (e.g. on a YubiKey)
-  # would append here rather than being introduced as parallel state.
+  # by the system layer on each platform:
+  #   - NixOS: modules/nixos/users.nix → users.users.dbf.openssh
+  #     .authorizedKeys.keys (renders /etc/ssh/authorized_keys.d/dbf).
+  #   - Darwin: modules/darwin/users.nix → users.users.dbf.openssh
+  #     .authorizedKeys.keys (renders /etc/ssh/nix_authorized_keys.d/dbf,
+  #     consumed by nix-darwin's AuthorizedKeysCommand drop-in).
+  # Today the Mac is the sole operator key; a backup key (e.g. on a
+  # YubiKey) would append here rather than being introduced as parallel
+  # state.
   authorizedKeys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@mac"
   ];
