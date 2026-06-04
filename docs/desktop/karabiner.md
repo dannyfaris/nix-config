@@ -317,9 +317,11 @@ installed.
 - [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md) —
   boundary rule placing Karabiner on the Mac via cask under
   clause 2; this doc owns the carve-out justification.
-- [`docs/desktop/keybinds.md`](./keybinds.md) — the
-  three-namespace philosophy this remap realizes; macOS section
-  cross-references this doc.
+- [`docs/desktop/keybinds.md`](./keybinds.md) — bind manifest
+  covering both the Karabiner-implemented Hyper modifier
+  (caps_lock → ⌘⌃⌥⇧) and the Hyper-anchored Mission Control
+  binds (`Hyper+Arrow`, `Hyper+1`..`9`) layered on top via
+  additional `complex_modifications.rules`.
 - Homebrew `karabiner-elements` cask source (pkg installer,
   DriverKit uninstall block, Sparkle livecheck) —
   https://github.com/Homebrew/homebrew-cask/blob/master/Casks/k/karabiner-elements.rb
