@@ -41,6 +41,34 @@ _: {
     # via the derivation's makeWrapper loop). See docs/desktop/utm.md
     # for the ADR-031 walk + CLI-first rationale.
     ../../modules/darwin/utm.nix
+
+    # Touch ID for sudo — pam_tid.so + pam_watchid.so via
+    # `security.pam.services.sudo_local.touchIdAuth`. Magic Keyboard
+    # with Touch ID is the sensor on this host; Apple Watch unlock is
+    # the free side-effect. See docs/darwin/touch-id.md.
+    ../../modules/darwin/touch-id.nix
+
+    # macOS + App Store unattended-install posture. Three keys:
+    # SoftwareUpdate.AutomaticallyInstallMacOSUpdates + the two
+    # com.apple.commerce keys (AutoUpdate, AutoUpdateRestartRequired)
+    # via CustomUserPreferences. Mirrors the Sparkle silent-update
+    # stance applied to per-app casks in homebrew.nix. See
+    # docs/darwin/system-updates.md.
+    ../../modules/darwin/system-updates.nix
+
+    # macOS user-facing system preferences — Dock, Finder, save/print
+    # dialog expansion, screensaver password-on-wake, boot chime.
+    # Bulk of the System Settings knobs the operator otherwise clicks
+    # through on every new Mac. Rationale per-knob lives in the
+    # module header.
+    ../../modules/darwin/system-prefs.nix
+
+    # Power / sleep / recovery for the always-on builder + SSH-bastion
+    # role. Auto-restart after outage, never sleep the computer,
+    # display sleep at factory default. Values here are wrong for a
+    # battery-powered Mac — a future MacBook host would not import
+    # this module. See module header for the per-knob rationale.
+    ../../modules/darwin/power.nix
   ];
 
   networking.hostName = "mac-mini";
