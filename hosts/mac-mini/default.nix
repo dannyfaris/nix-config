@@ -115,6 +115,9 @@ _: {
       # Ghostty user config (~/.config/ghostty/config). Cask owns the
       # .app — see modules/darwin/homebrew.nix and docs/desktop/ghostty.md.
       ../../home/darwin/ghostty.nix
+      # Ensures ~/Screenshots exists; pairs with screencapture.location
+      # in modules/darwin/system-prefs.nix.
+      ../../home/darwin/screenshots-dir.nix
       ../../home/shared/agent-clis.nix
       ../../home/shared/agent-clis-extras.nix
     ];

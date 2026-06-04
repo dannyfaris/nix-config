@@ -7,8 +7,9 @@
 # four micro-modules with no independent purchase.
 #
 # Scope: Dock, Finder, the two NSGlobalDomain save/print dialog
-# expansion knobs, the screensaver password-on-wake pair, and the boot
-# chime toggle. Power/sleep lives in a sibling module (power.nix) —
+# expansion knobs, the screensaver password-on-wake pair, the boot
+# chime toggle, and the screenshot save location. Power/sleep lives
+# in a sibling module (power.nix) —
 # distinct concern: operational posture, not UI preference. Touch ID
 # for sudo lives in its own module (touch-id.nix) — distinct concern:
 # authentication. macOS auto-update lives in its own module
@@ -44,7 +45,21 @@
 #   - Boot chime: muted on activation; takes effect at next boot. On
 #     Apple Silicon some firmware revisions ignore this; the setting
 #     is cheap regardless.
-_: {
+#   - Screenshot save location: keeps ⌘⇧3 / ⌘⇧4 / ⌘⇧5 captures out
+#     of ~/Desktop and into a dedicated ~/Screenshots folder. macOS's
+#     `screencapture` silently falls back to ~/Desktop if the
+#     configured path doesn't resolve, so the directory must exist
+#     for the setting to take effect. Directory creation lives in
+#     the home-manager module `home/darwin/screenshots-dir.nix`
+#     (the directory is per-user, so home-manager is the natural
+#     layer; mirrors the `ensureProjectDirs` pattern in
+#     `home/shared/git-identity-dual.nix`).
+_:
+
+let
+  operator = import ../../lib/operator.nix;
+in
+{
   system = {
     startup.chime = false;
 
@@ -99,6 +114,14 @@ _: {
         # screen wakes.
         askForPassword = true;
         askForPasswordDelay = 0;
+      };
+
+      screencapture = {
+        # Save screenshots to ~/Screenshots instead of ~/Desktop.
+        # Absolute path because `defaults write` doesn't expand `~`
+        # and macOS resolves the path literally. The directory is
+        # created by the matching home-manager module — see header.
+        location = "${operator.darwinHome}/Screenshots";
       };
     };
   };
