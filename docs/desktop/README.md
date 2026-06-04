@@ -54,6 +54,7 @@ rather than creating a new artifact.
 | [gemini.md](./gemini.md) | Google Gemini desktop client; Homebrew cask + Keystone (clause-1; SHARES Keystone agent with Chrome) | _pending_ |
 | [fellow.md](./fellow.md) | Fellow meeting agendas / notes / action items; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
 | [wispr-flow.md](./wispr-flow.md) | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
+| [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
 | [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | _pending_ |
 
 ### Cross-platform (NixOS desktop + macOS)
