@@ -47,6 +47,14 @@ _: {
     # with Touch ID is the sensor on this host; Apple Watch unlock is
     # the free side-effect. See docs/darwin/touch-id.md.
     ../../modules/darwin/touch-id.nix
+
+    # macOS + App Store unattended-install posture. Three keys:
+    # SoftwareUpdate.AutomaticallyInstallMacOSUpdates + the two
+    # com.apple.commerce keys (AutoUpdate, AutoUpdateRestartRequired)
+    # via CustomUserPreferences. Mirrors the Sparkle silent-update
+    # stance applied to per-app casks in homebrew.nix. See
+    # docs/darwin/system-updates.md.
+    ../../modules/darwin/system-updates.nix
   ];
 
   networking.hostName = "mac-mini";
