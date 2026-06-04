@@ -10,10 +10,10 @@ Shared publicly for transparency and so others can lift pieces useful to their o
 
 ```
 flake.nix                      # flake-parts entry point
-parts/                         # flake-parts modules (CI, formatter, dev-shells, nixosConfigurations)
+parts/                         # flake-parts modules (CI, formatter, dev-shells, nixos+darwin configurations)
 hosts/<host>/                  # per-host instance: hardware, identity, imports of foundation + bundles
-modules/{nixos,shared}/   # system-layer modules (foundation, bundles, standalone)
-home/{nixos,shared}/      # home-manager modules (foundation, bundles, standalone)
+modules/{nixos,darwin,shared}/ # system-layer modules (foundation, bundles, standalone)
+home/{nixos,darwin,shared}/    # home-manager modules (foundation, bundles, standalone)
 lib/                           # mk-host wrapper, per-host parameters, helper modules
 docs/                          # the rationale behind every decision
 ```
