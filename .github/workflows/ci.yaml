@@ -36,12 +36,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64-linux, aarch64-linux]
+        arch: [x86_64-linux, aarch64-linux, aarch64-darwin]
         include:
           - arch: x86_64-linux
             runner: ubuntu-24.04
           - arch: aarch64-linux
             runner: ubuntu-24.04-arm
+          # Darwin runner — closes the CI-coverage gap that issue #190
+          # named: darwinConfigurations.mac-mini gets zero structural
+          # verification until this matrix entry exists.
+          #
+          # `nix flake check` on the macOS runner realises
+          # `flake.checks.aarch64-darwin.host-mac-mini` declared in
+          # parts/checks.nix. The build phase does NOT run activation
+          # (nix-darwin's brew bundle / mas install / launchctl loads
+          # fire at `darwin-rebuild switch` time, not at build time), so
+          # the CI step is safe — no Homebrew side-effects, no MAS
+          # network calls, no admin prompts.
+          #
+          # Runner pinning — `macos-15` chosen:
+          #   - It's the current stable Apple Silicon (ARM64) line.
+          #     `macos-14` is still supported but on the deprecation
+          #     runway; `macos-latest` moves under us (was migrated to
+          #     macos-15 in Aug 2025 per actions/runner-images#12520);
+          #     the `-large` / `-xlarge` / `-intel` variants are metered
+          #     on public repos while the standard macos-15 label is
+          #     free (per GitHub's billing docs).
+          #   - aarch64-darwin matches mac-mini's actual arch — no
+          #     Rosetta 2 cross-arch surprises.
+          # The cost concern that issue #190 raised (macos minutes
+          # cost) doesn't bite: this repo is public, and standard
+          # macos-15 minutes are free on public repos.
+          - arch: aarch64-darwin
+            runner: macos-15
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
@@ -104,6 +131,16 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
           gc-max-store-size-linux: 5G
+          # Darwin counterpart to gc-max-store-size-linux. mac-mini's
+          # closure is ~7.3 GiB at write-time (verified locally) — above
+          # this 5G ceiling, so caching is partial: cache-nix-action's
+          # GC evicts under the cap, the next cold run rebuilds the
+          # evicted slice from cache.nixos.org. Acceptable for first
+          # landing; bump rather than churn if hit rate degrades. The
+          # Linux niri.cachix substituter is irrelevant on Darwin —
+          # Nix only queries substituters for outputs it's trying to
+          # build, and the mac-mini closure doesn't include niri.
+          gc-max-store-size-macos: 5G
           purge: true
           purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
           purge-created: 0 # no created-age gate; last-accessed is the real filter

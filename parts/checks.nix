@@ -14,13 +14,27 @@
   # Per-host toplevel derivations. Defined at the top-level flake namespace
   # (rather than inside perSystem) because flake-parts deliberately scrubs
   # `self` out of perSystem args. The system in the attribute path scopes
-  # each check to the right runner — aarch64 builds nixos-vm; x86_64 builds
-  # mercury + metis. Same derivation as `nixosConfigurations.<name>.config
-  # .system.build.toplevel`, so Nix's store deduplicates: no double build.
+  # each check to the right runner — aarch64-linux builds nixos-vm;
+  # x86_64-linux builds mercury + metis; aarch64-darwin builds mac-mini.
+  # For NixOS hosts the derivation is `nixosConfigurations.<name>.config
+  # .system.build.toplevel`; for Darwin it's the nix-darwin convenience
+  # alias `darwinConfigurations.<name>.system` (same derivation as
+  # `.config.system.build.toplevel`, verified by drvPath equality). Either
+  # way, Nix's store deduplicates: no double build.
+  #
+  # The Darwin entry closes the CI-coverage gap that issue #190 named —
+  # before this entry, modules/darwin/*, home/darwin/*, and the
+  # hosts/mac-mini composition had zero structural verification. The
+  # README's "CI builds every host on every PR" claim becomes true again
+  # alongside (the same PR fixes the README's stale "Three hosts today"
+  # line that lagged the 2026-06-02 mac-mini onboarding). The matching
+  # macOS runner is declared in the ci.yaml matrix (see that file for
+  # the runner-pinning + cache-budget rationale).
   flake.checks = {
     aarch64-linux.host-nixos-vm = self.nixosConfigurations.nixos-vm.config.system.build.toplevel;
     x86_64-linux.host-mercury = self.nixosConfigurations.mercury.config.system.build.toplevel;
     x86_64-linux.host-metis = self.nixosConfigurations.metis.config.system.build.toplevel;
+    aarch64-darwin.host-mac-mini = self.darwinConfigurations.mac-mini.system;
   };
 
   # Pre-commit hooks. git-hooks.nix lifts these to checks.<system>.pre-commit
