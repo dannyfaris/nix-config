@@ -41,6 +41,12 @@ _: {
     # via the derivation's makeWrapper loop). See docs/desktop/utm.md
     # for the ADR-031 walk + CLI-first rationale.
     ../../modules/darwin/utm.nix
+
+    # Touch ID for sudo — pam_tid.so + pam_watchid.so via
+    # `security.pam.services.sudo_local.touchIdAuth`. Magic Keyboard
+    # with Touch ID is the sensor on this host; Apple Watch unlock is
+    # the free side-effect. See docs/darwin/touch-id.md.
+    ../../modules/darwin/touch-id.nix
   ];
 
   networking.hostName = "mac-mini";
