@@ -65,16 +65,22 @@ let
     ];
   };
 
-  # Hyper + Arrow → Ctrl + Arrow, for macOS Mission Control's native
-  # "Move to space left/right." `mandatory` modifiers are consumed by
-  # the rule, so the emitted event is a clean Ctrl+Arrow — macOS sees
-  # its own shortcut and runs the native Space-switch animation. This
-  # piggybacks on the OS keybinding at System Settings → Keyboard →
-  # Keyboard Shortcuts → Mission Control → "Move left/right a space";
-  # disabling it there makes the chord a no-op. See docs/desktop/
-  # keybinds.md §Spaces for the bind-manifest entry.
-  hyperArrowSpaceNav = {
-    description = "Hyper + Arrow → Ctrl + Arrow (Mission Control Spaces)";
+  # Hyper + Arrow → Ctrl + Arrow, for macOS's Mission Control family:
+  #
+  #   left/right  →  "Move to space left/right" (symbolichotkey IDs 79/81)
+  #   up          →  "Mission Control" overview (ID 32)
+  #   down        →  "Application windows" exposé (ID 33)
+  #
+  # `mandatory` modifiers are consumed by the rule, so the emitted
+  # event is a clean Ctrl+Arrow — macOS sees its own shortcut and
+  # runs the native handler. This piggybacks on the OS keybindings
+  # at System Settings → Keyboard → Keyboard Shortcuts → Mission
+  # Control; disabling any of those rows there makes the
+  # corresponding arrow a no-op. All four are enabled by macOS
+  # default. See docs/desktop/keybinds.md §Mission Control for the
+  # bind-manifest entries.
+  hyperArrowMissionControl = {
+    description = "Hyper + Arrow → Ctrl + Arrow (Mission Control family)";
     manipulators =
       builtins.map
         (arrow: {
@@ -90,6 +96,8 @@ let
         [
           "left"
           "right"
+          "up"
+          "down"
         ];
   };
 
@@ -102,7 +110,7 @@ let
   # navigable (the macOS defaults disable them out of the box, and
   # only expose slots for as many Spaces as currently exist).
   # Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds.
-  # See docs/desktop/keybinds.md §Spaces.
+  # See docs/desktop/keybinds.md §Mission Control.
   hyperNumberSpaceJump = {
     description = "Hyper + N → Ctrl + N (Mission Control Spaces 1-9)";
     manipulators =
@@ -160,7 +168,7 @@ let
           parameters = { };
           rules = [
             capsLockToHyper
-            hyperArrowSpaceNav
+            hyperArrowMissionControl
             hyperNumberSpaceJump
           ];
         };
