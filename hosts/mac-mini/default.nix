@@ -62,6 +62,13 @@ _: {
     # through on every new Mac. Rationale per-knob lives in the
     # module header.
     ../../modules/darwin/system-prefs.nix
+
+    # Power / sleep / recovery for the always-on builder + SSH-bastion
+    # role. Auto-restart after outage, never sleep the computer,
+    # display sleep at factory default. Values here are wrong for a
+    # battery-powered Mac — a future MacBook host would not import
+    # this module. See module header for the per-knob rationale.
+    ../../modules/darwin/power.nix
   ];
 
   networking.hostName = "mac-mini";
