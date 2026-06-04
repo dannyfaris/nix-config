@@ -21,14 +21,30 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Default-permissions pin (defense-in-depth). The workflow only needs to
-# read repo contents — checkout clones, Nix fetches public flake inputs.
-# Without this, GitHub grants the broader default which includes write
-# scopes for several APIs we don't use. Explicit-over-implicit per
-# CLAUDE.md's whitelist > blanket stance, applied to the workflow's
-# token surface.
+# Permissions pin (defense-in-depth + whitelist > blanket per
+# CLAUDE.md). The workflow only needs:
+#
+#   contents: read    — actions/checkout to clone the repo; Nix to
+#                       fetch public flake inputs.
+#   actions: write    — cache-nix-action's purge-primary-key: always
+#                       calls `DELETE /repos/.../actions/caches` to
+#                       evict the existing cache entry before resaving
+#                       (the documented escape hatch for actions/cache's
+#                       "primary-key hit → save is a no-op" semantic).
+#                       Without this scope the delete returns 403, the
+#                       cache survives, the save-existence check
+#                       matches, and the save is skipped — observed
+#                       directly in #225 / #226 as the symptom that
+#                       motivated #227. Also required for the
+#                       post-save LRU sweep on `purge-prefixes` to
+#                       delete stale sibling entries.
+#
+# Explicit pin still keeps the workflow short of the GitHub default
+# (which would also grant `pull-requests: write`, `issues: write`, etc.
+# that we don't need).
 permissions:
   contents: read
+  actions: write
 
 jobs:
   flake-check:
