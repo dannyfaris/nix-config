@@ -121,6 +121,12 @@ _: {
       # Hyper modifier from docs/desktop/keybinds.md (caps_lock → ⌘⌃⌥⇧).
       # See docs/desktop/karabiner.md.
       ../../home/darwin/karabiner.nix
+      # Hammerspoon init.lua (~/.hammerspoon/init.lua). Cask owns
+      # the .app; this module owns the declarative Lua source.
+      # Binds Hyper+letter / Hyper+key actions on top of Karabiner's
+      # modifier. Enumerated bindings live in docs/desktop/keybinds.md
+      # §"Active bindings — macOS clients". See docs/desktop/hammerspoon.md.
+      ../../home/darwin/hammerspoon.nix
       # Ensures ~/Screenshots exists; pairs with screencapture.location
       # in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix
