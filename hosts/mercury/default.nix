@@ -53,6 +53,10 @@
     # an interactive `sudo tailscale up` (browser auth) — see the
     # runbook's Mercury verification section.
     ../../modules/nixos/tailscale.nix
+
+    # Fan systemd unit failures (e.g. nix-gc) to ntfy over the tailnet —
+    # mercury is headless, so nobody watches `systemctl --failed` (#199).
+    ../../modules/nixos/unit-failure-notifier.nix
   ];
 
   networking.hostName = "mercury";

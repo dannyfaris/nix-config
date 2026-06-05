@@ -31,6 +31,8 @@
     ../../modules/nixos/tailscale.nix
     ../../modules/nixos/docker.nix # Rootless Docker — see ADR-021.
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
+    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199).
+    ../../modules/nixos/ntfy-server.nix # Self-hosted ntfy receiver for the fleet's failure notifications (#199).
   ];
 
   networking.hostName = "metis";
