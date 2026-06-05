@@ -8,14 +8,116 @@
 # resilience; zellij handles cross-reboot persistence — they're
 # complementary.
 #
-# The `agent` layout (agent.kdl below) plus the `za` abbreviation in
+# The `agent` layout (agent.kdl below) plus the `za` function in
 # home/shared/shell.nix are the only path into the 3-pane agentic
 # workspace; plain `zellij` stays a vanilla single-pane session.
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
-  # Floating cheatsheet for the agent layout's custom binds. Invoked
-  # from Alt+k via the `Run … floating true` pattern (same shape as
-  # the Alt+g/d binds below). Mod+k as the help binding mirrors a
+  c = config.lib.stylix.colors;
+
+  # Palette pulled straight from the active Stylix scheme so the zjstatus
+  # top bar (agent.kdl below) stays cohesive even though stylix.targets
+  # .zellij doesn't reach a third-party plugin (it themes the stock
+  # status-bar + pane frames; zjstatus reads these hex values directly).
+  # Roles mirror the starship prompt and Claude statusline: host
+  # green/purple by SSH state, git branch cyan, status counts !conflict
+  # red / +staged green / ~modified yellow / ?untracked orange,
+  # session/clock foreground, swap-layout indicator muted. (base0B green /
+  # base0E purple / base0C cyan / base0A yellow / base09 orange / base08
+  # red / base05 fg / base03 muted — same slots as prompt.nix /
+  # claude-statusline.sh.)
+  greenHex = "#${c."base0B-hex"}";
+  purpleHex = "#${c."base0E-hex"}";
+  cyanHex = "#${c."base0C-hex"}";
+  yellowHex = "#${c."base0A-hex"}";
+  orangeHex = "#${c."base09-hex"}";
+  redHex = "#${c."base08-hex"}";
+  fgHex = "#${c."base05-hex"}";
+  mutedHex = "#${c."base03-hex"}";
+
+  # Glyphs decoded from codepoints (fromJSON `"\uXXXX"`) — same ASCII-safe
+  # pattern and same codepoints as prompt.nix / claude-statusline.sh.
+  desktopGlyph = builtins.fromJSON ''"\uf108"''; # nf-fa-desktop — local
+  sshGlyph = builtins.fromJSON ''"\uf489"''; # nf-mdi-console_network — SSH
+
+  zjstatus = "${pkgs.zellijPlugins.zjstatus}"; # output IS the .wasm file
+
+  # zjstatus runs widget commands *not* in a shell, so the host marker is
+  # a wrapped script (bash + PATH guaranteed) referenced below by absolute
+  # store path — hence it needn't land on the user's PATH.
+  #
+  # Host marker — emits zjstatus `#[fg=…]` markup chosen at runtime, so
+  # command_host_rendermode "dynamic" renders green + desktop glyph
+  # locally and purple + console-network glyph over SSH. SSH detection
+  # mirrors prompt.nix's sshDetect (survives sudo -i / su - via the
+  # `who -m` origin-host-in-parens fallback). Third mirror of the host
+  # chip in the prompt and Claude statusline (ADR-002 / ADR-024).
+  zjstatusHostMarker = pkgs.writeShellApplication {
+    name = "zjstatus-host-marker";
+    runtimeInputs = [ pkgs.coreutils ]; # who; hostname resolves from ambient PATH
+    text = ''
+      if [ -n "''${SSH_CONNECTION:-}" ] || case "$(who -m 2>/dev/null)" in (*\(*\)*) true ;; (*) false ;; esac
+      then
+        printf '#[fg=%s,bold]%s  %s' '${purpleHex}' '${sshGlyph}' "$(hostname -s)"
+      else
+        printf '#[fg=%s,bold]%s  %s' '${greenHex}' '${desktopGlyph}' "$(hostname -s)"
+      fi
+    '';
+  };
+
+  # Git marker — branch + per-category status counts for the workspace
+  # repo (the session launch dir; interval-polled below, so agent edits
+  # and branch-switches surface). Emits its own leading separator and
+  # zjstatus `#[fg=…]` markup (rendermode "dynamic"), so when the launch
+  # dir isn't a repo it prints nothing and contributes no gap — no
+  # reliance on zjstatus's undocumented hide-on-empty flag. The counts use
+  # the exact symbols, colours, porcelain categorisation and render order
+  # of the Claude statusline (`!conflict +staged ~modified ?untracked`,
+  # each shown only when non-zero) so the three surfaces speak one visual
+  # language. Branch cyan; detached HEAD shows `@<sha>`. Deliberately no
+  # ahead/behind — parity with the prompt/statusline, which omit it.
+  zjstatusGit = pkgs.writeShellApplication {
+    name = "zjstatus-git";
+    runtimeInputs = [ pkgs.git ];
+    text = ''
+      git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
+      branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+      if [ -z "$branch" ]; then
+        sha=$(git rev-parse --short HEAD 2>/dev/null || true)
+        [ -n "$sha" ] && branch="@$sha"
+      fi
+      [ -z "$branch" ] && exit 0
+
+      staged=0
+      modified=0
+      untracked=0
+      conflict=0
+      while IFS= read -r line; do
+        case "''${line:0:2}" in
+        DD | AU | UD | UA | DU | AA | UU) conflict=$((conflict + 1)) ;;
+        '??') untracked=$((untracked + 1)) ;;
+        *)
+          [ "''${line:0:1}" != " " ] && staged=$((staged + 1))
+          [ "''${line:1:1}" != " " ] && modified=$((modified + 1))
+          ;;
+        esac
+      done < <(git status --porcelain 2>/dev/null)
+
+      # Same symbols / colours / order as claude-statusline.sh's git segment.
+      out="   #[fg=${cyanHex}]$branch"
+      [ "$conflict" -gt 0 ] && out="$out #[fg=${redHex}]!$conflict"
+      [ "$staged" -gt 0 ] && out="$out #[fg=${greenHex}]+$staged"
+      [ "$modified" -gt 0 ] && out="$out #[fg=${yellowHex}]~$modified"
+      [ "$untracked" -gt 0 ] && out="$out #[fg=${orangeHex}]?$untracked"
+      printf '%s' "$out"
+    '';
+  };
+
+  # Floating cheatsheet for the agent layout's keys — the custom
+  # Alt+g/d/e/k binds plus zellij's default Alt+[ / Alt+] swap-layout
+  # toggles, which this layout gives meaning to (the agent/yazi monocles).
+  # Invoked from Alt+k via the `Run … floating true` pattern (same shape
+  # as the Alt+g/d binds below). Mod+k as the help binding mirrors a
   # convention already familiar from other tools, so no on-screen
   # discovery hint is needed in the layout itself.
   zellijAgentHelp = pkgs.writeShellApplication {
@@ -23,13 +125,14 @@ let
     text = ''
       cat <<'EOF'
 
-        Agent layout — custom binds
+        Agent layout — keys
 
-          Alt+← ↑ ↓ →   navigate panes
-          Alt+g         lazygit (floating)
-          Alt+d         lazydocker (floating)
-          Alt+e         capture scrollback to $EDITOR
-          Alt+k         this help
+          Alt+← ↑ ↓ →     navigate panes
+          Alt+[ / Alt+]   cycle layout: base · agent · yazi monocle
+          Alt+g           lazygit (floating)
+          Alt+d           lazydocker (floating)
+          Alt+e           capture scrollback to $EDITOR
+          Alt+k           this help
 
         Press any key to dismiss.
       EOF
@@ -69,6 +172,19 @@ in
     #     script defined in the `let` block above).
     extraConfig = ''
       keybinds {
+          // Tabs are unused in the agent workflow (one workspace per
+          // session) and the zjstatus bar renders no tab list, so make
+          // tab creation unreachable. `NewTab` exists only inside Tab mode
+          // and tmux mode, whose sole entry keys are Ctrl+t and Ctrl+b —
+          // unbinding both seals every path, including the indirect
+          // tmux → "," (rename) → Esc → Tab mode → "n" back-door, because
+          // rename mode is itself only reachable from those two modes
+          // (verified via `zellij setup --dump-config`). Side effect: the
+          // tmux-compat keytable goes with it, which this zellij-native
+          // setup doesn't use. The monocle swap-layout toggles (Alt+[ /
+          // Alt+]) live in `shared_except "locked"`, so they're unaffected.
+          unbind "Ctrl t" "Ctrl b"
+
           shared_except "locked" {
               bind "Alt g" {
                   Run "lazygit" {
@@ -107,19 +223,58 @@ in
   # parse ("Unknown layout node: 'pane'").
   #
   # `default_tab_template` restores chrome that a custom top-level-tab
-  # layout otherwise skips entirely (the stock tab-bar + status-bar live
-  # in the default template, not the global UI). The `tab` contents land
-  # where `children` sits in the template. The status-bar pane is `size=2`
-  # because `zellij:status-bar` is a single WASM rendering two rows
-  # (mode-indicator + keybind hints on top, rotating "Tip:" on bottom);
-  # giving it less than 2 rows clips the keybind hints. Custom binds
-  # added in `extraConfig` (Alt+g/d/e/k) live in the Alt+k cheatsheet,
-  # not the layout chrome.
+  # layout otherwise skips entirely (the bars live in the default
+  # template, not the global UI). The `tab` contents land where
+  # `children` sits in the template.
+  #
+  # Top bar: zjstatus (not the stock `zellij:tab-bar`) so the left side
+  # can carry host+SSH marker, session name, and the workspace repo's git
+  # state — none of which the stock bar exposes. `format_left` is the host
+  # widget + `{session}` + the git widget; no directory segment, because
+  # the session name is the basename of the launch dir (`za`, see
+  # shell.nix) and would just duplicate it. `format_right` is the
+  # swap-layout (monocle) indicator the stock bar used to show, plus a
+  # 12-hour NZ clock. No `{tabs}` widget — tabs are deliberately out (see
+  # the `unbind "Ctrl t"` above).
+  #
+  # Widget cadence: host interval "0" (once, cached — SSH-state is fixed
+  # for the session's life); git interval "2" (poll so agent edits and
+  # branch-switches show). Both render "dynamic" so the `#[fg=…]` markup
+  # the scripts emit is rendered as colour. The clock is the native
+  # `{datetime}` widget, timezone-pinned so it reads NZ time even on
+  # mercury (EC2, non-NZ region).
+  #
+  # Bottom bar unchanged: the stock `zellij:status-bar` is a single WASM
+  # rendering two rows (mode-indicator + keybind hints on top, rotating
+  # "Tip:" on bottom), so its pane stays `size=2` — less clips the hints.
+  # Custom binds from `extraConfig` (Alt+g/d/e/k) live in the Alt+k
+  # cheatsheet, not the layout chrome.
   xdg.configFile."zellij/layouts/agent.kdl".text = ''
     layout {
         default_tab_template {
             pane size=1 borderless=true {
-                plugin location="zellij:tab-bar"
+                plugin location="file:${zjstatus}" {
+                    format_left  "{command_host}  #[fg=${fgHex}]{session}{command_git}"
+                    format_right "#[fg=${mutedHex}]{swap_layout}  {datetime}"
+                    format_space ""
+
+                    command_host_command    "${zjstatusHostMarker}/bin/zjstatus-host-marker"
+                    command_host_format     "{stdout}"
+                    command_host_rendermode "dynamic"
+                    command_host_interval   "0"
+
+                    command_git_command    "${zjstatusGit}/bin/zjstatus-git"
+                    command_git_format     "{stdout}"
+                    command_git_rendermode "dynamic"
+                    command_git_interval   "2"
+
+                    swap_layout_format        "Alt <[]> {name} "
+                    swap_layout_hide_if_empty "false"
+
+                    datetime          "#[fg=${fgHex}]{format}"
+                    datetime_format   "%I:%M%P"
+                    datetime_timezone "Pacific/Auckland"
+                }
             }
             children
             pane size=2 borderless=true {
