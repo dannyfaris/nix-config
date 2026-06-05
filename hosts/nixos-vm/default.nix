@@ -20,6 +20,7 @@
     ../../modules/nixos/boot-systemd.nix
     ../../modules/nixos/networking-networkmanager.nix
     ../../modules/nixos/tailscale.nix
+    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199).
   ];
 
   networking.hostName = "nixos-vm";
