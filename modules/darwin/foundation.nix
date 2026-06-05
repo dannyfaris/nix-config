@@ -12,7 +12,8 @@
 # Darwin GC interval, baseline system packages, default editor for
 # system-mediated tools), security posture (ALF firewall), the
 # home-manager nix-darwin-module wiring, and Stylix theming (per-host
-# palette, via stylix-palette.nix).
+# palette via stylix-palette.nix; system-wide font install via
+# desktop-fonts.nix).
 #
 # Reserved for things that aren't opt-in capabilities. A capability —
 # even one every current host happens to want — belongs in a capability
@@ -38,5 +39,10 @@
     # own module so foundation stays a pure imports list (bundle-purity
     # rule). Mirrors modules/nixos/stylix-palette.nix.
     ./stylix-palette.nix
+    # Install the Stylix font faces system-wide (/Library/Fonts). On
+    # NixOS the parallel lives in the desktop-env bundle (gated for
+    # headless hosts); every Darwin host is GUI, so it belongs in
+    # foundation. Mirrors modules/nixos/desktop-fonts.nix.
+    ./desktop-fonts.nix
   ];
 }
