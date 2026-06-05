@@ -1,21 +1,29 @@
 #!/usr/bin/env bash
 # Exercises scripts/lint-bundle-purity.sh against synthetic positive
 # and negative fixtures so the lint's behaviour is verifiable in
-# isolation. Invoked manually during PR review on #54 P5.1 and any
-# subsequent change to the lint; not wired into CI (the lint itself
-# runs on every commit via pre-commit, so the *positive* path is
-# already continuously exercised — this script's value is locking
-# in the *negative* paths against regression).
+# isolation — locking in the *negative* paths (the lint's own
+# detection logic) against regression. The lint's *positive* path is
+# already exercised continuously by the bundle-purity pre-commit hook.
+#
+# Wired into the pre-commit framework via parts/checks.nix as the
+# `test-bundle-purity` hook, gated on edits to lint-bundle-purity.sh, so
+# it runs in `nix flake check`/CI and at commit-time whenever the linter
+# changes (#193). Also runnable standalone: `bash scripts/test-lint-bundle-purity.sh`.
 #
 # Fixtures live in a per-run TMPDIR; no committed test data.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LINT="$SCRIPT_DIR/lint-bundle-purity.sh"
+# Locate the linter under test. Standalone runs find it as a sibling;
+# the pre-commit hook sets LINT_SCRIPT to its Nix-store path, because the
+# store interns each file separately — the sibling lookup would miss it.
+LINT="${LINT_SCRIPT:-$SCRIPT_DIR/lint-bundle-purity.sh}"
 
-if [[ ! -x $LINT ]]; then
-  echo "ERROR: $LINT not found or not executable" >&2
+# Readable, not executable: the test always invokes via `bash "$LINT"`,
+# and the store path the hook passes need not carry the executable bit.
+if [[ ! -r $LINT ]]; then
+  echo "ERROR: $LINT not found or not readable" >&2
   exit 2
 fi
 

@@ -146,6 +146,47 @@
             # in the dev-shell see.
             extraPackages = [ pkgs.nix ];
           };
+
+          # Regression coverage for the two purity *linters* themselves
+          # (#193). The linters gate every bundle/foundation/shared file at
+          # commit-time, but a change that broke their detection — e.g. made
+          # them pass everything silently — would otherwise sail through and
+          # the purity guarantee would quietly evaporate. These self-tests
+          # exercise each linter's negative paths against synthetic fixtures.
+          #
+          # Wired as system hooks (not a separate flake.checks derivation):
+          # the linters are pre-commit hooks, and git-hooks.nix lifts these
+          # to checks.<system>.pre-commit too, so they live inside
+          # `nix flake check` per ADR-025 with no extra derivation plumbing.
+          #
+          # `files` gates each test to its own linter: at commit-time the
+          # test runs only when that linter is edited; in CI (`pre-commit run
+          # --all-files`) the linter file always matches, so it always runs.
+          # `pass_filenames = false` — the tests generate their own fixtures
+          # and ignore positional args. LINT_SCRIPT points the test at the
+          # linter's store path (the store interns each file separately, so
+          # the test's sibling-lookup default can't find it).
+          test-bundle-purity = {
+            enable = true;
+            name = "test-bundle-purity";
+            entry = "env LINT_SCRIPT=${../scripts/lint-bundle-purity.sh} bash ${../scripts/test-lint-bundle-purity.sh}";
+            files = "^scripts/lint-bundle-purity\\.sh$";
+            language = "system";
+            pass_filenames = false;
+            # The bundle linter (and so its self-test) shells out to
+            # nix-instantiate --parse; same injection as the linter's hook.
+            extraPackages = [ pkgs.nix ];
+          };
+
+          test-shared-purity = {
+            enable = true;
+            name = "test-shared-purity";
+            entry = "env LINT_SCRIPT=${../scripts/lint-shared-purity.sh} bash ${../scripts/test-lint-shared-purity.sh}";
+            files = "^scripts/lint-shared-purity\\.sh$";
+            language = "system";
+            pass_filenames = false;
+            # No extraPackages: the shared linter is pure grep, no Nix.
+          };
         };
     };
 }
