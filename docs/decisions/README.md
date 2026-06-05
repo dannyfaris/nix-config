@@ -53,7 +53,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [008](./ADR-008-agent-clis.md) | AI coding agents | Claude Code + Cursor (base), Codex + Gemini (extras) | OAuth login flows; extras opt-in per host |
 | [009](./ADR-009-git.md) | Git | dual identity, HTTPS+token | personal/work split via gitdir; HTTPS via gh/glab credential helpers |
 | [010](./ADR-010-ssh.md) | SSH | defaults only | Outbound key generation deferred (HTTPS git removes the need) |
-| [011](./ADR-011-remote-dev-qol.md) | Remote-dev QoL | mosh + OSC52 | Session resilience; cross-machine clipboard |
+| [011](./ADR-011-remote-dev-qol.md) | Remote-dev QoL | ~~mosh~~ + OSC52 | OSC52 cross-machine clipboard (mosh removed, #47 — session resilience now via SSH + zellij) |
 | [012](./ADR-012-taxonomy.md) | Module taxonomy | Most-communicative term | The naming rule itself, as a meta-decision |
 | [013](./ADR-013-composition-framework.md) | Composition framework | flake-parts + role-explicit imports | Roles list modules explicitly; no auto-discovery. **Amended by ADR-027** (role layer walked back; explicit-imports philosophy preserved) |
 | [014](./ADR-014-independent-roles.md) | Role composition | independent, not inherited | Each role imports modules directly; no shared parents. **Superseded by ADR-027** (role layer removed entirely) |

@@ -1,7 +1,13 @@
-# ADR-011: Remote-dev quality of life — mosh + OSC52
+# ADR-011: Remote-dev quality of life — ~~mosh~~ + OSC52
 
 **Date**: 2026-05-06
-**Status**: Accepted
+**Status**: Accepted — **mosh removed 2026-06-05 ([#47](https://github.com/dannyfaris/nix-config/issues/47)); OSC52 stands** (see Amendment)
+
+> **Amendment (2026-06-05, #47): mosh removed; OSC52 unaffected.** mosh is dropped from the fleet. Its state-synchronising terminal emulator implements only a subset of terminal escapes and, by design, does **not** carry OSC 4/10/11 dynamic-palette sequences — the exact mechanism by which a host's per-host Stylix theme reaches the *client* terminal on connect (it works over plain SSH, which is a transparent byte pipe). So over mosh the client keeps its own palette and the per-host theme never lands; an unthemed app (lazydocker) renders the client's palette over mosh but the host's over SSH, which isolates the cause. Per-host terminal theming is central to this setup, so that is a showstopper. It compounded accumulated jank surfaced while dialling mosh in: macchina's bar glyph was silently dropped, `COLORTERM` was stripped (truecolor lost), and `TERM` was downgraded (`xterm-ghostty` → `xterm-256color`) — none recoverable, because the loss is in mosh's emulator, not the environment.
+>
+> **What changed:** `modules/nixos/mosh.nix` and `modules/darwin/mosh.nix` deleted; the NixOS `remote-access` bundle drops its mosh import (sshd + ghostty-terminfo remain); the Darwin `remote-access` bundle is dissolved (it would have become a single-module bundle) and mac-mini imports `modules/darwin/sshd.nix` directly; UDP 60000–61000 is no longer opened (tighter posture). [#47](https://github.com/dannyfaris/nix-config/issues/47) (adopt mosh as canonical) is closed as not-planned.
+>
+> **What stands:** **OSC52** clipboard bridging is unaffected and remains the live decision of this ADR — it is plain terminal-output passthrough that any terminal/multiplexer carries, independent of mosh. Plain SSH (key-only, [ADR-010](./ADR-010-ssh.md)) is now the sole remote-shell transport; zellij ([ADR-004](./ADR-004-multiplexer.md)) still provides cross-disconnect session persistence (you reconnect and `zellij attach`, the part mosh used to smooth over). The mosh Rationale/Implementation below is retained as historical record of why it was originally adopted.
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
@@ -29,8 +35,7 @@ Both have well-established solutions. Both are easy wins.
 
 Two complementary mechanisms are enabled for this tier:
 
-1. **mosh** at the system level (`programs.mosh.enable`), which installs
-   the binary and opens UDP ports 60000–61000 in the firewall.
+1. ~~**mosh** at the system level (`programs.mosh.enable`), which installs the binary and opens UDP ports 60000–61000 in the firewall.~~ **(Removed 2026-06-05, #47 — see Amendment.)**
 2. **OSC52 clipboard bridging**, configured at three layers:
    - Helix: `editor.clipboard-provider = "termcode"`.
    - Zellij: pass-through of OSC52 sequences (default behaviour in modern
@@ -45,6 +50,8 @@ default — never expose the client's keys to the server).
 ## Rationale
 
 ### mosh
+
+> **Removed 2026-06-05 (#47).** Retained as historical record of the original adoption rationale; see the Amendment at the top for why it was dropped.
 
 mosh replaces the SSH transport for terminal sessions with a
 session-resumption protocol over UDP. The headline features are:
@@ -120,6 +127,8 @@ git auth path doesn't use SSH.
 
 ## Implementation
 
+> **mosh removed 2026-06-05 (#47).** The block below is historical — `modules/nixos/mosh.nix` and `modules/darwin/mosh.nix` were deleted and the `remote-access` bundles rewired. See the Amendment.
+
 mosh configured at the system level in `modules/nixos/mosh.nix`:
 
 ```nix
@@ -144,9 +153,6 @@ OSC52 is configured at three places:
 
 Daily use:
 
-- `mosh dbf@nixos-vm` from the Mac (after `brew install mosh`) instead of
-  `ssh dbf@nixos-vm`. Same key auth.
+- `ssh dbf@<host>` from the Mac (key auth). ~~`mosh …` instead of `ssh …`~~ — mosh removed (#47); SSH is the sole remote-shell transport, with zellij (`za`) handling reconnect-and-reattach across disconnects.
 - Inside helix, `y` (yank) deposits text in the Mac clipboard. `Cmd-V` to
   paste anywhere.
-- For tunnels, port-forwarding, or anything mosh doesn't support, fall
-  back to plain `ssh`. They coexist.

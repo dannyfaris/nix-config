@@ -45,7 +45,7 @@ in
 
     # systemd lingering: keep dbf's user-mode dockerd running across
     # session disconnects. Without this, the daemon stops when the
-    # last SSH/mosh session closes — fine for interactive use, bad
+    # last SSH session closes — fine for interactive use, bad
     # for background containers that should outlive a disconnect.
     linger = true;
   };

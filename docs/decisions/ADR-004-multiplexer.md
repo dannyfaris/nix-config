@@ -3,6 +3,8 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Amendment (2026-06-05):** mosh was removed from the fleet ([#47](https://github.com/dannyfaris/nix-config/issues/47), [ADR-011](./ADR-011-remote-dev-qol.md)). References below to mosh "pairing" with zellij are historical — zellij now carries cross-disconnect persistence on its own (reconnect over plain SSH, then `zellij attach`); there is no mosh layer. The zellij decision itself is unchanged.
+
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
 > per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
@@ -61,9 +63,7 @@ strangers' servers.
 - ✓ Status bar contextually shows available keybinds; learning curve is
   gentle.
 - ✓ Built-in layouts let projects declare their preferred pane setups.
-- ✓ Detach/reattach: SSH disconnect, network change, laptop sleep all
-  survive — combined with mosh (ADR-011) the workflow is essentially
-  uninterruptible.
+- ✓ Detach/reattach: SSH disconnect, network change, or laptop sleep don't lose your work — reconnect over SSH and `zellij attach`. (This originally paired with mosh for a no-reconnect experience; mosh was removed in #47, so the reconnect step is back.)
 - ✗ Smaller plugin ecosystem than tmux. (Most needs are covered by the
   built-ins.)
 - ✗ Not pre-installed on most servers. If the user starts SSHing into many
@@ -87,7 +87,4 @@ bridging. Custom layouts are declarative (KDL) — when a project's
 repeating workflow justifies one, declare it in `programs.zellij.settings`
 or in a project-local KDL file.
 
-Mosh (ADR-011) pairs with zellij; they're complementary, not redundant.
-Mosh handles network-blip and sleep cases without reconnect ceremony;
-zellij handles cross-reboot persistence (laptop reboot → reconnect via
-mosh → `zellij attach`).
+zellij provides session persistence across any disconnect — network blip, laptop sleep, or reboot: reconnect over SSH, then `zellij attach`. (This originally paired with mosh for no-reconnect roaming; mosh was removed in #47 — see ADR-011.)

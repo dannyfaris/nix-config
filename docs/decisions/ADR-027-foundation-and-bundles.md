@@ -50,7 +50,7 @@ The contents distinction between foundation and other bundles (foundation tends 
 
 **Foundation is structurally a bundle, distinguished only by convention.** An earlier framing of this design described foundation as a separate compositional layer above bundles. That was unnecessary: foundation is an aggregator file that imports two or more modules, satisfies the same `bundle-purity` rule, and is just named and placed conventionally to mark its universal-import status. Treating it as "the bundle hosts conventionally always import" collapses two concepts into one without losing anything. The contents guideline (foundation tends to hold identity / admin / posture; other bundles hold capabilities) governs what should be *inside* foundation, not whether foundation is structurally different from a bundle.
 
-**Foundation should stay honestly minimal.** Folding "every host imports it today" into foundation would re-create the same flattening that made `headless` a grab-bag. Foundation is reserved for things that *cannot be opt-out capabilities* — identity (users, sops), administration (nix-daemon, locale, baseline system packages), posture (firewall). Capabilities, even universal-today ones (remote access via sshd+mosh, cli tooling), live in capability bundles. This preserves the taxonomy as the fleet evolves: a future appliance host that doesn't need cli-tooling can simply not import that bundle, and the existing bundle structure makes that change trivial.
+**Foundation should stay honestly minimal.** Folding "every host imports it today" into foundation would re-create the same flattening that made `headless` a grab-bag. Foundation is reserved for things that *cannot be opt-out capabilities* — identity (users, sops), administration (nix-daemon, locale, baseline system packages), posture (firewall). Capabilities, even universal-today ones (remote access via sshd, cli tooling), live in capability bundles. This preserves the taxonomy as the fleet evolves: a future appliance host that doesn't need cli-tooling can simply not import that bundle, and the existing bundle structure makes that change trivial.
 
 **Single-module bundles are forbidden.** Pre-wrapping a single module in a bundle file adds an indirection without a capability grouping to justify it — the same kind of forecast-driven abstraction the role layer was. A bundle earns its place when it aggregates 2+ modules toward a coherent named capability. Until then, the module stays standalone in `modules/<platform>/`. Promotion happens when a natural sibling appears.
 
@@ -93,7 +93,7 @@ modules/nixos/
   ghostty-terminfo.nix        # standalone — extracted from system-packages
                               # so it can sit in remote-access bundle
   bundles/
-    remote-access.nix         # sshd + mosh + ghostty-terminfo
+    remote-access.nix         # sshd + ghostty-terminfo
   boot-systemd.nix            # standalone (no coherent sibling)
   networking-networkmanager.nix  # standalone (no coherent sibling)
   docker.nix                  # standalone (single-module; container-runtime

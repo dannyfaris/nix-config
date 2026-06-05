@@ -40,7 +40,7 @@ Three options were on the table for the daemon on NixOS: rootful Docker (the his
 
 **Subuid/subgid declared explicitly.** The NixOS rootless docker module does not auto-configure subordinate UIDs (verified against the pinned nixpkgs revision). Without subUidRanges/subGidRanges, `newuidmap`/`newgidmap` fail and containers can't start. Declaring `100000-165535` in the docker module itself (rather than in `users.nix`) keeps the subordinate-UID setup co-located with what needs it; the VM doesn't import the module, so its `/etc/subuid` stays empty.
 
-**Lingering enabled.** `users.users.dbf.linger = true;` makes systemd-logind treat dbf as having a persistent user session, so the user-mode dockerd starts at boot and runs whether or not dbf is logged in. Without it, background containers stop the moment the last SSH/mosh session closes — fine for foreground use, surprising for anything long-running.
+**Lingering enabled.** `users.users.dbf.linger = true;` makes systemd-logind treat dbf as having a persistent user session, so the user-mode dockerd starts at boot and runs whether or not dbf is logged in. Without it, background containers stop the moment the last SSH session closes — fine for foreground use, surprising for anything long-running.
 
 ### Darwin-specific rationale (2026-06-03 amendment)
 

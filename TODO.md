@@ -63,9 +63,9 @@ B below is a belt-and-braces extension.
       scaffolding landed in stages: `nix-darwin` input + flake
       plumbing (`parts/darwin.nix`, `lib/mk-darwin-host.nix`);
       `modules/darwin/` foundation + leaf modules (users, sops,
-      firewall, sshd, mosh, nix-daemon-darwin, host-context,
+      firewall, sshd, nix-daemon-darwin, host-context,
       home-manager, stylix-palette); `modules/darwin/linux-builder.nix`
-      (pending merge — see open PR list); `modules/darwin/bundles/remote-access.nix`;
+      (pending merge — see open PR list);
       `home/darwin/macchina-shell-init.nix`; the per-host palette
       entry in `lib/host-palettes.nix`. **Outstanding**: the host
       file itself (`hosts/mac-mini/default.nix` + `mkDarwinHost`
@@ -95,7 +95,7 @@ new host comes up.
       from home-manager needs a *truly fresh* shell to land —
       `exec fish` inherits exported state from the parent and triggers
       `__HM_SESS_VARS_SOURCED`'s early-return. Disconnect+reconnect
-      the ssh/mosh session for clean pickup.
+      the ssh session for clean pickup.
 - [ ] **SSH key generation** (per ADR-010): deferred because no
       non-git SSH-out workflow existed on the VM. Surfaces on hosts
       that need SSH-out beyond git (cloud control planes, host-to-host,

@@ -276,8 +276,6 @@ Run from the new host's `dbf` shell unless noted otherwise.
 - `echo $SHELL` → `/run/current-system/sw/bin/fish`.
 - `helix` opens a `.nix` file with `nixd` LSP working — hover over
   `programs.git` shows the option's type. `:lsp-restart` if uncertain.
-- `mosh dbf@<host>` connects; a laptop-sleep cycle survives the
-  reconnect.
 - `which claude` and `which cursor-agent` both resolve — the base
   agent set is on every host (ADR-008).
 - Rootless Docker (ADR-021):

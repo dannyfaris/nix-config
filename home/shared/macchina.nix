@@ -20,9 +20,10 @@
       theme = "Hydrogen"
     '';
 
-    # Custom Hydrogen theme: identical to upstream except hide_ascii = false
-    # and [custom_ascii] added. Cannot source upstream directly because that
-    # has hide_ascii = true, which would suppress the art entirely.
+    # Custom Hydrogen theme: identical to upstream except hide_ascii = false,
+    # [custom_ascii] added, and the [bar] glyph swapped (see below). Cannot
+    # source upstream directly because that has hide_ascii = true, which
+    # would suppress the art entirely.
     # Verify this TOML against contrib/themes/Hydrogen.toml when bumping macchina.
     #
     # The `[custom_ascii].path` points at a per-platform file written by
@@ -47,7 +48,13 @@
       visible = false
 
       [bar]
-      glyph           = "ߋ"
+      # Plain Geometric-Shapes circle (U+25CF) rather than the obscure NKO
+      # letter (U+07CB) upstream Hydrogen abuses for its round shape: a
+      # common, clearly-intentioned codepoint is the better choice for a
+      # decorative bar glyph. Its East-Asian width is "ambiguous", harmless
+      # here since every bar cell uses this one glyph (macchina shows used
+      # vs unused capacity by colour, not shape).
+      glyph           = "●"
       symbol_open     = '['
       symbol_close    = ']'
       hide_delimiters = true

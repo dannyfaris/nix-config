@@ -1,6 +1,6 @@
 # Ghostty terminfo entry (xterm-ghostty) — pulled in by
 # modules/nixos/bundles/remote-access.nix for NixOS hosts reached over
-# SSH/mosh from a Ghostty terminal client.
+# SSH from a Ghostty terminal client.
 #
 # Required so ncurses-based tools (htop, less, helix, etc.) work when
 # SSHing into this host from a Ghostty terminal on the client side.

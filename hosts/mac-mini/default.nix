@@ -14,10 +14,15 @@ _: {
     # Foundation — bundle every Darwin host imports by convention.
     ../../modules/darwin/foundation.nix
 
-    # Capability bundles.
-    ../../modules/darwin/bundles/remote-access.nix
-
     # Standalone system modules.
+    # Inbound SSH (key-only, no root, no password). Was the `remote-access`
+    # bundle (sshd + mosh); mosh was removed (#47) and a single-module
+    # bundle isn't allowed (ADR-027), so the bundle was dissolved and sshd
+    # imported directly. Ghostty clients get terminfo via Ghostty's own
+    # shell-integration ssh-terminfo push on connect (Ghostty ships as a
+    # native .app on macOS, not a nixpkgs terminfo), or fall back to
+    # TERM=xterm-256color.
+    ../../modules/darwin/sshd.nix
     ../../modules/darwin/linux-builder.nix
     # nix-homebrew + declarative cask list per ADR-031. Owns Ghostty,
     # Tailscale (`tailscale-app`), and 1Password on Darwin, plus the
