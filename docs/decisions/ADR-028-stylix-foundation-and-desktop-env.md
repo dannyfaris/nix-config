@@ -121,7 +121,7 @@ ADR + companion docs to match.
   anticipated "linux-workstation lands with foot" — that anticipation
   is now reality.
 - Ghostty is retained on **macOS clients** (operator's Mac) and via
-  the unchanged `modules/shared/ghostty-terminfo.nix` standalone
+  the unchanged `modules/nixos/ghostty-terminfo.nix` standalone
   module, which ships the `xterm-ghostty` terminfo entry on every
   host so SSH'ing in from a Ghostty-on-Mac terminal renders cleanly.
   The Ghostty client posture (Mac → SSH → any host) is untouched.
@@ -134,9 +134,12 @@ Files touched: see the amendment commit (`git log --grep "metis terminal"`).
 Note: line 14's reference to the `tier3-desktop-deferred` git tag is preserved
 verbatim because it accurately describes a historical artefact, not the
 current decision. Stylix's `foot` target is enabled centrally in
-`home/shared/bundles/theming.nix` alongside the other TUI targets
-(inert on non-desktop hosts because Stylix gates the target on
-`programs.foot.enable`).
+`home/shared/bundles/theming.nix` (since reclassified to
+`home/shared/stylix-targets.nix` per ADR-027 §"`theming.nix`
+reclassified", with foot's target later split out to
+`home/nixos/stylix-targets-desktop.nix` per #11) alongside the other
+TUI targets (inert on non-desktop hosts because Stylix gates the target
+on `programs.foot.enable`).
 
 ### DMS theming decoupled from Stylix (2026-05-29)
 
