@@ -3,11 +3,32 @@
 **Date**: 2026-05-18
 **Status**: Accepted
 
+> **Amendment (2026-06-05): paths, host set, and composition refreshed to
+> the current shape.** The import-split *principle* this ADR records is
+> unchanged; several concrete details have moved since 2026-05-18 and the
+> body below is swept to match:
+> - **Paths.** The modules live under `home/shared/` (not the old
+>   `home/core/shared/`), and the NixOS wiring file is
+>   `modules/nixos/home-manager.nix` (not `modules/core/nixos/…`), with a
+>   nix-darwin sibling at `modules/darwin/home-manager.nix`.
+> - **Host set.** What was originally the lone UTM VM as *the*
+>   mixed personal/work host is now three — nixos-vm, metis, and mac-mini;
+>   mercury remains the sole work-only host.
+> - **Composition.** Per [ADR-027](./ADR-027-foundation-and-bundles.md)
+>   (foundation + bundles), hosts no longer import the individual identity
+>   files via `extraHomeModules`; they opt in through capability *bundles*
+>   that compose the split — `home/shared/bundles/git-multi-identity.nix`
+>   (base + dual identity + gh) on mixed hosts, and
+>   `home/shared/bundles/git-work.nix` (base + work identity) on
+>   work-only hosts.
+>
+> (The work directory itself was renamed `~/work` → `~/grey-st` in #212.)
+
 ## Context
 
-Mercury (ADR-017) is a work-only host. The UTM VM is a mixed personal/work host. The home-manager layer contains several modules whose contents differ along this axis: `git.nix` carries a dual personal/work identity on the VM but should carry a single work identity on Mercury, and `programs.gh` (the GitHub CLI) makes sense on the VM but not on Mercury (no GitHub workflow).
+Mercury (ADR-017) is a work-only host. The other hosts (at the time of writing, the UTM VM; today also metis and mac-mini) are mixed personal/work hosts. The home-manager layer contains several modules whose contents differ along this axis: `git.nix` carries a dual personal/work identity on a mixed host but should carry a single work identity on Mercury, and `programs.gh` (the GitHub CLI) makes sense on a mixed host but not on Mercury (no GitHub workflow).
 
-Two implementation patterns were considered. First: host-keyed `mkIf` flags inside a single module — `mkIf (hostContext.isWorkOnly) { … }` branches that gate the personal-side configuration. Second: split each affected module into pieces and let each host import the pieces it wants — `git.nix` (base, both hosts) + `git-identity-dual.nix` (VM only) + `git-identity-work.nix` (Mercury only) + `gh.nix` (VM only).
+Two implementation patterns were considered. First: host-keyed `mkIf` flags inside a single module — `mkIf (hostContext.isWorkOnly) { … }` branches that gate the personal-side configuration. Second: split each affected module into pieces and let each host import the pieces it wants — `git.nix` (base, every host) + `git-identity-dual.nix` (mixed hosts) + `git-identity-work.nix` (Mercury) + `gh.nix` (mixed hosts).
 
 This is precisely the question PRD §3.2 already answers in the abstract for roles: "Where a role needs to choose between alternative tools, the choice is expressed as a choice of which module to import, not as a `mkDefault` setting an option." This ADR records that the same principle applies at the host level for work-vs-personal divergences, and the mechanism (`hostContext.extraHomeModules` from ADR-019) makes it ergonomic.
 
@@ -17,10 +38,10 @@ Work-vs-personal divergences in shared modules are expressed by splitting the mo
 
 Concretely for the current scope:
 
-- `home/core/shared/git.nix` is the base — `programs.git.enable`, `init.defaultBranch`, `pull.rebase`, the gitlab.com credential helper, glab as a package. Imported by every host via the standard imports list.
-- `home/core/shared/git-identity-dual.nix` is the personal-default + work-include identity, plus the `~/grey-st` + `~/personal` activation script (the work directory was `~/work` until #212). The VM imports this via its `extraHomeModules`.
-- `home/core/shared/git-identity-work.nix` is the single-work identity plus the `~/grey-st`-only activation script. Mercury imports this via its `extraHomeModules`.
-- `home/core/shared/gh.nix` is `programs.gh` and its HTTPS credential helper. The VM imports this; Mercury does not.
+- `home/shared/git.nix` is the base — `programs.git.enable`, `init.defaultBranch`, `pull.rebase`, the gitlab.com credential helper, glab as a package. Imported by every host (today via the bundles below).
+- `home/shared/git-identity-dual.nix` is the personal-default + work-include identity, plus the `~/grey-st` + `~/personal` activation script (the work directory was `~/work` until #212). Mixed hosts pull it in through the `git-multi-identity` bundle.
+- `home/shared/git-identity-work.nix` is the single-work identity plus the `~/grey-st`-only activation script. Mercury pulls it in through the `git-work` bundle.
+- `home/shared/gh.nix` is `programs.gh` and its HTTPS credential helper. Mixed hosts get it (via `git-multi-identity`); Mercury does not.
 
 ## Rationale
 
@@ -43,9 +64,9 @@ The cost of the split is more files. The PRD anticipated this (§5.1's directory
 
 ## Implementation
 
-The split lives at `home/core/shared/git.nix` + `git-identity-dual.nix` + `git-identity-work.nix` + `gh.nix`. Each host's `hosts/<host>/default.nix` declares its choices via `_module.args.hostContext.extraHomeModules`:
+The split lives at `home/shared/git.nix` + `git-identity-dual.nix` + `git-identity-work.nix` + `gh.nix`. Per [ADR-027](./ADR-027-foundation-and-bundles.md), hosts no longer name these files individually; they import a capability *bundle* that composes the right pieces, and each host's `hosts/<host>/default.nix` lists the bundle via `_module.args.hostContext.extraHomeModules`:
 
-- nixos-vm: `[ ../../home/core/shared/git-identity-dual.nix ../../home/core/shared/gh.nix ]`
-- mercury:  `[ ../../home/core/shared/git-identity-work.nix ]`
+- nixos-vm / metis / mac-mini: `[ ../../home/shared/bundles/git-multi-identity.nix ]` (base + dual identity + gh)
+- mercury:                      `[ ../../home/shared/bundles/git-work.nix ]` (base + work identity)
 
-The wiring file (`modules/core/nixos/home-manager.nix`) appends `extraHomeModules` to the standard imports list. The mechanism is the one documented in ADR-019; this ADR records the convention that it is the right tool for work-vs-personal divergences specifically, in preference to host-keyed conditionals.
+The wiring file (`modules/nixos/home-manager.nix`, with the nix-darwin sibling `modules/darwin/home-manager.nix`) appends `extraHomeModules` to the standard imports list. The mechanism is the one documented in ADR-019; this ADR records the convention that it is the right tool for work-vs-personal divergences specifically, in preference to host-keyed conditionals.
