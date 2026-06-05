@@ -174,7 +174,13 @@ let
     # disabling the operator's keybinds until the next `nh darwin
     # switch`. Same defensive purpose as the
     # `complex_modifications.parameters` block below.
-    global = { };
+    global = {
+      # Hide the menu-bar status item (Karabiner default is true). The
+      # shipped manipulators run headless — caps_lock → Hyper and the
+      # Mission Control remaps need no menu interaction — so the icon is
+      # pure clutter. See docs/desktop/karabiner.md §Configuration.
+      show_in_menu_bar = false;
+    };
     profiles = [
       {
         name = "Default";

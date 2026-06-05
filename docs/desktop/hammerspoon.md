@@ -121,6 +121,8 @@ on home-manager's atomic-replace activation is not robust enough
 to promise. See §Sharp edges "Auto-reload may not catch
 activations" for the manual `hs -c 'hs.reload()'` fallback.
 
+The `init.lua` calls `hs.menuIcon(false)` to hide the menu-bar status item — the config is driven entirely by Hyper hotkeys, not the menu icon. `hs.menuIcon` also persists the choice to Hammerspoon's prefs; re-running it on every load (each `hs.reload`) keeps the icon hidden even if that pref is flipped out-of-band.
+
 The shipped binds today live in
 [`keybinds.md`](./keybinds.md) §"Active bindings — macOS clients";
 this doc owns the *selection* of Hammerspoon; the bind manifest
@@ -176,9 +178,10 @@ directory is the target of the rename). Empirically the
 watcher usually fires; when it doesn't, the `init.lua` symlink
 has been updated but the running Hammerspoon Lua state is
 stale. The fallback is `hs -c 'hs.reload()'` (the cask's `hs`
-CLI shim is on PATH) — or quit-and-relaunch Hammerspoon from
-the menubar. A more robust path would be a post-activation hook
-that always invokes `hs -c 'hs.reload()'`; not in scope today.
+CLI shim is on PATH; quitting from the menu bar is not an option
+because this config hides the menu-bar icon — see §Configuration).
+A more robust path would be a post-activation hook that always
+invokes `hs -c 'hs.reload()'`; not in scope today.
 
 **UI edits do not survive activation.** Same posture as Karabiner
 and Ghostty: `home.file` symlinks `init.lua` from the nix store
