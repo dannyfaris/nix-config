@@ -56,6 +56,7 @@ rather than creating a new artifact.
 | [wispr-flow.md](./wispr-flow.md) | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
 | [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
 | [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | _pending_ |
+| [monitorcontrol.md](./monitorcontrol.md) | MonitorControl DDC/CI brightness + volume for external displays (LG UltraFine over HDMI); `pkgs.monitorcontrol` via nix-darwin (nixpkgs baseline — MAS is *Lite*-only, no clause-2 degradation) | _pending_ |
 | [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | _pending_ |
 | [hammerspoon.md](./hammerspoon.md) | Hammerspoon macOS hotkey-binding layer on top of Karabiner's Hyper; Homebrew cask + Sparkle silent (`.zip`-enclosure, same shape as Ghostty) (clause-1, no nixpkgs Darwin) | _pending_ |
 

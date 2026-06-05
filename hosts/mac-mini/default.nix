@@ -47,6 +47,16 @@ _: {
     # for the ADR-031 walk + CLI-first rationale.
     ../../modules/darwin/utm.nix
 
+    # MonitorControl — DDC/CI brightness + volume for the external
+    # display (LG UltraFine over HDMI), which macOS gives no native
+    # control for. Third nixpkgs-sourced Darwin runtime after colima +
+    # UTM; adds pkgs.monitorcontrol → MonitorControl.app at
+    # /Applications/Nix Apps/ via the system-applications symlink.
+    # Needs a one-time Accessibility grant to capture the media keys.
+    # See docs/desktop/monitorcontrol.md for the ADR-031 walk + the
+    # LG-over-HDMI volume caveat.
+    ../../modules/darwin/monitorcontrol.nix
+
     # Touch ID for sudo — pam_tid.so + pam_watchid.so via
     # `security.pam.services.sudo_local.touchIdAuth`. Magic Keyboard
     # with Touch ID is the sensor on this host; Apple Watch unlock is
