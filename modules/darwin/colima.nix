@@ -69,18 +69,20 @@
 #     colima starts on the first GUI login post-boot. Documented
 #     in docs/desktop/colima.md §Sharp edges.
 #
-# Docker context: colima registers a `colima` context with the docker
-# CLI on first start (sets it as the default). No DOCKER_HOST env var
-# override needed — `docker` resolves to colima's socket via context.
-# This diverges from the NixOS module's `setSocketVariable = true`
-# (which sets DOCKER_HOST to the rootless socket explicitly) because
-# the mechanism is different: Linux rootless uses a fixed socket path,
-# colima manages context registration itself.
+# Docker context + DOCKER_HOST: colima registers a `colima` docker-CLI
+# context on first start (sets it default), so the `docker` CLI resolves
+# the daemon via that context. But SDK-based clients — notably lazydocker
+# (ADR-006) — do NOT follow CLI contexts; they read DOCKER_HOST or fall
+# back to /var/run/docker.sock, which colima doesn't populate. So we also
+# export DOCKER_HOST to colima's socket in the operator's shell env
+# (below). This is the Darwin parallel to the NixOS module's
+# `setSocketVariable = true`; the only difference is the socket path
+# (colima's per-user ~/.colima/default/docker.sock vs the rootless path).
 #
 # Standalone module per ADR-027 (single-module — does not satisfy
 # bundle-purity; no coherent sibling yet to graduate into a bundle).
 # The host opts in by importing this module.
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
   operator = import ../../lib/operator.nix;
 in
@@ -118,8 +120,30 @@ in
       ];
       RunAtLoad = true;
       KeepAlive = false;
+      # launchd agents run with a minimal PATH that lacks the nix profile,
+      # so `colima start`'s dependency check couldn't find the `docker` CLI
+      # (it's in environment.systemPackages → on the interactive PATH, but
+      # NOT here) and fataled "docker not found", silently breaking
+      # auto-start. Give the agent docker explicitly; colima's own VM deps
+      # (limactl, the vz backend) are wrapped into its binary, and the
+      # system paths cover tools lima shells out to (ssh, etc.).
+      EnvironmentVariables.PATH =
+        lib.makeBinPath [
+          pkgs.docker
+          pkgs.docker-compose
+        ]
+        + ":/usr/bin:/bin:/usr/sbin:/sbin";
       StandardOutPath = "${operator.darwinHome}/Library/Logs/colima.out.log";
       StandardErrorPath = "${operator.darwinHome}/Library/Logs/colima.err.log";
     };
   };
+
+  # DOCKER_HOST for SDK clients (lazydocker) that ignore the docker-CLI
+  # context colima sets — see the "Docker context + DOCKER_HOST" note in
+  # the header. Set as a home-manager session var so it's sourced by fish
+  # and inherited by zellij panes (nix-darwin's environment.variables
+  # doesn't reliably reach a GUI-launched fish). Keeps all colima wiring in
+  # this module, parallel to the NixOS docker module owning its socket var.
+  home-manager.users.${operator.name}.home.sessionVariables.DOCKER_HOST =
+    "unix://${operator.darwinHome}/.colima/default/docker.sock";
 }
