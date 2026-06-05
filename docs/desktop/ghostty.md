@@ -62,7 +62,7 @@ homebrew.casks = [ "ghostty" ];
 **User config** — `home/darwin/ghostty.nix`:
 
 ```nix
-{ ... }: {
+{ lib, ... }: {
   programs.ghostty = {
     enable = true;
     # package=null tells HM to skip installing Ghostty into home.packages;
@@ -90,8 +90,42 @@ homebrew.casks = [ "ghostty" ];
 }
 ```
 
-Stylix targets do not yet cover Ghostty on Darwin; theming is the
-.app's default until a Darwin-side Stylix target lands.
+**Stylix theming** — `home/darwin/ghostty.nix`:
+
+```nix
+# palette (base16 ANSI slots) + Nerd Font family, the macOS parallel
+# of foot on metis. Tracks polarity automatically.
+stylix.targets.ghostty.enable = true;
+
+# ...but keep Ghostty's own macOS default size, not Stylix's scaled one
+programs.ghostty.settings.font-size = lib.mkForce 13;
+```
+
+The Stylix `ghostty` target writes the active base16 scheme into
+Ghostty's 16 ANSI slots (`theme = "stylix"` + a generated
+`themes.stylix` block covering background / foreground / cursor /
+selection / palette) and sets `font-family` to the Stylix monospace +
+emoji faces (`JetBrainsMono Nerd Font`, `Noto Color Emoji` — the faces
+`modules/darwin/desktop-fonts.nix` installs system-wide, #209). The
+palette tracks scheme + polarity flips with no extra wiring (#256).
+(The target also writes `background-opacity = 1.0` from
+`stylix.opacity.terminal`'s default — inert, since we don't set
+opacity; it'll appear in the emitted config as a Stylix-owned line.)
+
+**Font-size is pinned, deliberately.** The target also sets
+`font-size = fonts.sizes.terminal * 4/3` (the macOS 72→96-DPI scale);
+with Stylix's default terminal size (12) that lands at 16pt, larger
+than Ghostty's own macOS default. We adopt the palette and font
+*family* but keep the established size, so `lib.mkForce 13` overrides
+the target's value (13 is Ghostty's documented macOS default).
+
+**Placement.** The `enable` lives in `home/darwin/ghostty.nix`,
+colocated with the rest of the Ghostty config, rather than in a
+stylix-targets file. The cross-platform TUI whitelist
+(`home/shared/stylix-targets.nix`) is deliberately terminal-free, and
+the NixOS terminal target (foot) lives in the desktop-env home bundle
+— which Darwin has no analogue of. One terminal, one Darwin-only
+module: the toggle belongs with it.
 
 **Sparkle silent-update keys (belt-and-braces, inert today)** —
 `modules/darwin/homebrew.nix`:
@@ -184,8 +218,13 @@ domain (rare) won't honour these keys at the standard path; check
 the app's `Info.plist` for a `SUDefaultsDomain` entry before
 assuming.
 
-**Stylix targets not yet wired on Darwin.** Theming is the .app
-default until a Stylix Darwin-target arrives. Tracked separately.
+**Stylix font-size is overridden, not inherited.** The Stylix ghostty
+target computes `font-size` from `stylix.fonts.sizes.terminal` (×4/3 on
+macOS). `home/darwin/ghostty.nix` pins it with `lib.mkForce 13`, so
+changing the Stylix terminal size will *not* move Ghostty's size on the
+Mac — retune the `mkForce` value if that's wanted. The palette and font
+family, by contrast, do follow Stylix automatically. See §Configuration
+→ Stylix theming.
 
 **Verification.** After `darwin-rebuild switch`:
 
@@ -196,6 +235,14 @@ cat ~/.config/ghostty/config | grep auto-update   # → auto-update = download
 # Sparkle keys (inert today, hedge for future):
 defaults read com.mitchellh.ghostty SUAutomaticallyUpdate    # → 1
 defaults read com.mitchellh.ghostty SUEnableAutomaticChecks  # → 1
+
+# Stylix theming (#256): base16 palette + Nerd Font, pinned size:
+grep -E 'theme|font-family|font-size' ~/.config/ghostty/config
+#   → theme = stylix
+#   → font-family = JetBrainsMono Nerd Font
+#   → font-family = Noto Color Emoji
+#   → font-size = 13
+# and the macchina palette row (#206) now shows base16, not Ghostty defaults.
 ```
 
 (Run as `system.primaryUser`, or prefix with

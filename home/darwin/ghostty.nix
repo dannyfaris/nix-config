@@ -9,7 +9,23 @@
 # Sibling to home/darwin/macchina-shell-init.nix in the home/darwin/
 # tree. macOS-only — foot is the chosen terminal on Linux desktop
 # hosts per ADR-028 §History.
-_: {
+{ lib, ... }:
+{
+  # Bring Ghostty under Stylix theming, the macOS parallel of foot on
+  # metis (home/nixos/stylix-targets-desktop.nix). The target writes
+  # the base16 palette into Ghostty's 16 ANSI slots (theme = "stylix"
+  # + themes.stylix), plus background/foreground/cursor/selection, and
+  # tracks polarity automatically (#256). It also sets font-family
+  # (JetBrainsMono Nerd Font + Noto Color Emoji, the faces #209
+  # installs system-wide) so TUI glyphs render — desirable.
+  #
+  # Placement: the enable lives here, colocated with the Ghostty
+  # module, rather than in a Darwin stylix-targets file. The TUI
+  # whitelist (home/shared/stylix-targets.nix) is cross-platform and
+  # deliberately terminal-free; the NixOS terminal target (foot) lives
+  # in the desktop-env home bundle, which Darwin has no analogue of.
+  # One terminal, one Darwin-only module — the toggle belongs with it.
+  stylix.targets.ghostty.enable = true;
   # Make Ghostty's cask-bundled terminfo discoverable by non-Ghostty-
   # launched TUIs. The cask installs its compiled terminfo inside the
   # .app bundle (at the path below), outside the nix-derived
@@ -66,6 +82,17 @@ _: {
       # Ghostty bringing the runtime in line with the docstring in a
       # future release. See docs/desktop/ghostty.md §Sharp edges.
       auto-update = "download";
+
+      # Pin font-size back to Ghostty's own macOS default (13pt). The
+      # Stylix ghostty target sets font-size = fonts.sizes.terminal *
+      # 4/3 to convert Stylix's 72-DPI point size to Ghostty's 96-DPI
+      # macOS scaling; with the default terminal size (12) that lands
+      # at 16pt — noticeably larger than the .app default. We adopt
+      # Stylix's palette and font *family* but keep the operator's
+      # established size, so mkForce overrides the target's value.
+      # (Ghostty's macOS default is 13, per its Config.zig: "On macOS
+      # we default a little bigger since this tends to look better.")
+      font-size = lib.mkForce 13;
     };
   };
 }

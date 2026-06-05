@@ -22,6 +22,13 @@
 # (#11). The desktop file is imported via `home/nixos/bundles/desktop-env.nix`
 # so desktop hosts pick it up transitively.
 #
+# The one terminal-emulator target that *does* run on Darwin — Ghostty
+# — is enabled in `home/darwin/ghostty.nix`, colocated with the rest of
+# that module rather than listed here. This whitelist stays
+# terminal-free by design: foot's target is desktop-env-only (above),
+# and Ghostty is a single Darwin-only module that owns its own theming
+# toggle (#256).
+#
 # Foundation sets autoEnable = false at the system layer (whitelist
 # stance per CLAUDE.md), and that propagates to HM, so each target
 # must opt in here. Matches docs/philosophy.md's "explicit > implicit"
