@@ -300,6 +300,17 @@ manual-merge step from the loop while still gating on CI.
 - See also CLAUDE.md §"Conventions" for the same instruction
   surfaced to AI sessions.
 
+## Markdown is soft-wrapped
+
+**Rule.** All markdown in the repo — docs, ADRs, this file, READMEs, issue and PR bodies — is authored soft-wrapped: one line per paragraph, no hard newlines mid-paragraph. The editor handles visual wrapping (helix's per-language `soft-wrap.enable`, set in `home/shared/editor.nix`). List items, table rows, and fenced code keep their natural line structure. This is true soft-wrap, not semantic line breaks (one sentence per line).
+
+**Why.** Hard-wrapping prose buys nothing on GitHub: GFM collapses a single newline *within a paragraph* into a space, so hard- and soft-wrapped markdown render identically. What it costs is editing friction — manually maintaining a fill-column — and reflow churn: a one-word edit early in a hard-wrapped paragraph reflows every following line, burying the real change under wrapping noise in the diff. Soft-wrap trades that for paragraph-granularity diffs, which read cleanly under GitHub's rendered diff and `git diff --word-diff`. The line-level-diff benefit hard-wrap nominally offers rarely bites here: prose is edited at paragraph scale, review happens over rendered/word diffs and content-focused peer review, and blame/bisect on prose is rarely load-bearing.
+
+**How it shows up.**
+- Helix renders markdown soft-wrapped via the per-language entry in `home/shared/editor.nix`; it is display-only and never alters file bytes.
+- New docs, amended sections, and issue/PR bodies are authored soft-wrapped from the start — even when added to a file that is otherwise still hard-wrapped. Intra-file mixing is an accepted transition artifact, not a contradiction (it renders identically either way).
+- The transition is opportunistic, not big-bang: a legacy hard-wrapped doc is reflowed in full the next time it is substantively edited. There is no tree-wide reflow PR — that churn is high-cost, low-value, and risks mangling fenced code and tables.
+
 ## See also
 
 - [docs/philosophy.md](./philosophy.md) — the technical
