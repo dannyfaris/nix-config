@@ -1,0 +1,13 @@
+# Issue template chooser configuration.
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository
+
+# Keep the freeform escape hatch: the operator and AI sessions file many
+# issues via `gh`/the API (which bypass templates entirely), and a
+# near-solo repo doesn't need to hard-block blank issues. The templates
+# make the intent-first shape the path of least resistance, not a wall.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Workflow conventions (read before filing)
+    url: https://github.com/dannyfaris/nix-config/blob/main/docs/workflow.md
+    about: How work is framed and moves through this repo — intent-first framing, doc-before-code for selections, peer-reviewed diffs, squash auto-merge. The source of truth these templates surface.
