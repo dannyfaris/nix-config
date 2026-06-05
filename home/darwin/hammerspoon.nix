@@ -25,6 +25,14 @@ let
     -- ~/.hammerspoon/init.lua — managed by home/darwin/hammerspoon.nix.
     -- Hyper = ⌘⌃⌥⇧ produced by Karabiner-Elements from caps_lock.
 
+    -- Hide the menu-bar status item. The config is driven entirely by
+    -- Hyper hotkeys, not the menu icon, so it's pure clutter. hs.menuIcon
+    -- also persists the choice to Hammerspoon's prefs; re-applying it on
+    -- every load (this file runs on each hs.reload) keeps the icon hidden
+    -- even if that pref is flipped out-of-band. See
+    -- docs/desktop/hammerspoon.md §Configuration.
+    hs.menuIcon(false)
+
     local hyper = { "cmd", "ctrl", "alt", "shift" }
 
     -- Apps are identified by both bundle ID and macOS display name.

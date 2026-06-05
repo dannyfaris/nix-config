@@ -177,6 +177,8 @@ layering" for the full set.
 `~/.config/karabiner/karabiner.json` via `home.file.<path>.text`
 with the JSON serialized from a Nix attrset.
 
+The `global` block sets `show_in_menu_bar = false` to hide Karabiner's menu-bar status item — the shipped manipulators run headless (caps_lock → Hyper and the Mission Control remaps need no menu interaction), so the icon is pure clutter. Karabiner's own default is `true`.
+
 Two rule classes live in the config:
 
 - **Modifier-production rules** — caps_lock → Hyper. The
@@ -279,16 +281,7 @@ system-wide. Karabiner intercepts at a lower layer (DriverKit)
 and wins. To avoid confusion: leave the macOS setting at "Caps
 Lock" (default) — Karabiner handles the remap exclusively.
 
-**Empty `global` + `complex_modifications.parameters` blocks are
-defensive.** `home/darwin/karabiner.nix` ships both as empty
-attrsets even though the current single-rule config doesn't need
-them. Karabiner-Elements writes default values into these keys on
-first launch if absent — which would fail against the read-only
-symlink and surface a UI error. Pre-populating neutralizes the
-normalization. A future rule using `to_if_alone` (e.g. the
-"caps_lock tap → Escape, hold → Hyper" common extension) or
-`simultaneous` key chords adds its parameter overrides to the
-existing `parameters = { }` block — no shape changes elsewhere.
+**The `global` and `complex_modifications.parameters` blocks are pre-populated defensively.** `home/darwin/karabiner.nix` ships `global` carrying `show_in_menu_bar = false` (its one real setting; see §Configuration) and `parameters` as an empty attrset. Karabiner-Elements writes default values into these keys on first launch if absent — which would fail against the read-only symlink and surface a UI error. Pre-populating them neutralizes the normalization. A future rule using `to_if_alone` (e.g. the "caps_lock tap → Escape, hold → Hyper" common extension) or `simultaneous` key chords adds its parameter overrides to the existing `parameters = { }` block — no shape changes elsewhere.
 
 **The system extension is shared between updates.** When Karabiner
 self-updates via Sparkle, the DriverKit extension may need
