@@ -52,6 +52,12 @@ let
 
   zjstatus = "${pkgs.zellijPlugins.zjstatus}"; # output IS the .wasm file
 
+  # Shared local-vs-SSH detector — the same command the prompt and
+  # statuslines use. Reads the live client's connection so the host marker
+  # is correct after a zellij detach/reattach across contexts (#270). See
+  # home/shared/session-type.nix.
+  sessionType = pkgs.callPackage ./session-type.nix { };
+
   # Permission grant block for zjstatus, in zellij's permissions.kdl format
   # and keyed by the bare store path exactly as zellij caches it. Pre-seeded
   # by home.activation below (see the rationale there). Leading newline so
@@ -73,16 +79,23 @@ let
   #
   # Host marker — emits zjstatus `#[fg=…]` markup chosen at runtime, so
   # command_host_rendermode "dynamic" renders green + desktop glyph
-  # locally and purple + console-network glyph over SSH. SSH detection
-  # mirrors prompt.nix's sshDetect (survives sudo -i / su - via the
-  # `who -m` origin-host-in-parens fallback). Third mirror of the host
-  # chip in the prompt and Claude statusline (ADR-002 / ADR-024).
+  # locally and purple + console-network glyph over SSH. Connection
+  # detection delegates to the shared `session-type` command, which reads
+  # the live client's context — so the marker is correct after a zellij
+  # detach/reattach across connection contexts (#270), not stuck on the
+  # pane's frozen $SSH_CONNECTION. One of four surfaces sharing that
+  # detector (prompt + Claude/Cursor statuslines are the others; ADR-002 /
+  # ADR-024).
   zjstatusHostMarker = pkgs.writeShellApplication {
     name = "zjstatus-host-marker";
-    runtimeInputs = [ pkgs.coreutils ]; # who; hostname resolves from ambient PATH
+    # session-type does the detection; coreutils gives it `who` for the
+    # non-zellij fallback (hostname resolves from ambient PATH).
+    runtimeInputs = [
+      sessionType
+      pkgs.coreutils
+    ];
     text = ''
-      if [ -n "''${SSH_CONNECTION:-}" ] || case "$(who -m 2>/dev/null)" in (*\(*\)*) true ;; (*) false ;; esac
-      then
+      if [ "$(session-type)" = ssh ]; then
         printf '#[fg=%s,bold]%s  %s' '${purpleHex}' '${sshGlyph}' "$(hostname -s)"
       else
         printf '#[fg=%s,bold]%s  %s' '${greenHex}' '${desktopGlyph}' "$(hostname -s)"
@@ -274,8 +287,11 @@ in
   # 12-hour NZ clock. No `{tabs}` widget — tabs are deliberately out (see
   # the `unbind "Ctrl t"` above).
   #
-  # Widget cadence: host interval "0" (once, cached — SSH-state is fixed
-  # for the session's life); git interval "2" (poll so agent edits and
+  # Widget cadence: host interval "2" (poll — SSH-state is NOT fixed for a
+  # session's life: it flips on a zellij detach/reattach across contexts
+  # (#270); session-type is cheap, and its own 2s cache stacks with this
+  # poll so a reattach flip surfaces within ~4s). Git interval "2"
+  # (poll so agent edits and
   # branch-switches show). Both render "dynamic" so the `#[fg=…]` markup
   # the scripts emit is rendered as colour. The clock is the native
   # `{datetime}` widget, timezone-pinned so it reads NZ time even on
@@ -298,7 +314,7 @@ in
                     command_host_command    "${zjstatusHostMarker}/bin/zjstatus-host-marker"
                     command_host_format     "{stdout}"
                     command_host_rendermode "dynamic"
-                    command_host_interval   "0"
+                    command_host_interval   "2"
 
                     command_git_command    "${zjstatusGit}/bin/zjstatus-git"
                     command_git_format     "{stdout}"

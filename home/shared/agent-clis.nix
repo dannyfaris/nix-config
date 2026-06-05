@@ -71,6 +71,9 @@ in
     packages = with pkgs; [
       claude-code
       cursor-cli
+      # `session-type` on PATH for the Claude/Cursor statuslines, which are
+      # static files that call it by name. See home/shared/session-type.nix.
+      (callPackage ./session-type.nix { })
     ];
 
     # Custom statusline — see ADR-024 (Claude side) and

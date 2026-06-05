@@ -4,7 +4,7 @@
 # Settings declared inline as a nix attrset (programs.starship.settings)
 # rather than in a separate starship.toml file. Fish hook auto-wired by
 # programs.starship.enable.
-_:
+{ pkgs, lib, ... }:
 let
   # Glyphs decoded from codepoints via fromJSON `"\uXXXX"` escapes —
   # ASCII-safe in source (some editors strip raw PUA UTF-8 bytes) and
@@ -15,17 +15,22 @@ let
   snowGlyph = builtins.fromJSON ''"\uf2dc"''; # nf-fa-snowflake — nix-shell
   chev = builtins.fromJSON ''"❯"''; # ❯ — reading-flow separator
 
-  # SSH detection that survives sudo -i / su -. Both strip $SSH_CONNECTION
-  # from the elevated environment; who -m's origin-host-in-parens field is
-  # the fallback. Mirrors is_ssh() in claude-statusline.sh (pure.zsh trick).
-  # Negating it for host_local keeps the two modules exact complements. The
-  # snippet uses `$(…)` and `case …;;` — POSIX sh, not fish — so the custom
-  # modules below set `shell = ["sh"]` to force evaluation under sh rather
-  # than the active interactive shell. Without that, fish rejects `$(…)` in
-  # command position ("command substitutions not allowed in command
-  # position") and both `when` clauses exit 127, silently dropping the
-  # host segment from the prompt. See GH #45.
-  sshDetect = ''[ -n "$SSH_CONNECTION" ] || case "$(who -m 2>/dev/null)" in (*\(*\)*) true ;; (*) false ;; esac'';
+  # Host-marker connection detection (local vs SSH) — delegates to the
+  # shared `session-type` command (home/shared/session-type.nix). Inside
+  # zellij it reads the live *client's* connection instead of the pane's
+  # frozen $SSH_CONNECTION, so the glyph is correct after a detach/reattach
+  # across contexts (#270); outside zellij it's the prior $SSH_CONNECTION +
+  # who -m check (survives sudo -i / su -). The two custom modules below are
+  # mutually exclusive on its `ssh`/`local` output — host_local fires on
+  # anything that isn't `ssh`, so an unexpected/empty result still renders
+  # the safe local glyph rather than dropping the segment. Referenced by
+  # absolute store path (lib.getExe) so a missing PATH entry can't silently
+  # drop the host segment. The `when` snippet uses `$(…)` and `[ … ]` —
+  # POSIX sh, not fish — so the modules set `shell = ["sh"]`; without it
+  # fish rejects `$(…)` in command position and both clauses exit 127,
+  # dropping the host segment. See GH #45.
+  sessionType = pkgs.callPackage ./session-type.nix { };
+  sessionTypeExe = lib.getExe sessionType;
 in
 {
   programs.starship = {
@@ -33,8 +38,9 @@ in
 
     settings = {
       # Leading host segment via two mutually-exclusive custom modules
-      # (one fires based on SSH state — see `sshDetect` above, which
-      # survives sudo -i / su -). See ADR-002 history block, GH #17, #45.
+      # (one fires on the shared session-type output — see the sessionType
+      # comment above; SSH state survives sudo -i / su -). See ADR-002
+      # history block, GH #17, #45.
       #
       # `$nix_shell` slots between `$directory` and `$git_branch` so the
       # `(❄️)` renders as path-metadata (matches the statusline). See
@@ -110,17 +116,17 @@ in
       # HOST_COLOUR derivation.
       custom.host_local = {
         description = "Hostname marker — local (no SSH connection)";
-        when = "! { ${sshDetect}; }";
+        when = ''[ "$(${sessionTypeExe})" != ssh ]'';
         command = "hostname -s";
-        shell = [ "sh" ]; # see sshDetect comment in let block — fish chokes on `$(…)` in `when`
+        shell = [ "sh" ]; # see sessionType comment in let block — fish chokes on `$(…)` in `when`
         format = "[${desktopGlyph}  $output]($style) ${chev} ";
         style = "green";
       };
       custom.host_ssh = {
         description = "Hostname marker — over SSH";
-        when = sshDetect;
+        when = ''[ "$(${sessionTypeExe})" = ssh ]'';
         command = "hostname -s";
-        shell = [ "sh" ]; # see sshDetect comment in let block — fish chokes on `$(…)` in `when`
+        shell = [ "sh" ]; # see sessionType comment in let block — fish chokes on `$(…)` in `when`
         format = "[${sshGlyph}  $output]($style) ${chev} ";
         style = "purple";
       };

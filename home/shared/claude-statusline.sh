@@ -34,29 +34,17 @@ CLOCK_GLYPH=$'\xef\x80\x97'   # U+F017 nf-fa-clock_o (rate-limit marker)
 # glyphs above.
 NIX_GLYPH=$'\xef\x8b\x9c' # U+F2DC nf-fa-snowflake (nix-shell marker)
 
-# SSH detection that survives sudo -i / su -. sudo/su strip $SSH_CONNECTION
-# from the elevated environment, so a bare env-var check silently reverts the
-# host marker to its local glyph + colour precisely during break-glass admin
-# on a remote box — when host context matters most. who -m's origin-host-in-
-# parens field is the fallback Pure prompt has used for years (pure.zsh). See
-# GH #45.
-is_ssh() {
-  [ -n "$SSH_CONNECTION" ] && return 0
-  case "$(who -m 2>/dev/null)" in
-  *\(*\)*) return 0 ;; # who -m shows the origin host in parens over SSH
-  *) return 1 ;;
-  esac
-}
-
-# Host marker — glyph + colour swap based on SSH state, mirroring the
-# starship prompt (ADR-002 history). is_ssh() checks $SSH_CONNECTION first,
-# then falls back to who -m so the SSH signal survives sudo -i / su -. The
-# env-at-spawn caveat still applies for detached zellij sessions reattached
-# from a different context. GREEN/MAUVE map to base0B/base0E via Stylix; the
-# prompt uses the matching palette aliases (`green`/`purple`).
+# Host marker — glyph + colour by connection type, via the shared
+# `session-type` command (home/shared/session-type.nix). Inside zellij it
+# reads the live client's connection, so the marker is correct after a
+# detach/reattach across contexts (#270); outside zellij it's the prior
+# $SSH_CONNECTION + who -m check (survives sudo -i / su -). One of four
+# surfaces sharing that detector (prompt, zjstatus bar, Cursor statusline).
+# GREEN/MAUVE map to base0B/base0E via Stylix; the prompt uses the matching
+# palette aliases (`green`/`purple`).
 HOST_GLYPH=$DESKTOP_GLYPH
 HOST_COLOUR=$GREEN
-if is_ssh; then
+if [ "$(session-type 2>/dev/null)" = ssh ]; then
   HOST_GLYPH=$SSH_GLYPH
   HOST_COLOUR=$MAUVE
 fi

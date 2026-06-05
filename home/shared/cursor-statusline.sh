@@ -28,19 +28,12 @@ DESKTOP_GLYPH=$'\xef\x84\x88'
 SSH_GLYPH=$'\xef\x92\x89'
 NIX_GLYPH=$'\xef\x8b\x9c'
 
-# SSH detection identical to Claude's — survives sudo -i / su -. See
-# claude-statusline.sh:43-49 for the rationale and the GH #45 reference.
-is_ssh() {
-  [ -n "$SSH_CONNECTION" ] && return 0
-  case "$(who -m 2>/dev/null)" in
-  *\(*\)*) return 0 ;;
-  *) return 1 ;;
-  esac
-}
-
+# Host marker — glyph + colour by connection type, via the shared
+# `session-type` command (home/shared/session-type.nix); identical to
+# Claude's. Correct after a zellij detach/reattach across contexts (#270).
 HOST_GLYPH=$DESKTOP_GLYPH
 HOST_COLOUR=$GREEN
-if is_ssh; then
+if [ "$(session-type 2>/dev/null)" = ssh ]; then
   HOST_GLYPH=$SSH_GLYPH
   HOST_COLOUR=$MAUVE
 fi
