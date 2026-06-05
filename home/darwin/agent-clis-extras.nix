@@ -32,6 +32,22 @@
 # version they want to track — no obligation to follow nixpkgs's Hydra
 # cadence. See #220 for the full alternatives analysis (this file
 # is "Option A" from that issue).
+#
+# Bump recipe:
+#   1. Update `version` below to the new upstream release tag (the
+#      bare semver — `version` is interpolated into the `rust-v<N>`
+#      release-tag path). Latest tags at
+#      https://github.com/openai/codex/releases.
+#   2. Re-hash the tarball:
+#        nix store prefetch-file --hash-type sha256 \
+#          "https://github.com/openai/codex/releases/download/rust-v<NEW>/codex-aarch64-apple-darwin.tar.gz"
+#      Paste the printed `sha256-...=` SRI value into `hash` below.
+#
+# `nh darwin switch` will fetch from GitHub on first build —
+# cache.nixos.org doesn't substitute this Darwin prebuilt path.
+# No update-automation hook (no `passthru.updateScript`, no
+# `nix-update` integration) — operator-driven by design; a stale
+# version is a feature-delivery decision, not a bug.
 { pkgs, ... }:
 let
   codex-prebuilt = pkgs.stdenvNoCC.mkDerivation rec {
