@@ -10,6 +10,37 @@
 # tree. macOS-only — foot is the chosen terminal on Linux desktop
 # hosts per ADR-028 §History.
 _: {
+  # Make Ghostty's cask-bundled terminfo discoverable by non-Ghostty-
+  # launched TUIs. The cask installs its compiled terminfo inside the
+  # .app bundle (at the path below), outside the nix-derived
+  # TERMINFO_DIRS — so `infocmp xterm-ghostty` fails and gocui/tcell-
+  # based tools fatal at startup with a generic
+  # `*exec.ExitError exit status 1` (notably lazydocker, see
+  # github.com/jesseduffield/lazydocker issues #738 / #724 / #593, all
+  # converging on `TERM=xterm-256color` as the workaround). Prepending
+  # the cask's path to TERMINFO_DIRS makes xterm-ghostty resolvable
+  # natively so the workaround isn't needed.
+  #
+  # Reassigned (not `set --append`) because fish exports lists with
+  # space joins for variable names that don't match its `*PATH`/`*PATHS`
+  # auto-path heuristic — and TERMINFO_DIRS doesn't, so `--append` would
+  # leak ` <path>` into child envs and break ncurses lookups. Explicit
+  # colon-prepend produces a correct PATH-style child env. Guarded by
+  # `test -d` so this is a no-op if the cask isn't (yet) installed;
+  # merged into the shared fish init in home/shared/shell.nix by the HM
+  # module system.
+  programs.fish.interactiveShellInit = ''
+    set -l ghostty_terminfo /Applications/Ghostty.app/Contents/Resources/terminfo
+    # Re-sourcing config.fish (`exec fish` etc.) would otherwise compound
+    # the prepend; the contains-guard makes this idempotent. `string join`
+    # avoids a trailing colon when $TERMINFO_DIRS is empty (skips empty
+    # args).
+    if test -d $ghostty_terminfo
+        and not string match -q "*$ghostty_terminfo*" -- "$TERMINFO_DIRS"
+        set -gx TERMINFO_DIRS (string join : $ghostty_terminfo $TERMINFO_DIRS)
+    end
+  '';
+
   programs.ghostty = {
     enable = true;
     # package=null tells home-manager to skip installing Ghostty into
