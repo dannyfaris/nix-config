@@ -217,6 +217,22 @@ mac-mini today is single-display so this is theoretical; the
 doc records it because the binds are evergreen and will travel
 to multi-monitor Macs.
 
+**Display-name app identification is locale-sensitive.**
+`hs.window.filter:setAppFilter` keys per-app filters off
+`hs.application:name()`, which returns the *localized* display
+name on non-English macOS locales. Today's binds
+(`GHOSTTY.name = "Ghostty"`, `CHROME.name = "Google Chrome"`)
+work because (a) mac-mini's locale is English and (b) neither
+vendor localizes its app name. Adding a localizing app
+(Microsoft Word, Outlook, Pages) on a non-English Mac would
+silently break its filter — the filter registers but never
+matches, and the bind appears dead. If/when this becomes
+relevant, switch the affected app's filter to bundle-ID
+matching via `hs.window.filter.new(function(win) return
+win:application():bundleID() == BUNDLE_ID end)` instead of
+`setAppFilter`. Theoretical on mac-mini today; flagged because
+the binds are evergreen.
+
 **Hammerspoon must be running for binds to fire.** Stating the
 obvious: if Hammerspoon is quit (Cmd+Q from the menubar), no
 binds fire. The cask doesn't configure launch-at-login; this is

@@ -37,7 +37,11 @@ let
     --     which keys per-app filters off hs.application:name()
     --     (verified against window_filter.lua line ~530). Passing a
     --     bundle ID to setAppFilter silently registers a filter that
-    --     never matches.
+    --     never matches. hs.application:name() returns the *localized*
+    --     name on non-English macOS locales — see docs/desktop/
+    --     hammerspoon.md §Sharp edges "Display-name app identification
+    --     is locale-sensitive" for the failure mode and the bundle-ID
+    --     predicate workaround.
     --
     -- Both layers are kept here so every helper has the identifier it
     -- needs without re-derivation.
