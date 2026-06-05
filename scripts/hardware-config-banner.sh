@@ -33,6 +33,10 @@ for file in "$@"; do
     echo "ERROR: $file is missing the auto-generated banner." >&2
     echo "  Per ADR-023, hardware-configuration.nix must be auto-generated, not hand-edited." >&2
     echo "  Regenerate via:" >&2
+    # The trailing backslash is a literal — it renders the regenerate
+    # command as a copy-pasteable two-line invocation. Inside single
+    # quotes it stays verbatim; SC1003 misreads it as a botched quote-escape.
+    # shellcheck disable=SC1003
     echo '    nixos-anywhere --generate-hardware-config nixos-generate-config \' >&2
     echo "                   $file" >&2
     failures=$((failures + 1))

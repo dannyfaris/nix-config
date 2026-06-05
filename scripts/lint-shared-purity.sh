@@ -50,7 +50,7 @@ failures=0
 for file in "$@"; do
   if matches=$(grep -nE "$PATTERNS" "$file" 2>/dev/null); then
     echo "ERROR: $file contains platform-conditional code (shared/ must be platform-agnostic)." >&2
-    echo "$matches" | sed 's/^/  /' >&2
+    printf '%s\n' "$matches" | sed 's/^/  /' >&2
     echo "  → Move platform-specific code to modules/<platform>/ or home/<platform>/." >&2
     failures=$((failures + 1))
   fi
