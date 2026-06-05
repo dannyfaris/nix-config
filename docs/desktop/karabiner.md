@@ -174,8 +174,9 @@ land on the main app bundle; see §Sharp edges "Bundle ID
 layering" for the full set.
 
 **Declarative config** — `home/darwin/karabiner.nix` writes
-`~/.config/karabiner/karabiner.json` via `home.file.<path>.text`
-with the JSON serialized from a Nix attrset.
+`~/.config/karabiner/karabiner.json` via
+`xdg.configFile."karabiner/karabiner.json".text` with the JSON
+serialized from a Nix attrset.
 
 The `global` block sets `show_in_menu_bar = false` to hide Karabiner's menu-bar status item — the shipped manipulators run headless (caps_lock → Hyper and the Mission Control remaps need no menu interaction), so the icon is pure clutter. Karabiner's own default is `true`.
 
@@ -257,7 +258,7 @@ Three operator-confirmed prompts on first install:
 None of these have a nix-darwin-declarative path. Documented in
 the bootstrap runbook alongside the App Store sign-in.
 
-**UI edits do not survive activation.** `home.file` symlinks
+**UI edits do not survive activation.** `xdg.configFile` symlinks
 `karabiner.json` from the nix store. The Karabiner-Elements
 Preferences UI writes to `karabiner.json` when the operator
 changes anything via the GUI — those writes will fail (read-only
