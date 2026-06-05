@@ -37,7 +37,15 @@ in
     # modules internally (e.g. `inputs.zen-browser.homeModules.default`
     # in home/nixos/zen-browser.nix). Repo-local HM modules that don't
     # need flake-input access can ignore the arg.
-    extraSpecialArgs = { inherit hostContext inputs; };
+    #
+    # `zellijCacheDir` is the platform-specific dir where zellij reads/
+    # writes permissions.kdl; passed in so home/shared/multiplexer.nix can
+    # pre-grant the zjstatus plugin without a platform conditional in
+    # shared/ (which the shared-purity lint forbids). Linux: XDG cache.
+    extraSpecialArgs = {
+      inherit hostContext inputs;
+      zellijCacheDir = "${operator.linuxHome}/.cache/zellij";
+    };
 
     users.${operator.name} = _: {
       imports = hostContext.extraHomeModules or [ ];

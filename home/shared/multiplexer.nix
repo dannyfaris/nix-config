@@ -11,7 +11,13 @@
 # The `agent` layout (agent.kdl below) plus the `za` function in
 # home/shared/shell.nix are the only path into the 3-pane agentic
 # workspace; plain `zellij` stays a vanilla single-pane session.
-{ pkgs, config, ... }:
+{
+  pkgs,
+  config,
+  lib,
+  zellijCacheDir,
+  ...
+}:
 let
   c = config.lib.stylix.colors;
 
@@ -19,15 +25,17 @@ let
   # top bar (agent.kdl below) stays cohesive even though stylix.targets
   # .zellij doesn't reach a third-party plugin (it themes the stock
   # status-bar + pane frames; zjstatus reads these hex values directly).
-  # Roles mirror the starship prompt and Claude statusline: host
-  # green/purple by SSH state, git branch cyan, status counts !conflict
-  # red / +staged green / ~modified yellow / ?untracked orange,
-  # session/clock foreground, swap-layout indicator muted. (base0B green /
-  # base0E purple / base0C cyan / base0A yellow / base09 orange / base08
-  # red / base05 fg / base03 muted — same slots as prompt.nix /
-  # claude-statusline.sh.)
+  # Roles mirror the starship prompt and Claude statusline so the bar reads
+  # as a third surface of the same language: host green/purple by SSH
+  # state, session blue (the prompt's `$directory` slot), git "on" muted +
+  # branch cyan, status counts !conflict red / +staged green / ~modified
+  # yellow / ?untracked orange, clock foreground, swap-layout indicator
+  # muted. (base0B green / base0E purple / base0D blue / base0C cyan /
+  # base0A yellow / base09 orange / base08 red / base05 fg / base03 muted —
+  # same slots as prompt.nix / claude-statusline.sh.)
   greenHex = "#${c."base0B-hex"}";
   purpleHex = "#${c."base0E-hex"}";
+  blueHex = "#${c."base0D-hex"}";
   cyanHex = "#${c."base0C-hex"}";
   yellowHex = "#${c."base0A-hex"}";
   orangeHex = "#${c."base09-hex"}";
@@ -40,7 +48,25 @@ let
   desktopGlyph = builtins.fromJSON ''"\uf108"''; # nf-fa-desktop — local
   sshGlyph = builtins.fromJSON ''"\uf489"''; # nf-mdi-console_network — SSH
 
+  chevGlyph = builtins.fromJSON ''"\u276f"''; # ❯ host->session separator (prompt.nix's chev)
+  branchGlyph = builtins.fromJSON ''"\ue0a0"''; # nf-pl-branch, matches claude-statusline.sh
+
   zjstatus = "${pkgs.zellijPlugins.zjstatus}"; # output IS the .wasm file
+
+  # Permission grant block for zjstatus, in zellij's permissions.kdl format
+  # and keyed by the bare store path exactly as zellij caches it. Pre-seeded
+  # by home.activation below (see the rationale there). Leading newline so
+  # appending it can never fuse onto a prior block.
+  zjstatusGrant = pkgs.writeText "zjstatus-permissions.kdl" (
+    "\n"
+    + ''
+      "${zjstatus}" {
+          ChangeApplicationState
+          ReadApplicationState
+          RunCommands
+      }
+    ''
+  );
 
   # zjstatus runs widget commands *not* in a shell, so the host marker is
   # a wrapped script (bash + PATH guaranteed) referenced below by absolute
@@ -81,8 +107,14 @@ let
     runtimeInputs = [ pkgs.git ];
     text = ''
       git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
+      # On a real branch, prefix a dim "on" (like the statusline). Detached
+      # HEAD shows just `@<sha>` with no "on" — "on @sha" reads oddly, and
+      # the statusline drops it there too.
+      on=""
       branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
-      if [ -z "$branch" ]; then
+      if [ -n "$branch" ]; then
+        on="#[fg=${mutedHex}]on "
+      else
         sha=$(git rev-parse --short HEAD 2>/dev/null || true)
         [ -n "$sha" ] && branch="@$sha"
       fi
@@ -103,8 +135,10 @@ let
         esac
       done < <(git status --porcelain 2>/dev/null)
 
-      # Same symbols / colours / order as claude-statusline.sh's git segment.
-      out="   #[fg=${cyanHex}]$branch"
+      # Mirrors claude-statusline.sh's git segment: dim "on" (real branch
+      # only), cyan branch glyph + name, then the counts (same symbols/
+      # colours/order).
+      out=" ''${on}#[fg=${cyanHex}]${branchGlyph} $branch"
       [ "$conflict" -gt 0 ] && out="$out #[fg=${redHex}]!$conflict"
       [ "$staged" -gt 0 ] && out="$out #[fg=${greenHex}]+$staged"
       [ "$modified" -gt 0 ] && out="$out #[fg=${yellowHex}]~$modified"
@@ -128,7 +162,7 @@ let
         Agent layout — keys
 
           Alt+← ↑ ↓ →     navigate panes
-          Alt+[ / Alt+]   cycle layout: base · agent · yazi monocle
+          Alt+[ or Alt+]  cycle layout: base · agent · yazi monocle
           Alt+g           lazygit (floating)
           Alt+d           lazydocker (floating)
           Alt+e           capture scrollback to $EDITOR
@@ -254,7 +288,7 @@ in
         default_tab_template {
             pane size=1 borderless=true {
                 plugin location="file:${zjstatus}" {
-                    format_left  "{command_host}  #[fg=${fgHex}]{session}{command_git}"
+                    format_left  " {command_host} #[fg=${fgHex}]${chevGlyph} #[fg=${blueHex}]{session}{command_git}"
                     format_right "#[fg=${mutedHex}]{swap_layout}  {datetime}"
                     format_space ""
 
@@ -309,4 +343,33 @@ in
         }
     }
   '';
+
+  # zjstatus is a third-party plugin, so zellij withholds rendering until
+  # its permissions are granted — and that grant prompt can't be answered
+  # in the agent layout's 1-row borderless bar pane, so the bar just renders
+  # blank (the stock bars work only because built-in plugins are
+  # pre-granted). Pre-seed the grant so the bar works on first launch after
+  # a switch, on every host, with no interactive dance. zellij caches grants
+  # keyed by the plugin's bare store path in permissions.kdl under its
+  # cache dir (macOS Caches bundle dir / XDG cache on Linux). Append-if-
+  # missing keeps the file mutable (zellij still writes it when you grant
+  # other plugins) and preserves those grants; a zjstatus version bump
+  # changes the path and appends a fresh block, leaving the old one as
+  # harmless dead cruft. The `>>` lives inside `sh -c` so home-manager's
+  # dry-run run-wrapper doesn't perform the write.
+  home.activation.zellijZjstatusPermission =
+    let
+      # zellij's cache dir is platform-specific; the path is injected by
+      # the per-platform home-manager wiring (modules/{nixos,darwin}/
+      # home-manager.nix's extraSpecialArgs) so this shared module stays
+      # platform-pure (shared-purity lint).
+      permFile = "${zellijCacheDir}/permissions.kdl";
+    in
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      permFile="${permFile}"
+      if ! grep -qsF "${zjstatus}" "$permFile"; then
+        run mkdir -p "$(dirname "$permFile")"
+        run sh -c 'cat "$1" >> "$2"' sh "${zjstatusGrant}" "$permFile"
+      fi
+    '';
 }
