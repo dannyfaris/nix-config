@@ -109,7 +109,7 @@ A bundle is a file at `modules/<platform>/bundles/<name>.nix` (or `home/<platfor
 
 Bundle names describe what is in the bundle, not what kind of host imports it. Illustrative examples (final decomposition lives in slice 2 of the role-removal migration):
 
-- `remote-access` — sshd + mosh + ghostty.terminfo
+- `remote-access` — sshd + ghostty.terminfo
 - `cli-tooling` — shell + prompt + direnv + multiplexer + editor + cli-utils + nix-tooling
 - `agent-clis-base` — claude-code + cursor-cli
 - `desktop-env` — niri + greetd + desktop-fonts + electron-wayland + libsecret (system side); foot + niri user-config + the per-tool selections from `docs/desktop/` (home side)

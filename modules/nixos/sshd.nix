@@ -25,8 +25,8 @@
       MaxAuthTries = 3;
       LoginGraceTime = "30s";
 
-      # No repo workflow uses `ssh -L`/`-R`; mosh handles remote-shell
-      # resilience. Pin explicitly rather than inheriting upstream `yes`.
+      # No repo workflow uses `ssh -L`/`-R`. Pin explicitly rather than
+      # inheriting upstream `yes`.
       AllowTcpForwarding = "no";
 
       # Upstream default is already `false`; pin so a future nixpkgs

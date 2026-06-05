@@ -66,7 +66,7 @@ In practice, "most communicative" resolves to one of three name sources:
 | `boot.nix`, `networking.nix`, `locale.nix` | Role names — these are universal terms for what they configure. |
 | `nix.nix` | Tool name — "nix" is the universally recognised term for nix daemon settings. |
 | `ssh.nix` | Protocol acronym (same reasoning as in `modules/home/`). |
-| `sops.nix`, `mosh.nix` | Tool names. |
+| `sops.nix`, `docker.nix` | Tool names. |
 | `users.nix`, `packages.nix` | Role/category names. |
 
 ## Rejected alternatives
@@ -156,7 +156,7 @@ Concretely, this rules out names like:
 
 And rules in names like:
 
-- `remote-access.nix` (the capability of being reachable over SSH/mosh)
+- `remote-access.nix` (the capability of being reachable over SSH)
 - `desktop-env.nix` (the capability of running a graphical desktop)
 - `container-runtime.nix` (the capability of running containers)
 

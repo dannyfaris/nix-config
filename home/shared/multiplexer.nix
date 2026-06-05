@@ -4,9 +4,8 @@
 #
 # Default zellij settings already pass OSC52 escape sequences through to
 # the terminal emulator (see ADR-011), so no custom clipboard config is
-# needed here. Mosh (modules/nixos/mosh.nix) handles network-blip
-# resilience; zellij handles cross-reboot persistence — they're
-# complementary.
+# needed here. zellij handles session persistence across disconnects
+# (reconnect over SSH, then `zellij attach`). (mosh was removed in #47.)
 #
 # The `agent` layout (agent.kdl below) plus the `za` function in
 # home/shared/shell.nix are the only path into the 3-pane agentic

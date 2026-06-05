@@ -21,9 +21,9 @@
     '';
 
     # Custom Hydrogen theme: identical to upstream except hide_ascii = false,
-    # [custom_ascii] added, and the [bar] glyph swapped for mosh-safety (see
-    # below). Cannot source upstream directly because that has hide_ascii =
-    # true, which would suppress the art entirely.
+    # [custom_ascii] added, and the [bar] glyph swapped (see below). Cannot
+    # source upstream directly because that has hide_ascii = true, which
+    # would suppress the art entirely.
     # Verify this TOML against contrib/themes/Hydrogen.toml when bumping macchina.
     #
     # The `[custom_ascii].path` points at a per-platform file written by
@@ -48,15 +48,12 @@
       visible = false
 
       [bar]
-      # Plain Geometric-Shapes circle (U+25CF), not a Nerd-Font or exotic
-      # codepoint: mosh silently drops uncommon glyphs while re-rendering its
-      # screen model (upstream Hydrogen's NKO U+07CB vanished entirely over
-      # mosh, though it rendered fine over raw SSH). U+25CF is widely
-      # supported and verified to survive a mosh session. Its East-Asian
-      # width is "ambiguous", but that's harmless here: every bar cell uses
-      # this one glyph (macchina shows used vs unused capacity by colour, not
-      # shape) and the fleet runs non-CJK locales, so the bar can't shear.
-      # Deliberate divergence from upstream Hydrogen — don't revert on a bump.
+      # Plain Geometric-Shapes circle (U+25CF) rather than the obscure NKO
+      # letter (U+07CB) upstream Hydrogen abuses for its round shape: a
+      # common, clearly-intentioned codepoint is the better choice for a
+      # decorative bar glyph. Its East-Asian width is "ambiguous", harmless
+      # here since every bar cell uses this one glyph (macchina shows used
+      # vs unused capacity by colour, not shape).
       glyph           = "●"
       symbol_open     = '['
       symbol_close    = ']'

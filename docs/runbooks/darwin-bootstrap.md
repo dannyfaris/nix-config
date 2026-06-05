@@ -618,14 +618,6 @@ honoured by the macchina version we ship. Mitigation: replace the
 (`\033[3{N}m...\033[0m`) in the module — same pattern the NixOS
 sibling uses for Stylix-driven colours.
 
-### Mosh ALF prompt
-
-ALF (`networking.applicationFirewall.enable = true`) passes signed
-binaries by default. `pkgs.mosh` is a signed nixpkgs binary, so
-inbound mosh should work without an extra prompt. If you adopt the
-stealth posture (`enableStealthMode = true` in the host file), an
-explicit allow may be needed; observe at activation.
-
 ## What this runbook does NOT cover
 
 - Recovery from a corrupted nix store on macOS — `/nix` repair via
@@ -651,10 +643,11 @@ explicit allow may be needed; observe at activation.
   Per-tool docs under `docs/desktop/` record both the numeric ID
   and the uninstall command for every managed MAS app.
 - Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is
-  Linux-only in nixpkgs, so `modules/darwin/bundles/remote-access.nix`
-  doesn't ship `xterm-ghostty` terminfo (the NixOS variant of the
-  bundle does, via `modules/nixos/ghostty-terminfo.nix`). Ghostty
-  clients SSHing into a Darwin host either rely on Ghostty's
+  Linux-only in nixpkgs, so the Darwin side doesn't ship
+  `xterm-ghostty` terminfo (mac-mini imports `modules/darwin/sshd.nix`
+  directly; only NixOS hosts add it, via
+  `modules/nixos/ghostty-terminfo.nix` in their remote-access bundle).
+  Ghostty clients SSHing into a Darwin host either rely on Ghostty's
   shell-integration ssh-terminfo push (the client copies terminfo
   over on connect), fall back to `TERM=xterm-256color` with reduced
   rendering fidelity, or wait for a nix-homebrew Ghostty cask (#13)

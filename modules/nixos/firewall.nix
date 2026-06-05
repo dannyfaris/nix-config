@@ -9,10 +9,9 @@
 # the explicit posture; the runbook for AWS hosts mirrors the same
 # rules in the SG.
 #
-# Per-service "openFirewall" knobs (services.openssh.openFirewall,
-# programs.mosh's UDP range) only do anything when the firewall is
-# enabled — placing the enable in foundation means those knobs work
-# for every host.
+# Per-service "openFirewall" knobs (e.g. services.openssh.openFirewall)
+# only do anything when the firewall is enabled — placing the enable in
+# foundation means those knobs work for every host.
 {
   networking.firewall.enable = true;
 }
