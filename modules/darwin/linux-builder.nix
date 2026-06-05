@@ -26,14 +26,14 @@
 # `nix.linux-builder.config.virtualisation.{cores,memorySize,diskSize}`
 # in the host file. nix-darwin's defaults are conservative.
 #
-# `nix.settings.trusted-users` carries `@admin` (which includes `dbf`
-# on the sudo-able operator account macOS creates) alongside the
-# upstream-default `root` — without it, `nix build` invoked from the
-# operator shell can't drive the remote build and silently falls back
-# to local-only. The linux-builder module does NOT add to
-# `trusted-users` automatically (upstream sets just `root`), so
-# importing this module wires what's needed end-to-end rather than
-# leaving the operator to chase a half-working setup.
+# Trusted-user posture (`nix.settings.trusted-users = ["root" "@admin"]`)
+# lives in modules/darwin/nix-daemon-darwin.nix — foundation-imported on
+# every Darwin host, so it's in scope wherever this module is imported.
+# `@admin` trust is what the operator shell needs to invoke
+# `nix.buildMachines` entries; without it, `nix build` falls back to
+# local-only silently. The posture knob lived here until 2026-06-05;
+# moved out because trusted-users is independent of remote-builder use
+# (substituter overrides, path-trust marking also need it).
 #
 # Standalone module per ADR-027 (no coherent sibling yet to graduate
 # into a bundle).
@@ -42,9 +42,4 @@ _: {
     enable = true;
     systems = [ "aarch64-linux" ];
   };
-
-  nix.settings.trusted-users = [
-    "root"
-    "@admin"
-  ];
 }
