@@ -3,6 +3,11 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 A shell prompt is the persistent visual context for every command — "where am
@@ -70,7 +75,7 @@ as a worked example of a recommendation reversing on closer examination.
 
 ## Implementation
 
-Configured in `home/core/shared/prompt.nix` via `programs.starship`. Settings
+Configured in `home/shared/prompt.nix` via `programs.starship`. Settings
 declared inline as a nix attrset (`programs.starship.settings`), not in a
 separate TOML file. Initial minimal shape:
 

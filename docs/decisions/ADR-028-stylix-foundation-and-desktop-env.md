@@ -3,6 +3,11 @@
 **Date**: 2026-05-28
 **Status**: Amended by ADR-029 (item 3 retracted; items 1–2 stand and are implemented)
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 ADR-027 (foundation + bundles) landed an additive composition model in which a host's capabilities are expressed by which bundles it imports. The desktop environment has been the prototypical case the model was designed to absorb: under ADR-027, a host evolving from headless to desktop is `imports += [ bundles/desktop-env.nix ]`, not a role migration or category rename.
@@ -21,7 +26,7 @@ Adopt a coordinated three-part decision, scoped to land as one ADR because the t
 
 **1. Stylix is promoted to foundation, with per-host base16 palettes as the single source of truth for theming.** `inputs.stylix.nixosModules.stylix` is imported by `modules/nixos/foundation.nix`. A new `lib/host-palettes.nix` maps `hostName → { polarity; schemes = { dark; light; }; }`; foundation reads this map keyed on `hostContext.hostName` (the field name set by ADR-019). Missing-host lookups fail loudly at eval. Stylix governs all colour/font surfaces across both the TUI surface (helix, bat, zellij, starship, lazygit, yazi, btop, fish) and — via the wiring below — the desktop shell. (Polarity + paired schemes added in later amendments — see §History.)
 
-**2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/core/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/core/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Foot, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
+**2. Metis is the first desktop host.** A new `desktop-env` bundle at `modules/nixos/bundles/desktop-env.nix` aggregates the system-level desktop components (niri compositor enablement, greetd session entry, desktop fonts not already in foundation). A parallel `home/nixos/bundles/desktop-env.nix` aggregates the home-manager pieces (DMS, Foot, niri user config). Metis imports both bundles; mercury (work, headless) and nixos-vm (UTM, no DRM) do not.
 
 **3. DMS theming is decoupled from Stylix** (decision rebased then retracted 2026-05-29; see §History entries below — fully retracted per ADR-029). DMS uses its own built-in palette and runtime wallpaper picker. `programs.dank-material-shell.enableDynamicTheming = false` suppresses matugen so it doesn't fight Stylix's GTK/Qt targets. `stylix.image` is not set on DMS-driven hosts; Stylix has no wallpaper consumer there. Stylix remains canonical for the TUI surface, foot terminal, GTK/Qt apps, and niri focus-ring/cursor.
 
@@ -69,7 +74,7 @@ Decision-only landing; implementation in subsequent slices, each peer-reviewed o
 
 1. **Slice 1 (this PR) — Documentation reconciliation.** ADR-028 authored; `docs/decisions/README.md` lifecycle convention; CLAUDE.md / PRD / TODO.md framing updates; issue #4 body update. No code changes.
 2. **Slice 2 — Stylix in foundation, TUI targets.** Stylix flake input; `lib/host-palettes.nix` (metis, mercury, nixos-vm); foundation import; HM-side Stylix targets for existing TUI tools; macchina banner recolour. Hard prereq for slices 3–5.
-3. **Slice 3 — desktop-env bundle scaffolding.** New `modules/core/nixos/bundles/desktop-env.nix` (niri + greetd + desktop fonts) and `home/core/nixos/bundles/desktop-env.nix` (niri user config + Foot + DMS). The home-side bundle directory `home/core/nixos/bundles/` is created as part of this slice (it does not exist yet; existing HM bundles live in `home/core/shared/bundles/`, but the desktop stack is Linux-only and belongs under `nixos/` per the shared-purity rule). Metis's `default.nix` adds both imports. Build-verify; no activation.
+3. **Slice 3 — desktop-env bundle scaffolding.** New `modules/nixos/bundles/desktop-env.nix` (niri + greetd + desktop fonts) and `home/nixos/bundles/desktop-env.nix` (niri user config + Foot + DMS). The home-side bundle directory `home/nixos/bundles/` is created as part of this slice (it does not exist yet; existing HM bundles live in `home/shared/bundles/`, but the desktop stack is Linux-only and belongs under `nixos/` per the shared-purity rule). Metis's `default.nix` adds both imports. Build-verify; no activation.
 4. **Slice 4 — DMS↔Stylix theme wiring [retracted per ADR-029; see §History 2026-05-29 (DMS retracted)].** Originally planned as a standalone HM module emitting DMS custom-theme JSON from `config.lib.stylix.colors`. Decoupled from Stylix on 2026-05-29 then retracted entirely on the same date when DMS was removed from the configuration. Slice numbering preserved for archaeological consistency.
 5. **Slice 5 — First activation on metis.** `nh os switch`. End-to-end verify: niri launches, DMS in metis palette, Foot themed, TUI surfaces match.
 6. **Slice 6 (follow-up) — Issue #7 (Claude statusline) ceding colours to Stylix.** Another `config.lib.stylix.colors` consumer; independent of desktop work.
@@ -116,11 +121,11 @@ ADR + companion docs to match.
   anticipated "linux-workstation lands with foot" — that anticipation
   is now reality.
 - Ghostty is retained on **macOS clients** (operator's Mac) and via
-  the unchanged `modules/core/shared/ghostty-terminfo.nix` standalone
+  the unchanged `modules/shared/ghostty-terminfo.nix` standalone
   module, which ships the `xterm-ghostty` terminfo entry on every
   host so SSH'ing in from a Ghostty-on-Mac terminal renders cleanly.
   The Ghostty client posture (Mac → SSH → any host) is untouched.
-- A future `home/core/darwin/` tree (per the mac-mini onboarding
+- A future `home/darwin/` tree (per the mac-mini onboarding
   epic, #11) will add `programs.ghostty.enable` for Darwin hosts.
   The Linux/Darwin split is now: Linux desktop uses Foot, macOS uses
   Ghostty.
@@ -129,7 +134,7 @@ Files touched: see the amendment commit (`git log --grep "metis terminal"`).
 Note: line 14's reference to the `tier3-desktop-deferred` git tag is preserved
 verbatim because it accurately describes a historical artefact, not the
 current decision. Stylix's `foot` target is enabled centrally in
-`home/core/shared/bundles/theming.nix` alongside the other TUI targets
+`home/shared/bundles/theming.nix` alongside the other TUI targets
 (inert on non-desktop hosts because Stylix gates the target on
 `programs.foot.enable`).
 
@@ -214,7 +219,7 @@ graphical background; DMS owns the lock screen). On headless hosts
 
 The corresponding code change (adding
 `programs.dank-material-shell.enableDynamicTheming = false` to
-`home/core/nixos/dms.nix` plus a header-comment rewrite, alongside
+`home/nixos/dms.nix` plus a header-comment rewrite, alongside
 two other slice-5-readiness hardening edits) lands in a separate
 follow-up PR. This amendment is docs-only.
 
@@ -263,8 +268,8 @@ two living documents (`docs/desktop/keybinds.md`,
 (PRs #79 + #80 + #81 + #82). Per-tool follow-on work is tracked in
 issues #72–#77.
 
-The corresponding code change — deleting `home/core/nixos/dms.nix`,
-`modules/core/nixos/dms-home-bridge.nix`, the `dank-material-shell`
+The corresponding code change — deleting `home/nixos/dms.nix`,
+`modules/nixos/dms-home-bridge.nix`, the `dank-material-shell`
 flake input, and the bundle imports from both `desktop-env` bundles
 — ships in a separate follow-up PR under issue #70. This amendment
 is docs-only.
@@ -273,13 +278,13 @@ is docs-only.
 
 Decision item 1 above placed Stylix in foundation by importing
 `inputs.stylix.nixosModules.stylix` *and setting the per-host palette
-inline* in `modules/core/nixos/foundation.nix`. That inline block
+inline* in `modules/nixos/foundation.nix`. That inline block
 violated ADR-027's `bundle-purity` rule (foundation must be a pure
 `imports` list), a contradiction that surfaced when #54 P5.1 went to
 build the enforcing lint.
 
 The stylix module import and the per-host `base16Scheme` lookup now live
-in a dedicated `modules/core/nixos/stylix-palette.nix`, which foundation
+in a dedicated `modules/nixos/stylix-palette.nix`, which foundation
 imports. **Decision items 1 and 2 are unchanged in substance** — Stylix
 is still foundation-wide (every host imports foundation, which imports
 stylix-palette.nix), and the per-host base16 palette from
@@ -292,7 +297,7 @@ change ships under #54.
 ### Amendment (2026-05-31, #123) — Per-host polarity added to the palette entry shape
 
 `lib/host-palettes.nix` entries grew from `hostName → "scheme-string"`
-to `hostName → { scheme; polarity; }`. `modules/core/nixos/stylix-palette.nix`
+to `hostName → { scheme; polarity; }`. `modules/nixos/stylix-palette.nix`
 now passes `palette.polarity` through to `stylix.polarity`.
 
 Before: Stylix's `polarity` was unset, so it defaulted to `"either"` and

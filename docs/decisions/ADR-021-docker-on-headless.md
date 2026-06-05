@@ -3,6 +3,11 @@
 **Date**: 2026-05-18
 **Status**: Accepted (amended 2026-06-03 — see §History)
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 [ADR-006](./ADR-006-cli-utilities.md) § "Tool-vs-runtime split" deliberately deferred the docker daemon decision: lazydocker landed in the home tier as the universal client UI, the docker CLI was scoped to per-project devShells (consistent with the per-project toolchain pattern in [ADR-003](./ADR-003-direnv.md)), and the daemon was left as "a deployment decision deferred until the first project needs it."

@@ -3,6 +3,11 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 The user actively uses four AI coding agent CLIs across different
@@ -62,8 +67,8 @@ pattern can be added as a follow-up. The mechanism would be:
 1. Add `openai_api_key` (or whichever) to `secrets/secrets.yaml` via
    `sops`.
 2. Declare `sops.secrets.openai_api_key.owner = "dbf"` in
-   `modules/core/nixos/sops.nix`.
-3. In `home/core/shared/agent-clis.nix`, add a fish `shellInit` block
+   `modules/nixos/sops.nix`.
+3. In `home/shared/agent-clis.nix`, add a fish `shellInit` block
    that reads the file and exports the env var:
    ```fish
    if test -r /run/secrets/openai_api_key
@@ -109,7 +114,7 @@ This is documented here as the future path; not implemented now.
 
 ## Implementation
 
-Split across two files. The base lives in `home/core/shared/agent-clis.nix`
+Split across two files. The base lives in `home/shared/agent-clis.nix`
 and ships on every host:
 
 ```nix
@@ -121,7 +126,7 @@ and ships on every host:
 }
 ```
 
-The opt-in extras live in `home/core/shared/agent-clis-extras.nix` and ship
+The opt-in extras live in `home/shared/agent-clis-extras.nix` and ship
 only on hosts that include the file in `hostContext.extraHomeModules`:
 
 ```nix

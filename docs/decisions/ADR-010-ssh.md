@@ -3,11 +3,16 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 The repo's *inbound* SSH (i.e., the `services.openssh` config that lets
 the user SSH *into* this box from their Mac) is hardened and unchanged
-by this tier — see `modules/core/nixos/sshd.nix`.
+by this tier — see `modules/nixos/sshd.nix`.
 
 The question this ADR answers is about *outbound* SSH: should the dev box
 have SSH keys generated for talking to other machines, and how should
@@ -74,7 +79,7 @@ doesn't have to re-derive them.
 
 ## Implementation
 
-Configured in `home/core/shared/ssh.nix`:
+Configured in `home/shared/ssh.nix`:
 
 ```nix
 {

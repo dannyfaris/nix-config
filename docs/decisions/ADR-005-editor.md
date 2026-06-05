@@ -3,6 +3,11 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 The editor is the tool the user spends the most time in; the choice shapes
@@ -108,7 +113,7 @@ the headless dev stack.
 
 ## Implementation
 
-Configured in `home/core/shared/editor.nix`:
+Configured in `home/shared/editor.nix`:
 
 ```nix
 let
@@ -156,7 +161,7 @@ Notes:
   a single attrset). The shape above is the correct one.
 - `lib.getExe pkgs.nixfmt` resolves to the absolute binary path,
   surviving any future binary-rename in nixpkgs.
-- `nixd` LSP and `nixfmt` formatter are installed by `home/core/shared/nix-tooling.nix`
+- `nixd` LSP and `nixfmt` formatter are installed by `home/shared/nix-tooling.nix`
   (ADR-007); helix invokes them through PATH.
 - The nixd `options.{nixos,home-manager}.expr` strings are passed through
   to nixd verbatim; nixd evaluates them at hover-time. The flake path
@@ -171,10 +176,10 @@ Notes:
 
 **`EDITOR` wiring (two-layer).** Interactive user shells get
 `home.sessionVariables.{EDITOR,VISUAL} = "hx";` from
-`home/core/shared/editor.nix` itself. System-mediated tools
+`home/shared/editor.nix` itself. System-mediated tools
 (`sudoedit`, `visudo`, `systemctl edit`) get
 `environment.variables.{SUDO_EDITOR,SYSTEMD_EDITOR} = "${pkgs.helix}/bin/hx";`
-from a dedicated `modules/core/shared/editor-defaults.nix` imported via
+from a dedicated `modules/shared/editor-defaults.nix` imported via
 `foundation.nix`. The system layer uses absolute store paths because
 sudo strips `PATH` from the inherited environment. `VISUAL` complements
 `EDITOR` for tools (notably git) that check `VISUAL` first.

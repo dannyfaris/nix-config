@@ -3,6 +3,11 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 This is a headless dev box. The user works at it exclusively over SSH
@@ -115,7 +120,7 @@ git auth path doesn't use SSH.
 
 ## Implementation
 
-mosh configured at the system level in `modules/core/nixos/mosh.nix`:
+mosh configured at the system level in `modules/nixos/mosh.nix`:
 
 ```nix
 {
@@ -128,9 +133,9 @@ automatically — both are required, and the module handles them together.
 
 OSC52 is configured at three places:
 
-- **Helix** (`home/core/shared/editor.nix`): in
+- **Helix** (`home/shared/editor.nix`): in
   `programs.helix.settings.editor`, set `clipboard-provider = "termcode"`.
-- **Zellij** (`home/core/shared/multiplexer.nix`): default settings already
+- **Zellij** (`home/shared/multiplexer.nix`): default settings already
   pass OSC52 through. No extra config needed in the typical case; if the
   bridge ever stops working, check zellij's clipboard config first.
 - **Terminal emulator on the Mac**: outside this repo's scope. Use
