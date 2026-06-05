@@ -1,9 +1,9 @@
 # git-multi-identity — git with multiple identities (personal default
-# + work override under ~/work/) and the GitHub CLI.
+# + work override under ~/grey-st/) and the GitHub CLI.
 #
 # Base git config (HTTPS+token via gh/glab credential helpers, glab
 # package + credential-helper wiring) + dual identity (personal as
-# default; work under ~/work/ via gitdir-conditional include) + the
+# default; work under ~/grey-st/ via gitdir-conditional include) + the
 # GitHub CLI for personal interactions.
 #
 # Named for contents per the taxonomy.md naming rule ("bundle names

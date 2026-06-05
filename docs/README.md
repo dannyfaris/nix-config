@@ -43,7 +43,7 @@ truth, eliminating drift between AI memory and in-repo reference.
 
 - **[identities.md](./identities.md)** — the cross-tool convention for the
   operator's personal / work identity split: direction (personal default,
-  work conditional under `~/work/`), trigger boundary, participating tools,
+  work conditional under `~/grey-st/`), trigger boundary, participating tools,
   failure modes. Where future tools that grow per-identity state should
   refer when wiring their split.
 
