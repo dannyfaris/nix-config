@@ -56,14 +56,15 @@ _: {
       description = "Zellij agent workspace, session named for the cwd";
       body = ''
         set -l name (basename $PWD)
-        # `contains` is an exact list-membership test — unlike `string
-        # match`, it won't treat a dir name with glob chars (* ? [ ]) as a
-        # pattern and false-match a different session.
-        if contains -- $name (zellij ls -ns 2>/dev/null)
-            zellij attach $name
-        else
-            zellij -s $name -l agent
-        end
+        # Ask `attach` directly: it attaches to this repo's session
+        # (resurrecting it if it had exited) and, when none exists, exits
+        # non-zero with its error on stderr — so the `or` creates it with
+        # the agent layout. Race-free, and crucially it doesn't depend on
+        # how `zellij ls` renders the session list: the previous
+        # `contains`-over-`zellij ls` check could disagree with what
+        # `attach` can actually reach and tried to attach to a session that
+        # wasn't there.
+        zellij attach $name 2>/dev/null; or zellij -s $name -l agent
       '';
     };
 
