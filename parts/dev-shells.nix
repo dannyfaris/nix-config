@@ -22,6 +22,7 @@ _:
           just
           nixfmt
           shfmt
+          shellcheck
           statix
           deadnix
           actionlint

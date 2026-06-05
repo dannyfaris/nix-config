@@ -72,6 +72,21 @@
           };
           actionlint.enable = true;
 
+          # Shell correctness for the repo's own bash. shfmt (via the treefmt
+          # hook) only formats; shellcheck catches unquoted expansions,
+          # set -e foot-guns, and unused/undefined vars. The built-in hook
+          # selects files by `types = [ "shell" ]` — pre-commit detects the
+          # bash dialect from each script's shebang, so every scripts/*.sh
+          # and the home/shared/*-statusline.sh files are covered at default
+          # severity with no per-file directives. Lifts to
+          # checks.<system>.pre-commit like the others, so it gates CI too.
+          #
+          # Out of scope: the justfile's embedded bash. `just` recipes aren't
+          # standalone .sh files (no shebang for pre-commit to detect), and
+          # linting them would mean parsing `just --dump` — fragile for the
+          # marginal gain. The install/bootstrap recipes stay reviewer-side.
+          shellcheck.enable = true;
+
           # Format enforcement at commit-time. Reuses the treefmt wrapper
           # built by parts/formatter.nix (config.treefmt.build.wrapper)
           # rather than re-declaring nixfmt/shfmt or their exclude globs,
