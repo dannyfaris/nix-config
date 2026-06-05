@@ -19,6 +19,18 @@ ADRs (one per major decision). Start with [docs/README.md](./docs/README.md).
 This CLAUDE.md is the AI/contributor entry point; `docs/` is the deeper
 companion.
 
+## Agent memory lives in git, not local state
+
+Work on this repo happens across all four hosts. Claude Code's file-based
+memory (`~/.claude/projects/.../memory/`) is **per-host and never synced** —
+a fact learned on `metis` is invisible on `mac-mini`. So anything durable —
+decisions, conventions, gotchas, host quirks — must be committed to the repo
+where every host sees it: this CLAUDE.md for working agreements and
+deliberate stances, `docs/` (ADRs, selection docs) for the *why*, and inline
+module comments for the *why* of a setting. Treat local agent memory as a
+scratchpad for the current session; if it matters tomorrow or on another
+host, write it down in git.
+
 ## Structure
 
 ```
