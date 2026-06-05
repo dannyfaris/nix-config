@@ -3,6 +3,11 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 Standard Unix tools (`grep`, `find`, `cat`, `ls`, `cd`, `du`, etc.) are
@@ -104,14 +109,14 @@ level. The split:
   `devShells.default`, picked up via direnv on `cd` (ADR-003). This
   avoids global docker version churn and lets different projects pin
   different versions. *Per-host exception: Mercury and any other
-  headless host that imports `modules/core/nixos/docker.nix` gets the
+  headless host that imports `modules/nixos/docker.nix` gets the
   docker CLI system-wide alongside the daemon — see ADR-021 for the
   rationale on overriding this default once a daemon exists locally.*
 - **docker daemon** — a deployment decision, not a per-project one.
   **Resolved (2026-05-18) by [ADR-021](./ADR-021-docker-on-headless.md):**
   rootless Docker via `virtualisation.docker.rootless.enable` on hosts
   that need it (Mercury today), imported per-host from
-  `modules/core/nixos/docker.nix` rather than from the role. The
+  `modules/nixos/docker.nix` rather than from the role. The
   originally-sketched alternatives (Docker Desktop on the Mac with
   `DOCKER_HOST=ssh://…`, rootful `virtualisation.docker.enable`, podman)
   are discussed and rejected in ADR-021.
@@ -144,7 +149,7 @@ rootless daemon and a system-wide CLI.
 
 ## Implementation
 
-Configured in `home/core/shared/cli-utils.nix`. Pattern: use dedicated
+Configured in `home/shared/cli-utils.nix`. Pattern: use dedicated
 `programs.X` modules where home-manager provides them (these wire shell
 integrations cleanly, e.g. fzf's Ctrl-R history binding); plain
 `home.packages` for the rest.

@@ -3,10 +3,15 @@
 **Date**: 2026-05-25
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 ADR-008 installs the Claude Code CLI on every host via the base
-`home/core/shared/agent-clis.nix`. Beyond the binary, Claude Code keeps
+`home/shared/agent-clis.nix`. Beyond the binary, Claude Code keeps
 configuration and runtime state co-located in `~/.claude/`. Some of
 that tree is *configuration* (settings.json, CLAUDE.md, agents/,
 commands/, hooks/, skills/, statusline scripts) and is a good
@@ -34,7 +39,7 @@ reference deployed artifacts from settings.json with a one-time
 per-host edit.
 
 First artifact under this pattern: the statusline script at
-`home/core/shared/claude-statusline.sh`, deployed to
+`home/shared/claude-statusline.sh`, deployed to
 `~/.claude/statusline.sh`.
 
 ## Rationale
@@ -90,15 +95,15 @@ First artifact under this pattern: the statusline script at
   `~/.claude/statusline.{sh,py,js}` lookup). At that point, the
   per-host settings.json edit can be dropped.
 - ⚠ Migration trigger: the multi-host rebuild (PRD + ADRs 013–016)
-  lands and `home/core/shared/` exists. At that point the script
-  relocates from `home/core/nixos/` into `shared/` so darwin hosts
+  lands and `home/shared/` exists. At that point the script
+  relocates from `home/nixos/` into `shared/` so darwin hosts
   pick it up too.
 
 ## Implementation
 
-Script lives at `home/core/shared/claude-statusline.sh` (bash;
+Script lives at `home/shared/claude-statusline.sh` (bash;
 cross-platform; requires `jq`). Wired alongside the existing
-`home.packages` list in `home/core/shared/agent-clis.nix`:
+`home.packages` list in `home/shared/agent-clis.nix`:
 
 ```nix
 # Custom statusline — see ADR-024.
@@ -121,7 +126,7 @@ Per-host one-time edit to `~/.claude/settings.json` (not Nix-managed):
 
 Companion changes:
 
-- `home/core/shared/cli-utils.nix` gains `jq` in its `home.packages`
+- `home/shared/cli-utils.nix` gains `jq` in its `home.packages`
   list. ADR-006's locked list and rationale are amended to add jq
   (moved from the deferred tier to installed; statusline is the
   immediate driver, jq is broadly useful).
@@ -130,7 +135,7 @@ Companion changes:
 **Palette-driven colours (added per ADR-028 slice 6, 2026-05-28).** The
 six colour bindings in `claude-statusline.sh` (BLUE / GREEN / YELLOW /
 RED / MAUVE / TEAL) are no longer hardcoded ANSI 256-colour escapes.
-`home/core/shared/agent-clis.nix` emits a `~/.claude/statusline-colours.sh`
+`home/shared/agent-clis.nix` emits a `~/.claude/statusline-colours.sh`
 derivation at activation time using `pkgs.writeText` +
 `config.lib.stylix.colors`, and the main script `source`s it at
 startup. The colour escapes are now truecolor (`38;2;R;G;B`) rather

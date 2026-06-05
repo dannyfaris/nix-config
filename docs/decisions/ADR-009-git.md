@@ -22,6 +22,11 @@
 > employer "GotaXi" — the employer is **Grey St** (which operates the Tax
 > Traders and Taxi brands); the `gotaxi.co.nz` email domain is unchanged.
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 The user works on two distinct git ecosystems from this dev box:
@@ -169,7 +174,7 @@ interactive flow (same compromise as gh — not declarative, but stable).
 
 > **Update (post-ADR-020, 2026-05-18):** what was a single
 > `modules/home/git.nix` has been split into four files to support
-> work-only hosts cleanly: a shared base (`home/core/shared/git.nix`)
+> work-only hosts cleanly: a shared base (`home/shared/git.nix`)
 > plus three per-host pieces (`git-identity-dual.nix`,
 > `git-identity-work.nix`, `gh.nix`) selected per-host via
 > `hostContext.extraHomeModules`. The mechanism is documented in
@@ -178,7 +183,7 @@ interactive flow (same compromise as gh — not declarative, but stable).
 > no longer the live shape.
 
 Originally configured in `modules/home/git.nix` (single file, the
-combined behaviour now distributed across `home/core/shared/git.nix`
+combined behaviour now distributed across `home/shared/git.nix`
 plus the per-host identity and forge-CLI pieces selected via
 `hostContext.extraHomeModules` — `git-identity-dual.nix` + `gh.nix`
 on the dual-identity UTM VM, `git-identity-work.nix` on Mercury):

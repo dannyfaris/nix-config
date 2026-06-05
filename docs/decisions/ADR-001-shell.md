@@ -3,6 +3,11 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 The user is configuring a NixOS system for headless development and self-describes
@@ -73,13 +78,13 @@ user prioritised: the gap between a fresh install and a productive shell.
 
 Configured in:
 
-- `modules/core/nixos/users.nix` — sets `users.users.dbf.shell = pkgs.fish` and
+- `modules/nixos/users.nix` — sets `users.users.dbf.shell = pkgs.fish` and
   `programs.fish.enable = true`. The system-side enable is **load-bearing**:
   it registers fish in `/etc/shells`, which is the gate for being a valid
   login shell. Without it, switching the user's shell to a home-manager-only
   fish locks the user out at next login. This is documented in a `# why`
   comment at that line.
-- `home/core/shared/shell.nix` — `programs.fish.enable = true` at the home-manager
+- `home/shared/shell.nix` — `programs.fish.enable = true` at the home-manager
   level for user rc (plugins, abbreviations, environment).
 
 When advising on env-var changes in fish sessions, remember the syntax is

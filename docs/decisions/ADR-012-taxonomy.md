@@ -7,9 +7,14 @@
 > (`modules/home/`, `modules/system/`) reflect the pre-refactor layout
 > in place when the decision was made. The PRD §5 role/host refactor
 > (introduced post-ADR-013 through ADR-016, landed on branch
-> `claude/headless-dev-config-v7cUS`) moved these to `home/core/nixos/`
-> and `modules/core/nixos/` respectively. The naming rule this ADR
+> `claude/headless-dev-config-v7cUS`) moved these to `home/nixos/`
+> and `modules/nixos/` respectively. The naming rule this ADR
 > captures applies unchanged in the new tree.
+
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
 ## Context
 

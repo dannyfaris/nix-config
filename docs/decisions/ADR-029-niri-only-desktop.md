@@ -3,6 +3,11 @@
 **Date**: 2026-05-29
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 ADR-028 landed a coordinated three-part decision: Stylix in foundation; metis as the first desktop host via additive bundle composition; Dank Material Shell (DMS) as the metis shell. The §History 2026-05-29 amendment had already decoupled DMS theming from Stylix in response to the matugen-vs-GTK/Qt conflict surfaced during slice-3-readiness; that amendment kept DMS but disabled its dynamic theming (`programs.dank-material-shell.enableDynamicTheming = false`).
@@ -25,7 +30,7 @@ Retract the DMS portion of ADR-028. Preserve the rest.
 
 - **§Decision item 3** ("DMS theming is decoupled from Stylix") — superseded. DMS is removed from the configuration entirely, not merely decoupled from Stylix's theme engine.
 - **§Implementation slice 4** — already deferred indefinitely in the 2026-05-29 amendment; now formally closed.
-- All DMS-specific scaffolding lands deleted from the code tree: `home/core/nixos/dms.nix`, `modules/core/nixos/dms-home-bridge.nix`, the `dank-material-shell` flake input, the corresponding imports from both `desktop-env` bundles.
+- All DMS-specific scaffolding lands deleted from the code tree: `home/nixos/dms.nix`, `modules/nixos/dms-home-bridge.nix`, the `dank-material-shell` flake input, the corresponding imports from both `desktop-env` bundles.
 
 **Preserved from ADR-028:**
 

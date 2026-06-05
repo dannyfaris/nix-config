@@ -3,6 +3,11 @@
 **Date**: 2026-05-26
 **Status**: Accepted
 
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
+> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
+> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
+> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
 ## Context
 
 Until now, CI has been informal: the operator runs `nh os switch` locally on each host; a single hand-rolled `pre-commit` hook in `.githooks/` enforces ADR-023's "do not hand-edit `hardware-configuration.nix`" rule; nothing else is automated. Three forces motivate formalising this.
@@ -106,7 +111,7 @@ treefmt-nix = {
 
 Each module follows the per-output-file convention used by `parts/nixos.nix` (attributed there to ryan4yin's flake shape).
 
-**`parts/checks.nix`** imports `git-hooks-nix.flakeModule`. Pre-commit hooks: nixfmt, statix, deadnix, actionlint, plus an extra `hardware-config-banner` hook whose `entry` points to `./scripts/hardware-config-banner.sh` and whose `files` pattern matches `^hosts/[^/]+/hardware-configuration\.nix$`. Per-host checks under `checks.<system>` via `lib.optionalAttrs` per the Decision section. The hook `package` references for nixfmt are explicitly `pkgs.nixfmt` (canonical RFC-style formatter) — *not* `pkgs.nixfmt-rfc-style` (deprecated alias; see the comments in `home/core/shared/nix-tooling.nix`).
+**`parts/checks.nix`** imports `git-hooks-nix.flakeModule`. Pre-commit hooks: nixfmt, statix, deadnix, actionlint, plus an extra `hardware-config-banner` hook whose `entry` points to `./scripts/hardware-config-banner.sh` and whose `files` pattern matches `^hosts/[^/]+/hardware-configuration\.nix$`. Per-host checks under `checks.<system>` via `lib.optionalAttrs` per the Decision section. The hook `package` references for nixfmt are explicitly `pkgs.nixfmt` (canonical RFC-style formatter) — *not* `pkgs.nixfmt-rfc-style` (deprecated alias; see the comments in `home/shared/nix-tooling.nix`).
 
 **`parts/formatter.nix`** imports `treefmt-nix.flakeModule`. Programs enabled: `nixfmt`, `shfmt`. `projectRootFile = "flake.nix"`.
 
@@ -167,7 +172,7 @@ A small conformance gap surfaced: the auto-generated `hosts/<name>/hardware-conf
 
 ### treefmt added to the pre-commit hooks; §3's formatter/linter split revised (2026-05-31)
 
-Implementation note §3 above drew a clean line — *treefmt owns formatting; pre-commit owns linting* — and kept the formatter out of the pre-commit hook list specifically to avoid two nixfmt invocations per `nix flake check`. That split optimised for one cost (duplicate invocation) but missed the cost that actually bit: **a pre-commit that does not format-check lets format violations reach CI.** A multiline-string mis-format in `home/core/nixos/greetd.nix` was committed locally without complaint and failed only in CI (#54 P5.5, root-caused in #64). The forcing function the pre-commit hook is supposed to provide — catch it before it leaves the machine — did not exist for formatting.
+Implementation note §3 above drew a clean line — *treefmt owns formatting; pre-commit owns linting* — and kept the formatter out of the pre-commit hook list specifically to avoid two nixfmt invocations per `nix flake check`. That split optimised for one cost (duplicate invocation) but missed the cost that actually bit: **a pre-commit that does not format-check lets format violations reach CI.** A multiline-string mis-format in `home/nixos/greetd.nix` was committed locally without complaint and failed only in CI (#54 P5.5, root-caused in #64). The forcing function the pre-commit hook is supposed to provide — catch it before it leaves the machine — did not exist for formatting.
 
 This amendment revises §3: **`treefmt` is now also a pre-commit hook** (`parts/checks.nix`, `pre-commit.settings.hooks.treefmt`), so `git commit` runs the same format check that CI runs. The split is no longer "formatting vs linting" but "where each runs": formatting and linting both run at commit-time and at flake-check/CI-time.
 
