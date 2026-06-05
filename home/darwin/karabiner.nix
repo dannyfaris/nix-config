@@ -13,10 +13,29 @@
 # complex_modifications. The foundational rule is caps_lock → Hyper
 # (⌘⌃⌥⇧), the macOS analogue of the Linux Super + Ctrl + Alt + Shift.
 #
-# Symlinked into the nix store and therefore read-only — edit this
-# file to change the config; do not edit through the Karabiner-Elements
-# Preferences UI. UI writes break the symlink and the change does not
-# survive activation. Same posture as home/darwin/ghostty.nix.
+# Written via `xdg.configFile."karabiner/karabiner.json"` with
+# `force = true`: home-manager unconditionally overwrites the file
+# on every activation, clobbering any runtime writes from the
+# Karabiner-Elements first-launch normalizer (or, defensively, from
+# a future Karabiner release that seeds a new top-level key beyond
+# `global` / `complex_modifications.parameters`). Without force,
+# two distinct failure modes apply: (a) at runtime, Karabiner's
+# write attempt EACCES against the read-only symlink and the
+# normalizer may degrade or quit; (b) on next activation,
+# home-manager's pre-link collision check refuses to clobber the
+# non-HM file karabiner has produced and aborts with "Existing
+# file '...' would be clobbered". force=true skips (b) — and the
+# scaffolding below addresses (a) belt-and-braces. UI / Preferences
+# edits do not survive activation — edit this file to change the
+# config, not the Karabiner-Elements Preferences UI.
+#
+# `xdg.configFile` is the idiomatic home-manager path for
+# `~/.config/<name>` writes; it resolves to the same on-disk
+# location as a `home.file.".config/<name>"` write but threads
+# through xdg.configHome (which home-manager defaults to ~/.config
+# on both Linux and Darwin). The two were interchangeable here
+# pre-conversion; the change is for shape-consistency with
+# home/darwin/macchina-shell-init.nix and home/shared/* modules.
 _:
 let
   # Caps Lock → Hyper. Sends left_shift held with left_command +
@@ -145,11 +164,16 @@ let
   };
 
   karabinerConfig = {
-    # Empty top-level `global` block neutralizes Karabiner-Elements'
-    # first-launch config-normalization rewrite — Karabiner expects
-    # this key to exist and will write a default if it's missing,
-    # which fails against the read-only symlink. Same defensive
-    # purpose as the `complex_modifications.parameters` block below.
+    # Pre-populate the `global` key Karabiner-Elements expects at
+    # first-launch normalization. Belt-and-braces with `force = true`
+    # on the xdg.configFile entry below: force=true keeps the *next*
+    # activation succeeding after Karabiner has clobbered the file,
+    # but this scaffolding closes the user-visible gap in between —
+    # without it, Karabiner's rewrite would strip the caps_lock →
+    # Hyper rule (and every other manipulator we ship), silently
+    # disabling the operator's keybinds until the next `nh darwin
+    # switch`. Same defensive purpose as the
+    # `complex_modifications.parameters` block below.
     global = { };
     profiles = [
       {
@@ -177,5 +201,8 @@ let
   };
 in
 {
-  home.file.".config/karabiner/karabiner.json".text = builtins.toJSON karabinerConfig;
+  xdg.configFile."karabiner/karabiner.json" = {
+    text = builtins.toJSON karabinerConfig;
+    force = true;
+  };
 }
