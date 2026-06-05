@@ -56,6 +56,11 @@ in
     # (JetBrains Mono Nerd Font) for Nerd Font glyph coverage in
     # network/tray modules.
     waybar.enable = true;
+    # swaylock — gates on `programs.swaylock.enable` (set in
+    # home/nixos/screen-lock.nix). Stylix writes the lock screen's
+    # colour config (~/.config/swaylock/config) so the lock surface
+    # follows the host palette. See docs/desktop/screen-lock.md.
+    swaylock.enable = true;
     # firefox — gates on `programs.firefox.enable`. profileNames is
     # operator-declared because Stylix's Firefox module can't auto-
     # detect profile names without infinite recursion (documented in
