@@ -12,6 +12,9 @@
 #     settings (see docs/desktop/fuzzel.md).
 #   - fnott.nix — services.fnott.enable (notification daemon;
 #     D-Bus-activated; see docs/desktop/fnott.md).
+#   - screen-lock.nix — programs.swaylock + services.swayidle (session
+#     lock + idle handling: lock on idle, displays off, lock before
+#     sleep; see docs/desktop/screen-lock.md).
 #   - waybar.nix — programs.waybar.enable + status-bar layout
 #     settings (top of screen; tray-bearing; see
 #     docs/desktop/waybar.md).
@@ -47,6 +50,7 @@
     ../foot.nix
     ../fuzzel.nix
     ../fnott.nix
+    ../screen-lock.nix
     ../waybar.nix
     ../firefox.nix
     ../zen-browser.nix
