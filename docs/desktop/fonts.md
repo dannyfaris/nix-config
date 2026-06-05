@@ -83,6 +83,30 @@ consult the Stylix-configured names. Flipping
 `enableDefaultPackages = false` would mean curating the entire base
 set ourselves; deliberately not done.
 
+### Darwin
+
+macOS hosts mirror the *install* wire but not the *naming* one.
+`modules/darwin/desktop-fonts.nix` declares the same monospace / sans /
+emoji selections and installs them via nix-darwin's `fonts.packages =
+config.stylix.fonts.packages`, which symlinks the faces into
+`/Library/Fonts` (the system-wide font directory). After activation the
+faces are selectable by name in any Mac app through Core Text / Font
+Book.
+
+The fontconfig wire is deliberately absent: macOS resolves fonts via
+Core Text, which reads `/Library/Fonts` directly, so
+`stylix.targets.fontconfig.enable` would write a `defaultFonts` map
+nothing on the platform consults. `sizes.terminal` is likewise omitted
+— that's a foot DPI accommodation, and on Darwin Ghostty owns its own
+sizing.
+
+Consequence: Darwin installs the faces but has no alias layer, and
+Ghostty bundles its own JetBrainsMono — so the practical effect is
+*availability + parity*, not an automatic re-render anywhere. The
+module is imported from `modules/darwin/foundation.nix` rather than a
+desktop bundle, because every Darwin host is GUI (no headless gate to
+respect). Per #209.
+
 ## Sharp edges
 
 - **DejaVu Sans fallback warning** (foot launching with "DejaVu Sans:
@@ -108,8 +132,11 @@ set ourselves; deliberately not done.
 
 - **No universal monospace.** Earlier iterations claimed monospace
   was a foundation-level concern (universal across all hosts); this
-  was a misread. Headless hosts don't render fonts. JetBrains Mono
-  Nerd Font configuration lives on desktop hosts only.
+  was a misread. Headless NixOS hosts don't render fonts. JetBrains
+  Mono Nerd Font configuration lives on *GUI* hosts only — every
+  desktop NixOS host (via the desktop-env bundle) and every Darwin
+  host (via foundation, since all Darwin hosts are GUI). Headless
+  NixOS hosts (mercury, nixos-vm) still get nothing.
 
 ## Cadence
 
@@ -132,7 +159,10 @@ model), so the cadence is lighter than for keybinds.
 ## See also
 
 - `modules/nixos/desktop-fonts.nix` — Stylix font config + install
-  wiring for desktop hosts.
+  wiring for desktop NixOS hosts.
+- `modules/darwin/desktop-fonts.nix` — Darwin parallel: same
+  selections, install-only (no fontconfig target), imported by
+  Darwin foundation.
 - `modules/nixos/stylix-palette.nix` — Stylix base config: the
   module enable + per-host base16 palette (no font selections;
   deliberately). Imported by foundation, so it reaches every host.
