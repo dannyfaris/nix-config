@@ -482,7 +482,8 @@ grep -c "on 'ssh-ng://builder@linux-builder'" /tmp/phase3.log
 A non-zero count is the positive-evidence check. Zero count means
 the build ran locally despite the linux-builder being available
 — investigate `trusted-users` in `/etc/nix/nix.conf` (should
-contain `@admin`) and `builders-use-substitutes = true`.
+contain `@admin`; set in `modules/darwin/nix-daemon-darwin.nix`)
+and `builders-use-substitutes = true`.
 
 The VM listens on `:31022` for SSH. IPv4 may return
 "connection refused" while IPv6 accepts; harmless. Verify:
