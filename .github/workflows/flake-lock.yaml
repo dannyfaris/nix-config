@@ -32,9 +32,9 @@ jobs:
   bump:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - uses: cachix/install-nix-action@v31
+      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -46,11 +46,19 @@ jobs:
       # minimum permissions needed (contents r/w, pull-requests r/w,
       # metadata r), and the merge is manual either way.
       #
+      # Per ADR-025's SHA-pin History entry, even `@main` is now repinned
+      # to a specific SHA — future upstream fixes don't auto-flow; the
+      # operator refreshes deliberately by checking the upstream commit
+      # range since the pinned SHA. The trailing comment captures the
+      # date of the pinned main SHA so staleness is readable at a
+      # glance. This is the one pin Dependabot couldn't manage even if
+      # we adopted it (no immutable tags upstream).
+      #
       # No `pr-body:` set: the action's default template interpolates
       # `{{ env.GIT_COMMIT_MESSAGE }}`, and `nix flake update
       # --commit-lock-file` already emits per-input commit range URLs in
       # that body, which is what ADR-025 §Rationale asks for.
-      - uses: DeterminateSystems/update-flake-lock@main
+      - uses: DeterminateSystems/update-flake-lock@b83e0671a67dfd774680fb1beaa1497ef7e58bfc # main (2026-06-01)
         with:
           token: ${{ secrets.GH_PAT_FLAKE_LOCK }}
           pr-title: "flake: weekly lockfile bump"
