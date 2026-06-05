@@ -44,14 +44,34 @@ _: {
     # Stylix palette. See GH #6.
     functions.fish_title = ''echo (hostname -s)": "(prompt_pwd)'';
 
+    # `za` — open the 3-pane agentic workspace (agent.kdl), session named
+    # for the current directory so the zjstatus session segment reads
+    # usefully (e.g. `nix-config`) rather than zellij's random
+    # adjective-noun. A function rather than an abbreviation because
+    # attach-or-create needs a conditional: re-running `za` where a
+    # same-named session already exists attaches to it (resurrecting it if
+    # it had exited, per session_serialization) instead of erroring on the
+    # duplicate name. See home/shared/multiplexer.nix and GH #5.
+    functions.za = {
+      description = "Zellij agent workspace, session named for the cwd";
+      body = ''
+        set -l name (basename $PWD)
+        # `contains` is an exact list-membership test — unlike `string
+        # match`, it won't treat a dir name with glob chars (* ? [ ]) as a
+        # pattern and false-match a different session.
+        if contains -- $name (zellij ls -ns 2>/dev/null)
+            zellij attach $name
+        else
+            zellij -s $name -l agent
+        end
+      '';
+    };
+
     # Sparse abbreviation set. Fish abbreviations expand inline so the
     # actual command is visible in history — preferred over aliases.
     shellAbbrs = {
       g = "git";
       nos = "nh os switch";
-      # Open the 3-pane agentic workspace (agent.kdl) in the current dir.
-      # See home/shared/multiplexer.nix and GH #5.
-      za = "zellij --layout agent";
     };
   };
 }
