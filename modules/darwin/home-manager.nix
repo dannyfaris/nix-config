@@ -42,7 +42,15 @@ in
     # `inputs` is forwarded so HM modules can import flake-provided HM
     # modules internally. Repo-local HM modules that don't need
     # flake-input access can ignore the arg.
-    extraSpecialArgs = { inherit hostContext inputs; };
+    #
+    # `zellijCacheDir` is the platform-specific dir where zellij reads/
+    # writes permissions.kdl; passed in so home/shared/multiplexer.nix can
+    # pre-grant the zjstatus plugin without a platform conditional in
+    # shared/ (which the shared-purity lint forbids). macOS: Caches bundle.
+    extraSpecialArgs = {
+      inherit hostContext inputs;
+      zellijCacheDir = "${operator.darwinHome}/Library/Caches/org.Zellij-Contributors.Zellij";
+    };
 
     users.${operator.name} = _: {
       imports = hostContext.extraHomeModules or [ ];
