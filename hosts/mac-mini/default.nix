@@ -77,8 +77,10 @@ _: {
   # string and separately tracked from `system.darwinRelease`). Pins
   # the nix-darwin release this host is compatible with — keeps
   # option-defaults stable across upgrades per nix-darwin's
-  # `version.nix` description. Never bumped silently. 7 is the current
-  # upstream `maxStateVersion`.
+  # `version.nix` description. Never bumped silently. 7 is the upstream
+  # `maxStateVersion` as of 2026-06-05 (verified against the pinned
+  # nix-darwin's `modules/system/version.nix` default). Re-verify
+  # against the same file in the pinned input before bumping.
   system.stateVersion = 7;
 
   # macOS owns user creation; nix-darwin only manages the attributes in
