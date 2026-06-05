@@ -122,7 +122,7 @@ home/
   shared/
     bundles/
       cli-tooling.nix
-      git-personal.nix
+      git-multi-identity.nix
       git-work.nix
     agent-clis.nix
     editor.nix

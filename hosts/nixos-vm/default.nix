@@ -45,7 +45,7 @@
     hostName = "nixos-vm";
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
-      ../../home/shared/bundles/git-personal.nix
+      ../../home/shared/bundles/git-multi-identity.nix
       ../../home/shared/stylix-targets.nix
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix

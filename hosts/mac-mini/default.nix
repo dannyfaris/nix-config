@@ -97,7 +97,7 @@ _: {
   # Per-host parametrisation consumed by home-manager modules.
   # extraHomeModules is the full HM imports list for this host —
   # capability bundles + standalone modules per ADR-027. Mirrors metis
-  # (personal dev box: cli-tooling + git-personal + full agent CLI set)
+  # (personal dev box: cli-tooling + git-multi-identity + full agent CLI set)
   # with NixOS-only modules swapped for Darwin equivalents:
   #   - desktop-env dropped (macOS owns the desktop; no Darwin parallel).
   #   - home/nixos/macchina-shell-init.nix → home/darwin/macchina-shell-init.nix
@@ -109,7 +109,7 @@ _: {
     hostName = "mac-mini";
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
-      ../../home/shared/bundles/git-personal.nix
+      ../../home/shared/bundles/git-multi-identity.nix
       ../../home/shared/stylix-targets.nix
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix

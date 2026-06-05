@@ -104,7 +104,7 @@ home/core/nixos/
   bundles/
     cli-tooling.nix           # shell + prompt + direnv + multiplexer
                               # + editor + cli-utils + nix-tooling
-    git-personal.nix          # git + git-identity-dual + gh
+    git-multi-identity.nix    # git + git-identity-dual + gh
     git-work.nix              # git + git-identity-work
   ssh.nix                     # standalone (single SSH outbound config)
   macchina.nix                # standalone (single login-info display)
