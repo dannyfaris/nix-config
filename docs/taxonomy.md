@@ -137,7 +137,7 @@ bundle every host imports.
 ```
 modules/nixos/bundles/remote-access.nix
 home/shared/bundles/cli-tooling.nix
-home/shared/bundles/git-personal.nix
+home/shared/bundles/git-multi-identity.nix
 ```
 
 **The naming rule (load-bearing):** **bundle names describe what is in

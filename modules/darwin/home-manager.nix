@@ -7,7 +7,7 @@
 # home-module composition is owned by each host:
 # `hostContext.extraHomeModules` is the full HM imports list for the
 # host, typically populated with bundle paths (cli-tooling,
-# git-personal) plus standalone modules (ssh, macchina pair,
+# git-multi-identity) plus standalone modules (ssh, macchina pair,
 # agent-clis, ...). See ADR-027.
 #
 # Parametrisation: `hostContext` arrives as a function argument, sourced

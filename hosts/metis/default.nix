@@ -76,7 +76,7 @@
     hostName = "metis";
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
-      ../../home/shared/bundles/git-personal.nix
+      ../../home/shared/bundles/git-multi-identity.nix
       ../../home/shared/stylix-targets.nix
       ../../home/nixos/bundles/desktop-env.nix
       ../../home/shared/ssh.nix

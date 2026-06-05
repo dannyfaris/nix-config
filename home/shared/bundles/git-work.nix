@@ -6,8 +6,8 @@
 # (work-only hosts must not be in a position to push to personal
 # repos via gh's credential helper).
 #
-# Imported by work-only hosts (mercury). Personal hosts import the
-# sibling git-personal.nix bundle instead.
+# Imported by work-only hosts (mercury). Multi-identity hosts import
+# the sibling git-multi-identity.nix bundle instead.
 {
   imports = [
     ../git.nix
