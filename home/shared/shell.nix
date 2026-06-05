@@ -58,13 +58,18 @@ _: {
         set -l name (basename $PWD)
         # Ask `attach` directly: it attaches to this repo's session
         # (resurrecting it if it had exited) and, when none exists, exits
-        # non-zero with its error on stderr — so the `or` creates it with
-        # the agent layout. Race-free, and crucially it doesn't depend on
-        # how `zellij ls` renders the session list: the previous
-        # `contains`-over-`zellij ls` check could disagree with what
-        # `attach` can actually reach and tried to attach to a session that
-        # wasn't there.
-        zellij attach $name 2>/dev/null; or zellij -s $name -l agent
+        # non-zero with its error on stderr — so the `or` creates it. This
+        # avoids depending on how `zellij ls` renders the session list,
+        # which the previous `contains`-over-`zellij ls` check got wrong (it
+        # could disagree with what `attach` can actually reach and tried to
+        # attach to a session that wasn't there).
+        #
+        # Create with `-n agent` (new-session-with-layout), not `-l agent`:
+        # `-l` *adds the layout as tabs to the current session* when run
+        # from inside one, whereas `-n` always starts a fresh session — so
+        # `za` from within an existing session still spawns a standalone
+        # `$name` workspace instead of grafting tabs onto the wrong one.
+        zellij attach $name 2>/dev/null; or zellij -n agent -s $name
       '';
     };
 
