@@ -9,3 +9,12 @@ result-*
 # The configuration lives in parts/checks.nix; this file is regenerated
 # automatically by the devShell's shellHook.
 .pre-commit-config.yaml
+
+# Claude Code ephemeral artifacts. The `.claude/` directory itself is
+# intentionally checked in (shared agent skills, slash commands,
+# settings) — but specific files inside it are per-session / per-machine
+# state that must not be committed. Listed by file pattern rather than
+# blanket-ignoring `.claude/` so that future shared infrastructure
+# under that directory tracks cleanly.
+.claude/scheduled_tasks.lock
+.claude/pr-body-*.md
