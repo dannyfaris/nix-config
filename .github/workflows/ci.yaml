@@ -87,9 +87,9 @@ jobs:
             runner: macos-15
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - uses: cachix/install-nix-action@v31
+      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
           # Explicit GH token for Nix's github.com fetches.
           # install-nix-action v31's docs say `GITHUB_TOKEN` is picked
@@ -142,7 +142,7 @@ jobs:
       # entries coexisting under the 10 GB per-repo limit; a 7-day
       # last-accessed purge sweeps dead prefix entries without ever purging
       # the run's own primary key.
-      - uses: nix-community/cache-nix-action@v7
+      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-

@@ -200,3 +200,15 @@ The gap closed across five PRs. **PR #218** (closes #190) added `flake.checks.aa
 - `flake-check (aarch64-darwin)` ← added 2026-06-04 via ruleset 16950997
 
 The §131 two-check phrasing is historical; the live required set is verifiable via `gh api repos/dannyfaris/nix-config/rulesets/16950997 --jq '.rules[] | select(.type=="required_status_checks").parameters.required_status_checks | map(.context)'`. The new third check adds ~5 min to every PR's auto-merge wait — bounded by the runner-provisioning floor rather than any source-rebuild work.
+
+### SHA-pinning adopted (trigger from §79 fired) (2026-06-05)
+
+§79's revisit trigger fires now: `flake-lock.yaml` runs `DeterminateSystems/update-flake-lock@main` (a moving branch, not even a tag) on a workflow with `contents: write + pull-requests: write` and the fine-grained `GH_PAT_FLAKE_LOCK` PAT. That's the "automation that touches real secrets" case §79 names.
+
+Every `uses: <action>@<ref>` line in `.github/workflows/` is repinned to a full 40-char commit SHA, with the original tag retained as a trailing `# <tag>` comment. Uniform rule applied: first-party `actions/*` held to the same bar as third-party, because the cost is the same and the reasoning is uniform.
+
+**Maintenance is manual.** SHAs refresh when the operator wants a feature or fix from a newer release of an action, at roughly the same cadence as flake-input bumps. Dependabot's `github-actions` ecosystem is deliberately NOT enabled — adding it would itself need SHA-pinning discipline and is more bot surface than this repo's update cadence warrants. **Trigger to revisit Dependabot:** a security fix in an upstream action is missed for >2 weeks because the manual refresh didn't trigger. Note that `DeterminateSystems/update-flake-lock` is the one pin Dependabot couldn't manage even if we adopted it — upstream publishes no immutable tags, so the trailing comment is `# main (<date>)` not a tag, and refreshes are operator-driven.
+
+**Compromise-recovery posture is unchanged from any other supply-chain disclosure:** if a pinned SHA is later disclosed as the moment a compromised action was published, the response is to repin to a clean SHA and audit any artefacts produced under the bad SHA. Naming this because SHA pinning makes the surface harder to reason about by ref — `@v5` is one thing to investigate; a SHA is opaque without `git log`.
+
+The §129 line ("Action version pinning: all actions pinned to `@vN` major-version tags. SHA pinning rejected as ceremony beyond the current threat model.") and the §79 non-goal bullet on SHA-pinned action versions are now historical.

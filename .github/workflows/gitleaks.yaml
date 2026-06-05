@@ -15,7 +15,7 @@ jobs:
   scan:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
 
@@ -27,7 +27,10 @@ jobs:
       # documented temporary mitigation is to add
       # `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true` to the env block
       # below — valid until Node 20 is removed entirely on 2026-09-16.
-      # Bump to the new tag when upstream merges the migration.
-      - uses: gitleaks/gitleaks-action@v2
+      # Repin to the migration SHA when upstream merges it (per ADR-025's
+      # SHA-pin History entry — tag bumps no longer auto-flow under SHA
+      # pinning, so the upstream tag move is the operator's signal to
+      # repin here intentionally).
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
