@@ -29,8 +29,8 @@ let
   # as a third surface of the same language: host green/purple by SSH
   # state, session blue (the prompt's `$directory` slot), git "on" muted +
   # branch cyan, status counts !conflict red / +staged green / ~modified
-  # yellow / ?untracked orange, clock foreground, swap-layout indicator
-  # muted. (base0B green / base0E purple / base0D blue / base0C cyan /
+  # yellow / ?untracked orange, clock foreground. (base0B green / base0E
+  # purple / base0D blue / base0C cyan /
   # base0A yellow / base09 orange / base08 red / base05 fg / base03 muted —
   # same slots as prompt.nix / claude-statusline.sh.)
   greenHex = "#${c."base0B-hex"}";
@@ -147,9 +147,7 @@ let
     '';
   };
 
-  # Floating cheatsheet for the agent layout's keys — the custom
-  # Alt+g/d/e/k binds plus zellij's default Alt+[ / Alt+] swap-layout
-  # toggles, which this layout gives meaning to (the agent/yazi monocles).
+  # Floating cheatsheet for the agent layout's custom Alt+g/d/e/k binds.
   # Invoked from Alt+k via the `Run … floating true` pattern (same shape
   # as the Alt+g/d binds below). Mod+k as the help binding mirrors a
   # convention already familiar from other tools, so no on-screen
@@ -162,7 +160,6 @@ let
         Agent layout — keys
 
           Alt+← ↑ ↓ →     navigate panes
-          Alt+[ or Alt+]  cycle layout: base · agent · yazi monocle
           Alt+g           lazygit (floating)
           Alt+d           lazydocker (floating)
           Alt+e           capture scrollback to $EDITOR
@@ -200,6 +197,7 @@ in
     # to config.kdl; these binds are additive to zellij's defaults.
     #   Alt+g / Alt+d — floating lazygit / lazydocker, scoped to the
     #     focused pane's cwd; close_on_exit avoids an `(exited)` corpse.
+    #     Sized 85% centred (x/y 7%) — the default float is too cramped.
     #   Alt+e — drop the current pane's scrollback straight into $EDITOR
     #     (helix, per ADR-005) for capture/annotation.
     #   Alt+k — floating cheatsheet for these custom binds (zellij-agent-help
@@ -215,8 +213,8 @@ in
           // rename mode is itself only reachable from those two modes
           // (verified via `zellij setup --dump-config`). Side effect: the
           // tmux-compat keytable goes with it, which this zellij-native
-          // setup doesn't use. The monocle swap-layout toggles (Alt+[ /
-          // Alt+]) live in `shared_except "locked"`, so they're unaffected.
+          // setup doesn't use. The custom Alt+g/d/e/k binds below live in
+          // `shared_except "locked"`, unaffected.
           unbind "Ctrl t" "Ctrl b"
 
           shared_except "locked" {
@@ -224,12 +222,20 @@ in
                   Run "lazygit" {
                       floating true
                       close_on_exit true
+                      width "85%"
+                      height "85%"
+                      x "7%"
+                      y "7%"
                   }
               }
               bind "Alt d" {
                   Run "lazydocker" {
                       floating true
                       close_on_exit true
+                      width "85%"
+                      height "85%"
+                      x "7%"
+                      y "7%"
                   }
               }
               bind "Alt e" { EditScrollback; }
@@ -250,11 +256,10 @@ in
   # of the 50% right column lands yazi at 30% and terminal at 20% of the
   # screen (the split #5 asked for). No `cwd` anywhere — every pane
   # inherits the directory `zellij --layout agent` was launched from, so
-  # `za` opens the workspace *here*. The two `swap_tiled_layout`s give
-  # Alt+[ / Alt+] monocle toggles (full-screen agent or full-screen yazi);
-  # per zellij's swap-layouts grammar, each holds a `tab` wrapping the
-  # bare pane — a bare `pane` directly under `swap_tiled_layout` fails to
-  # parse ("Unknown layout node: 'pane'").
+  # `za` opens the workspace *here*. No swap layouts — full-screen monocles
+  # weren't useful, and swap layouts can't substitute a pane's command
+  # (they only rearrange existing panes), so tool-switching stays on the
+  # floating Alt+g/Alt+d binds above.
   #
   # `default_tab_template` restores chrome that a custom top-level-tab
   # layout otherwise skips entirely (the bars live in the default
@@ -266,8 +271,7 @@ in
   # state — none of which the stock bar exposes. `format_left` is the host
   # widget + `{session}` + the git widget; no directory segment, because
   # the session name is the basename of the launch dir (`za`, see
-  # shell.nix) and would just duplicate it. `format_right` is the
-  # swap-layout (monocle) indicator the stock bar used to show, plus a
+  # shell.nix) and would just duplicate it. `format_right` is just a
   # 12-hour NZ clock. No `{tabs}` widget — tabs are deliberately out (see
   # the `unbind "Ctrl t"` above).
   #
@@ -289,7 +293,7 @@ in
             pane size=1 borderless=true {
                 plugin location="file:${zjstatus}" {
                     format_left  " {command_host} #[fg=${fgHex}]${chevGlyph} #[fg=${blueHex}]{session}{command_git}"
-                    format_right "#[fg=${mutedHex}]{swap_layout}  {datetime}"
+                    format_right "{datetime}"
                     format_space ""
 
                     command_host_command    "${zjstatusHostMarker}/bin/zjstatus-host-marker"
@@ -301,9 +305,6 @@ in
                     command_git_format     "{stdout}"
                     command_git_rendermode "dynamic"
                     command_git_interval   "2"
-
-                    swap_layout_format        "Alt <[]> {name} "
-                    swap_layout_hide_if_empty "false"
 
                     datetime          "#[fg=${fgHex}]{format}"
                     datetime_format   "%I:%M%P"
@@ -324,20 +325,6 @@ in
                         command "yazi"
                     }
                     pane size="40%" name="terminal"
-                }
-            }
-        }
-
-        swap_tiled_layout name="agent-monocle" {
-            tab {
-                pane focus=true name="agent"
-            }
-        }
-
-        swap_tiled_layout name="yazi-monocle" {
-            tab {
-                pane name="yazi" {
-                    command "yazi"
                 }
             }
         }
