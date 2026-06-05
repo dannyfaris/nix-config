@@ -13,9 +13,12 @@
     email = "daniel.faris@gotaxi.co.nz";
   };
 
-  # Only ~/work/ is ensured. Symmetric idempotent mkdir as in
-  # git-identity-dual.nix; existing contents untouched.
+  # Only ~/grey-st/ is ensured (named for the employer, Grey St). On this
+  # work-only host the dir is convention, not a routing trigger — the work
+  # identity applies everywhere here — so the rename is cosmetic, kept in
+  # step with git-identity-dual.nix for a uniform convention across hosts.
+  # Symmetric idempotent mkdir; existing contents untouched.
   home.activation.ensureProjectDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "$HOME/work"
+    run mkdir -p "$HOME/grey-st"
   '';
 }

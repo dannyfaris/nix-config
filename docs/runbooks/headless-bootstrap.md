@@ -293,7 +293,7 @@ Run from the new host's `dbf` shell unless noted otherwise.
 **Mercury (work-only):**
 - `git config user.email` → `daniel.faris@gotaxi.co.nz` (single work
   identity per `git-identity-work.nix`).
-- `~/work/` exists; `~/personal/` does not (ADR-020).
+- `~/grey-st/` exists; `~/personal/` does not (ADR-020).
 - `which gh` → nothing (Mercury doesn't import `gh.nix`).
 - `which codex` and `which gemini` → nothing (no `agent-clis-extras`).
 - `glab auth login` interactively works; token persists to
@@ -320,7 +320,7 @@ Run from the new host's `dbf` shell unless noted otherwise.
 **Metis (personal dev box):**
 - Dual git identity:
   - `git config user.email` returns the personal address by default.
-  - Inside `~/work/<repo>`, `git config user.email` returns the work
+  - Inside `~/grey-st/<repo>`, `git config user.email` returns the work
     address (via `git-identity-dual.nix`'s `gitdir` rules).
 - All four agent CLIs resolve:
   `which claude cursor-agent codex gemini`.

@@ -3,14 +3,34 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Amendment (2026-06-05, #212): work directory `~/work/` → `~/grey-st/`.**
+> The work boundary directory — and the `gitdir:` trigger that keys the
+> work identity off it — is renamed from the generic `~/work/` to
+> `~/grey-st/`, so the path reflects the actual work context (the
+> employer, Grey St) rather than a generic label. This is a directory
+> **relabel only**: the work identity itself (`Daniel Faris` /
+> `daniel.faris@gotaxi.co.nz`) is unchanged, as is `~/personal/`. The
+> rename applies functionally on dual-identity hosts (the gitdir trigger)
+> and cosmetically on work-only mercury (convention-only dir). The body
+> below has been swept to `~/grey-st/`; the original convention was
+> `~/work/`. **Operational note:** activation creates the new dir but
+> does not migrate repos — a work repo left under a legacy `~/work/`
+> silently falls back to the personal identity, so each dual-identity
+> host must `mv ~/work ~/grey-st` (or move repos individually) and verify
+> `git config user.email` inside `~/grey-st/<repo>` returns the work
+> address. Same employer-label correction: earlier text called the
+> employer "GotaXi" — the employer is **Grey St** (which operates the Tax
+> Traders and Taxi brands); the `gotaxi.co.nz` email domain is unchanged.
+
 ## Context
 
 The user works on two distinct git ecosystems from this dev box:
 
 - **Personal**, on GitHub, as `dannyfaris <daniel@faris.co.nz>`.
 - **Work**, on GitLab.com, as `Daniel Faris <daniel.faris@gotaxi.co.nz>`
-  (employer: GotaXi). Approved by employer policy to operate from this
-  personal box.
+  (employer: Grey St, which operates the Tax Traders and Taxi brands;
+  the email domain is a brand domain). Approved by employer policy to
+  operate from this personal box.
 
 Note the asymmetry in the **name** convention: personal commits use the
 user's GitHub handle (`dannyfaris`) for visual consistency with their
@@ -34,8 +54,8 @@ The setup needs to:
 
 - Personal is the default identity, applied everywhere:
   `name = "dannyfaris"`, `email = "daniel@faris.co.nz"`.
-- Work identity is applied automatically inside `~/work/` via a
-  `gitdir:~/work/` conditional include, overriding **both** name and
+- Work identity is applied automatically inside `~/grey-st/` via a
+  `gitdir:~/grey-st/` conditional include, overriding **both** name and
   email: `name = "Daniel Faris"`, `email = "daniel.faris@gotaxi.co.nz"`.
 
 **Auth is HTTPS + token-based**, with `gh` and `glab` registered as git
@@ -53,7 +73,7 @@ the broader SSH stance.)
 ### Dual identity via gitdir
 
 Git's `includeIf` mechanism is the standard idiom for this. Anything
-cloned/created under `~/work/` automatically picks up the work email; no
+cloned/created under `~/grey-st/` automatically picks up the work email; no
 manual switching, no risk of accidentally committing personal email to a
 work repo.
 
@@ -143,7 +163,7 @@ interactive flow (same compromise as gh — not declarative, but stable).
   values, including the gitdir conditional include. Verify the legacy
   file does not exist before declaring the identity setup correct. On
   the current host this manifested as `user.name` resolving to a stale
-  legacy value and the work-email override not applying inside `~/work/`.
+  legacy value and the work-email override not applying inside `~/grey-st/`.
 
 ## Implementation
 
@@ -170,9 +190,9 @@ on the dual-identity UTM VM, `git-identity-work.nix` on Mercury):
 
     # Personal default identity matches the user's GitHub handle
     # (dannyfaris) — GitHub attribution is email-based, not name-based,
-    # so the name is purely cosmetic on commit logs. Under ~/work/ the
+    # so the name is purely cosmetic on commit logs. Under ~/grey-st/ the
     # gitdir-include below overrides BOTH name and email to the work
-    # identity ("Daniel Faris" / GotaXi email) so commits to the work
+    # identity ("Daniel Faris" / Grey St email) so commits to the work
     # GitLab show the user's real name (employer convention).
     settings = {
       user = {
@@ -194,7 +214,7 @@ on the dual-identity UTM VM, `git-identity-work.nix` on Mercury):
     };
 
     includes = [{
-      condition = "gitdir:~/work/";
+      condition = "gitdir:~/grey-st/";
       contents.user = {
         name = "Daniel Faris";
         email = "daniel.faris@gotaxi.co.nz";
@@ -222,7 +242,7 @@ above avoids those.
 
 Notes:
 
-- Directory convention: `~/work/` is the work boundary. Anything cloned
+- Directory convention: `~/grey-st/` is the work boundary. Anything cloned
   under it gets the work identity. Personal repos can live anywhere else.
 - Commit signing is **not configured** for either identity. Neither GitHub
   personal nor GitLab work requires it. If signing becomes a requirement,
@@ -234,12 +254,12 @@ Notes:
   Rationale § "What about glab?"). Authentication still runs interactively
   via `glab auth login` (token-paste flow); the token persists in
   `~/.config/glab-cli/hosts.yml`.
-- **Project directory convention** — `~/work/` for employer/GitLab work,
+- **Project directory convention** — `~/grey-st/` for employer/GitLab work,
   `~/personal/` as the conventional sibling for personal repos. Both
   directories are ensured declaratively via
   `home.activation.ensureProjectDirs` (idempotent `mkdir -p` during
   activation; existing contents untouched). The gitdir-include condition
-  is `gitdir:~/work/` only — `~/personal/` doesn't need a gitdir
+  is `gitdir:~/grey-st/` only — `~/personal/` doesn't need a gitdir
   condition because it inherits the personal default identity.
 - The `gh repo clone` test in Slice 6 verification is the canary: it must
   produce an `https://...` URL, not `git@github.com:...`. If it does the

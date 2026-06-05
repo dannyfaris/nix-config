@@ -18,8 +18,8 @@ Work-vs-personal divergences in shared modules are expressed by splitting the mo
 Concretely for the current scope:
 
 - `home/core/shared/git.nix` is the base — `programs.git.enable`, `init.defaultBranch`, `pull.rebase`, the gitlab.com credential helper, glab as a package. Imported by every host via the standard imports list.
-- `home/core/shared/git-identity-dual.nix` is the personal-default + work-include identity, plus the `~/work` + `~/personal` activation script. The VM imports this via its `extraHomeModules`.
-- `home/core/shared/git-identity-work.nix` is the single-work identity plus the `~/work`-only activation script. Mercury imports this via its `extraHomeModules`.
+- `home/core/shared/git-identity-dual.nix` is the personal-default + work-include identity, plus the `~/grey-st` + `~/personal` activation script (the work directory was `~/work` until #212). The VM imports this via its `extraHomeModules`.
+- `home/core/shared/git-identity-work.nix` is the single-work identity plus the `~/grey-st`-only activation script. Mercury imports this via its `extraHomeModules`.
 - `home/core/shared/gh.nix` is `programs.gh` and its HTTPS credential helper. The VM imports this; Mercury does not.
 
 ## Rationale

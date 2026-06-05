@@ -3,9 +3,10 @@
 The operator works two distinct identities from this dev box:
 
 - **Personal** — `dannyfaris <daniel@faris.co.nz>`, GitHub, this nix-config,
-  side projects, anything outside `~/work/`.
-- **Work** — `Daniel Faris <daniel.faris@gotaxi.co.nz>`, Tax Traders,
-  GitLab, anything inside `~/work/`.
+  side projects, anything outside `~/grey-st/`.
+- **Work** — `Daniel Faris <daniel.faris@gotaxi.co.nz>`, Grey St (which
+  operates the Tax Traders and Taxi brands), GitLab, anything inside
+  `~/grey-st/`.
 
 Multiple tools need to know which identity is active so that commits,
 sessions, and credentials route to the right place. This doc captures
@@ -13,21 +14,21 @@ the convention they all follow.
 
 ## Convention
 
-**Rule.** Personal is the default. Work is conditional under `~/work/`.
+**Rule.** Personal is the default. Work is conditional under `~/grey-st/`.
 Every tool that participates in the split applies the same shape: the
 personal identity is used everywhere unless the working directory is
-inside `~/work/`, at which point the work identity takes over. The
-load-bearing trigger is the literal path prefix `~/work/`. The
+inside `~/grey-st/`, at which point the work identity takes over. The
+load-bearing trigger is the literal path prefix `~/grey-st/`. The
 companion `~/personal/` directory exists by convention — both are
 pre-created by `home/shared/git-identity-dual.nix`'s activation block —
 but `~/personal/` is not a routing condition for any tool; it is a
 naming convention for where personal repos *prefer* to live.
 
 **Why.** The personal-default direction means a repo or session that
-starts outside `~/work/` cannot silently inherit the work identity.
+starts outside `~/grey-st/` cannot silently inherit the work identity.
 Stray nix experiments, throwaway scripts, cloned forks, and this repo
 itself all stay personal without further thought. The work identity is
-opt-in by location: putting something under `~/work/` is the explicit
+opt-in by location: putting something under `~/grey-st/` is the explicit
 signal "this belongs to the employer context" — the same signal that
 already governs which git remote it pushes to and which calendar /
 chat context it relates to. The inverse direction was tried — see the
@@ -40,7 +41,7 @@ the box is operator-personal-by-default in practice.
 own idiom but observes the same direction and trigger. New tools that
 grow per-identity state (credentials, transcripts, caches, profiles)
 should adopt the same pattern: personal default, work conditional
-under `~/work/`. Before wiring, verify end-to-end that the tool's
+under `~/grey-st/`. Before wiring, verify end-to-end that the tool's
 per-tree mechanism actually controls *identity* state — not just
 settings, caches, or session histories.
 
@@ -48,7 +49,7 @@ settings, caches, or session histories.
 
 For tools whose identity selection runs off environment variables or
 config-path lookups, the standard activation primitive is direnv (per
-[ADR-003](./decisions/ADR-003-direnv.md)): an `.envrc` at `~/work/`
+[ADR-003](./decisions/ADR-003-direnv.md)): an `.envrc` at `~/grey-st/`
 sets per-identity variables and Nix-managed direnv activates them on
 `cd`. Tools that have a native conditional mechanism — git's
 `includeIf gitdir:` is the canonical case — should use it directly
@@ -58,7 +59,7 @@ rather than route through direnv.
 
 | Tool | Mechanism | Reference |
 |---|---|---|
-| **git** | `includeIf gitdir:~/work/` in user-level config | [ADR-009](./decisions/ADR-009-git.md), `home/shared/git-identity-dual.nix` |
+| **git** | `includeIf gitdir:~/grey-st/` in user-level config | [ADR-009](./decisions/ADR-009-git.md), `home/shared/git-identity-dual.nix` |
 
 ## Tools that opted out
 
@@ -93,7 +94,7 @@ The split is best-effort, not enforced. Known modes:
 
 Mitigations are tool-specific and tracked under each tool's own
 issues rather than centrally. The general posture is "rely on
-explicit `~/work/` placement to be enough"; instrumentation gets
+explicit `~/grey-st/` placement to be enough"; instrumentation gets
 added per tool only if leaks actually occur.
 
 ## See also
