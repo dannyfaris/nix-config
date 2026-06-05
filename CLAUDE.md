@@ -67,7 +67,7 @@ whitelist > blanket.
 | Stance | Rationale |
 |--------|-----------|
 | `users.mutableUsers = false` | This file is the sole source of truth for user state. `passwd` changes do not persist. |
-| SSH: key-only, no passwords, no root, wheel-only | Hardened from boot one on every host. NixOS sshd also pins `AllowGroups [ "wheel" ]` so any future non-wheel account is locked out by default (whitelist > blanket). Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis; Apple keyboard at the local login for mac-mini. |
+| SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (mac-mini) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis; Apple keyboard at the local login for mac-mini. |
 | `allowUnfreePredicate` whitelist | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`. |
 | `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
 | `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
