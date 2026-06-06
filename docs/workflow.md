@@ -311,6 +311,17 @@ manual-merge step from the loop while still gating on CI.
 - New docs, amended sections, and issue/PR bodies are authored soft-wrapped from the start — even when added to a file that is otherwise still hard-wrapped. Intra-file mixing is an accepted transition artifact, not a contradiction (it renders identically either way).
 - The transition is opportunistic, not big-bang: a legacy hard-wrapped doc is reflowed in full the next time it is substantively edited. There is no tree-wide reflow PR — that churn is high-cost, low-value, and risks mangling fenced code and tables.
 
+## Rationale lives in one place
+
+**Rule.** Decide *where* a rationale lives before writing it, keyed on length: a one- or two-line *why* stays inline beside the setting; anything longer is authored into a single canonical home — the relevant ADR or `docs/<area>/` doc — and the code points to it. The length-tiering itself is defined once in [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) (Rule 2); this section is the process habit that applies it — write the doc, then point, rather than letting the same *why* accrete in a comment *and* a doc *and* an ADR.
+
+**Why.** Duplicated rationale drifts exactly like duplicated state, and the drift is silent — it surfaces only when the two copies disagree. Tiering by length keeps each *why* findable (long-form reasoning in the doc designated for it) and the modules readable (configuration, not essays). The full reasoning, and the companion rule that enforcement machinery earns its weight by what it guards, live in [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md).
+
+**How it shows up.**
+- A module carries a one-line `# see docs/<area>/<tool>.md` pointer where a per-tool doc owns the detail, rather than an inline essay duplicating it.
+- Decisions with alternatives and consequences are ADRs; the code points to the ADR number, not a paragraph re-deriving it.
+- Drift between a doc and the code it explains is a cadence bug, fixed by reconciling to the single source — the same treatment selection-doc drift gets above.
+
 ## See also
 
 - [docs/philosophy.md](./philosophy.md) — the technical

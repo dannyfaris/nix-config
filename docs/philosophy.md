@@ -93,6 +93,7 @@ ones where two records disagree and you don't know which is correct.
   scattered as duplicated literals across four files until #49.
 - After Tier 3, `docs/` is canonical for design rationale. AI memory files
   point here rather than duplicating content.
+- Rationale is single-sourced like state: a *why* longer than a few lines lives in one canonical home (an ADR or `docs/<area>/`) with one-line pointers from code, never restated inline. See [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) and [workflow.md](./workflow.md) §"Rationale lives in one place".
 
 ## No premature abstraction; YAGNI
 
@@ -114,6 +115,7 @@ them.
   hypothetical future shape.
 - New tools are added when they earn their place, not pre-emptively because
   "we might want them".
+- Enforcement machinery is sized to the severity it guards — the lightest mechanism that holds the guarantee (convention → `grep`-lint → bespoke parser), escalating only on repeated evidence. Building the gate before the evidence is itself a speculative abstraction. See [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md).
 
 ## Most-communicative term naming
 
