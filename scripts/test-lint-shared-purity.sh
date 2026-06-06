@@ -1,158 +1,68 @@
 #!/usr/bin/env bash
-# Exercises scripts/lint-shared-purity.sh against synthetic positive and
-# negative fixtures so the platform-purity lint's detection logic is
-# verifiable in isolation — locking in the *negative* paths (one per
-# flagged pattern family) against regression. The lint's *positive* path
-# is already exercised continuously by the shared-purity pre-commit hook.
+# Smoke-test for scripts/lint-shared-purity.sh: each `fail` snippet must be
+# flagged (one representative per pattern family in the linter's PATTERNS
+# alternation), each `pass` snippet must not be (locking in that clean code,
+# and prose/strings that merely mention a platform, don't false-positive —
+# the real risk with grep-based linting). Pure grep, no Nix.
 #
-# Wired into the pre-commit framework via parts/checks.nix as the
-# `test-shared-purity` hook, gated on edits to lint-shared-purity.sh, so
-# it runs in `nix flake check`/CI and at commit-time whenever the linter
-# changes (#193). Also runnable standalone: `bash scripts/test-lint-shared-purity.sh`.
+# Wired via parts/checks.nix as the `test-shared-purity` hook, gated on edits
+# to lint-shared-purity.sh (#193); runs in `nix flake check`/CI and at
+# commit-time when the linter changes. Also runnable standalone:
+#   bash scripts/test-lint-shared-purity.sh
 #
-# Pure grep — no Nix needed (unlike the bundle linter, which
-# canonicalises via nix-instantiate). The bundle linter had a parallel
-# self-test until 2026-06-06, retired with its tokeniser when
-# bundle-purity was narrowed to the shape check (ADR-032).
-#
-# Fixtures live in a per-run TMPDIR; no committed test data.
+# Compact data-driven form — shrunk 2026-06-06 from per-fixture heredocs to a
+# single loop, keeping the same coverage in a third of the lines, per ADR-032
+# (proportionate enforcement: lightest mechanism that holds the guarantee).
+# The bundle linter's parallel self-test was retired entirely in the same
+# spirit when bundle-purity narrowed to the shape check (ADR-032 item 3).
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# Locate the linter under test. Standalone runs find it as a sibling;
-# the pre-commit hook sets LINT_SCRIPT to its Nix-store path, because the
-# store interns each file separately — the sibling lookup would miss it.
+# The pre-commit hook passes the linter's Nix-store path via LINT_SCRIPT (the
+# store interns each file separately, so the sibling default can't find it);
+# standalone runs fall back to the sibling.
 LINT="${LINT_SCRIPT:-$SCRIPT_DIR/lint-shared-purity.sh}"
-
-# Readable, not executable: the test always invokes via `bash "$LINT"`,
-# and the store path the hook passes need not carry the executable bit.
-if [[ ! -r $LINT ]]; then
+[[ -r $LINT ]] || {
   echo "ERROR: $LINT not found or not readable" >&2
   exit 2
-fi
-
-fixtures=$(mktemp -d)
-trap 'rm -rf "$fixtures"' EXIT
-
-# Positive case: platform-agnostic module — no flagged pattern.
-cat >"$fixtures/clean.nix" <<'EOF'
-{ pkgs, ... }:
-{
-  home.packages = [ pkgs.ripgrep ];
-  programs.git.enable = true;
 }
-EOF
 
-# Positive case: the word "Darwin" in a comment/string is not a pattern.
-# Locks in that prose mentioning a platform doesn't false-positive — only
-# the conditional constructs do.
-cat >"$fixtures/prose-mentions-platform.nix" <<'EOF'
-{ ... }:
-{
-  # Works identically on Darwin and Linux; no conditional needed.
-  programs.foo.description = "a linux-friendly tool";
-}
-EOF
-
-# Negative case: stdenv.isDarwin.
-cat >"$fixtures/stdenv-isdarwin.nix" <<'EOF'
-{ stdenv, ... }:
-{
-  home.packages = stdenv.lib.optionals stdenv.isDarwin [ ];
-}
-EOF
-
-# Negative case: stdenv.isLinux.
-cat >"$fixtures/stdenv-islinux.nix" <<'EOF'
-{ stdenv, ... }:
-{
-  services.foo.enable = stdenv.isLinux;
-}
-EOF
-
-# Negative case: pkgs.stdenv.isDarwin (qualified prefix).
-cat >"$fixtures/pkgs-stdenv-isdarwin.nix" <<'EOF'
-{ pkgs, ... }:
-{
-  home.packages = pkgs.lib.optionals pkgs.stdenv.isDarwin [ ];
-}
-EOF
-
-# Negative case: stdenv.hostPlatform.isDarwin.
-cat >"$fixtures/hostplatform-isdarwin.nix" <<'EOF'
-{ stdenv, ... }:
-{
-  programs.foo.enable = stdenv.hostPlatform.isDarwin;
-}
-EOF
-
-# Negative case: pkgs.hostPlatform.isLinux.
-cat >"$fixtures/pkgs-hostplatform-islinux.nix" <<'EOF'
-{ pkgs, ... }:
-{
-  programs.foo.enable = pkgs.hostPlatform.isLinux;
-}
-EOF
-
-# Negative case: system == "<arch>-darwin" string comparison, qualified
-# (exercises the optional `(pkgs.stdenv.)?` prefix present).
-cat >"$fixtures/system-eq-darwin.nix" <<'EOF'
-{ pkgs, ... }:
-{
-  programs.foo.enable = pkgs.stdenv.system == "aarch64-darwin";
-}
-EOF
-
-# Negative case: bare `system == "<arch>-linux"` (the same prefix absent),
-# locking in that the linter's `(pkgs.stdenv.)?` quantifier stays optional.
-cat >"$fixtures/system-eq-linux-bare.nix" <<'EOF'
-{ system, ... }:
-{
-  programs.foo.enable = system == "x86_64-linux";
-}
-EOF
-
-# Negative case: lib.platforms.linux.
-cat >"$fixtures/lib-platforms-linux.nix" <<'EOF'
-{ lib, ... }:
-{
-  meta.platforms = lib.platforms.linux;
-}
-EOF
-
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
 failures=0
 
-assert_pass() {
-  local fixture=$1
-  if bash "$LINT" "$fixture" >/dev/null 2>&1; then
-    echo "OK   pass:  $(basename "$fixture")"
+# check <pass|fail> <snippet> — write the snippet as a module line and assert
+# the linter's verdict. lint-shared-purity.sh is line-based grep, so a
+# one-line snippet exercises each pattern exactly.
+check() {
+  local expect=$1 snippet=$2 f="$tmp/case.nix" got
+  printf '{ ... }: {\n  x = %s;\n}\n' "$snippet" >"$f"
+  if bash "$LINT" "$f" >/dev/null 2>&1; then got=pass; else got=fail; fi
+  if [[ $got == "$expect" ]]; then
+    echo "OK   $expect: $snippet"
   else
-    echo "FAIL pass:  $(basename "$fixture") — expected to pass but lint rejected it" >&2
+    echo "FAIL want=$expect got=$got: $snippet" >&2
     failures=$((failures + 1))
   fi
 }
 
-assert_fail() {
-  local fixture=$1
-  if bash "$LINT" "$fixture" >/dev/null 2>&1; then
-    echo "FAIL fail:  $(basename "$fixture") — expected lint to reject but it passed" >&2
-    failures=$((failures + 1))
-  else
-    echo "OK   fail:  $(basename "$fixture")"
-  fi
-}
-
-assert_pass "$fixtures/clean.nix"
-assert_pass "$fixtures/prose-mentions-platform.nix"
-assert_fail "$fixtures/stdenv-isdarwin.nix"
-assert_fail "$fixtures/stdenv-islinux.nix"
-assert_fail "$fixtures/pkgs-stdenv-isdarwin.nix"
-assert_fail "$fixtures/hostplatform-isdarwin.nix"
-assert_fail "$fixtures/pkgs-hostplatform-islinux.nix"
-assert_fail "$fixtures/system-eq-darwin.nix"
-assert_fail "$fixtures/system-eq-linux-bare.nix"
-assert_fail "$fixtures/lib-platforms-linux.nix"
+# Positives — must NOT flag.
+check pass 'pkgs.ripgrep'
+check pass '"runs on Darwin and Linux"  # a linux-friendly tool'
+# Negatives — one representative per PATTERNS family; both sides of the
+# is(Darwin|Linux) alternation and the optional (pkgs.)? / (pkgs.stdenv.)?
+# prefixes, so a one-sided or prefix-dropping regex edit is caught.
+check fail 'stdenv.isDarwin'
+check fail 'stdenv.isLinux'
+check fail 'pkgs.stdenv.isDarwin'
+check fail 'stdenv.hostPlatform.isDarwin'
+check fail 'pkgs.stdenv.hostPlatform.isLinux'
+check fail 'pkgs.hostPlatform.isLinux'
+check fail 'pkgs.stdenv.system == "aarch64-darwin"'
+check fail 'system == "x86_64-linux"'
+check fail 'lib.platforms.linux'
+check fail 'lib.platforms.darwin'
 
 echo
 if ((failures > 0)); then
