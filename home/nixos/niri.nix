@@ -84,6 +84,14 @@ _: {
       "Mod+Return".action.spawn = "foot";
       "Mod+Space".action.spawn = "fuzzel";
 
+      # Hyper — personal system commands. keyd realizes Caps Lock → Hyper
+      # (Super+Ctrl+Alt+Shift) at the evdev layer; see modules/nixos/keyd.nix
+      # and docs/desktop/keyd.md. Binds are written with all four modifiers.
+      # First Hyper bind: Hyper+Return → foot, mirroring the mac's
+      # Hyper+Return → Ghostty (docs/desktop/keybinds.md). Mod+Return is
+      # retained for now.
+      "Mod+Ctrl+Alt+Shift+Return".action.spawn = "foot";
+
       # Session — quit (niri shows a confirmation dialog by default)
       "Mod+Shift+E".action.quit = { };
 
