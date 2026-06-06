@@ -197,41 +197,48 @@ jobs:
           # key automatically — no manual bump, no version suffix.
           purge-primary-key: always
 
-      # Retry `nix flake check` on TRANSIENT fetch failures only. Some
-      # inputs / cargoDeps resolve via eval-time git+http fetches to
+      # Bounded retry for `nix flake check`. Some eval-time fetches reach
       # third-party forges — e.g. niri's pipewire-rs from
-      # gitlab.freedesktop.org — and a `builtins.fetchGit` blip there is
-      # NOT covered by Nix's own `download-attempts` (that retries the
-      # HTTP downloader / binary cache, not fetchGit). One freedesktop
-      # GitLab hiccup would otherwise red `main` for a non-issue
-      # (observed 2026-06-05, run 27010804953).
+      # gitlab.freedesktop.org via `builtins.fetchGit` — and a blip there
+      # reds `main` for a non-issue (observed 2026-06-05, run 27010804953).
+      # Two layers absorb that:
+      #   - Nix's own `download-attempts` (default 5) already retries the
+      #     HTTP downloader / binary-cache fetches — the subset it covers.
+      #     Left at the default; documented here rather than re-set, since
+      #     setting it to its default value would be a no-op config line.
+      #   - `fetchGit` is NOT covered by `download-attempts`, so this step
+      #     re-runs the whole check on any failure: up to 3 attempts, 30s
+      #     backoff.
       #
-      # Up to 3 attempts with a 30s backoff, but ONLY when the failure
-      # log matches a network/fetch signature. A genuine eval or build
-      # error does NOT match, so it still fails fast on the first
-      # attempt — no 3×-slower red feedback, and a real failure is never
-      # masked (worst case of a missed signature is the same red we get
-      # today). Extend the regex if a new transient surfaces. The
-      # default GH `run:` shell is `bash --noprofile --norc -eo
-      # pipefail`, so the `nix | tee` pipe reports nix's exit code and
-      # the failing command inside `if` is exempt from errexit.
+      # Blind retry, not regex-gated: the previous version matched a
+      # 19-branch stderr signature to classify transient-vs-real, brittle
+      # both ways (masks a real failure whose log happens to match; misses
+      # a transient it didn't enumerate). Per ADR-032 (Rule 1 —
+      # proportionate enforcement) the lighter mechanism wins, and its cost
+      # is small: the Nix store persists across attempts in the same job,
+      # so a retry re-runs only the failed derivation and its un-built
+      # dependents (an eval error re-evals in seconds), not the whole
+      # closure — and a real, deterministic error still goes red, just
+      # after the retries are spent. The default GH `run:` shell is `bash
+      # --noprofile --norc -eo pipefail`, so the failing `nix flake check`
+      # inside `if` is exempt from errexit.
       - name: nix flake check
         run: |
           attempts=3
           delay=30
           for attempt in $(seq 1 "$attempts"); do
             echo "::group::nix flake check (attempt $attempt/$attempts)"
-            if nix flake check --print-build-logs 2>&1 | tee /tmp/flake-check.log; then
+            if nix flake check --print-build-logs 2>&1; then
               echo "::endgroup::"
               exit 0
             fi
             echo "::endgroup::"
-            if [ "$attempt" -lt "$attempts" ] && grep -iqE "failed to fetch|unable to download|could not resolve host|couldn't resolve host|temporary failure in name resolution|network is unreachable|connection (timed out|reset|refused)|operation timed out|(tls|ssl) (connection|handshake)|remote end hung up|rpc failed|early eof|unexpected end[ -]of[ -]file|transfer closed|partial file|(gateway )?time-?out|bad gateway|service unavailable|the requested url returned error: (5|429)" /tmp/flake-check.log; then
-              echo "::warning::transient fetch failure on attempt $attempt; retrying in ${delay}s"
+            if [ "$attempt" -lt "$attempts" ]; then
+              echo "::warning::nix flake check failed on attempt $attempt; retrying in ${delay}s"
               sleep "$delay"
               continue
             fi
-            echo "::error::nix flake check failed (non-transient error, or attempts exhausted)"
+            echo "::error::nix flake check failed after $attempts attempts"
             exit 1
           done
           exit 1
