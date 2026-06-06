@@ -118,9 +118,8 @@ git auth path doesn't use SSH.
   work. Surfaced during Tier 3 verification — paste-from-helix didn't
   populate the Mac clipboard, but the nix-config side was correct
   (helix `clipboard-provider = "termcode"`, zellij default pass-through,
-  mosh OSC52-aware). Resolution deferred — see `TODO.md` "Carryover
-  when new hosts land" (will be exercised end-to-end once
-  `linux-workstation` lands with foot).
+  mosh OSC52-aware). Resolution deferred — to be exercised
+  end-to-end now that metis's desktop has landed with foot.
 - ⚠ Migration trigger: a Mac terminal emulator without OSC52 support
   would break the clipboard bridge. Modern alternatives all support it;
   unlikely to be an issue.

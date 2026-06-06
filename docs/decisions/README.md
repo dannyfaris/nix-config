@@ -81,7 +81,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 - **Filename convention**: `ADR-NNN-<topic>.md` where `<topic>` is a
   short kebab-case slug.
 - **Status reflects lifecycle.** ADRs move: `Proposed` → `Accepted, Implementation pending` → `Accepted, Implemented`. Terminal states: `Superseded by ADR-XXX`, `Amended by ADR-XXX`, `Withdrawn`. Once an ADR's decision lands in code, the ADR is immutable historical record — don't delete or rewrite; use `Superseded` (contradicting replacement) or `Amended` (extending augmentation) via a new ADR when the decision needs to change. Before implementation, the ADR is plan-state and may be revised freely in response to new information. `Withdrawn` is for ADRs revised so substantially before implementation that preserving the original would mislead — withdraw with a pointer, author fresh.
-- **Existing ADRs (001 through 027) carry bare `Accepted`.** Grandfathered as `Accepted, Implemented` unless `TODO.md` or the ADR's own Implementation section indicates otherwise (notably ADR-025, which is a decision-only landing per `TODO.md`). New ADRs use the lifecycle states above from the outset.
+- **Existing ADRs (001 through 027) carry bare `Accepted`.** Grandfathered as `Accepted, Implemented` unless the ADR's own Implementation section indicates otherwise. New ADRs use the lifecycle states above from the outset.
 - **Date** is the date of the original decision, not the date of writing.
   When backfilling ADRs from earlier conversations, use the conversation
   date.

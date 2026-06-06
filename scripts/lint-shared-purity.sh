@@ -39,8 +39,7 @@
 # one-off platform fallbacks that should still live in shared/) with:
 #   git commit --no-verify
 #
-# See TODO.md §Good→Great / git history for the rationale; ADR-025 for
-# this framework.
+# See git history for the rationale; ADR-025 for this framework.
 
 set -euo pipefail
 

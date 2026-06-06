@@ -7,8 +7,8 @@
 # Operator recipient (mac): age key derived from a human-controlled
 # credential. Used by the operator to run `sops`/`sops updatekeys` from
 # their daily-driver machine without depending on any individual host
-# being alive. Closes the sops-decryption bus-factor gap recorded in
-# TODO.md (formerly: "the only decryption identity lives on the VM").
+# being alive. Closes the sops-decryption bus-factor gap — formerly
+# only the VM held a decryption identity.
 keys:
   - &nixos-vm age1wwg6k2xnt4kakkajl7y2eydxw3jf4ll7z8ql64v9hvjdm8svh5psjxxz3l
   - &mercury  age1vze2vqnjtmyltqez5uw3g5dzr64wa0qaz0mwngvq662djxcwlefsnjlx2t
