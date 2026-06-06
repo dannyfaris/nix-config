@@ -126,11 +126,14 @@
             pass_filenames = true;
           };
 
-          # Enforces ADR-027 §Decision / PRD §8.1 #4 bundle-purity on
+          # Enforces ADR-027 §Decision / PRD §8.1 #3 bundle-purity on
           # foundation.nix and every bundles/<X>.nix file: an aggregator
-          # must contain `{ imports = [ ≥ 2 distinct entries ]; }` and
-          # nothing else — no inline option setting, no extra top-level
-          # attributes. Replaces the retired role-purity rule.
+          # must be exactly `{ imports = [ ... ]; }` and nothing else — no
+          # inline option setting, no extra top-level attributes. The
+          # former "≥ 2 distinct entries" sub-rule is no longer gated here
+          # (it guarded an aesthetic/idempotent property at disproportionate
+          # cost — bespoke tokeniser + self-test); it survives as a
+          # convention per ADR-032 (Rule 1 — proportionate enforcement).
           bundle-purity = {
             enable = true;
             name = "bundle-purity";
@@ -147,37 +150,29 @@
             extraPackages = [ pkgs.nix ];
           };
 
-          # Regression coverage for the two purity *linters* themselves
-          # (#193). The linters gate every bundle/foundation/shared file at
-          # commit-time, but a change that broke their detection — e.g. made
-          # them pass everything silently — would otherwise sail through and
-          # the purity guarantee would quietly evaporate. These self-tests
-          # exercise each linter's negative paths against synthetic fixtures.
+          # Regression coverage for the shared-purity linter itself
+          # (#193). The linter gates every shared/ file at commit-time, but
+          # a change that broke its detection — e.g. made it pass everything
+          # silently — would otherwise sail through and the purity guarantee
+          # would quietly evaporate. This self-test exercises the linter's
+          # negative paths against synthetic fixtures. (The bundle-purity
+          # linter carried a parallel self-test until 2026-06-06; it was
+          # removed along with the paren-tokeniser it covered when
+          # bundle-purity was narrowed to the shape check — see ADR-032 and
+          # the lint-bundle-purity.sh header.)
           #
-          # Wired as system hooks (not a separate flake.checks derivation):
-          # the linters are pre-commit hooks, and git-hooks.nix lifts these
-          # to checks.<system>.pre-commit too, so they live inside
+          # Wired as a system hook (not a separate flake.checks derivation):
+          # the linter is a pre-commit hook, and git-hooks.nix lifts this to
+          # checks.<system>.pre-commit too, so it lives inside
           # `nix flake check` per ADR-025 with no extra derivation plumbing.
           #
-          # `files` gates each test to its own linter: at commit-time the
-          # test runs only when that linter is edited; in CI (`pre-commit run
+          # `files` gates the test to its linter: at commit-time it runs
+          # only when the linter is edited; in CI (`pre-commit run
           # --all-files`) the linter file always matches, so it always runs.
-          # `pass_filenames = false` — the tests generate their own fixtures
-          # and ignore positional args. LINT_SCRIPT points the test at the
+          # `pass_filenames = false` — the test generates its own fixtures
+          # and ignores positional args. LINT_SCRIPT points the test at the
           # linter's store path (the store interns each file separately, so
           # the test's sibling-lookup default can't find it).
-          test-bundle-purity = {
-            enable = true;
-            name = "test-bundle-purity";
-            entry = "env LINT_SCRIPT=${../scripts/lint-bundle-purity.sh} bash ${../scripts/test-lint-bundle-purity.sh}";
-            files = "^scripts/lint-bundle-purity\\.sh$";
-            language = "system";
-            pass_filenames = false;
-            # The bundle linter (and so its self-test) shells out to
-            # nix-instantiate --parse; same injection as the linter's hook.
-            extraPackages = [ pkgs.nix ];
-          };
-
           test-shared-purity = {
             enable = true;
             name = "test-shared-purity";

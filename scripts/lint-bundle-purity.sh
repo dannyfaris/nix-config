@@ -1,45 +1,41 @@
 #!/usr/bin/env bash
-# Enforces ADR-027 / PRD §8.1 #4 "bundle-purity" on aggregator files
-# (foundation.nix plus any bundle under bundles/).
+# Enforces ADR-027 / PRD §8.1 #3 "bundle-purity" on aggregator files
+# (foundation.nix plus any bundle under bundles/): the top level must be
+# exactly `{ imports = [ ... ]; }` (optionally function-wrapped) — an
+# imports list and nothing else. No inline option setting, no `config`
+# block, no extra top-level attributes.
 #
 # Wired into the pre-commit framework via parts/checks.nix; the framework
 # filters tracked files through the configured `files` regex
 # (^(modules|home)/[^/]+/(bundles/.*|foundation)\.nix$) and passes the
 # matches as positional args.
 #
-# Rule (ADR-027 §Decision, PRD §8.1 #4):
-#   "aggregator files (foundation and bundles) contain an `imports` list
-#    of two or more distinct modules and no inline configuration."
+# Scope (per ADR-032, Rule 1 — proportionate enforcement): this gate
+# checks the one load-bearing invariant — pure aggregation, no inline
+# config — and stops there. The earlier "≥ 2 imports" and "no duplicate
+# entries" checks were removed: duplicate imports are idempotent in Nix
+# (not a correctness bug), and forbidding single-module bundles is an
+# aesthetic/structural rule a reviewer catches for free. Both survive as
+# conventions (ADR-027, PRD §8.1 #3), author/reviewer-enforced rather
+# than gated. Dropping them also retired the hand-rolled paren-depth
+# tokeniser they required, and the separate self-test harness that
+# locked in that tokeniser's behaviour — the "bespoke parser/tokeniser
+# is a smell" the proportionate-enforcement rule names. The shape check
+# below needs neither.
 #
 # Strategy: `nix-instantiate --parse` canonicalises the file to a single
 # line (whitespace folded, every list item wrapped in parens, relative
-# paths resolved to absolute). The canonical body is exactly
-# `{ imports = [ X1 X2 ... Xn ]; }`, optionally wrapped in a function
-# header `(<args>: ...)`. Any extra top-level attribute, any inline
-# `services.X.enable`, any non-`imports` setting produces text the shape
-# regex below refuses. Items are then tokenised paren-balanced (X1 = `(/abs/path)`,
-# `(ident)`, `((expr).attr.chain)`, etc.) so we can count them and check
-# pairwise distinctness.
-#
-# Out of scope deliberately: aggregators that wrap their imports list in
-# `let ... in` bindings or top-level `assert <cond>;` clauses. ADR-027
-# reserves aggregators for pure import composition; a `let`-bound name
-# is already a small piece of inline logic and belongs in a wrapped
-# standalone module (the same shape stylix-palette.nix uses to keep
-# foundation.nix imports-only). If real-world need arises, broaden the
-# header capture and update the rule.
-#
-# Violations:
-#   - top-level attrset with any attribute other than `imports`
-#   - `imports` value that isn't a list
-#   - `imports` list with fewer than 2 entries
-#   - `imports` list with duplicate entries
+# paths resolved to absolute). The shape regex then asserts the canonical
+# body is exactly `{ imports = [ ... ]; }`, optionally wrapped in a
+# function header `(<args>: ...)`. Any extra top-level attribute, any
+# inline `services.X.enable`, any `config` block produces text the regex
+# refuses.
 #
 # Override (intentional one-off shape deviation):
 #   git commit --no-verify
 #
-# See ADR-027 (bundle-purity, replacing role-purity) and PRD §8.1 #4
-# for rationale; ADR-025 for the lint framework.
+# See ADR-027 (bundle-purity) and ADR-032 (proportionate enforcement);
+# ADR-025 for the lint framework.
 
 set -euo pipefail
 
@@ -61,67 +57,15 @@ for file in "$@"; do
   fi
   rm -f "$err_file"
 
-  # Strict shape: `{ imports = [<content>]; }`, optionally inside a
+  # Strict shape: `{ imports = [ <content> ]; }`, optionally inside a
   # function header `(<args>: ...)`. Greedy `.*` in the function-header
   # capture is safe because the only depth-0 `: ` in canonical Nix
-  # output is the args→body separator. Greedy `(.*)` for the list body
-  # is safe because a well-formed body contains exactly one `]; }`.
-  shape_re='^(\(.*: )?\{ imports = \[(.*)\]; \}\)?$'
+  # output is the args→body separator; greedy `.*` for the list body is
+  # safe because a well-formed body contains exactly one `]; }`.
+  shape_re='^(\(.*: )?\{ imports = \[.*\]; \}\)?$'
   if [[ ! $parsed =~ $shape_re ]]; then
-    echo "ERROR: $file violates bundle-purity (top-level must be exactly { imports = [ ... ]; } — no inline config, no extra attributes)." >&2
+    echo "ERROR: $file violates bundle-purity (top level must be exactly { imports = [ ... ]; } — no inline config, no extra attributes)." >&2
     echo "  parsed: $parsed" >&2
-    failures=$((failures + 1))
-    continue
-  fi
-
-  list_content="${BASH_REMATCH[2]}"
-
-  # Tokenise list items. `nix-instantiate --parse` wraps every list entry
-  # in parens (paths → `(/abs/path)`, identifiers → `(ident)`, attribute
-  # chains → `((ident).attr.path)`, function calls → `((f arg))`). Walking
-  # char-by-char with a paren-depth counter splits cleanly at depth-0
-  # close-paren boundaries, regardless of how deep an individual entry nests.
-  items=()
-  buf=""
-  depth=0
-  for ((i = 0; i < ${#list_content}; i++)); do
-    c="${list_content:i:1}"
-    case "$c" in
-    "(")
-      depth=$((depth + 1))
-      buf+="$c"
-      ;;
-    ")")
-      depth=$((depth - 1))
-      buf+="$c"
-      if ((depth == 0)); then
-        items+=("$buf")
-        buf=""
-      fi
-      ;;
-    *)
-      # Whitespace between items at depth 0 is the separator we split
-      # on; only content *inside* a parenthesised item belongs in the
-      # buffer.
-      if ((depth > 0)); then
-        buf+="$c"
-      fi
-      ;;
-    esac
-  done
-
-  count=${#items[@]}
-  if ((count < 2)); then
-    echo "ERROR: $file violates bundle-purity (imports list has $count entries; rule requires ≥ 2 — a single-import aggregator should be inlined at its callsite)." >&2
-    failures=$((failures + 1))
-    continue
-  fi
-
-  unique_count=$(printf '%s\n' "${items[@]}" | sort -u | wc -l)
-  if ((unique_count != count)); then
-    duplicates=$(printf '%s\n' "${items[@]}" | sort | uniq -d)
-    echo "ERROR: $file violates bundle-purity (imports list contains duplicate entries):" >&2
-    printf '%s\n' "$duplicates" | sed 's/^/  duplicate: /' >&2
     failures=$((failures + 1))
     continue
   fi
