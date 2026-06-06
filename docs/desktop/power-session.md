@@ -4,7 +4,7 @@ Deliberate power- and session-state controls for the niri desktop on metis (#98)
 
 ## Selection
 
-A **`fuzzel --dmenu` power menu** — a small shell script that presents a labelled action list to fuzzel in dmenu mode and dispatches the chosen entry to `loginctl` / `systemctl` / `niri msg`. Bound to a single key in niri (repurposing the existing `Mod+Shift+E` session bind). No new package: fuzzel (#73) is already the launcher, and the action verbs are stock systemd / logind / niri-IPC.
+A **`fuzzel --dmenu` power menu** — a small shell script that presents a labelled action list to fuzzel in dmenu mode and dispatches the chosen entry to `loginctl` / `systemctl` / `niri msg`. Bound to **`Hyper+Escape`** in niri — a proper `Hyper`-namespace bind, now that keyd realizes the Hyper modifier on metis ([keyd.md](./keyd.md), #282). No new package: fuzzel (#73) is already the launcher, and the action verbs are stock systemd / logind / niri-IPC.
 
 The menu entries and what each runs:
 
@@ -28,7 +28,7 @@ fuzzel is already a Stylix target (`stylix.targets.fuzzel.enable`, full base16 p
 
 **Composes cleanly with the #97 lock automation.** The lock surface was wired with these triggers in mind: swayidle already honours `loginctl lock-session` (its `lock` event) and locks before any suspend (its `before-sleep` event). So "Lock" and "Suspend" here are just the deliberate triggers for machinery that already exists — resume always requires auth regardless of how the suspend was initiated.
 
-**Power/session is a `Hyper`-namespace capability, on an interim `Super`-side bind.** Under the keybinds philosophy, lock / personal-system commands belong to the (unrealised-on-metis) `Hyper` namespace. Like `Mod+Space` → fuzzel, this lands on an interim `Super`-side bind (`Mod+Shift+E`) with a documented migration target, so it moves mechanically if a `Hyper` layer ever lands on metis.
+**Power/session is a `Hyper`-namespace capability — and Hyper now exists on metis.** Under the keybinds philosophy, lock / personal-system commands belong to the `Hyper` namespace, and keyd now realizes that modifier on metis ([keyd.md](./keyd.md), #282). So the menu binds directly to `Hyper+Escape`, landing in its philosophically-correct home from the start with no interim `Super`-side detour (Escape reads as "get me out" — the session/power surface). `Mod+Shift+E` → quit niri is left untouched, so the direct keyboard quit still works.
 
 ## Alternatives considered
 
@@ -48,7 +48,7 @@ fuzzel is already a Stylix target (`stylix.targets.fuzzel.enable`, full base16 p
 - **Destructive actions are confirmed; safe ones dispatch directly.** Lock and Suspend run immediately. Log out relies on niri's *built-in* quit-confirm dialog, so it needs no extra prompt. Reboot and Shut down route through a second `fuzzel --dmenu` prompt (`Cancel` / `Yes, <action>`) with `Cancel` pre-highlighted as the default (`fuzzel --select-index 0`); because cancel/Escape emits nothing, a stray Enter on the default lands on `Cancel` and dispatches nothing.
 - Entry order puts the safe, frequent action (Lock) first and the destructive pair last.
 
-**Keybind** — `home/nixos/niri.nix`. The existing `Mod+Shift+E` → `action.quit` is **repurposed** to spawn the menu. This is not a *new* binding, but it is a deliberate change to an existing one: the Session key no longer quits directly — quit moves into the menu (behind niri's confirm dialog) as the "Log out" entry. That muscle-memory shift is its own one-bind learning-ceremony event, not a free addition, so it is made deliberately and [keybinds.md](./keybinds.md)'s Session row updates in the same PR (the bind-manifest commit).
+**Keybind** — `home/nixos/niri.nix` gains `"Mod+Ctrl+Alt+Shift+Escape".action.spawn` → the menu script (niri spells `Hyper` as the four modifiers `Mod+Ctrl+Alt+Shift`). One new `Hyper` bind — one learning ceremony — and `Mod+Shift+E` → `action.quit` is left as-is (direct quit-niri stays; the menu's "Log out" entry is the fuller path). **Depends on #282** (keyd realizing the Hyper modifier): until that lands the chord has no modifier to fire. [keybinds.md](./keybinds.md) gains the `Hyper+Escape` row in the same PR (the bind-manifest commit).
 
 **No system module / no sudo expected.** The actions are issued by the operator's *active* graphical session (niri under greetd is a proper logind seat session), which logind's default polkit rules let suspend/reboot/poweroff and lock without authentication. So this is home-manager-only, like screen-lock.nix — but see Sharp edges to verify on first activation.
 
@@ -60,16 +60,17 @@ fuzzel is already a Stylix target (`stylix.targets.fuzzel.enable`, full base16 p
 
 **`fuzzel`, `niri msg`, `loginctl`, `systemctl` must resolve in the spawn environment.** niri spawns inherit the session PATH and `NIRI_SOCKET` (the same import-environment path screen-lock.nix relies on for `niri msg`), so the script's tools resolve. If the menu opens but `niri msg action quit` no-ops, an unset `NIRI_SOCKET` is the first thing to check — same failure mode documented in screen-lock.md §Sharp edges.
 
-**The bind is interim by philosophy.** `Mod+Shift+E` is a `Super`-side home for a `Hyper`-namespace capability; restated here so a future reader doesn't wonder why it isn't `Hyper+…`. If a `Hyper` layer ever lands on metis (keyd-equivalent), the migration is one line.
+**The bind depends on the Hyper modifier (#282).** `Hyper+Escape` is `Mod+Ctrl+Alt+Shift+Escape`, which only fires once keyd maps Caps Lock to that chord ([keyd.md](./keyd.md), #282) — land #282 first (or together), or the bind is inert. `Mod+Shift+E` → quit niri is unaffected and remains the keyboard quit regardless.
 
 **Hibernate is deliberately omitted.** No swap-to-disk is configured on metis, so `systemctl hibernate` would fail; the menu offers suspend only. Revisit if hibernation is ever set up.
 
 ## References
 
 - [screen-lock.md](./screen-lock.md) (#97) — the unattended lock/idle automation this composes with; `swayidle` `lock` + `before-sleep` events are the triggers used here.
-- [keybinds.md](./keybinds.md) — modifier-namespace philosophy + cadence; the Session row is the bind manifest this updates.
+- [keybinds.md](./keybinds.md) — modifier-namespace philosophy + cadence; gains the `Hyper+Escape` row (the `Hyper` namespace; `Mod+Shift+E`/Session left as-is).
+- [keyd.md](./keyd.md) (#282) — realizes the `Hyper` modifier on metis that this bind depends on.
 - [fuzzel.md](./fuzzel.md) (#73) — the launcher reused in `--dmenu` mode; its Stylix target is what themes the menu.
 - `home/nixos/power-session.nix` — the menu script + dispatch (the implementation surface).
-- `home/nixos/niri.nix` — the `Mod+Shift+E` bind.
+- `home/nixos/niri.nix` — the `Hyper+Escape` (`Mod+Ctrl+Alt+Shift+Escape`) bind.
 - ADR-028 (Stylix as surface source-of-truth — the "no Stylix target ⇒ hand-wired CSS" argument against wlogout), ADR-029 (niri-only desktop).
 - logind / polkit defaults for active-session power actions; niri IPC `quit` action.
