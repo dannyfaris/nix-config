@@ -10,8 +10,8 @@
 #
 # Lives under nixos/ because fuzzel is Wayland-only and doesn't
 # compile off Linux — same placement reasoning as foot.nix. macOS
-# hosts will get their own launcher (Raycast/Alfred) when
-# home/darwin/ lands per the mac-mini onboarding epic #11.
+# hosts use a native launcher (Spotlight today); a Raycast/Alfred
+# selection hasn't been made.
 #
 # Bind: Mod+Space → fuzzel. Defined in home/nixos/niri.nix
 # alongside the rest of the bind set; see docs/desktop/keybinds.md

@@ -12,8 +12,7 @@
 # Lives under nixos/ because fnott is Wayland-only and doesn't
 # compile off Linux — same placement reasoning as foot.nix and
 # fuzzel.nix. macOS hosts get notifications from macOS Notification
-# Center natively when home/darwin/ lands per the mac-mini
-# onboarding epic #11.
+# Center natively; no fnott equivalent is wired.
 #
 # Auto-start is D-Bus-activated, not session-target-pulled: HM's
 # services.fnott module ships an org.freedesktop.Notifications D-Bus

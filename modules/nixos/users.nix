@@ -1,8 +1,7 @@
 # User declaration. Fully declarative — mutableUsers = false makes this the
 # sole source of truth for user state. Identity attributes (name,
 # description, SSH keys) come from lib/operator.nix per #49 so the same
-# record will feed a sibling modules/darwin/users.nix when Darwin
-# lands (epic #11).
+# record feeds the sibling modules/darwin/users.nix (Darwin, epic #11).
 { config, pkgs, ... }:
 
 let

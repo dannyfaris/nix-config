@@ -1,8 +1,8 @@
 # Host constructor for Darwin hosts. Thin wrapper over nix-darwin's
 # darwinSystem. Sibling of lib/mk-host.nix.
 #
-# Called from parts/darwin.nix once Darwin hosts exist (mac-mini lands
-# in epic #11 PR 6).
+# Called from parts/darwin.nix (mac-mini, onboarded 2026-06-02 per
+# epic #11).
 #
 # Usage:
 #   (import ./lib/mk-darwin-host.nix { inherit inputs; }) { hostname = "mac-mini"; }

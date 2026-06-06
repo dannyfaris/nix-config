@@ -14,8 +14,8 @@
 # (xdg.mimeApps) is Linux-only. Unlike foot/fuzzel/fnott/waybar
 # (which don't build on Darwin at all), pkgs.firefox does build on
 # Darwin — placement here is gated by the xdg.mimeApps wiring, not
-# package portability. The macOS browser selection is deferred to
-# home/darwin/ per the mac-mini onboarding epic #11.
+# package portability. On macOS the browser is Chrome (the
+# `google-chrome` cask in modules/darwin/homebrew.nix; docs/desktop/chrome.md).
 #
 # Wayland enablement requires no extra wiring: Firefox 121+ (we ship
 # 150-class via nixos-unstable) auto-detects WAYLAND_DISPLAY at
