@@ -66,7 +66,7 @@ The composition model, module organisation, enforcement mechanisms, and remainin
 - Replacing or duplicating tooling that already solves a problem well (e.g., browser sync, 1Password for secrets).
 - Exhaustive capture of every setting on every machine — capturing intent, not state.
 - Commit signing.
-- `agenix` / `sops-nix`. Runtime secret access via the 1Password CLI (`op`) is sufficient for current workstation use. Headless hosts in original scope did not consume runtime secrets; this changed with the first concrete headless host (Mercury, ADR-018), which adopted `sops-nix` for the user password hash. Subsequent secret-consumption decisions are per-host: see ADR-018 and the bus-factor / Option-C deliberations in TODO.
+- `agenix` / `sops-nix`. Runtime secret access via the 1Password CLI (`op`) is sufficient for current workstation use. Headless hosts in original scope did not consume runtime secrets; this changed with the first concrete headless host (Mercury, ADR-018), which adopted `sops-nix` for the user password hash. Subsequent secret-consumption decisions are per-host: see ADR-018. (The decryption bus-factor follow-up once tracked in the now-retired `TODO.md` is resolved — `.sops.yaml` carries an operator age-recipient alongside the host keys.)
 - Tutorial or learning content — assumes working familiarity with Nix, flake-parts, and module composition.
 - Use as a public template — this is Dan's configuration; generalisation is a separate project if ever undertaken.
 - Build-time performance tuning beyond defaults — correctness and clarity dominate.

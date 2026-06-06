@@ -41,23 +41,25 @@ rather than creating a new artifact.
 | Doc | Subject | Landed |
 |---|---|---|
 | [ghostty.md](./ghostty.md) | Ghostty terminal (Mac-only; GPU-accelerated); nix-homebrew cask | #13 |
-| [slack.md](./slack.md) | Slack chat client (work daily-driver); MAS via `homebrew.masApps` — first managed MAS app | _pending_ |
-| [chrome.md](./chrome.md) | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone | _pending_ |
-| [microsoft-365.md](./microsoft-365.md) | Microsoft 365 — Word, Excel, PowerPoint, Outlook; MAS via `homebrew.masApps`. Teams excluded — runs in Chrome at teams.microsoft.com, see doc §Sharp edges | _pending_ |
-| [amphetamine.md](./amphetamine.md) | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution) | _pending_ |
-| [typora.md](./typora.md) | Typora markdown editor; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
-| [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | _pending_ |
-| [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | _pending_ |
-| [colima.md](./colima.md) | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021. | _pending_ |
-| [claude-desktop.md](./claude-desktop.md) | Anthropic Claude desktop client; Homebrew cask + custom in-app updater (clause-1) | _pending_ |
-| [chatgpt.md](./chatgpt.md) | OpenAI ChatGPT desktop client; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
-| [gemini.md](./gemini.md) | Google Gemini desktop client; Homebrew cask + Keystone (clause-1; SHARES Keystone agent with Chrome) | _pending_ |
-| [fellow.md](./fellow.md) | Fellow meeting agendas / notes / action items; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
-| [wispr-flow.md](./wispr-flow.md) | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1) | _pending_ |
-| [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | _pending_ |
-| [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | _pending_ |
-| [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | _pending_ |
-| [hammerspoon.md](./hammerspoon.md) | Hammerspoon macOS hotkey-binding layer on top of Karabiner's Hyper; Homebrew cask + Sparkle silent (`.zip`-enclosure, same shape as Ghostty) (clause-1, no nixpkgs Darwin) | _pending_ |
+| [slack.md](./slack.md) | Slack chat client (work daily-driver); MAS via `homebrew.masApps` — first managed MAS app | #11 |
+| [chrome.md](./chrome.md) | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone | #11 |
+| [microsoft-365.md](./microsoft-365.md) | Microsoft 365 — Word, Excel, PowerPoint, Outlook; MAS via `homebrew.masApps`. Teams excluded — runs in Chrome at teams.microsoft.com, see doc §Sharp edges | #11 |
+| [amphetamine.md](./amphetamine.md) | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution) | #11 |
+| [typora.md](./typora.md) | Typora markdown editor; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
+| [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | #11 |
+| [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | #11 |
+| [colima.md](./colima.md) | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021. | #11 |
+| [claude-desktop.md](./claude-desktop.md) | Anthropic Claude desktop client; Homebrew cask + custom in-app updater (clause-1) | #11 |
+| [chatgpt.md](./chatgpt.md) | OpenAI ChatGPT desktop client; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
+| [gemini.md](./gemini.md) | Google Gemini desktop client; Homebrew cask + Keystone (clause-1; SHARES Keystone agent with Chrome) | #11 |
+| [fellow.md](./fellow.md) | Fellow meeting agendas / notes / action items; Homebrew cask + Electron-style updater (clause-1) | #11 |
+| [wispr-flow.md](./wispr-flow.md) | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1) | #11 |
+| [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
+| [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | #11 |
+| [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | #11 |
+| [hammerspoon.md](./hammerspoon.md) | Hammerspoon macOS hotkey-binding layer on top of Karabiner's Hyper; Homebrew cask + Sparkle silent (`.zip`-enclosure, same shape as Ghostty) (clause-1, no nixpkgs Darwin) | #11 |
+
+_macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on mac-mini, not pending._
 
 ### Cross-platform (NixOS desktop + macOS)
 
