@@ -1,7 +1,7 @@
 # ADR-032: Proportionate enforcement and single-sourced rationale
 
 **Date**: 2026-06-06
-**Status**: Proposed
+**Status**: Accepted, Implemented
 
 > This ADR turns the repo's own proportionality principles — [philosophy.md](../philosophy.md) "No premature abstraction" and "Single source of truth" — inward, onto the repo's *meta-layer*: its enforcement machinery (linters, CI guards) and its rationale prose (comments, docs). It adds no new architecture; it constrains how that meta-layer is allowed to grow. Precedent: [ADR-027](./ADR-027-foundation-and-bundles.md) walked back an over-built abstraction once it had data; this generalises the same instinct to guardrails and documentation.
 
@@ -66,3 +66,11 @@ Decision-only landing, per `docs/workflow.md` doc-before-code. This ADR is the c
 A separate doc-hygiene pass — not part of this ADR — reconciles the stale PRD §2.2 `TODO` reference and the inaccurate "pending" markers in `docs/desktop/`.
 
 Cross-reference: [philosophy.md](../philosophy.md) ("No premature abstraction", "Single source of truth"); [ADR-027](./ADR-027-foundation-and-bundles.md) (precedent — walking back an over-built abstraction on data); [ADR-025](./ADR-025-ci-in-flake.md) (the lint + CI framework items 3–4 touch).
+
+## History
+
+### Implemented (2026-06-06)
+
+All four Implementation items landed: #285 (the ADR itself plus item 1, the evergreen pointers), #286 (item 2, homebrew essay relocation), #287 (item 3, lint-bundle-purity narrowed to the shape check — Option A "lean gate"), #288 (item 4, CI blind retry). The separate doc-hygiene pass (this entry's PR) then reconciled the stale PRD §2.2 `TODO` reference and the `docs/desktop/` "pending" markers.
+
+The four `PRD §8.1 #4` cross-references inside [ADR-027](./ADR-027-foundation-and-bundles.md)'s §History/Consequences narrative were considered and **deliberately left**: they are period-accurate (bundle-purity occupied row #4 when those dated entries were written; it later renumbered to #3), and one of them refers to the long-removed `role-purity` rule that genuinely was #4. Renumbering them would falsify the historical record rather than fix a live pointer — the live pointers were corrected in #287.
