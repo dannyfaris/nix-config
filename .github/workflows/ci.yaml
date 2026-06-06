@@ -31,13 +31,10 @@ concurrency:
 #                       evict the existing cache entry before resaving
 #                       (the documented escape hatch for actions/cache's
 #                       "primary-key hit → save is a no-op" semantic).
-#                       Without this scope the delete returns 403, the
-#                       cache survives, the save-existence check
-#                       matches, and the save is skipped — observed
-#                       directly in #225 / #226 as the symptom that
-#                       motivated #227. Also required for the
-#                       post-save LRU sweep on `purge-prefixes` to
-#                       delete stale sibling entries.
+#                       Without this scope the delete returns 403 and
+#                       the resave is silently skipped (see #227). Also
+#                       required for the post-save LRU sweep on
+#                       `purge-prefixes` to delete stale sibling entries.
 #
 # Explicit pin still keeps the workflow short of the GitHub default
 # (which would also grant `pull-requests: write`, `issues: write`, etc.
@@ -148,13 +145,11 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
           gc-max-store-size-linux: 5G
           # Darwin counterpart to gc-max-store-size-linux. mac-mini's
-          # closure is ~7.3 GiB at write-time (verified locally). PR
-          # #218 shipped this at 5G (matching the Linux ceiling)
-          # provisionally and observed cold Darwin runs at 38-55 min
-          # — the 5G ceiling forced ~2.3 GiB eviction on save, so
-          # warm-cache runs restored only ~5 GiB and re-fetched the
-          # rest from cache.nixos.org each time. 8G holds the full
-          # closure with ~700 MB headroom for growth (per #219).
+          # closure is ~7.3 GiB at write-time; 8G holds it with ~700 MB
+          # headroom for growth. A lower ceiling forces eviction on
+          # save, so warm-cache runs re-fetch the shortfall from
+          # cache.nixos.org each time (history: 5G under-provisioned —
+          # #218 → #219).
           #
           # Repo-wide cache budget callout: GitHub Actions caps each
           # repo's cache pool at 10 GB. With both Linux entries at
@@ -177,31 +172,23 @@ jobs:
           # `cache-nix-action`'s save logic wraps `actions/cache`'s
           # standard "primary-key hit → save is a no-op" semantic:
           # without this knob set to `always`, every run after the
-          # first hits the primary key, skips the save with the log
-          # line "Cache hit occurred on the primary-key. Not
-          # collecting garbage. Not saving a new cache.", and the
-          # original cache contents are cemented in the pool — even
-          # if the closure has since grown, or the GC ceiling has
-          # been raised. That's what we observed on Darwin between
-          # #218 (first cold save at 5G ceiling clamped the closure
-          # to 1.3 GiB compressed) and #222 (8G ceiling change that
-          # couldn't take effect until this knob is flipped). See
-          # #225 for the full root-cause analysis.
-          #
-          # The escape-hatch flow: with `purge-primary-key: always`,
-          # `saveImpl.ts:54-58` calls `purgeCaches({primaryKey})`
+          # first hits the primary key, skips the save ("Cache hit
+          # occurred on the primary-key. Not saving a new cache."),
+          # and the original cache contents are cemented in the pool
+          # — even after the closure grows or the GC ceiling is
+          # raised. With `always`, the action purges the primary key
           # *before* the save-step's existence check, so the lookup
-          # subsequently misses, GC runs against the current closure
-          # under the configured cap, and a fresh full cache is
-          # saved. Each successful run then refreshes its primary
-          # key automatically — no manual bump, no version suffix.
+          # misses, GC runs against the current closure under the
+          # configured cap, and a fresh full cache is saved. Each
+          # successful run refreshes its own key — no manual bump, no
+          # version suffix. Root-cause history: #225 (the stale-cache
+          # semantic also blocked the #218 → #222 ceiling raise).
           purge-primary-key: always
 
       # Bounded retry for `nix flake check`. Some eval-time fetches reach
       # third-party forges — e.g. niri's pipewire-rs from
       # gitlab.freedesktop.org via `builtins.fetchGit` — and a blip there
-      # reds `main` for a non-issue (observed 2026-06-05, run 27010804953).
-      # Two layers absorb that:
+      # reds `main` for a non-issue. Two layers absorb that:
       #   - Nix's own `download-attempts` (default 5) already retries the
       #     HTTP downloader / binary-cache fetches — the subset it covers.
       #     Left at the default; documented here rather than re-set, since
