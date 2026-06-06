@@ -31,4 +31,10 @@
   # with `.` passed explicitly. NH_FLAKE applies to all `nh` subcommands;
   # NH_OS_FLAKE would scope to just `nh os`.
   home.sessionVariables.NH_FLAKE = hostContext.flakePath;
+
+  # sessionVariables freshness: a newly-set or changed value needs a
+  # *truly fresh* shell to land. `exec fish` inherits the parent's
+  # exported state and hits home-manager's `__HM_SESS_VARS_SOURCED`
+  # early-return, so the new value never sources — disconnect + reconnect
+  # the SSH session (or start a fresh login shell) for a clean pickup.
 }

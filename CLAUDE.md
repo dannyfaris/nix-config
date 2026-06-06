@@ -148,7 +148,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
 
 ## Open work
 
-See [TODO.md](./TODO.md) for the prioritised roadmap and task tracking.
+Tracked in [GitHub issues](https://github.com/dannyfaris/nix-config/issues), framed intent-first (see [docs/workflow.md](./docs/workflow.md)). Roadmap-level items carry the `roadmap` label.
 
 ## License
 
