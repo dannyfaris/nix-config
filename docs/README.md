@@ -82,8 +82,8 @@ If you're new to this repo:
 1. Start with the project-level [CLAUDE.md](../CLAUDE.md) for the top-level
    context, current state, and operational stances.
 2. Read [nix-config-prd.md](./nix-config-prd.md) for the design of the
-   multi-host configuration — what each role is, how modules are organised,
-   what the structural rules are.
+   multi-host configuration — how foundation + bundles compose, how modules
+   are organised, what the structural rules are.
 3. Read [philosophy.md](./philosophy.md) — the operating principles will help
    you predict why subsequent choices were made.
 4. Read [workflow.md](./workflow.md) — the process conventions tell you how

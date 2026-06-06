@@ -388,21 +388,23 @@ The `shared/`-vs-`nixos/`-vs-`darwin/` split is about the *operating system the 
 
 ## 8. Structural invariants and enforcement
 
-Every convention that admits a deterministic test is encoded as an automated check. The list below defines the invariants the configuration must satisfy. Each invariant has a stable rule name, which is referenced in lint failure messages so that an agent failing a check can map the error back to the rule and its rationale in `CLAUDE.md`.
+Most conventions that admit a deterministic test are encoded as an automated check; a few low-severity ones stay conventions (see the note under §8.1). The list below defines the invariants the configuration must satisfy. Each gated invariant has a stable rule name, surfaced in its lint failure message so an agent failing a check can map the error back to the rule — whose rationale lives in the rule's script header and the ADR it cites.
 
 ### 8.1 Invariants
 
 | # | Rule name | Invariant | Enforcement |
 |---|-----------|-----------|-------------|
 | 1 | `shared-purity` | No platform conditionals (`isDarwin`, `isLinux`, `stdenv.is*`, platform-keyed `optionals`, references to platform-specific paths) appear in any file under `modules/*/shared/` or `home/*/shared/`. Necessary but not sufficient — see §7.1. | `scripts/lint-shared-purity.sh` |
-| 2 | `filename-kebab-case` | All `.nix` filenames are kebab-case (no camelCase, no snake_case). | `scripts/lint-filename-kebab-case.sh` |
+| 2 | `filename-kebab-case` | All `.nix` filenames are kebab-case (no camelCase, no snake_case). | Convention (author + reviewer; not gated) |
 | 3 | `bundle-purity` | Aggregator files — `modules/<platform>/foundation.nix`, `home/<platform>/foundation.nix`, and any file under `modules/<platform>/bundles/` or `home/<platform>/bundles/` — contain only an `imports` list at the top level. No `mkDefault` selections, no inline option setting. Each entry in `imports` resolves to a distinct module under `modules/` or `home/` (post-path-resolution; the same module referenced via two relative-path spellings counts once). Aggregator files must import **two or more distinct modules** — single-module "bundles" are forbidden, and the underlying capability stays a standalone module until a sibling joins it. Bundles do not import other bundles (the model is flat per ADR-027). The lint gates only the *shape* — pure aggregation (`{ imports = [ ... ]; }`, no inline config); the two-or-more-distinct-modules and no-duplicate-entries sub-rules are conventions upheld by author and reviewer (not gated), their bespoke-tokeniser check removed as disproportionate per [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) — mirroring how `host-purity` (#4) leaves the "genuinely host-specific" judgement to author and reviewer. | `scripts/lint-bundle-purity.sh` |
-| 4 | `host-purity` | Host `default.nix` files contain: identifying data (`networking.hostName`, `system.stateVersion`, `nixpkgs.hostPlatform` when applicable); per-host wiring (`_module.args.hostContext`); an `imports` list resolving to paths under `modules/` or `home/` (or `./hardware-configuration.nix` / `./disko.nix` in the same directory); and instance-specific option overrides where the override is genuinely host-specific and would be a category mistake to place in a shared module (e.g., AWS-image conflicts, hardware-specific swap sizing, oomd policy, module-conflict resolution via `lib.mkForce`, host-tuned kernel parameters). Forbidden: inline conditional logic on host attributes, helper function definitions, derivation definitions, or any construct that would belong in a reusable module. Lint enforces the *structural* envelope (no helper definitions, no `let` bindings introducing logic, no derivation syntax) rather than judging each option assignment — the test of "genuinely host-specific" is left to author and reviewer per PRD §3.4. | `scripts/lint-host-purity.sh` |
-| 5 | `flake-evaluates` | The flake evaluates without errors. A module placed under the wrong tree (a Home Manager module under `modules/`, a NixOS module under `home/`) fails evaluation here. Errors from this invariant come from Nix directly and do not follow the `[<rule-name>]` format. | `nix flake check` |
-| 6 | `hosts-build` | Every host configuration that the current machine can build natively, builds. Cross-platform builds may run via `linux-builder` on macOS hosts but are not required. | `nix build .#<host>` per applicable host |
+| 4 | `host-purity` | Host `default.nix` files contain: identifying data (`networking.hostName`, `system.stateVersion`, `nixpkgs.hostPlatform` when applicable); per-host wiring (`_module.args.hostContext`); an `imports` list resolving to paths under `modules/` or `home/` (or `./hardware-configuration.nix` / `./disko.nix` in the same directory); and instance-specific option overrides where the override is genuinely host-specific and would be a category mistake to place in a shared module (e.g., AWS-image conflicts, hardware-specific swap sizing, oomd policy, module-conflict resolution via `lib.mkForce`, host-tuned kernel parameters). Forbidden: inline conditional logic on host attributes, helper function definitions, derivation definitions, or any construct that would belong in a reusable module. Author and reviewer uphold the *structural* envelope (no helper definitions, no `let` bindings introducing logic, no derivation syntax) and judge each option assignment — the test of "genuinely host-specific" per PRD §3.4. | Convention (author + reviewer; not gated) |
+| 5 | `flake-evaluates` | The flake evaluates without errors. A module placed under the wrong tree (a Home Manager module under `modules/`, a NixOS module under `home/`) fails evaluation here. Errors from this invariant come from Nix directly (not a lint script), so they read as Nix evaluation errors rather than the `ERROR: <file> violates <rule>` form the structural scripts emit. | `nix flake check` |
+| 6 | `hosts-build` | Every host configuration that the current machine can build natively, builds. Cross-platform builds may run via `linux-builder` on macOS hosts but are not required. | `nix flake check` (per-host `toplevel`) + CI |
 | 7 | `format` | All Nix code is formatted. | `nixfmt` (RFC 166 official) |
 | 8 | `lint-statix` | No Nix anti-patterns. | `statix` |
 | 9 | `lint-deadnix` | No dead Nix code. | `deadnix` |
+
+Rows 2 and 4 (`filename-kebab-case`, `host-purity`) are deterministic but currently **convention-only** — no lint script is built. Both are low-severity structural rules a reviewer catches; per [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) (proportionate enforcement) a grep-class gate is added only if drift appears, not pre-emptively. Earlier drafts named `scripts/lint-{filename-kebab-case,host-purity}.sh`; those were never built.
 
 Three invariants from earlier drafts were dropped after review:
 
@@ -412,29 +414,28 @@ Three invariants from earlier drafts were dropped after review:
 
 ### 8.2 Enforcement integration
 
-Invariants run in **two stages**, split by cost:
+Enforcement runs at three points of increasing cost and coverage (per [ADR-025](./decisions/ADR-025-ci-in-flake.md)):
 
-| Stage | Hook | Contents | Typical duration |
-|---|---|---|---|
-| Pre-commit | `pre-commit` | `nixfmt`, `statix`, `deadnix`, all `scripts/lint-*.sh` structural rules | under 10 seconds |
-| Pre-push | `pre-push` | `nix flake check` (evaluation), then `nix build .#<host>` for each host the current machine can build natively | seconds to minutes |
+| Point | What runs | Typical duration |
+|---|---|---|
+| `pre-commit` hook | Formatter (`nixfmt` + `shfmt`, via treefmt) and linters (`statix`, `deadnix`, `actionlint`, `shellcheck`) plus the structural scripts (`hardware-config-banner`, `shared-purity`, `bundle-purity`) — no Nix evaluation | under 10 seconds |
+| `nix flake check` | The full set: every `pre-commit` hook (git-hooks.nix lifts them to `checks.<system>.pre-commit`) **plus** the per-host `system.build.toplevel` build for each host the current machine can build natively | seconds to minutes |
+| CI (GitHub Actions) | `nix flake check` across the `x86_64-linux` / `aarch64-linux` / `aarch64-darwin` matrix, on every push and pull request | minutes |
 
-Pre-commit stays fast — formatter + linters + path-based structural scripts only, no Nix evaluation — so `--no-verify` remains an emergency tool rather than a routine bypass. Pre-push pays the evaluation and build cost once per push, at the natural boundary for "this change is going somewhere a real machine might pull it from."
+There is a single git hook — `pre-commit` — declared inside the flake using `git-hooks.nix` and installed by the dev-shell's `shellHook` on `nix develop` (no separate install step, no `pre-push` stage). It stays fast: formatter + linters + path-based structural scripts only, no Nix evaluation, so `--no-verify` remains an emergency tool rather than a routine bypass.
 
-Both hook layers are declared inside the flake using `git-hooks.nix`, so hook setup is itself declarative and bootstrapped automatically on new machines.
-
-An additional manual entry point, `nix run .#verify`, runs the full check set (pre-commit + pre-push contents together) on demand. This is the command an AI agent invokes when working without a human-driven commit/push rhythm, and the command a human invokes before doing anything risky.
+`nix flake check` is the full local verification — one command runs format, lint, structural checks, and every buildable host. It is what an agent or human runs to verify everything outside a commit/push rhythm, and the exact command CI runs. See ADR-025 for why every check is a flake output.
 
 ### 8.3 Failure messages
 
-Every lint script emits failure messages in a consistent format:
+Each structural lint script emits a clear, self-correcting failure on stderr — the rule violated, the offending file, the specific reason, and an override/fix hint, e.g.:
 
 ```
-[<rule-name>] <file>: <specific failure>
-See CLAUDE.md § <rule-name> for rationale and correction guidance.
+ERROR: <file> violates bundle-purity (top level must be exactly { imports = [ ... ]; } — no inline config, no extra attributes).
+Override (intentional shape deviation): git commit --no-verify
 ```
 
-This format gives an agent failing a check the rule name (for documentation lookup), the file (for direct correction), and a specific failure description (for the actual fix). The pointer to `CLAUDE.md` closes the loop: every rule has a corresponding section in `CLAUDE.md` describing what it enforces, why, and how to satisfy it.
+The message names the rule (for lookup) and the specific violation (for the fix). The rationale for each rule lives in the script's header comment and the ADR it cites (`shared-purity` → ADR-013; `bundle-purity` → ADR-027 / ADR-032) — single-sourced there, not duplicated into `CLAUDE.md`.
 
 ### 8.4 Judgment-based conventions
 
@@ -457,31 +458,21 @@ Both are run as part of the pre-commit hook chain.
 
 ### 9.3 Structural lint scripts
 
-Custom structural rules from §8.1 are implemented as shell scripts under `scripts/lint-*.sh`. Each script enforces a single invariant, named after the invariant's rule name. Failures emit the standardised message format defined in §8.3.
+The custom structural invariants a formatter/linter can't catch — `shared-purity` and `bundle-purity`, plus the ADR-023 `hardware-config-banner` check — are implemented as shell scripts under `scripts/`, each enforcing one invariant and emitting the failure format shown in §8.3. (The `filename-kebab-case` / `host-purity` rows of §8.1 are convention-only — see the note under §8.1.)
 
 ### 9.4 Hook framework
 
-Pre-commit and pre-push hooks are declared inside the flake using `git-hooks.nix`. This makes hook configuration declarative and ensures hooks are bootstrapped automatically on every machine that activates the configuration.
-
-The two stages execute as defined in §8.2: pre-commit runs fast checks plus evaluation; pre-push runs the host builds. Any failure aborts the corresponding git operation. The `nix run .#verify` flake app runs the full set on demand.
+The `pre-commit` hook is declared inside the flake using `git-hooks.nix` and installed by the dev-shell `shellHook` on `nix develop` (which also clears any stale `core.hooksPath`). Hook configuration is declarative, with no separate install step. There is no `pre-push` stage: host builds run in `nix flake check` and in CI (§8.2), not at push time. See [ADR-025](./decisions/ADR-025-ci-in-flake.md).
 
 ### 9.5 Continuous integration
 
-CI is deferred. The local hook chain, combined with builds via `linux-builder` on macOS hosts (§8.1 #6), provides the verification needed during initial build-out.
-
-CI may be added later, once multiple machines are in active use, to provide cross-platform coverage that local hooks cannot. The decision and configuration are not part of this PRD.
+Continuous integration is live (per [ADR-025](./decisions/ADR-025-ci-in-flake.md)). GitHub Actions runs `nix flake check` on every push and pull request across the `x86_64-linux`, `aarch64-linux`, and `aarch64-darwin` matrix — building every host on its native runner — defined in `.github/workflows/ci.yaml`. A weekly `flake-lock.yaml` job opens a lockfile-bump PR that merges manually after green CI. PRs land via squash auto-merge once required checks pass. CI is thin YAML; every check is a flake output, so local `nix flake check` and CI verify the identical set.
 
 ### 9.6 AI agent integration
 
-`CLAUDE.md` at the repository root is the canonical documentation of conventions and enforcement for AI agents working on the configuration. It contains:
+`CLAUDE.md` at the repository root is the AI/contributor entry point. It carries the operational current — the deliberate stances (mutableUsers, SSH posture, the unfree whitelist), the working conventions (including the ADR-032 enforcement-proportionality and rationale-single-sourcing rules), the structure overview, and build/break-glass commands — and **points to** this PRD, `docs/`, and the ADRs for the deeper *why* rather than restating them. It deliberately does not re-enumerate every invariant: §8.1 is the canonical list, and CLAUDE.md links to it rather than duplicating it (single source of truth).
 
-- The architectural principles (§4)
-- The cross-platform contract (§7)
-- Every structural invariant (§8.1) with its rule name, what it enforces, and how to satisfy it
-- Judgment-based conventions that inform authoring decisions (§8.4)
-- Pointers to this PRD and ADRs for deeper rationale
-
-Hook failures reference rules by name (§8.3), allowing the agent to map errors back to the relevant section of `CLAUDE.md` and self-correct.
+A failing structural check names its rule and the specific violation (§8.3); the agent reads that rule's script header and cited ADR to self-correct.
 
 ### 9.7 Daily workflow
 
@@ -489,8 +480,8 @@ The design-level workflow for routine changes:
 
 1. **Edit** the relevant module, foundation, bundle, or host file.
 2. **Commit.** Pre-commit runs fast structural checks only (formatter, linters, path-based lint scripts). Any failure aborts the commit with a rule-named error message.
-3. **(Optional) Verify locally** with `nix run .#verify` if making non-trivial changes — this runs the full check set (evaluation + host builds) without waiting for push.
-4. **Push.** Pre-push runs `nix flake check` (evaluation) then `nix build .#<host>` for each host the current machine can build natively. Any failure aborts the push.
+3. **(Optional) Verify locally** with `nix flake check` if making non-trivial changes — one command runs the full set (format, lint, structural, and every buildable host) without waiting for CI.
+4. **Push and open a PR.** CI runs `nix flake check` across the matrix (every host builds); a failure blocks the PR. PRs land via squash auto-merge once required checks pass.
 5. **Rebuild** the machine (`darwin-rebuild switch` or `nixos-rebuild switch` against the flake) to apply the change.
 6. **Verify** the change behaves as expected.
 
@@ -518,7 +509,7 @@ This section frames the strategy at the design level. The specific checks and to
 
 ### 10.3 Local verification
 
-The hook chain (§8.2) runs the in-scope check set across commit and push. A clean pre-push pass is the standard for "this change is safe to roll out." See §9.4 for the integration model.
+Enforcement runs at commit-time (`pre-commit`), on demand (`nix flake check`), and in CI (§8.2). A clean `nix flake check` — locally or in CI — is the standard for "this change is safe to roll out." See §9.4–§9.5 for the integration model.
 
 ### 10.4 Pre-activation verification
 
