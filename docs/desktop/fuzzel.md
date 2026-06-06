@@ -94,19 +94,19 @@ See Sharp edges if visual footprint reads wrong later.
 stylix.targets.fuzzel.enable = true;
 ```
 
-Stylix writes three sets of `programs.fuzzel.settings`:
-- `main.font` = `"Inter:size=10"` (from `stylix.fonts.sansSerif.name`
-  + `stylix.fonts.sizes.popups`). Sans-serif is deliberate — fuzzel
-  is UI chrome, not a terminal. Same reasoning as macOS Spotlight
-  using San Francisco (the system sans).
+Stylix writes two sets of `programs.fuzzel.settings`:
 - `colors.*` — full base16 palette mapped to fuzzel's eleven colour
   slots (background, text, prompt, match, selection, etc.).
 - `main.icon-theme` — picked from `stylix.polarity` via
   `stylix.icons.{dark,light}`.
 
-We deliberately don't override Stylix's font/colour writes. The
-operator-facing settings above (layer/anchor/terminal) are about
-*behaviour*, not theming.
+The **font is the one override**: `home/nixos/fuzzel.nix` sets
+`main.font` to the mono Nerd Font (`JetBrainsMono Nerd Font` at
+`stylix.fonts.sizes.popups`) via `lib.mkForce`, rather than the
+sansSerif slot (Inter) Stylix defaults to — so the launcher and power
+menu use the one Nerd Font the rest of the chrome uses (foot, waybar).
+Colours come from Stylix unchanged. The operator-facing settings
+(layer/anchor/terminal) are behaviour, not theming.
 
 **Keybind** — `home/nixos/niri.nix`:
 

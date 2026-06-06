@@ -64,12 +64,22 @@ replacement for fnott + a separate notification-center add-on.
 **HM module** — `home/nixos/fnott.nix`:
 
 ```nix
-_: {
+{ config, lib, ... }:
+let
+  monoPopup = lib.mkForce
+    "${config.stylix.fonts.monospace.name}:size=${toString config.stylix.fonts.sizes.popups}";
+in {
   services.fnott.enable = true;
+  services.fnott.settings.main = {
+    "title-font" = monoPopup;
+    "summary-font" = monoPopup;
+    "body-font" = monoPopup;
+  };
 }
 ```
 
-Minimal — all real configuration flows through Stylix targets.
+Near-minimal — colours and icons flow through Stylix; the one local
+override is the chrome font (mono Nerd Font, above).
 
 Layout values (anchor, timing, urgency-level handling) stay at
 fnott's defaults — explicitly not tuned day-1. The defaults position
@@ -91,10 +101,11 @@ stylix.targets.fnott.enable = true;
 
 Stylix writes three sets of `services.fnott.settings`:
 
-- **Fonts** — `title-font`, `summary-font`, `body-font` all set to
-  `Inter:size=10` (from `stylix.fonts.sansSerif.name` +
-  `stylix.fonts.sizes.popups`). Same sans-serif-for-UI-chrome
-  rationale as fuzzel.
+- **Fonts** — `title-font`, `summary-font`, `body-font` are overridden
+  in `home/nixos/fnott.nix` to the mono Nerd Font (`JetBrainsMono Nerd
+  Font` at `stylix.fonts.sizes.popups`) via `lib.mkForce`, so
+  notifications match the rest of the chrome (foot, waybar, fuzzel)
+  rather than the sansSerif slot (Inter) Stylix defaults to.
 - **Colours** — base16 palette mapped to fnott's colour slots
   (background, title-color, summary-color, body-color,
   progress-color) plus per-urgency-level border accents:
