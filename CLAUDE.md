@@ -112,7 +112,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
   command for system + home).
 - **flake-parts** for flake organisation.
 - One inline comment per non-obvious setting explaining "why", not "what".
-- **Rationale is single-sourced.** An inline comment gives the *why* of one setting in ≤ ~3 lines; anything longer (a decision with alternatives, a multi-item matrix) lives in one canonical home — an ADR or `docs/<area>/` — with a one-line pointer from the code, never restated. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md) and [docs/workflow.md](./docs/workflow.md) §"Rationale lives in one place".
+- **Rationale is single-sourced.** An inline comment gives the *why* of one setting in ≤ ~3 lines; anything longer (a decision with alternatives, a multi-item matrix) lives in one canonical home — an ADR or `docs/<area>/` — with a one-line pointer from the code, never restated. Incident provenance (PR-number root causes, dated observations, timings) is history, not rationale — it lives in the PR or an ADR §History, not inline; `git blame` reaches it. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md) and [docs/workflow.md](./docs/workflow.md) §"Rationale lives in one place".
 - **Enforcement is proportionate.** Guardrails are sized to the severity they guard — the lightest mechanism that holds the guarantee (convention → `grep`-lint → bespoke parser), escalating only on repeated evidence; mechanical gates are reserved for correctness-severity issues. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md).
 - Module file naming follows the "most-communicative term" rule. See
   [docs/taxonomy.md](./docs/taxonomy.md).

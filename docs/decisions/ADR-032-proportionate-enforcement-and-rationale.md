@@ -1,7 +1,7 @@
 # ADR-032: Proportionate enforcement and single-sourced rationale
 
 **Date**: 2026-06-06
-**Status**: Accepted, Implemented
+**Status**: Accepted, Implemented (amended 2026-06-06 — see §History)
 
 > This ADR turns the repo's own proportionality principles — [philosophy.md](../philosophy.md) "No premature abstraction" and "Single source of truth" — inward, onto the repo's *meta-layer*: its enforcement machinery (linters, CI guards) and its rationale prose (comments, docs). It adds no new architecture; it constrains how that meta-layer is allowed to grow. Precedent: [ADR-027](./ADR-027-foundation-and-bundles.md) walked back an over-built abstraction once it had data; this generalises the same instinct to guardrails and documentation.
 
@@ -30,7 +30,11 @@ Reserve mechanical *gates* for correctness-severity issues (platform leakage, se
 - **Anything longer** — a decision with alternatives, a multi-host or multi-app matrix, multi-step reasoning — lives in exactly **one** canonical home (an ADR, or a `docs/<area>/*.md`), and the code carries a one-line pointer to it.
 - **No rationale paragraph appears in more than one place.** Secondary surfaces (CLAUDE.md, philosophy.md, README) carry one-liners and pointers, never restatements.
 
-This ADR is bound by its own Rule 2: it is the canonical home for these two rules, and the evergreen surfaces will point here rather than restate. It is kept deliberately short for the same reason.
+**Rule 2 corollary — provenance is history, not rationale.** Rule 2 tiers rationale by *length*; a second axis tiers by *kind*. The dated narrative of how a setting's value was arrived at — a PR number and its root-cause story, an empirical timing, an "observed YYYY-MM-DD" account — is not evergreen rationale. It is historical record, and its canonical home is the artifact that already holds history: the PR/commit that made the change, or, for a decision, an ADR §History. Even when it fits in three lines it does not belong inline. The evergreen comment states *why the setting is what it is*; the *how we found out* collapses to at most a one-line pointer — and usually to nothing, since `git blame` already reaches the PR.
+
+The test: *if I changed this setting, does this sentence tell me what would break, or only how someone once found out it breaks?* The former is evergreen and stays inline; the latter is archaeology and routes out. So `# 8G holds the Darwin closure with headroom` stays, while `# PR #218 shipped 5G; cold runs observed at 38–55 min; #219 raised it` becomes `# 8G holds the closure with headroom (history: #218 → #219)` — or just the evergreen line, because blame reaches the rest. Like Rule 1's conventions this is reviewer/agent-enforced, not gated: there is no clean signature for "this sentence is a war story" (a `#\d+` regex would flag legitimate pointers and miss number-less prose). Rollout is opportunistic, matching the markdown-soft-wrap and essay-relocation precedents — trim a module's archaeology when it is next substantively edited; take the free wins where an inline retelling duplicates a PR/doc/ADR that already holds it.
+
+This ADR is bound by its own Rule 2: it is the canonical home for these rules, and the evergreen surfaces will point here rather than restate. It is kept deliberately short for the same reason.
 
 ## Rationale
 
@@ -53,6 +57,7 @@ This ADR is bound by its own Rule 2: it is the canonical home for these two rule
 - ✗ Relocating inline essays into docs is a one-time churn cost spread across several modules.
 - ⚠ **Migration trigger — a convention proves insufficient.** If a convention-not-gate rule is violated in practice across ≥ 2 PRs (e.g. bundles repeatedly accrue inline config), that is the evidence Rule 1 asks for: re-escalate to the lightest mechanism that holds.
 - ⚠ **Migration trigger — the contributor model changes.** The cost/benefit of mechanical gates is computed for a single operator plus agents. If external contributors arrive, the value of gates rises; revisit which conventions deserve promotion.
+- ⚠ **Migration trigger — provenance keeps being re-inlined.** If the same class of incident detail returns inline across ≥ 2 PRs, the pointer target is too weak: promote that history into the relevant doc or ADR §History so the one-line pointer lands somewhere durable.
 
 ## Implementation
 
@@ -68,6 +73,10 @@ A separate doc-hygiene pass — not part of this ADR — reconciles the stale PR
 Cross-reference: [philosophy.md](../philosophy.md) ("No premature abstraction", "Single source of truth"); [ADR-027](./ADR-027-foundation-and-bundles.md) (precedent — walking back an over-built abstraction on data); [ADR-025](./ADR-025-ci-in-flake.md) (the lint + CI framework items 3–4 touch).
 
 ## History
+
+### Rule 2 sharpened — provenance is history, not rationale (2026-06-06, same-day amendment)
+
+A follow-on pass over the *comment* surface (the same maturity review that motivated this ADR) found that Rule 2's length-tiering did not, on its own, catch a distinct failure: short-but-archaeological comments — dated incident narratives, PR-number root causes, empirical timings — embedded in evergreen source. The clearest case is `.github/workflows/ci.yaml`, where ~155 lines of comment wrap ~90 of YAML, much of it incident log (`#218`/`#219`/`#225`/`#226` cache-saga retellings). These pass the length test yet duplicate the PR/commit history that already records them, and rot silently as that history moves on. The corollary added to §Decision tiers rationale by *kind* as well as length: provenance routes to the PR or an ADR §History, with at most a one-line inline pointer. Convention-enforced per Rule 1; rollout opportunistic per the markdown-soft-wrap precedent. No change to Rule 1 or to Rule 2's length tiers. Evergreen-surface pointers updated in the same PR: `docs/workflow.md` §"Rationale lives in one place" gains a "how it shows up" bullet; `CLAUDE.md` §Conventions gains a one-liner.
 
 ### Implemented (2026-06-06)
 
