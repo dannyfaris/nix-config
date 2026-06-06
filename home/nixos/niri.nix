@@ -84,7 +84,8 @@ _: {
       "Mod+Return".action.spawn = "foot";
       "Mod+Space".action.spawn = "fuzzel";
 
-      # Hyper — personal system commands. keyd realizes Caps Lock → Hyper
+      # Hyper — the cross-platform layer (nav/spawn/system; see keybinds.md).
+      # keyd realizes Caps Lock → Hyper
       # (Super+Ctrl+Alt+Shift) at the evdev layer; see modules/nixos/keyd.nix
       # and docs/desktop/keyd.md. Binds are written with all four modifiers.
       # First Hyper bind: Hyper+Return → foot, mirroring the mac's

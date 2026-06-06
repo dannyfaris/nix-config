@@ -1,15 +1,18 @@
 # Keybindings
 
-Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top, enumerated below. Living document — updated with every new binding.
+Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the first, `Hyper+Return`, with the rest migrating in). Living document — updated with every new binding.
 
 ## Philosophy
 
 Keybindings separate into three modifier namespaces, each with a distinct
 purpose:
 
-- **`Super`** (written as `Mod` in niri's KDL syntax) — window
-  management. Focus, movement, workspaces, spawning the terminal. The
-  compositor's domain; niri owns all bindings in this namespace.
+- **`Super`** (written as `Mod` in niri's KDL syntax) — niri-specific
+  window **manipulation**: moving windows and columns, resizing,
+  consuming/expelling from a column, closing. The scrollable-tiling
+  operations with no macOS analogue — niri's domain. *Navigation*
+  (focus, workspace-switch, overview) is **not** here; it migrates to
+  `Hyper` (see the cross-platform analogy below).
 
 - **`Super+letter`** — reserved namespace for application commands
   (copy/paste/save/find/close-tab and similar). Under the philosophy, a
@@ -19,19 +22,21 @@ purpose:
   unbound at the niri level so the philosophy could land cleanly if
   ever pursued.
 
-- **`Hyper`** — reserved namespace for personal system commands
-  (launcher, clipboard, notifications, screenshots, lock screen).
-  `Hyper` is the combined `Super+Ctrl+Alt+Shift` modifier;
-  conventionally bound to Caps Lock via `keyd` or equivalent.
-  **Realized on macOS via Karabiner-Elements (see
-  [karabiner.md](./karabiner.md)) and on metis via keyd (see
-  [keyd.md](./keyd.md))** — both sides produce the
-  `Super+Ctrl+Alt+Shift` chord from Caps Lock. metis-side Hyper
-  commands beyond the first (`Hyper+Return`→foot) land as their
-  underlying tools arrive.
+- **`Hyper`** — the **cross-platform layer**: navigation (focus,
+  workspace-switch, overview), application spawn (terminal, browser),
+  and personal-system commands (launcher, clipboard, notifications,
+  lock). `Hyper` is the combined `Super+Ctrl+Alt+Shift` modifier from
+  Caps Lock, realized on macOS via Karabiner-Elements
+  ([karabiner.md](./karabiner.md)) and on metis via keyd
+  ([keyd.md](./keyd.md)). Its defining rule is the cross-platform
+  analogy below; the paired mapping is the source of truth.
 
 - **`Super+Hyper`** — reserved for extended window management
   (fullscreen, maximize-column, similar). Same dependency as Hyper.
+
+**Cross-platform analogy — the defining rule for `Hyper`.** Each `Hyper` chord performs the *analogous* action on both platforms, so the muscle memory built on the Mac transfers to niri intact. The Mac's `Hyper+Left/Right` moves between Spaces → on niri it focuses the column left/right; `Hyper+1`–`9` switches Space → focuses workspace N; `Hyper+Up` is Mission Control → niri's overview; `Hyper+Return` opens a terminal on both. The paired table under [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping) is the source of truth.
+
+**Decision — navigation migrates `Super` → `Hyper`.** Because the analogy puts navigation on `Hyper`, niri's navigation binds move off `Super`: focus-column, workspace-switch, and overview migrate to their `Hyper` homes, leaving `Super` for niri-specific *manipulation* (move, resize, consume/expel, close — actions with no Mac counterpart). Per the cadence below this is incremental — one bind per ceremony — so the Active-bindings tables keep each bind's current `Super` home shown with its `Hyper` target until it moves.
 
 The framework is a way of thinking, not a roadmap. The remaining
 metis-side unrealised layer (the local `Super+Hyper`) may never be
@@ -49,26 +54,42 @@ the cross-platform layer the philosophy enables. Bindings on top of
 Hyper land per-platform as they materialize — `Hyper+Return`→foot on
 metis, the Mission Control family on macOS.
 
+## Cross-platform Hyper mapping
+
+The canonical mapping: each `Hyper` chord and its analogous action per platform. niri binds land per the one-bind-per-ceremony cadence — ✓ marks those already implemented; the rest are the migration backlog.
+
+| `Hyper` chord | macOS | niri analogue | niri status |
+|---|---|---|---|
+| `Hyper+Left` / `Right` | move between Spaces | focus-column-left / right | planned |
+| `Hyper+1`–`9` | switch to Space N | focus-workspace N | planned |
+| `Hyper+Up` | Mission Control overview | toggle-overview | planned |
+| `Hyper+Down` | application-windows exposé | *(no analogue — niri has no per-app window group)* | n/a |
+| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | spawn fuzzel (launcher) | planned — migrates `Mod+Space` |
+| `Hyper+Return` | new terminal window | spawn foot | ✓ |
+| `Hyper+B` | Chrome window | spawn / focus browser | planned |
+
+**niri-specific `Hyper` binds** (no Mac mirror) live in the same namespace and land as their tools arrive — e.g. `Hyper+Escape` → power/session menu (#98), a lock-now bind, clipboard / notification / screenshot actions. niri's own extra navigation (e.g. vertical window-focus within a column) either stays on `Super` or gets a niri-only `Hyper` bind, decided per bind.
+
 ## Implementation status
 
 | Namespace | metis (niri) | macOS clients | Notes |
 |---|---|---|---|
-| `Super` (window management) | Active | n/a (macOS owns WM) | This document enumerates the metis bindings. |
+| `Super` (niri manipulation) | Active | n/a (macOS owns WM) | Move/resize/consume/close — niri-specific. Navigation is migrating out to `Hyper`. |
 | `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
-| `Hyper` (personal system) | **Active** (modifier via keyd; 1 bind) | **Active** (modifier + binds) | metis Hyper realized via keyd ([keyd.md](./keyd.md)): caps_lock → Super+Ctrl+Alt+Shift, first bind `Hyper+Return`→foot. macOS via Karabiner ([karabiner.md](./karabiner.md)) + Hammerspoon ([hammerspoon.md](./hammerspoon.md)). |
+| `Hyper` (cross-platform: nav + spawn + system) | **Active** (modifier via keyd; `Hyper+Return`, nav migrating in) | **Active** (modifier + binds) | Realized via keyd on metis ([keyd.md](./keyd.md)) + Karabiner/Hammerspoon on macOS. The paired mapping above is the source of truth. |
 | `Super+Hyper` (extended WM) | Reserved | n/a | Hyper modifier now realized on metis (keyd); no extended-WM binds made yet. |
 
-**Interim deviations** — knowingly accepted; would migrate if the
-philosophy lands:
+**Transitional bindings** — currently on `Super`, migrating to `Hyper` per the cross-platform analogy (one bind per ceremony):
 
-- `Mod+W` → `close-window`. Conflicts with the hypothetical
-  `Super+W` → `Ctrl+W` (close tab) translation. Pragmatic choice for
-  daily use; philosophical target is `Super+Hyper+W`.
-- `Mod+Space` → fuzzel application launcher (landed per #73).
-  Conflicts with the hypothetical `Hyper+Space` Spotlight-equivalent.
-  Migration target is `Hyper+Space`.
+- Navigation: `Mod+Left`/`Right` (focus-column), `Mod+1`–`9` (focus-workspace), `Mod+O` (overview) → `Hyper+Left`/`Right`, `Hyper+1`–`9`, `Hyper+Up`.
+- `Mod+Space` → fuzzel → `Hyper+Space` (the Spotlight-equivalent).
+- `Mod+Return` → foot: `Hyper+Return` is already added; `Mod+Return` is retained until the migration settles, then retired.
+
+**Letter-space deviation** (separate from the migration): `Mod+W` → `close-window` sits in the reserved `Super+letter` space (it would clash with a hypothetical `Super+W` → `Ctrl+W`). close is manipulation, so it stays on `Super`; the philosophical target is `Super+Hyper+W`.
 
 ## Active bindings
+
+*Navigation rows (focus-column, focus-workspace, overview) are **transitional** — migrating to their `Hyper` homes per [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping); the tables below show what is bound today. Manipulation rows (move-column/window, move-to-workspace, close) stay on `Super`.*
 
 ### Navigation
 
@@ -100,7 +121,7 @@ focused column.
 
 | Key | Action | Notes |
 |---|---|---|
-| `Mod+W` | close-window | Interim binding — see Implementation status |
+| `Mod+W` | close-window | Letter-space deviation — see Implementation status |
 
 ### Workspaces
 
@@ -220,27 +241,9 @@ future keyd remap can pass them through to applications as
 `Mod+W` is currently bound to `close-window` as an interim deviation
 (see Implementation status).
 
-### `Hyper` namespace (personal system commands)
+### `Hyper` namespace — now active (not reserved)
 
-`Hyper` (Caps Lock as modifier) is the philosophical home for
-launcher, clipboard manager, notification panel, screenshot, lock
-screen, and similar personal system commands.
-
-**Status by platform:**
-
-- **macOS clients** — modifier realized via Karabiner-Elements
-  (`caps_lock` → `⌘ + ⌃ + ⌥ + ⇧`); see
-  [karabiner.md](./karabiner.md). Binds layered via Hammerspoon
-  (see [hammerspoon.md](./hammerspoon.md)). Active bindings
-  enumerated above under §"Active bindings — macOS clients".
-- **metis (niri)** — modifier **realized via keyd** (Caps Lock →
-  `Super+Ctrl+Alt+Shift`; see [keyd.md](./keyd.md)). First bind:
-  `Hyper+Return` → foot (see §Hyper under Active bindings).
-  `Mod+Space` → fuzzel remains an interim Super-side deviation,
-  migration target `Hyper+Space`.
-
-Any future bindings here are added to this document when
-implemented, and tagged by the platform(s) on which they apply.
+`Hyper` is no longer a reserved namespace: it is realized on both platforms and is the cross-platform layer (navigation + spawn + system). Its canonical binds live in [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping); per-platform realization is in the Implementation-status table. Kept here only as a pointer so the reserved-keys list stays complete.
 
 ### `Super+Hyper` (extended WM)
 
