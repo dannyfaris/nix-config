@@ -129,11 +129,8 @@
           # Enforces ADR-027 §Decision / PRD §8.1 #3 bundle-purity on
           # foundation.nix and every bundles/<X>.nix file: an aggregator
           # must be exactly `{ imports = [ ... ]; }` and nothing else — no
-          # inline option setting, no extra top-level attributes. The
-          # former "≥ 2 distinct entries" sub-rule is no longer gated here
-          # (it guarded an aesthetic/idempotent property at disproportionate
-          # cost — bespoke tokeniser + self-test); it survives as a
-          # convention per ADR-032 (Rule 1 — proportionate enforcement).
+          # inline option setting, no extra top-level attributes. Gates the
+          # shape only; the ≥2-distinct sub-rule is a convention per ADR-032.
           bundle-purity = {
             enable = true;
             name = "bundle-purity";
@@ -155,11 +152,8 @@
           # a change that broke its detection — e.g. made it pass everything
           # silently — would otherwise sail through and the purity guarantee
           # would quietly evaporate. This self-test exercises the linter's
-          # negative paths against synthetic fixtures. (The bundle-purity
-          # linter carried a parallel self-test until 2026-06-06; it was
-          # removed along with the paren-tokeniser it covered when
-          # bundle-purity was narrowed to the shape check — see ADR-032 and
-          # the lint-bundle-purity.sh header.)
+          # negative paths against synthetic fixtures. (bundle-purity has no
+          # parallel self-test — retired under ADR-032 item 3.)
           #
           # Wired as a system hook (not a separate flake.checks derivation):
           # the linter is a pre-commit hook, and git-hooks.nix lifts this to
