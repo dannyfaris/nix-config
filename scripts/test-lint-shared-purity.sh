@@ -10,8 +10,10 @@
 # it runs in `nix flake check`/CI and at commit-time whenever the linter
 # changes (#193). Also runnable standalone: `bash scripts/test-lint-shared-purity.sh`.
 #
-# Mirrors test-lint-bundle-purity.sh. Pure grep — no Nix needed (unlike
-# the bundle linter, which canonicalises via nix-instantiate).
+# Pure grep — no Nix needed (unlike the bundle linter, which
+# canonicalises via nix-instantiate). The bundle linter had a parallel
+# self-test until 2026-06-06, retired with its tokeniser when
+# bundle-purity was narrowed to the shape check (ADR-032).
 #
 # Fixtures live in a per-run TMPDIR; no committed test data.
 

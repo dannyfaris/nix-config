@@ -1,6 +1,6 @@
 # desktop-env — host runs a Wayland desktop session.
 #
-# Pure aggregation per the bundle-purity rule (PRD §8.1 #4): bundles
+# Pure aggregation per the bundle-purity rule (PRD §8.1 #3): bundles
 # contain only an `imports` list and no inline option setting. The
 # capabilities a desktop host needs are factored into standalone modules
 # beside this file:
