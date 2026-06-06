@@ -1,4 +1,4 @@
-# niri user keybinds — niri-only desktop, curated essential set.
+# niri user settings — keybinds (curated essential set) + window defaults.
 #
 # Bind composition + rationale + the three-modifier-namespace
 # philosophy under which bindings are organised lives in
@@ -13,89 +13,103 @@
 # (modules/nixos/niri.nix). niri-flake's nixosModule auto-imports
 # homeModules.config (the typed settings surface) into every HM user
 # when home-manager runs as a NixOS module, so this module just sets
-# settings.binds — there's no `programs.niri.enable` here.
+# `programs.niri.settings.*` — there's no `programs.niri.enable` here.
 # homeModules.config declares no `enable` option; setting one would
 # be an undeclared-option eval failure.
 #
 # See #69 for the niri-only baseline close-out under which this
 # curated bind set was established.
 _: {
-  programs.niri.settings.binds = {
-    # Navigation — focus (arrow + vim-style mirrors)
-    "Mod+Left".action.focus-column-left = { };
-    "Mod+Down".action.focus-window-down = { };
-    "Mod+Up".action.focus-window-up = { };
-    "Mod+Right".action.focus-column-right = { };
-    "Mod+H".action.focus-column-left = { };
-    "Mod+J".action.focus-window-down = { };
-    "Mod+K".action.focus-window-up = { };
-    "Mod+L".action.focus-column-right = { };
+  programs.niri.settings = {
+    # Window open-width — new windows open at two-thirds of the workspace
+    # (a niri preset proportion), leaving a third for a companion column.
+    # niri otherwise honours each client's own preferred size, which is
+    # why foot (its ~80×24 default) opened narrow. This overrides that
+    # for all windows. See docs/desktop/niri.md §Configuration.
+    layout.default-column-width.proportion = 0.66;
 
-    # Navigation — move (arrow + vim-style mirrors)
-    "Mod+Ctrl+Left".action.move-column-left = { };
-    "Mod+Ctrl+Down".action.move-window-down = { };
-    "Mod+Ctrl+Up".action.move-window-up = { };
-    "Mod+Ctrl+Right".action.move-column-right = { };
-    "Mod+Ctrl+H".action.move-column-left = { };
-    "Mod+Ctrl+J".action.move-window-down = { };
-    "Mod+Ctrl+K".action.move-window-up = { };
-    "Mod+Ctrl+L".action.move-column-right = { };
+    # No client-side decorations — niri asks clients to drop their own
+    # titlebars and draws its focus-ring border instead. Titlebars are
+    # wasted space when tiling; foot honours this and drops its top bar.
+    prefer-no-csd = true;
 
-    # Window management — interim binding; philosophical target is
-    # Super+Hyper+W. See docs/desktop/keybinds.md §Implementation status.
-    "Mod+W".action.close-window = { };
+    binds = {
+      # Navigation — focus (arrow + vim-style mirrors)
+      "Mod+Left".action.focus-column-left = { };
+      "Mod+Down".action.focus-window-down = { };
+      "Mod+Up".action.focus-window-up = { };
+      "Mod+Right".action.focus-column-right = { };
+      "Mod+H".action.focus-column-left = { };
+      "Mod+J".action.focus-window-down = { };
+      "Mod+K".action.focus-window-up = { };
+      "Mod+L".action.focus-column-right = { };
 
-    # Workspaces — focus
-    "Mod+1".action.focus-workspace = 1;
-    "Mod+2".action.focus-workspace = 2;
-    "Mod+3".action.focus-workspace = 3;
-    "Mod+4".action.focus-workspace = 4;
-    "Mod+5".action.focus-workspace = 5;
-    "Mod+6".action.focus-workspace = 6;
-    "Mod+7".action.focus-workspace = 7;
-    "Mod+8".action.focus-workspace = 8;
-    "Mod+9".action.focus-workspace = 9;
+      # Navigation — move (arrow + vim-style mirrors)
+      "Mod+Ctrl+Left".action.move-column-left = { };
+      "Mod+Ctrl+Down".action.move-window-down = { };
+      "Mod+Ctrl+Up".action.move-window-up = { };
+      "Mod+Ctrl+Right".action.move-column-right = { };
+      "Mod+Ctrl+H".action.move-column-left = { };
+      "Mod+Ctrl+J".action.move-window-down = { };
+      "Mod+Ctrl+K".action.move-window-up = { };
+      "Mod+Ctrl+L".action.move-column-right = { };
 
-    # Workspaces — move window to
-    "Mod+Shift+1".action.move-window-to-workspace = 1;
-    "Mod+Shift+2".action.move-window-to-workspace = 2;
-    "Mod+Shift+3".action.move-window-to-workspace = 3;
-    "Mod+Shift+4".action.move-window-to-workspace = 4;
-    "Mod+Shift+5".action.move-window-to-workspace = 5;
-    "Mod+Shift+6".action.move-window-to-workspace = 6;
-    "Mod+Shift+7".action.move-window-to-workspace = 7;
-    "Mod+Shift+8".action.move-window-to-workspace = 8;
-    "Mod+Shift+9".action.move-window-to-workspace = 9;
+      # Window management — interim binding; philosophical target is
+      # Super+Hyper+W. See docs/desktop/keybinds.md §Implementation status.
+      "Mod+W".action.close-window = { };
 
-    # Spawn — terminal + application launcher
-    "Mod+Return".action.spawn = "foot";
-    "Mod+Space".action.spawn = "fuzzel";
+      # Workspaces — focus
+      "Mod+1".action.focus-workspace = 1;
+      "Mod+2".action.focus-workspace = 2;
+      "Mod+3".action.focus-workspace = 3;
+      "Mod+4".action.focus-workspace = 4;
+      "Mod+5".action.focus-workspace = 5;
+      "Mod+6".action.focus-workspace = 6;
+      "Mod+7".action.focus-workspace = 7;
+      "Mod+8".action.focus-workspace = 8;
+      "Mod+9".action.focus-workspace = 9;
 
-    # Session — quit (niri shows a confirmation dialog by default)
-    "Mod+Shift+E".action.quit = { };
+      # Workspaces — move window to
+      "Mod+Shift+1".action.move-window-to-workspace = 1;
+      "Mod+Shift+2".action.move-window-to-workspace = 2;
+      "Mod+Shift+3".action.move-window-to-workspace = 3;
+      "Mod+Shift+4".action.move-window-to-workspace = 4;
+      "Mod+Shift+5".action.move-window-to-workspace = 5;
+      "Mod+Shift+6".action.move-window-to-workspace = 6;
+      "Mod+Shift+7".action.move-window-to-workspace = 7;
+      "Mod+Shift+8".action.move-window-to-workspace = 8;
+      "Mod+Shift+9".action.move-window-to-workspace = 9;
 
-    # Discovery
-    "Mod+O".action.toggle-overview = { };
-    "Mod+Shift+Slash".action.show-hotkey-overlay = { };
+      # Spawn — terminal + application launcher
+      "Mod+Return".action.spawn = "foot";
+      "Mod+Space".action.spawn = "fuzzel";
 
-    # Screenshots — niri's built-in capture, no external tool. The Print
-    # family reproduces niri's defaults (save to disk per the default
-    # screenshot-path + copy to clipboard); the Mod+Ctrl+Shift+N family
-    # mirrors macOS's clipboard-screenshot chords via write-to-disk=false
-    # (clipboard only). Region capture is niri's interactive overlay, which
-    # always does both disk+clipboard with no per-bind split — hence Print
-    # and Mod+Ctrl+Shift+4 are equivalent. See docs/desktop/keybinds.md
-    # §Screenshots (#100). The macOS file-variant chords (Mod+Shift+3/4/5)
-    # are taken by move-window-to-workspace; remap candidate in #323.
-    "Print".action.screenshot = { };
-    "Ctrl+Print".action.screenshot-screen = { };
-    "Alt+Print".action.screenshot-window = { };
-    "Mod+Ctrl+Shift+4".action.screenshot = { };
-    "Mod+Ctrl+Shift+3".action.screenshot-screen = {
-      write-to-disk = false;
-    };
-    "Mod+Ctrl+Shift+5".action.screenshot-window = {
-      write-to-disk = false;
+      # Session — quit (niri shows a confirmation dialog by default)
+      "Mod+Shift+E".action.quit = { };
+
+      # Discovery
+      "Mod+O".action.toggle-overview = { };
+      "Mod+Shift+Slash".action.show-hotkey-overlay = { };
+
+      # Screenshots — niri's built-in capture, no external tool. The Print
+      # family reproduces niri's defaults (save to disk per the default
+      # screenshot-path + copy to clipboard); the Mod+Ctrl+Shift+N family
+      # mirrors macOS's clipboard-screenshot chords via write-to-disk=false
+      # (clipboard only). Region capture is niri's interactive overlay, which
+      # always does both disk+clipboard with no per-bind split — hence Print
+      # and Mod+Ctrl+Shift+4 are equivalent. See docs/desktop/keybinds.md
+      # §Screenshots (#100). The macOS file-variant chords (Mod+Shift+3/4/5)
+      # are taken by move-window-to-workspace; remap candidate in #323.
+      "Print".action.screenshot = { };
+      "Ctrl+Print".action.screenshot-screen = { };
+      "Alt+Print".action.screenshot-window = { };
+      "Mod+Ctrl+Shift+4".action.screenshot = { };
+      "Mod+Ctrl+Shift+3".action.screenshot-screen = {
+        write-to-disk = false;
+      };
+      "Mod+Ctrl+Shift+5".action.screenshot-window = {
+        write-to-disk = false;
+      };
     };
   };
 }
