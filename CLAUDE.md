@@ -45,7 +45,7 @@ modules/nixos/                # NixOS-specific standalone modules
 modules/shared/               # cross-platform standalone system modules
 home/shared/bundles/          # capability bundles (home-level, cross-platform)
 home/shared/                  # cross-platform standalone home-manager modules
-home/nixos/                   # NixOS-specific home-manager modules (e.g. macchina)
+home/nixos/                   # NixOS-specific home-manager modules (e.g. macchina-shell-init)
 ```
 
 Composition follows the foundation + bundles model (ADR-027): every host
