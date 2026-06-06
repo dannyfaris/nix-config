@@ -1,11 +1,6 @@
 # Keybindings
 
-Keybindings for the niri desktop on metis, with the **modifier-namespace
-philosophy now extended to macOS clients** via Karabiner-Elements (see
-[karabiner.md](./karabiner.md) for the Hyper-realization mechanics).
-The active-bindings tables below are metis-only at write-time; macOS
-clients realize Hyper as a modifier today but bind nothing on top yet.
-Living document — updated with every new binding.
+Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top, enumerated below. Living document — updated with every new binding.
 
 ## Philosophy
 
@@ -29,29 +24,30 @@ purpose:
   `Hyper` is the combined `Super+Ctrl+Alt+Shift` modifier;
   conventionally bound to Caps Lock via `keyd` or equivalent.
   **Realized on macOS via Karabiner-Elements (see
-  [karabiner.md](./karabiner.md)); still reserved on metis** —
-  metis-side Hyper-targeted commands either don't exist yet (their
-  underlying tools aren't installed) or live on interim Super-side
-  bindings until a keyd-equivalent lands.
+  [karabiner.md](./karabiner.md)) and on metis via keyd (see
+  [keyd.md](./keyd.md))** — both sides produce the
+  `Super+Ctrl+Alt+Shift` chord from Caps Lock. metis-side Hyper
+  commands beyond the first (`Hyper+Return`→foot) land as their
+  underlying tools arrive.
 
 - **`Super+Hyper`** — reserved for extended window management
   (fullscreen, maximize-column, similar). Same dependency as Hyper.
 
-The framework is a way of thinking, not a roadmap. The metis-side
-unrealised layers (`keyd` translation, the local `Super+Hyper`) may
-never be implemented. The shape of the bind composition below is
+The framework is a way of thinking, not a roadmap. The remaining
+metis-side unrealised layer (the local `Super+Hyper`) may never be
+implemented. The shape of the bind composition below is
 nonetheless informed by the philosophy — reserved namespaces are
 deliberately left unbound — so that if any of the layers eventually
 land, migration is mechanical rather than disruptive.
 
-Cross-platform portability is now partially realized: Karabiner on
-macOS produces the same Hyper modifier shape as the (still
-hypothetical) metis keyd remap would. The `Super+letter` app-command
-translation has no macOS parallel (macOS uses ⌘+letter natively, no
-remap needed); the `Hyper` namespace is the cross-platform layer
-the philosophy enables. Bindings on top of Hyper will land
-per-platform as they materialize — none exist on either side at
-write-time.
+Cross-platform portability is now realized: Karabiner on macOS and
+keyd on metis (see [keyd.md](./keyd.md)) produce the same
+`Super+Ctrl+Alt+Shift` Hyper modifier shape on both sides. The
+`Super+letter` app-command translation has no macOS parallel (macOS
+uses ⌘+letter natively, no remap needed); the `Hyper` namespace is
+the cross-platform layer the philosophy enables. Bindings on top of
+Hyper land per-platform as they materialize — `Hyper+Return`→foot on
+metis, the Mission Control family on macOS.
 
 ## Implementation status
 
@@ -59,8 +55,8 @@ write-time.
 |---|---|---|---|
 | `Super` (window management) | Active | n/a (macOS owns WM) | This document enumerates the metis bindings. |
 | `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
-| `Hyper` (personal system) | Reserved | **Active** (modifier + binds) | metis awaits keyd-equivalent; macOS realized via Karabiner ([karabiner.md](./karabiner.md)) with binds via Hammerspoon ([hammerspoon.md](./hammerspoon.md)). |
-| `Super+Hyper` (extended WM) | Reserved | n/a | Same metis dependency as Hyper. |
+| `Hyper` (personal system) | **Active** (modifier via keyd; 1 bind) | **Active** (modifier + binds) | metis Hyper realized via keyd ([keyd.md](./keyd.md)): caps_lock → Super+Ctrl+Alt+Shift, first bind `Hyper+Return`→foot. macOS via Karabiner ([karabiner.md](./karabiner.md)) + Hammerspoon ([hammerspoon.md](./hammerspoon.md)). |
+| `Super+Hyper` (extended WM) | Reserved | n/a | Hyper modifier now realized on metis (keyd); no extended-WM binds made yet. |
 
 **Interim deviations** — knowingly accepted; would migrate if the
 philosophy lands:
@@ -146,6 +142,14 @@ Capture uses niri's **built-in** screenshot actions — screen, window, and regi
 | `Mod+Ctrl+Shift+3` | screenshot-screen (`write-to-disk=false`) | Whole focused output → clipboard only |
 | `Mod+Ctrl+Shift+5` | screenshot-window (`write-to-disk=false`) | Focused window → clipboard only |
 
+### Hyper
+
+The `Hyper` namespace is realized on metis via keyd (Caps Lock → `Super+Ctrl+Alt+Shift`; see [keyd.md](./keyd.md)). niri catches Hyper binds as `Mod+Ctrl+Alt+Shift+<key>` — niri's exact-modifier matching means a four-modifier chord never collides with the `Mod` / `Mod+Ctrl` / `Mod+Shift` binds above.
+
+| Key | Action | Notes |
+|---|---|---|
+| `Hyper+Return` | spawn `foot` (terminal) | First metis Hyper bind. Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained for now. |
+
 ## Active bindings — macOS clients
 
 Hyper (`⌘⌃⌥⇧`) is produced by Karabiner-Elements from `caps_lock`
@@ -229,11 +233,11 @@ screen, and similar personal system commands.
   [karabiner.md](./karabiner.md). Binds layered via Hammerspoon
   (see [hammerspoon.md](./hammerspoon.md)). Active bindings
   enumerated above under §"Active bindings — macOS clients".
-- **metis (niri)** — modifier not yet realized; no keyd or
-  equivalent layer in place. `Mod+Space` is bound to fuzzel as an
-  interim deviation (see Implementation status §"Interim
-  deviations" above); philosophical target is `Hyper+Space` if a
-  Hyper modifier is ever realised on this side.
+- **metis (niri)** — modifier **realized via keyd** (Caps Lock →
+  `Super+Ctrl+Alt+Shift`; see [keyd.md](./keyd.md)). First bind:
+  `Hyper+Return` → foot (see §Hyper under Active bindings).
+  `Mod+Space` → fuzzel remains an interim Super-side deviation,
+  migration target `Hyper+Space`.
 
 Any future bindings here are added to this document when
 implemented, and tagged by the platform(s) on which they apply.

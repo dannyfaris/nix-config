@@ -39,6 +39,7 @@ rather than creating a new artifact.
 | [popups.md](./popups.md) | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred) | #308 |
 | [screen-sharing.md](./screen-sharing.md) | Screencast backend — keep niri-flake's `xdg-desktop-portal-gnome` driving niri's native `Mutter.ScreenCast` over PipeWire (wiring verified present; RemoteDesktop unsupported upstream) | #101 |
 | [removable-media.md](./removable-media.md) | USB auto-mount — udisks2 + udiskie (tray-less, fnott notifications) + yazi `mount` plugin; exfatprogs/ntfs3g/dosfstools helpers; passwordless (independent of #103) | #105 |
+| [keyd.md](./keyd.md) | keyd caps-lock → Hyper (Super+Ctrl+Alt+Shift) — realizes the keybinds.md Hyper namespace on metis, mirroring the mac's Karabiner | — |
 
 ### macOS clients (mac-mini)
 
