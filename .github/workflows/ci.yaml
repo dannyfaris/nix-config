@@ -1,13 +1,8 @@
-# Per-host build + lint/format gate. The explicit `name:` on the job
-# produces job display names `flake-check (x86_64-linux)` and
-# `flake-check (aarch64-linux)` — the names branch-protection on `main`
-# requires (configured out-of-band per ADR-025 §Implementation
-# operator-side setup). Without the explicit name, GitHub would
-# auto-generate `flake-check (x86_64-linux, ubuntu-24.04)` from every
-# matrix dimension (including `runner:` introduced by `include`), which
-# would never match the protection rule.
-#
-# See docs/decisions/ADR-025-ci-in-flake.md for the framework rationale.
+# Per-host build + lint/format gate (nix flake check). The explicit job
+# `name:` is load-bearing — keep it keyed on matrix.arch alone, or the
+# auto-generated check names stop matching branch protection on main.
+# Per-knob rationale for this workflow: docs/ci.md. Framework decision:
+# docs/decisions/ADR-025-ci-in-flake.md.
 name: flake-check
 
 on:
@@ -21,24 +16,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Permissions pin (defense-in-depth + whitelist > blanket per
-# CLAUDE.md). The workflow only needs:
-#
-#   contents: read    — actions/checkout to clone the repo; Nix to
-#                       fetch public flake inputs.
-#   actions: write    — cache-nix-action's purge-primary-key: always
-#                       calls `DELETE /repos/.../actions/caches` to
-#                       evict the existing cache entry before resaving
-#                       (the documented escape hatch for actions/cache's
-#                       "primary-key hit → save is a no-op" semantic).
-#                       Without this scope the delete returns 403 and
-#                       the resave is silently skipped (see #227). Also
-#                       required for the post-save LRU sweep on
-#                       `purge-prefixes` to delete stale sibling entries.
-#
-# Explicit pin still keeps the workflow short of the GitHub default
-# (which would also grant `pull-requests: write`, `issues: write`, etc.
-# that we don't need).
+# Permissions pinned to the minimum (whitelist > blanket). actions: write
+# is needed for cache-nix-action's cache DELETE on resave — without it the
+# resave silently no-ops and the cache never refreshes. See docs/ci.md
+# §Permissions.
 permissions:
   contents: read
   actions: write
@@ -55,31 +36,11 @@ jobs:
             runner: ubuntu-24.04
           - arch: aarch64-linux
             runner: ubuntu-24.04-arm
-          # Darwin runner — closes the CI-coverage gap that issue #190
-          # named: darwinConfigurations.mac-mini gets zero structural
-          # verification until this matrix entry exists.
-          #
-          # `nix flake check` on the macOS runner realises
-          # `flake.checks.aarch64-darwin.host-mac-mini` declared in
-          # parts/checks.nix. The build phase does NOT run activation
-          # (nix-darwin's brew bundle / mas install / launchctl loads
-          # fire at `darwin-rebuild switch` time, not at build time), so
-          # the CI step is safe — no Homebrew side-effects, no MAS
-          # network calls, no admin prompts.
-          #
-          # Runner pinning — `macos-15` chosen:
-          #   - It's the current stable Apple Silicon (ARM64) line.
-          #     `macos-14` is still supported but on the deprecation
-          #     runway; `macos-latest` moves under us (was migrated to
-          #     macos-15 in Aug 2025 per actions/runner-images#12520);
-          #     the `-large` / `-xlarge` / `-intel` variants are metered
-          #     on public repos while the standard macos-15 label is
-          #     free (per GitHub's billing docs).
-          #   - aarch64-darwin matches mac-mini's actual arch — no
-          #     Rosetta 2 cross-arch surprises.
-          # The cost concern that issue #190 raised (macos minutes
-          # cost) doesn't bite: this repo is public, and standard
-          # macos-15 minutes are free on public repos.
+          # Darwin runner pinned to macos-15 (current Apple-Silicon line,
+          # billed-free on public repos; -large/-xlarge/-intel are not,
+          # and *-latest moves under us). nix flake check realises the
+          # mac-mini derivation but runs no nix-darwin activation, so CI
+          # is side-effect-free. See docs/ci.md §Runners.
           - arch: aarch64-darwin
             runner: macos-15
     runs-on: ${{ matrix.runner }}
@@ -95,120 +56,43 @@ jobs:
           # and surfaces in the action's logs).
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-          # `accept-flake-config = false` carries the whitelist-over-blanket
-          # stance from modules/shared/nix-daemon.nix into CI: a
-          # transitive input's nixConfig block can't silently add a
-          # substituter or change settings here.
-          #
-          # niri.cachix.org is whitelisted explicitly below — mirrors the
-          # nix.settings in modules/nixos/niri.nix (ADR-028 slice 3b.5).
-          # Without this, CI's daemon doesn't trust the cache, niri builds
-          # from source, and the build hits the in-flight nixpkgs Rust
-          # crate fetcher 403 (rust-lang/crates.io#13482,
-          # NixOS/nixpkgs#512735). Public key sourced from niri-flake's
-          # flake.nix (the same key niri-flake would have added via the
-          # default-true cache.enable). Cross-arch note: niri.cachix.org
-          # serves x86_64-linux only, but flake-check builds every host
-          # (including aarch64 nixos-vm) and aarch64 hosts don't import
-          # the niri module, so the substituter is queried only for the
-          # x86_64 matrix entry.
+          # accept-flake-config = false carries the whitelist stance into
+          # CI (no transitive input can add a substituter). niri.cachix.org
+          # mirrors modules/nixos/niri.nix — without it niri builds from
+          # source and hits an upstream crates.io 403. See docs/ci.md
+          # §Substituters.
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = false
             extra-substituters = https://niri.cachix.org
             extra-trusted-public-keys = niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964=
 
-      # Store-path cache across cold runs (ADR-028 slice-3 follow-up, #61).
-      # This is `actions/cache`-shaped storage for build *outputs* — it is
-      # NOT a substituter, and is orthogonal to the niri.cachix.org trust
-      # lines above (#59). It amortises the non-niri half of the desktop
-      # closure that a fresh runner otherwise rebuilds every cold run:
-      # Quickshell + Qt6 + matugen + DMS + xwayland-satellite + foot and
-      # their transitive deps.
-      #
-      # Why this and not Cachix/FlakeHub/Attic: those are larger trust or
-      # operational delegations than a one-operator / three-host project
-      # warrants today. `cache-nix-action` first; revisit Cachix/Attic only
-      # if hit rate stays below ~60% over a month or a second major
-      # source-built dep arrives (#61 "Triggers to revisit").
-      #
-      # Key semantics: keyed on os × arch × flake.lock hash, so a lock bump
-      # invalidates cleanly. PR branches restore from the os×arch prefix
-      # seeded on main — the squash-auto-merge flow reseeds the cache after
-      # each PR lands. GC before save (5G ceiling) keeps x86_64 + aarch64
-      # entries coexisting under the 10 GB per-repo limit; a 7-day
-      # last-accessed purge sweeps dead prefix entries without ever purging
-      # the run's own primary key.
+      # Build-output cache (actions/cache-shaped storage, NOT a
+      # substituter) to amortise cold-run rebuilds of the desktop closure.
+      # Why cache-nix-action over Cachix/Attic, the cache-key semantics,
+      # and the per-arch size ceilings: docs/ci.md §Cache.
       - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
           gc-max-store-size-linux: 5G
-          # Darwin counterpart to gc-max-store-size-linux. mac-mini's
-          # closure is ~7.3 GiB at write-time; 8G holds it with ~700 MB
-          # headroom for growth. A lower ceiling forces eviction on
-          # save, so warm-cache runs re-fetch the shortfall from
-          # cache.nixos.org each time (history: 5G under-provisioned —
-          # #218 → #219).
-          #
-          # Repo-wide cache budget callout: GitHub Actions caps each
-          # repo's cache pool at 10 GB. With both Linux entries at
-          # 5G each + Darwin at 8G, the theoretical max is 18 GB and
-          # GitHub will LRU-evict across the pool. Linux closures
-          # are well under their 5G ceiling so this is more headroom
-          # than it looks. Worth knowing if future Linux closures
-          # grow.
-          #
-          # The Linux niri.cachix substituter is irrelevant on Darwin
-          # — Nix only queries substituters for outputs it's trying
-          # to build, and the mac-mini closure doesn't include niri.
+          # 8G holds the ~7.3 GiB Darwin closure with headroom; a lower
+          # ceiling forces save-time eviction and warm-cache re-fetch.
+          # See docs/ci.md §Cache.
           gc-max-store-size-macos: 8G
           purge: true
           purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
           purge-created: 0 # no created-age gate; last-accessed is the real filter
           purge-last-accessed: 604800
-          # Force resave on every successful run by purging the
-          # existing primary-key entry early in the save step.
-          # `cache-nix-action`'s save logic wraps `actions/cache`'s
-          # standard "primary-key hit → save is a no-op" semantic:
-          # without this knob set to `always`, every run after the
-          # first hits the primary key, skips the save ("Cache hit
-          # occurred on the primary-key. Not saving a new cache."),
-          # and the original cache contents are cemented in the pool
-          # — even after the closure grows or the GC ceiling is
-          # raised. With `always`, the action purges the primary key
-          # *before* the save-step's existence check, so the lookup
-          # misses, GC runs against the current closure under the
-          # configured cap, and a fresh full cache is saved. Each
-          # successful run refreshes its own key — no manual bump, no
-          # version suffix. Root-cause history: #225 (the stale-cache
-          # semantic also blocked the #218 → #222 ceiling raise).
+          # always: without it the primary-key hit makes the resave a
+          # no-op, cementing a stale cache even after the closure grows.
+          # Needs the actions: write scope above. See docs/ci.md §Cache.
           purge-primary-key: always
 
-      # Bounded retry for `nix flake check`. Some eval-time fetches reach
-      # third-party forges — e.g. niri's pipewire-rs from
-      # gitlab.freedesktop.org via `builtins.fetchGit` — and a blip there
-      # reds `main` for a non-issue. Two layers absorb that:
-      #   - Nix's own `download-attempts` (default 5) already retries the
-      #     HTTP downloader / binary-cache fetches — the subset it covers.
-      #     Left at the default; documented here rather than re-set, since
-      #     setting it to its default value would be a no-op config line.
-      #   - `fetchGit` is NOT covered by `download-attempts`, so this step
-      #     re-runs the whole check on any failure: up to 3 attempts, 30s
-      #     backoff.
-      #
-      # Blind retry, not regex-gated: the previous version matched a
-      # 19-branch stderr signature to classify transient-vs-real, brittle
-      # both ways (masks a real failure whose log happens to match; misses
-      # a transient it didn't enumerate). Per ADR-032 (Rule 1 —
-      # proportionate enforcement) the lighter mechanism wins, and its cost
-      # is small: the Nix store persists across attempts in the same job,
-      # so a retry re-runs only the failed derivation and its un-built
-      # dependents (an eval error re-evals in seconds), not the whole
-      # closure — and a real, deterministic error still goes red, just
-      # after the retries are spent. The default GH `run:` shell is `bash
-      # --noprofile --norc -eo pipefail`, so the failing `nix flake check`
-      # inside `if` is exempt from errexit.
+      # Bounded blind retry (3x, 30s backoff): fetchGit eval-fetches
+      # (e.g. niri's pipewire-rs) aren't covered by Nix's download-attempts,
+      # so a transient forge blip would red main. Blind, not regex-gated,
+      # per ADR-032 Rule 1. See docs/ci.md §Retry.
       - name: nix flake check
         run: |
           attempts=3
