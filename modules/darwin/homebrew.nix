@@ -19,129 +19,14 @@
 #     installs missing casks but does not attempt brew-side upgrades.
 #     Upgrades flow through the per-app vendor path.
 #
-# Update behaviour (per ADR-031 §Update mechanism stance + per-tool
-# docs):
-#   - Ghostty: Sparkle silent via auto-update = "download" in
-#     home/darwin/ghostty.nix (Ghostty drives Sparkle's runtime
-#     properties; the SU* keys below are belt-and-braces, inert today,
-#     a hedge per docs/desktop/ghostty.md §Sharp edges).
-#   - Tailscale: Sparkle silent via the SU* keys below (no in-app
-#     config knob; CustomUserPreferences is the primary mechanism).
-#   - 1Password: no CustomUserPreferences keys today — vendor prompts
-#     accepted on "least action" grounds per ADR-031 §Rationale. The
-#     suppression fallback (updates.autoUpdate = false) is documented
-#     in docs/desktop/1password.md §Update behaviour for the day the
-#     prompts become intolerable.
-#   - Slack (MAS): updates flow through Apple's mechanism — no
-#     Sparkle/CustomUserPreferences keys apply per ADR-031 clause 3.
-#     See docs/desktop/slack.md.
-#   - Microsoft 365 — Word/Excel/PowerPoint/Outlook (MAS):
-#     same Apple-mechanism update path as Slack. Named clause-3
-#     advantage is bypassing Microsoft's installer/updater stack
-#     end-to-end — both the .pkg installer's /Applications/ writes
-#     and Microsoft AutoUpdate (MAU, com.microsoft.autoupdate2).
-#     The Homebrew casks DO deselect MAU via their pkg `choices`
-#     block, but the cask path still triggers the Microsoft pkg's
-#     /Applications/ writes, and Office apps may re-install MAU on
-#     first launch when missing. MAS sandboxing prevents MAU
-#     structurally. Teams was originally scoped in but dropped
-#     after the 2026-06-03 mac-mini activation surfaced an
-#     `mas install` failure that broke the whole Brewfile run;
-#     operator chose the Chrome web client at teams.microsoft.com
-#     over chasing the right MAS listing. See
-#     docs/desktop/microsoft-365.md §Sharp edges.
-#   - Amphetamine (MAS): MAS is the only channel — no direct .dmg,
-#     no cask, no nixpkgs package. Clause 3 by absence of
-#     alternative, not by weigh-up. See docs/desktop/amphetamine.md.
-#   - Typora (cask, clause-2): Sparkle silent via the SU* keys
-#     below under abnerworks.Typora. Nixpkgs path carved out
-#     because the immutable nix-store .app breaks Sparkle's
-#     in-place update flow. See docs/desktop/typora.md.
-#   - Obsidian (cask, clause-2): MAS vendor-disrecommended
-#     (sandbox restrictions break vault filesystem access).
-#     Nixpkgs path carved out because the immutable nix-store .app
-#     breaks Obsidian's electron-builder updater. No Sparkle keys —
-#     Obsidian's updater is not Sparkle. Suppression fallback is
-#     the in-app Settings → About → Automatic updates toggle, not
-#     a `defaults`-domain key. See docs/desktop/obsidian.md.
-#   - Cursor (cask, clause-2): not on MAS. Nixpkgs path carved out
-#     because the immutable nix-store .app breaks Cursor's
-#     ToDesktop auto-updater (Anysphere ships point releases
-#     multiple times per week; flake-bump cadence is a feature-
-#     delivery cost). No Sparkle keys — ToDesktop-generated
-#     `com.todesktop.*` bundle ID, in-IDE Update Mode toggle is
-#     the suppression fallback. The Darwin install-path doc is
-#     docs/desktop/cursor.md — narrowly scoped per the README
-#     "Deliberate no-doc" precedent (IDE-selection rationale
-#     lives in home/nixos/cursor-ide.nix).
-#   - Claude desktop (cask, clause-1): no MAS, no Darwin nixpkgs
-#     equivalent. Anthropic's custom in-app updater — NOT Sparkle,
-#     no SU* keys. Suppression fallback is in-app toggle.
-#     See docs/desktop/claude-desktop.md.
-#   - ChatGPT (cask, clause-2): not on MAS. Nixpkgs path carved
-#     out because the immutable nix-store .app breaks ChatGPT's
-#     Sparkle auto-updater. SU* keys wired below under com.openai.chat.
-#     See docs/desktop/chatgpt.md.
-#   - Gemini (cask, clause-1): no MAS (the Cypress North "Gemini"
-#     on MAS is a Stellar wallet, not Google's AI). No Darwin
-#     nixpkgs equivalent at write-time. Update mechanism is
-#     Keystone — SHARED with Chrome's existing Keystone install
-#     (one launchd agent, both apps). Suppression fallback recipe
-#     in docs/desktop/chrome.md applies to both apps simultaneously.
-#     See docs/desktop/gemini.md.
-#   - Fellow (cask, clause-1): no MAS, no nixpkgs Darwin. Electron-
-#     style in-app updater (no Sparkle keys). Bundle ID
-#     `com.electron.fellow`. See docs/desktop/fellow.md.
-#   - Wispr Flow (cask, clause-1): no MAS, no nixpkgs Darwin.
-#     Electron-style in-app updater. Bundle ID
-#     `com.electron.wispr-flow`. macOS Monterey+; needs
-#     Accessibility + Microphone TCC prompts on first run. See
-#     docs/desktop/wispr-flow.md.
-#   - AltTab (cask, clause-2): not on MAS (GPL3+, upstream
-#     distributes via GitHub releases only). Nixpkgs path carved
-#     out because the immutable nix-store .app breaks AltTab's
-#     Sparkle auto-updater (no pre-disable safety like Chrome).
-#     SU* keys wired below under com.lwouis.alt-tab-macos.
-#     Needs Accessibility + Screen Recording TCC prompts on first
-#     run. See docs/desktop/alt-tab.md.
-#   - Hammerspoon (cask, clause-1): not on MAS (sandboxed MAS
-#     cannot drive Accessibility-API window manipulation or
-#     global event taps). Not in nixpkgs Darwin
-#     (`pkgs.hammerspoon` returns "does not provide attribute" on
-#     aarch64-darwin / x86_64-darwin) — clause 1 fires; no
-#     degradation analysis needed. `.zip`-enclosure Sparkle so
-#     silent updates work (same shape as Ghostty). SU* keys wired
-#     below under `org.hammerspoon.Hammerspoon`. Needs Accessibility
-#     TCC prompt on first launch (one-time). Declarative init.lua
-#     managed by home/darwin/hammerspoon.nix (read-only symlink —
-#     UI / console edits do not survive activation). The macOS
-#     hotkey-binding layer that lives on top of Karabiner's Hyper
-#     modifier. See docs/desktop/hammerspoon.md.
-#   - Karabiner-Elements (cask, clause-2): not on MAS (DriverKit +
-#     sandbox structurally incompatible). Nixpkgs path carved out
-#     because Karabiner is a privileged-pkg-installed system
-#     component — DriverKit system extension + 7+ launchd jobs at
-#     /Library/{LaunchDaemons,LaunchAgents}/ + privileged install
-#     at /Library/Application Support/org.pqrs/Karabiner-Elements/
-#     — that nix-store extraction cannot drive through macOS's
-#     systemextensionsctl approval flow. Same shape as Tailscale
-#     (pkg + system extension). Sparkle is pkg-enclosure so
-#     updates always prompt for admin auth (no silent path per
-#     Sparkle's docs); SU* keys below are belt-and-braces only.
-#     Bundle ID `org.pqrs.Karabiner-Elements`. Needs DriverKit
-#     extension approval (Login Items & Extensions → Driver
-#     Extensions) + Input Monitoring TCC on first run. Declarative
-#     karabiner.json managed by home/darwin/karabiner.nix
-#     (read-only symlink — UI edits do not survive activation).
-#     See docs/desktop/karabiner.md.
-#   - Chrome: Keystone (com.google.Keystone.Agent) runs on its
-#     vendor default and silently updates /Applications/Google
-#     Chrome.app. No CustomUserPreferences keys today — Keystone is
-#     allowed to run because browsers are security-load-bearing
-#     (Chrome ships weekly CVE patches). Suppression fallback
-#     (checkInterval = 0) is documented in docs/desktop/chrome.md
-#     §Update behaviour for the day Mosyle escalates /Applications/
-#     writes.
+# Per-app update behaviour — clause classification (ADR-031), update
+# mechanism (Sparkle / Keystone / MAS / Electron / ToDesktop / custom),
+# Sparkle bundle ID, nixpkgs carve-out rationale, and first-run TCC /
+# DriverKit prompts — lives in the per-tool doc for each app under
+# docs/desktop/, which every cask and masApps entry below points to by
+# name. It is single-sourced to those docs (not restated here) per
+# ADR-032 (Rule 2 — single-sourced rationale); the Sparkle keys this
+# module actually sets are annotated at their definition below.
 #
 # `masApps` cleanup asymmetry (per ADR-031 §Configuration stance):
 # `homebrew.onActivation.cleanup = "uninstall"` does NOT extend to
@@ -230,12 +115,9 @@ in
       "Microsoft Excel" = 462058435;
       "Microsoft PowerPoint" = 462062816;
       "Microsoft Outlook" = 985367838;
-      # Microsoft Teams intentionally NOT included — see
-      # docs/desktop/microsoft-365.md §Sharp edges. Teams's MAS
-      # listing surfaced an `mas install` failure on the 2026-06-03
-      # mac-mini bring-up that broke the entire activation; operator
-      # chose to drop the desktop client and use Teams via Chrome at
-      # teams.microsoft.com instead.
+      # Microsoft Teams intentionally NOT included — its MAS listing
+      # broke activation (`mas install` failure); Teams runs via Chrome
+      # instead. See docs/desktop/microsoft-365.md §Sharp edges.
       "Amphetamine" = 937984704; # docs/desktop/amphetamine.md
     };
     # Mirror the taps declared by nix-homebrew so the nix-darwin module
