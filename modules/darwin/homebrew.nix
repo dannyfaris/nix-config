@@ -131,49 +131,44 @@ in
     };
   };
 
-  # Sparkle silent-update keys for Ghostty, Tailscale, Typora,
-  # ChatGPT, AltTab, Karabiner-Elements, and Hammerspoon. See
-  # per-tool docs (docs/desktop/{ghostty,tailscale,typora,chatgpt,
-  # alt-tab,karabiner,hammerspoon}.md §Configuration) for the
-  # per-app rationale + verification commands. Bundle IDs are the
-  # *app* bundle IDs (not pkg installer IDs) — Tailscale's pkg ID
-  # is com.tailscale.ipn.macsys, the app ID is io.tailscale.ipn.macsys.
-  # ChatGPT's is `com.openai.chat` (singular "chat", not "chatgpt").
-  # AltTab's is `com.lwouis.alt-tab-macos` (the upstream maintainer's
-  # GitHub handle is part of the reverse-DNS prefix). Karabiner's
-  # is `org.pqrs.Karabiner-Elements` (the main app — NOT the
-  # `org.pqrs.Karabiner-DriverKit-VirtualHIDDevice` system extension,
-  # NOT the `org.pqrs.Karabiner-EventViewer` companion). Karabiner
-  # is pkg-enclosure Sparkle so the keys are belt-and-braces only —
-  # Sparkle's package-updates path always prompts for admin auth
-  # and has no silent mode (per Sparkle's own docs). Hammerspoon's
-  # is `org.hammerspoon.Hammerspoon`; `.zip`-enclosure Sparkle so
-  # the silent path applies (same shape as Ghostty).
+  # Sparkle silent-update keys for the Sparkle-driven casks. The *app*
+  # bundle ID (distinct from the pkg installer ID), each app's update
+  # mechanism, and the verification commands are single-sourced to the
+  # per-tool doc pointed at on each key (ADR-032 Rule 2). The one
+  # pkg-enclosure cask (Karabiner) gets no silent path from Sparkle, so
+  # its keys are belt-and-braces — see docs/desktop/karabiner.md.
   system.defaults.CustomUserPreferences = {
+    # docs/desktop/ghostty.md
     "com.mitchellh.ghostty" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
+    # docs/desktop/tailscale.md
     "io.tailscale.ipn.macsys" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
+    # docs/desktop/typora.md
     "abnerworks.Typora" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
+    # docs/desktop/chatgpt.md
     "com.openai.chat" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
+    # docs/desktop/alt-tab.md
     "com.lwouis.alt-tab-macos" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
+    # docs/desktop/karabiner.md
     "org.pqrs.Karabiner-Elements" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };
+    # docs/desktop/hammerspoon.md
     "org.hammerspoon.Hammerspoon" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
