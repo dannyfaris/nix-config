@@ -121,8 +121,8 @@
   # extraHomeModules is the full HM imports list for this host —
   # capability bundles plus standalone modules, per ADR-027's bundle
   # model. Work-only: cli tooling + work-only git (no gh per the
-  # mercury_push_boundary rule) + login info + base agent CLIs +
-  # outbound SSH. No agent-clis-extras.
+  # mercury_push_boundary rule) + TUI theming + login info + base agent
+  # CLIs + outbound SSH. No agent-clis-extras.
   #
   # flakePath omitted — the host-context default ("/home/dbf/nix-config")
   # matches this host.
