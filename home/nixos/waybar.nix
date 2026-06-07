@@ -12,9 +12,8 @@
 # below are behaviour-only.
 #
 # Lives under nixos/ because waybar is Linux-only — same placement
-# reasoning as foot.nix, fuzzel.nix, and fnott.nix. macOS hosts get
-# their own bar (or rely on macOS menu bar) when home/darwin/
-# lands per the mac-mini onboarding epic #11.
+# reasoning as foot.nix, fuzzel.nix, and fnott.nix. macOS hosts rely
+# on the native macOS menu bar; no waybar equivalent is wired.
 #
 # Auto-start via systemd: `programs.waybar.systemd.enable = true`
 # adds a systemd user unit bound to `graphical-session.target`.

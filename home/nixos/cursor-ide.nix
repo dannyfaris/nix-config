@@ -19,8 +19,8 @@
 #
 # Lives under nixos/ because the launcher integration (xdg-open,
 # fuzzel discovery via /etc/profiles/per-user/dbf/share/applications/)
-# is Linux-only. macOS hosts install Cursor via the official .dmg
-# when home/darwin/ lands per the mac-mini onboarding epic #11.
+# is Linux-only. macOS hosts install Cursor via the `cursor` Homebrew
+# cask (modules/darwin/homebrew.nix; see docs/desktop/cursor.md).
 #
 # No Stylix integration day 1: Stylix's vscode target gates on
 # `programs.vscode.enable` and writes to ~/.config/Code, not

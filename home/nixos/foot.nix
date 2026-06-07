@@ -13,8 +13,8 @@
 #
 # Lives under nixos/ because foot is Wayland-only and doesn't compile
 # off Linux — there is no cross-platform variant to share. macOS hosts
-# get Ghostty instead (via a future home/darwin/ module, per the
-# mac-mini onboarding epic #11); the server-side terminfo for
+# get Ghostty instead (home/darwin/ghostty.nix + the `ghostty` cask in
+# modules/darwin/homebrew.nix); the server-side terminfo for
 # Ghostty (xterm-ghostty) lives at modules/nixos/ghostty-terminfo.nix
 # and ships on every NixOS host so SSH'ing into any NixOS host from a
 # Ghostty-on-Mac terminal renders cleanly. (NixOS-only because

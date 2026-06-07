@@ -12,10 +12,10 @@
 #   - modules/darwin/home-manager.nix — HM attr-name + homeDirectory
 #   - modules/darwin/host-context.nix — flakePath default
 #
-# When Darwin lands (epic #11), a sibling `modules/darwin/users.nix`
-# consumes the same record with the `darwinHome` field. The deliberate
-# split between `linuxHome` and `darwinHome` records the platform-rooted
-# home location once; consumers pick the right one for their layer.
+# The sibling `modules/darwin/users.nix` (listed above) consumes the
+# same record with the `darwinHome` field. The deliberate split between
+# `linuxHome` and `darwinHome` records the platform-rooted home location
+# once; consumers pick the right one for their layer.
 #
 # Why a plain attrset and not a NixOS option: an option layer would
 # require an `imports` evaluation timing dance for any module that wants
@@ -30,9 +30,9 @@
 
   # Platform-rooted home paths. Consumers pick the right one for the
   # layer they're in; the home-manager NixOS-module path uses linuxHome,
-  # the (forthcoming) Darwin equivalent will use darwinHome.
+  # the Darwin equivalent (modules/darwin/home-manager.nix) uses darwinHome.
   linuxHome = "/home/dbf";
-  darwinHome = "/Users/dbf"; # consumed when mac-mini lands (epic #11)
+  darwinHome = "/Users/dbf"; # consumed by the Darwin users + home-manager modules
 
   # Flake checkout directory name, joined with the per-platform home to
   # produce the full filesystem path (e.g. /home/dbf/nix-config on Linux,
