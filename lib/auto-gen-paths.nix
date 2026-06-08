@@ -38,4 +38,8 @@ in
 {
   inherit globs;
   regexes = map globToRegex globs;
+  # Exposed so the glob→regex translation (the one piece of real logic
+  # here) can be unit-tested directly rather than only through `regexes`.
+  # See lib/tests/auto-gen-paths.nix, wired as a CI check per ADR-033.
+  inherit globToRegex;
 }
