@@ -88,3 +88,16 @@ repeating workflow justifies one, declare it in `programs.zellij.settings`
 or in a project-local KDL file.
 
 zellij provides session persistence across any disconnect — network blip, laptop sleep, or reboot: reconnect over SSH, then `zellij attach`. (This originally paired with mosh for no-reconnect roaming; mosh was removed in #47 — see ADR-011.)
+
+### Session naming (2026-06-08)
+
+The `za` workspace function names its session `<host>:<repo>` (e.g. `mac-mini:nix-config`), not the bare repo basename. The driver is the OS-level window switcher: zellij sets the outer terminal title via OSC-0 to `<session> | <focused-pane-title>` — session-name-first, with no option to reorder or disable the session prefix (zellij 0.44.3, `make_terminal_title`). Leading the session name with the host is therefore the only lever that puts the host first in the title, which is what disambiguates otherwise-identical workspaces across the fleet when cmd-tabbing in Ghostty.
+
+Two consequences follow, and they are the reason the surrounding code looks the way it does:
+
+- **The bar renders the path, not the session name.** The zjstatus `format_left` would otherwise show the host-prefixed session and double the host already in its `{command_host}` segment. Instead a `{command_path}` widget renders the launch-dir basename (zjstatus runs command widgets in the session's launch dir, the same cwd the git widget relies on) — which is the prompt's `$directory` value, so bar, fish prompt and Claude statusline stay one visual language.
+- **`fish_title` is silent inside zellij.** zellij captures the focused pane's OSC-0 title and appends it after the session name. Left active, `fish_title` would make the title `<host>:<repo> | hostname: pwd`; returning early when `$ZELLIJ` is set keeps it the clean `<host>:<repo>`. (A non-fish focused pane such as yazi may still set its own title; the host-led prefix holds regardless.) Outside zellij `fish_title` is unchanged — it still surfaces `hostname: pwd` for plain Ghostty tabs.
+
+The `:` separator is CLI- and filesystem-safe: the session name doubles as a unix socket filename, and zellij 0.44.3 accepts `:` (its `validate_session_name` rejects only empty / `.` / `..` / names containing `/`).
+
+Code: `home/shared/shell.nix` (`za`, `fish_title`) and `home/shared/multiplexer.nix` (the `{command_path}` widget). Renaming the session orphans any pre-existing bare-named session — `zellij delete-session <old>` once after first switch.
