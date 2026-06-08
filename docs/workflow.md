@@ -321,6 +321,7 @@ manual-merge step from the loop while still gating on CI.
 - A module carries a one-line `# see docs/<area>/<tool>.md` pointer where a per-tool doc owns the detail, rather than an inline essay duplicating it.
 - Decisions with alternatives and consequences are ADRs; the code points to the ADR number, not a paragraph re-deriving it.
 - Drift between a doc and the code it explains is a cadence bug, fixed by reconciling to the single source — the same treatment selection-doc drift gets above.
+- Incident provenance — a PR-number root cause, a dated "observed" note, a timing measurement — stays in the PR/commit (or an ADR §History), not inline. A comment gives the evergreen *why the setting is what it is*; `git blame` reaches the *how we found out*. The test: does the sentence say what would break if the setting changed, or only how someone once found out it breaks? The latter is history — route it out, keep at most a one-line pointer. See [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) (Rule 2 corollary).
 
 ## See also
 
