@@ -1,13 +1,70 @@
-# Continuous-integration outputs: per-host system.build.toplevel checks
-# plus git-hooks.nix pre-commit hooks. The formatter list (nixfmt + shfmt)
+# Continuous-integration outputs: per-host system.build.toplevel checks,
+# the deliberate-stance + lib unit-test eval checks (ADR-033), plus
+# git-hooks.nix pre-commit hooks. The formatter list (nixfmt + shfmt)
 # and its exclude globs are defined once in parts/formatter.nix; the
 # treefmt pre-commit hook below reuses that same wrapper rather than
 # re-declaring the tools, so format enforcement at commit-time and at
 # `nix flake check`/CI-time share a single source of truth.
 #
-# See docs/decisions/ADR-025-ci-in-flake.md for the framework rationale.
+# See docs/decisions/ADR-025-ci-in-flake.md for the framework rationale,
+# and docs/decisions/ADR-033-eval-checks-stances-and-lib-units.md for the
+# stance/unit-test layer the toplevel builds structurally can't cover.
 { inputs, self, ... }:
 
+let
+  lib = inputs.nixpkgs.lib;
+
+  # The deliberate-stance assertions (lib/stances.nix) and the lib unit
+  # tests (lib/tests/auto-gen-paths.nix) are pure eval — they produce
+  # lists of failures, which mkReportCheck turns into check derivations.
+  stances = import ../lib/stances.nix { inherit lib; };
+  autoGenPathsFailures = import ../lib/tests/auto-gen-paths.nix { inherit lib; };
+
+  pkgsFor = system: inputs.nixpkgs.legacyPackages.${system};
+
+  # Render a list of failure strings into a check derivation: a no-op
+  # success when empty, otherwise a build that prints the report to stderr
+  # and fails. The report passes through a file (passAsFile) so the
+  # messages need no shell-escaping.
+  mkReportCheck =
+    system: name: header: failures:
+    let
+      pkgs = pkgsFor system;
+    in
+    if failures == [ ] then
+      pkgs.runCommand name { } ''echo "${header}: ok" > "$out"''
+    else
+      pkgs.runCommand name
+        {
+          report = header + ":\n" + lib.concatMapStrings (f: "  - ${f}\n") failures;
+          passAsFile = [ "report" ];
+        }
+        ''
+          cat "$reportPath" >&2
+          exit 1
+        '';
+
+  # One deliberate-stance check per host: evaluate the platform's stance
+  # assertions against the host config; fail with the violation list.
+  mkStanceCheck =
+    system: platform: hostName: config:
+    mkReportCheck system "stances-${hostName}"
+      "Deliberate-stance violations on ${hostName} (CLAUDE.md §Deliberate stances; ADR-033)"
+      (stances.${platform} config);
+
+  # lib.runTests returns records { name; expected; result; }; flatten each
+  # to a legible one-liner for the report.
+  mkUnitTestCheck =
+    system: name: runTestsFailures:
+    mkReportCheck system "unit-${name}" "lib.runTests failures in ${name} (ADR-033)" (
+      map (
+        f:
+        "${f.name}: expected ${lib.generators.toPretty { } f.expected}, got ${
+          lib.generators.toPretty { } f.result
+        }"
+      ) runTestsFailures
+    );
+in
 {
   imports = [ inputs.git-hooks-nix.flakeModule ];
 
@@ -30,11 +87,32 @@
   # line that lagged the 2026-06-02 mac-mini onboarding). The matching
   # macOS runner is declared in the ci.yaml matrix (see that file for
   # the runner-pinning + cache-budget rationale).
+  # Each host carries a `host-*` toplevel build (does it compile?) and a
+  # `stances-*` eval check (does it still hold the deliberate stances?).
+  # The lib unit tests are pure eval and platform-independent, so they run
+  # once on the x86_64-linux runner rather than redundantly on each.
   flake.checks = {
-    aarch64-linux.host-nixos-vm = self.nixosConfigurations.nixos-vm.config.system.build.toplevel;
-    x86_64-linux.host-mercury = self.nixosConfigurations.mercury.config.system.build.toplevel;
-    x86_64-linux.host-metis = self.nixosConfigurations.metis.config.system.build.toplevel;
-    aarch64-darwin.host-mac-mini = self.darwinConfigurations.mac-mini.system;
+    aarch64-linux = {
+      host-nixos-vm = self.nixosConfigurations.nixos-vm.config.system.build.toplevel;
+      stances-nixos-vm =
+        mkStanceCheck "aarch64-linux" "nixos" "nixos-vm"
+          self.nixosConfigurations.nixos-vm.config;
+    };
+    x86_64-linux = {
+      host-mercury = self.nixosConfigurations.mercury.config.system.build.toplevel;
+      host-metis = self.nixosConfigurations.metis.config.system.build.toplevel;
+      stances-mercury =
+        mkStanceCheck "x86_64-linux" "nixos" "mercury"
+          self.nixosConfigurations.mercury.config;
+      stances-metis = mkStanceCheck "x86_64-linux" "nixos" "metis" self.nixosConfigurations.metis.config;
+      lib-auto-gen-paths = mkUnitTestCheck "x86_64-linux" "auto-gen-paths" autoGenPathsFailures;
+    };
+    aarch64-darwin = {
+      host-mac-mini = self.darwinConfigurations.mac-mini.system;
+      stances-mac-mini =
+        mkStanceCheck "aarch64-darwin" "darwin" "mac-mini"
+          self.darwinConfigurations.mac-mini.config;
+    };
   };
 
   # Pre-commit hooks. git-hooks.nix lifts these to checks.<system>.pre-commit

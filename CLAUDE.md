@@ -72,6 +72,8 @@ whitelist > blanket.
 | `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
 | `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
 
+These stances are asserted as eval-only CI checks (`lib/stances.nix`, wired in `parts/checks.nix`), so weakening one fails `nix flake check` rather than building green — see [ADR-033](./docs/decisions/ADR-033-eval-checks-stances-and-lib-units.md).
+
 ## Break-glass
 
 If SSH wedges or keys go wrong, recovery is host-specific:

@@ -75,6 +75,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [030](./ADR-030-nixpkgs-channel.md) | nixpkgs channel | `nixos-unstable`, weekly flake-lock | Records the existing choice; weekly bump PR with manual merge after green CI. Aligns with Stylix + niri-flake + home-manager all tracking unstable. Migration triggers named for Darwin onboarding and repeated Stylix breakage. |
 | [031](./ADR-031-nix-homebrew-boundary.md) | Darwin cask boundary | nix-homebrew + cask + MAS | When something lands in Homebrew vs nixpkgs vs the Mac App Store; declarative cask list, Sparkle silent-update stance. Per-app mechanism details live in `docs/desktop/`. |
 | [032](./ADR-032-proportionate-enforcement-and-rationale.md) | Meta-layer proportionality | proportionate enforcement + single-sourced rationale | Turns the repo's "no premature abstraction" + "single source of truth" principles onto its own linters/CI and rationale prose: lightest mechanism that holds the guarantee; rationale lives in one canonical home with pointers elsewhere. |
+| [033](./ADR-033-eval-checks-stances-and-lib-units.md) | Stance + lib eval checks | assert deliberate stances; unit-test `lib/` | Adds eval-only `flake.checks`: per-host assertions that the CLAUDE.md deliberate stances still hold (so a weakened stance fails CI instead of auto-merging), plus `lib.runTests` coverage of `lib/auto-gen-paths.nix`. Property tests ruled out; NixOS VM behavioural tests deferred. |
 
 ## Conventions
 
