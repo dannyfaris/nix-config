@@ -47,6 +47,13 @@ truth, eliminating drift between AI memory and in-repo reference.
   failure modes. Where future tools that grow per-identity state should
   refer when wiring their split.
 
+- **[ci.md](./ci.md)** — the per-knob operational companion to
+  [ADR-025](./decisions/ADR-025-ci-in-flake.md): why each setting in
+  `.github/workflows/ci.yaml` is what it is (display-name/branch-protection
+  mechanics, permissions, runner pins, substituters, the build-output
+  cache, the retry). Living doc; ADR-025 owns the framework decision and
+  dated history, this owns the standing mechanics.
+
 - **[decisions/](./decisions/)** — Architecture Decision Records (ADRs), one
   per major decision. Light-format: Context / Decision / Rationale /
   Consequences / Implementation. See
