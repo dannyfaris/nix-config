@@ -171,13 +171,7 @@ from SSH" shortcut on the same boot cycle — running `colima
 start` manually in the SSH session works, but it won't fix the
 GUI-domain state that launchd cares about for the NEXT boot.
 
-**Docker context — not `DOCKER_HOST`.** colima registers a
-docker context on first start and sets it as the default. The
-`docker` CLI resolves to colima's socket via context, not via
-the `DOCKER_HOST` env var. If you ever see `Cannot connect to
-the Docker daemon`, check `docker context ls` first — if
-something switched the current context away from `colima`,
-`docker context use colima` restores it.
+**Docker context for the CLI; `DOCKER_HOST` for SDK clients.** colima registers a docker context on first start and sets it default, so the `docker` CLI resolves to colima's socket via that context — no `DOCKER_HOST` needed for the CLI. SDK-based clients that don't read docker contexts are different: notably lazydocker reads `$DOCKER_HOST`, or falls back to the standard `/var/run/docker.sock`, and colima populates neither (its socket is `~/.colima/default/docker.sock`). So `modules/darwin/colima.nix` exports `DOCKER_HOST` to colima's socket as a session var for those clients. Troubleshooting: if the `docker` CLI shows `Cannot connect to the Docker daemon`, check `docker context ls` first — if the current context was switched away from `colima`, `docker context use colima` restores it; if *lazydocker* can't connect, confirm `DOCKER_HOST` is set in the shell env.
 
 **Resource flags are first-start-sticky.** `colima start --cpu
 4` on first start commits the VM to 4 CPUs in its `colima.yaml`;

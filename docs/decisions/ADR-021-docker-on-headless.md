@@ -58,7 +58,7 @@ For "always-on after unattended reboot without anyone at the keyboard," the oper
 
 **System-wide CLI on Darwin.** Same reasoning as the Linux side: once the daemon exists locally, the cost of devShell-only CLI exceeds the version-pinning benefit. `pkgs.docker` + `pkgs.docker-compose` land in `environment.systemPackages` on hosts that import the colima module, mirroring the rootless-docker module's behaviour on NixOS.
 
-**No `DOCKER_HOST` env-var override.** The Linux module sets `setSocketVariable = true` to point the docker CLI at `unix:///run/user/$UID/docker.sock`. The Darwin path uses a different mechanism: colima registers a `colima` docker context on first `colima start` and sets it as the default; `docker` then resolves to colima's socket via context, not via `DOCKER_HOST`. This is the upstream-supported path and doesn't need declarative override.
+**`DOCKER_HOST` exported for SDK clients, not the CLI.** The Linux module sets `setSocketVariable = true` to point the docker CLI at `unix:///run/user/$UID/docker.sock`. On Darwin the `docker` *CLI* needs no such override: colima registers a `colima` docker context on first `colima start` and sets it as the default, so `docker` resolves to colima's socket via that context. But SDK-based clients that don't read docker contexts — notably lazydocker ([ADR-006](./ADR-006-cli-utilities.md)) — read `$DOCKER_HOST`, or fall back to the standard `/var/run/docker.sock`, and colima populates neither (its socket is the non-standard `~/.colima/default/docker.sock`). So `modules/darwin/colima.nix` exports `DOCKER_HOST` to colima's socket as a home-manager session var — the Darwin parallel to the Linux `setSocketVariable`, scoped to the client class that actually needs it. See §History ("`DOCKER_HOST` rationale corrected").
 
 ## Consequences
 
@@ -99,13 +99,17 @@ First-use verification on Mercury after the bootstrap is in `docs/runbooks/headl
 
 **Darwin side (2026-06-03 amendment):**
 
-- `modules/darwin/colima.nix` — the module itself: adds `pkgs.colima` + `pkgs.docker` + `pkgs.docker-compose` to `environment.systemPackages`, and declares `launchd.user.agents.colima` (RunAtLoad=true, KeepAlive=false, ProgramArguments running `${pkgs.colima}/bin/colima start`, stdout/stderr to `~/Library/Logs/colima.{out,err}.log`). No `DOCKER_HOST` override (colima registers a docker context instead).
+- `modules/darwin/colima.nix` — the module itself: adds `pkgs.colima` + `pkgs.docker` + `pkgs.docker-compose` to `environment.systemPackages`, and declares `launchd.user.agents.colima` (RunAtLoad=true, KeepAlive=false, ProgramArguments running `${pkgs.colima}/bin/colima start`, stdout/stderr to `~/Library/Logs/colima.{out,err}.log`). Exports `DOCKER_HOST` to colima's socket as a home-manager session var for SDK clients (lazydocker) that don't follow docker contexts; the `docker` CLI itself needs no override (it uses the colima context). See §Rationale.
 - `hosts/mac-mini/default.nix` — imports the module directly. Any future Mac that runs containers imports the same module from its own host file.
 - Per-tool doc at `docs/desktop/colima.md` covers the operator-facing surface (first-use `colima start`, resource flags, lazydocker pairing, `docker context` interaction).
 
 First-use verification on mac-mini: `colima start` (one-time bootstrap), then `docker run --rm hello-world` should succeed without sudo; `colima status` should show the VM running; `docker context ls` should list `colima` as the current context.
 
 ## History
+
+### `DOCKER_HOST` rationale corrected — exported for SDK clients (2026-06-06)
+
+The §Rationale bullet originally read "No `DOCKER_HOST` env-var override" and described the Darwin design as CLI-via-context with no `DOCKER_HOST` set; `docs/desktop/colima.md` §Sharp edges carried the matching "Docker context — not `DOCKER_HOST`" note. That was accurate for the `docker` CLI but stale overall: `modules/darwin/colima.nix` exports `DOCKER_HOST` for SDK clients (lazydocker) that don't follow docker contexts and would otherwise fail to reach colima's non-standard socket. The two docs and the module comment had drifted, and the contradiction stayed invisible precisely because the rationale was triplicated — it surfaced only when the three copies were lined up during the [ADR-032](./ADR-032-proportionate-enforcement-and-rationale.md) comment-deduplication pass. Reconciled docs-to-code (the export is verified accurate on mac-mini): the CLI needs no override; `DOCKER_HOST` is exported for the SDK-client class. The `colima.nix` comment is the implementation-side source of truth; this ADR and the per-tool doc now match it. Docs-only correction — no code change.
 
 ### Darwin coverage added — colima on mac-mini (2026-06-03)
 
