@@ -1,14 +1,25 @@
 # Recipients.
 #
-# Host recipients (nixos-vm, mercury): age keys derived from each host's
-# /etc/ssh/ssh_host_ed25519_key. Used at activation time by sops-nix to
-# decrypt secrets for the running host. One per host.
+# Host recipients (nixos-vm, mercury, metis): age keys derived from each
+# host's /etc/ssh/ssh_host_ed25519_key. Used at activation time by
+# sops-nix to decrypt secrets for the running host. One per host.
 #
 # Operator recipient (mac): age key derived from a human-controlled
 # credential. Used by the operator to run `sops`/`sops updatekeys` from
 # their daily-driver machine without depending on any individual host
 # being alive. Closes the sops-decryption bus-factor gap — formerly
 # only the VM held a decryption identity.
+#
+# Recovery (last resort, #279). The mac recipient is the human-controlled,
+# host-independent identity, so a copy of its private key is kept
+# out-of-band in 1Password (item "sops age key — dbf@mac"). If every host
+# AND this Mac are lost: write that value to ~/.config/sops/age/keys.txt
+# (chmod 600) on any machine with sops + age, then `sops -d
+# secrets/secrets.yaml` decrypts. The key derives from ~/.ssh/id_ed25519
+# via `ssh-to-age -private-key`, so backing up that SSH key re-derives it.
+# Verify a restored keys.txt without exposing it: `age-keygen -y <file>`
+# (reads age-format keys, not the SSH key) must print the `mac` public
+# key below.
 keys:
   - &nixos-vm age1wwg6k2xnt4kakkajl7y2eydxw3jf4ll7z8ql64v9hvjdm8svh5psjxxz3l
   - &mercury  age1vze2vqnjtmyltqez5uw3g5dzr64wa0qaz0mwngvq662djxcwlefsnjlx2t
