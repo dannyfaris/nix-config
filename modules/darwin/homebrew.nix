@@ -60,26 +60,14 @@ in
 
   homebrew = {
     enable = true;
-    # mas-cli formula. Declarative dependency for `homebrew.masApps`
-    # — nix-darwin's `masApps` option emits `mas "<Name>", id: <id>`
-    # lines into the Brewfile, but `brew bundle` needs the `mas`
-    # binary on PATH to invoke them. brew bundle does have a lazy
-    # fallback that tries to install `mas` on-demand the first time
-    # it hits a `mas` entry without the binary present, but that
-    # path is fragile (raises if the on-demand install fails for any
-    # reason, and surfaces diagnostics inconsistently). Declaring
-    # `mas` here makes the dependency a deterministic, explicit step
-    # — brew bundle processes the Brewfile in strict file-line order
-    # with `--jobs=1` (verified against nix-darwin's homebrew module
-    # invocation), so `brew "mas"` is installed before any `mas`
-    # entry is reached on a single first activation; no second pass
-    # needed.
-    #
-    # The empirical 2026-06-03 mac-mini activation produced zero
-    # MAS installs without this entry; the failure mode was the
-    # lazy-fallback path interacting with mas-cli's auth-state
-    # requirements (App Store sign-in is a separate prerequisite,
-    # documented in docs/runbooks/darwin-bootstrap.md step 8).
+    # mas-cli — required on PATH for `homebrew.masApps`. brew bundle's
+    # lazy on-demand install of `mas` is fragile, so declare it
+    # explicitly; brew processes the Brewfile in file-line order, so
+    # `mas` lands before any `mas` entry on first activation. The
+    # one-time App Store sign-in prerequisite and the 2026-06-03
+    # ordering-failure incident are recorded in
+    # docs/runbooks/darwin-bootstrap.md and
+    # docs/desktop/microsoft-365.md §Sharp edges.
     brews = [ "mas" ];
 
     # The day-one cask list per ADR-031 §Day-one casks. Each cask has
@@ -115,9 +103,8 @@ in
       "Microsoft Excel" = 462058435;
       "Microsoft PowerPoint" = 462062816;
       "Microsoft Outlook" = 985367838;
-      # Microsoft Teams intentionally NOT included — its MAS listing
-      # broke activation (`mas install` failure); Teams runs via Chrome
-      # instead. See docs/desktop/microsoft-365.md §Sharp edges.
+      # Microsoft Teams intentionally excluded — runs in Chrome.
+      # See docs/desktop/microsoft-365.md §Sharp edges.
       "Amphetamine" = 937984704; # docs/desktop/amphetamine.md
     };
     # Mirror the taps declared by nix-homebrew so the nix-darwin module
