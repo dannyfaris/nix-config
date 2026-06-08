@@ -159,6 +159,18 @@ let
     '';
   };
 
+  # Path marker — the basename of the session launch dir (zjstatus runs
+  # command widgets in that cwd, like the git marker above). Renders in the
+  # bar's directory slot in place of `{session}`, which is host-prefixed —
+  # see ADR-004 §Session naming.
+  zjstatusPath = pkgs.writeShellApplication {
+    name = "zjstatus-path";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      basename "$PWD"
+    '';
+  };
+
   # Floating cheatsheet for the agent layout's custom Alt+g/d/e/k binds.
   # Invoked from Alt+k via the `Run … floating true` pattern (same shape
   # as the Alt+g/d binds below). Mod+k as the help binding mirrors a
@@ -279,13 +291,13 @@ in
   # `children` sits in the template.
   #
   # Top bar: zjstatus (not the stock `zellij:tab-bar`) so the left side
-  # can carry host+SSH marker, session name, and the workspace repo's git
+  # can carry host+SSH marker, the workspace path, and the repo's git
   # state — none of which the stock bar exposes. `format_left` is the host
-  # widget + `{session}` + the git widget; no directory segment, because
-  # the session name is the basename of the launch dir (`za`, see
-  # shell.nix) and would just duplicate it. `format_right` is just a
-  # 12-hour NZ clock. No `{tabs}` widget — tabs are deliberately out (see
-  # the `unbind "Ctrl t"` above).
+  # widget + `{command_path}` (launch-dir basename) + the git widget — the
+  # path, not `{session}`, because the session name is host-prefixed (see
+  # ADR-004 §Session naming). `format_right` is just a 12-hour NZ clock. No
+  # `{tabs}` widget — tabs are deliberately out (see the `unbind "Ctrl t"`
+  # above).
   #
   # Widget cadence: host interval "2" (poll — SSH-state is NOT fixed for a
   # session's life: it flips on a zellij detach/reattach across contexts
@@ -293,7 +305,10 @@ in
   # poll so a reattach flip surfaces within ~4s). Git interval "2"
   # (poll so agent edits and
   # branch-switches show). Both render "dynamic" so the `#[fg=…]` markup
-  # the scripts emit is rendered as colour. The clock is the native
+  # the scripts emit is rendered as colour. Path interval "10" (the launch
+  # dir is fixed for a session's life, so it barely needs re-polling) and
+  # rendermode "static" — it emits plain text, coloured by the leading
+  # `#[fg=…]` in format_left. The clock is the native
   # `{datetime}` widget, timezone-pinned so it reads NZ time even on
   # mercury (EC2, non-NZ region).
   #
@@ -307,7 +322,7 @@ in
         default_tab_template {
             pane size=1 borderless=true {
                 plugin location="file:${zjstatus}" {
-                    format_left  " {command_host} #[fg=${fgHex}]${chevGlyph} #[fg=${blueHex}]{session}{command_git}"
+                    format_left  " {command_host} #[fg=${fgHex}]${chevGlyph} #[fg=${blueHex}]{command_path}{command_git}"
                     format_right "{datetime}"
                     format_space ""
 
@@ -315,6 +330,11 @@ in
                     command_host_format     "{stdout}"
                     command_host_rendermode "dynamic"
                     command_host_interval   "2"
+
+                    command_path_command    "${zjstatusPath}/bin/zjstatus-path"
+                    command_path_format     "{stdout}"
+                    command_path_rendermode "static"
+                    command_path_interval   "10"
 
                     command_git_command    "${zjstatusGit}/bin/zjstatus-git"
                     command_git_format     "{stdout}"

@@ -41,21 +41,27 @@ _: {
     # Terminal title — surfaces SSH context in the emulator's tab/window
     # chrome (Ghostty etc.). Lives above the shell layer; complements the
     # starship host segment (always-on, glyph-swap) and the per-host
-    # Stylix palette. See GH #6.
-    functions.fish_title = ''echo (hostname -s)": "(prompt_pwd)'';
+    # Stylix palette. See GH #6. Silent inside zellij, which owns the outer
+    # title there — see ADR-004 §Session naming.
+    functions.fish_title = ''
+      if set -q ZELLIJ
+        return
+      end
+      echo (hostname -s)": "(prompt_pwd)
+    '';
 
     # `za` — open the 3-pane agentic workspace (agent.kdl), session named
-    # for the current directory so the zjstatus session segment reads
-    # usefully (e.g. `nix-config`) rather than zellij's random
-    # adjective-noun. A function rather than an abbreviation because
+    # `<host>:<repo>` (e.g. `mac-mini:nix-config`); the host prefix drives
+    # the outer terminal title — see ADR-004 §Session naming. A function
+    # rather than an abbreviation because
     # attach-or-create needs a conditional: re-running `za` where a
     # same-named session already exists attaches to it (resurrecting it if
     # it had exited, per session_serialization) instead of erroring on the
     # duplicate name. See home/shared/multiplexer.nix and GH #5.
     functions.za = {
-      description = "Zellij agent workspace, session named for the cwd";
+      description = "Zellij agent workspace, session named <host>:<repo>";
       body = ''
-        set -l name (basename $PWD)
+        set -l name (hostname -s)":"(basename $PWD)
         # Ask `attach` directly: it attaches to this repo's session
         # (resurrecting it if it had exited) and, when none exists, exits
         # non-zero with its error on stderr — so the `or` creates it. This
