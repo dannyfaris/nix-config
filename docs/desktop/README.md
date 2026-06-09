@@ -37,6 +37,7 @@ rather than creating a new artifact.
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
 | [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |
 | [popups.md](./popups.md) | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred) | #308 |
+| [removable-media.md](./removable-media.md) | USB auto-mount — udisks2 + udiskie (tray-less, fnott notifications) + yazi `mount` plugin; exfatprogs/ntfs3g/dosfstools helpers; passwordless (independent of #103) | #105 |
 
 ### macOS clients (mac-mini)
 
