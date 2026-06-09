@@ -138,6 +138,8 @@ reviewer's.
   NEEDS-DISCUSSION. NEEDS-DISCUSSION pauses the work for
   operator input rather than guessing.
 
+**Verifying the lint surface locally.** `nix flake check --no-build` *evaluates* the `pre-commit` and `treefmt` check derivations but never *runs* them, so statix / nixfmt / deadnix violations on new or edited files pass locally and only fail in CI. To run the hooks for real before pushing, build the check derivation directly: `nix build .#checks.<system>.pre-commit --no-link` (e.g. `.#checks.aarch64-darwin.pre-commit`), and likewise `.#checks.<system>.treefmt`. Catches the empty-pattern / formatting class of failure that `--no-build` waves through.
+
 ## Sense-check `main` before implementing a planned slice
 
 **Rule.** Before implementing a planned slice — especially when
