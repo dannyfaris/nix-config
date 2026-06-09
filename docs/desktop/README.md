@@ -36,6 +36,7 @@ rather than creating a new artifact.
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
 | [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |
+| [popups.md](./popups.md) | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred) | #308 |
 
 ### macOS clients (mac-mini)
 
