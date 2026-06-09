@@ -25,5 +25,8 @@
     ../git.nix
     ../git-identity-dual.nix
     ../gh.nix
+    # gh-dash rides on programs.gh (it registers as a gh extension), so it
+    # belongs next to gh.nix; ADR-006 §"gh-dash" has the host-gate rationale.
+    ../gh-dash.nix
   ];
 }

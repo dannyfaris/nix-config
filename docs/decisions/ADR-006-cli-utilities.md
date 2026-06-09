@@ -56,6 +56,7 @@ decision isn't relitigated unintentionally:
 - `glow` — markdown renderer. `bat README.md` covers most cases.
 - `procs` — `ps` replacement. htop covers most "what's running" needs.
 - `duf` — `df` replacement. Less compelling than dust.
+- **ENHANCE** (gh-dash.dev/enhance) — the gh-dash author's GitHub-Actions companion TUI. Skipped: it's gated behind a paid "Insiders" supporter program rather than shipped in nixpkgs, so it can't be installed the declarative reproducible-from-flake way everything else here is. Revisit only if it lands as a normal open-source nixpkgs package. (Its sibling `gh-dash` — the free MIT PR/issue dashboard — *was* adopted; see below.)
 
 ## Rationale
 
@@ -126,6 +127,13 @@ daemon state. Hosts without the daemon module work exactly as ADR-006
 originally specified (per-project CLI via devShells, daemon remote or
 absent); hosts with the daemon module additionally get a local
 rootless daemon and a system-wide CLI.
+
+### gh-dash (GitHub PR/issue dashboard)
+
+**Added 2026-06-09.** gh-dash is a TUI dashboard for GitHub pull requests and issues, packaged as a `gh` CLI extension (MIT, in nixpkgs, first-class `programs.gh-dash` home-manager module). It is *not* one of the twelve modern-Unix-replacements above — it's a GitHub-workflow surface, not a general Unix tool — so it sits outside the "available everywhere" core and is recorded here as an adjacent adoption rather than a 13th locked tool.
+
+- **Host gate.** The HM module self-registers in `programs.gh.extensions`, so gh-dash structurally rides on `programs.gh`. It is imported via the `git-multi-identity` bundle next to `gh.nix` — landing on every GitHub host (nixos-vm, metis, mac-mini) and, by the same `mercury_push_boundary` that omits `gh.nix` from `git-work`, never on the work-only host. Putting it on Mercury would mean enabling `gh` there, a deliberate-stance relaxation; declined. See ADR-020 for the personal-vs-work import split.
+- **Theming.** gh-dash has no Stylix target, so its `theme.colors` block is bridged by hand to the base16 palette (`config.lib.stylix.colors`) inside `home/shared/gh-dash.nix` — a scheme change in `stylix-palette.nix` repaints it for free. Pinning a named vendor theme (Catppuccin/etc.) was rejected: it would be a second palette source that drifts from Stylix. The cost is a small hand-maintained seam (no `stylix.targets.<x>.enable` toggle).
 
 ## Consequences
 
