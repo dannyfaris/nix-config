@@ -133,5 +133,5 @@ See `modules/nixos/niri.nix:7-32` for the inline rationale.
   no-merge-with-defaults behaviour.
 - [fonts.md](./fonts.md) — font installation model; niri's chrome
   participates in the Stylix flow.
-- niri upstream — https://github.com/YaLTeR/niri
+- niri upstream — https://github.com/niri-wm/niri
 - niri-flake — https://github.com/sodiboo/niri-flake
