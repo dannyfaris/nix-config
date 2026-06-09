@@ -37,6 +37,7 @@ rather than creating a new artifact.
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
 | [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |
 | [popups.md](./popups.md) | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred) | #308 |
+| [screen-sharing.md](./screen-sharing.md) | Screencast backend — keep niri-flake's `xdg-desktop-portal-gnome` driving niri's native `Mutter.ScreenCast` over PipeWire (wiring verified present; RemoteDesktop unsupported upstream) | #101 |
 
 ### macOS clients (mac-mini)
 
