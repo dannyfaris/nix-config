@@ -1,10 +1,10 @@
 # Secrets scanning on every push and PR. Default scope is incremental
-# (gitleaks-action v2 diffs against the merge base for PRs and against
+# (gitleaks-action diffs against the merge base for PRs and against
 # the push range for pushes), which needs the full history.
 #
 # No GITLEAKS_LICENSE env var is required for personal-account repos;
 # the license is only required for organization repos per the
-# gitleaks-action v2 README.
+# gitleaks-action README.
 name: gitleaks
 
 on:
@@ -19,18 +19,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Pinned at v2 because upstream has not yet cut a Node 24 release —
-      # PRs #207 and #215 are open but unmerged as of 2026-05. From
-      # 2026-06-02, GitHub runners force Node 24 by default, so this
-      # action's `using: "node20"` declaration is ignored and the bundled
-      # JS executes under Node 24. If that breakage materialises, the
-      # documented temporary mitigation is to add
-      # `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true` to the env block
-      # below — valid until Node 20 is removed entirely on 2026-09-16.
-      # Repin to the migration SHA when upstream merges it (per ADR-025's
-      # SHA-pin History entry — tag bumps no longer auto-flow under SHA
-      # pinning, so the upstream tag move is the operator's signal to
-      # repin here intentionally).
-      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+      # Pinned at v3, which migrates the action runtime from Node 20 to
+      # Node 24 (no input/output/behaviour change vs v2); this clears the
+      # GitHub Node-20-deprecation warning that v2 raised. Tag bumps do
+      # not auto-flow under SHA pinning (ADR-025), so an upstream tag move
+      # is the operator's signal to repin here intentionally.
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
