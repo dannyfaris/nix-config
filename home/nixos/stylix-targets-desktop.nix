@@ -115,12 +115,4 @@ in
     # installed. See docs/desktop/polkit.md.
     gtk.enable = lib.mkIf desktopSession true;
   };
-
-  # Silence the home-manager `gtk.gtk4.theme` legacy-default deprecation
-  # warning that surfaces whenever `config.gtk.theme` is set (which Stylix
-  # does when `targets.gtk` fires above). Keeps legacy behaviour — GTK4
-  # inherits the same theme as GTK3 — until home.stateVersion crosses
-  # 26.05 and the default flips to `null` upstream. Same gate as the
-  # target enable above so the option only resolves on desktop hosts.
-  gtk.gtk4.theme = lib.mkIf desktopSession config.gtk.theme;
 }
