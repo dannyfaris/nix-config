@@ -56,7 +56,7 @@ decision isn't relitigated unintentionally:
 - `glow` — markdown renderer. `bat README.md` covers most cases.
 - `procs` — `ps` replacement. htop covers most "what's running" needs.
 - `duf` — `df` replacement. Less compelling than dust.
-- **ENHANCE** (gh-dash.dev/enhance) — the gh-dash author's GitHub-Actions companion TUI. Skipped: it's gated behind a paid "Insiders" supporter program rather than shipped in nixpkgs, so it can't be installed the declarative reproducible-from-flake way everything else here is. Revisit only if it lands as a normal open-source nixpkgs package. (Its sibling `gh-dash` — the free MIT PR/issue dashboard — *was* adopted; see below.)
+- **ENHANCE** (`dlvhdr/gh-enhance`) — the gh-dash author's GitHub-Actions companion TUI (Go, MIT, public; sponsor-supported but *not* paywalled). Skipped not for cost but for packaging: it isn't in nixpkgs and ships no home-manager module, so it can't be installed the declarative reproducible-from-flake way everything else here is — the only paths today are an imperative `gh extension install` (rejected by declarative > imperative) or carrying our own `buildGoModule` derivation. Revisit when it lands as a nixpkgs package; the packaging-and-adopt track is #320. (Its sibling `gh-dash` — the free MIT PR/issue dashboard — *was* adopted; see below.)
 
 ## Rationale
 
