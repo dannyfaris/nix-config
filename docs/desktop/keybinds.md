@@ -133,6 +133,19 @@ focused column.
 | `Mod+O` | toggle-overview | Birds-eye workspace view |
 | `Mod+Shift+/` (i.e. `Mod+?`) | show-hotkey-overlay | Live cheat sheet for currently-bound keys |
 
+### Screenshots
+
+Capture uses niri's **built-in** screenshot actions — screen, window, and region are all native, and niri already backs the `org.freedesktop.portal.Screenshot` portal interface for apps, so no external capture tool (grim/slurp) is installed and annotation is deliberately out of scope (#100). The `Print` family reproduces niri's own defaults: save to disk (niri's default `screenshot-path`, `~/Pictures/Screenshots/`, which niri creates on first use) **and** copy to the clipboard. The `Mod+Ctrl+Shift+N` family echoes macOS's `Cmd+Ctrl+Shift+N` chord shape — where `+Ctrl` means *to clipboard* — so `write-to-disk=false` makes them clipboard-only; note `+5` is repurposed to window capture here (macOS uses it for the capture-options bar, which has no niri analogue). Region capture is niri's interactive overlay, which always does both disk + clipboard with no per-bind split, so its two chords (`Print`, `Mod+Ctrl+Shift+4`) are equivalent. macOS's *file*-variant chords (`Cmd+Shift+3/4/5`) would map to `Mod+Shift+3/4/5`, which are taken by `move-window-to-workspace` here — remap candidate tracked in #323.
+
+| Key | Action | Notes |
+|---|---|---|
+| `Print` | screenshot | Interactive overlay — pick region / window / output; → disk + clipboard |
+| `Ctrl+Print` | screenshot-screen | Whole focused output → disk + clipboard |
+| `Alt+Print` | screenshot-window | Focused window → disk + clipboard |
+| `Mod+Ctrl+Shift+4` | screenshot | Interactive overlay (macOS-style chord); also saves to disk — region can't be clipboard-only |
+| `Mod+Ctrl+Shift+3` | screenshot-screen (`write-to-disk=false`) | Whole focused output → clipboard only |
+| `Mod+Ctrl+Shift+5` | screenshot-window (`write-to-disk=false`) | Focused window → clipboard only |
+
 ## Active bindings — macOS clients
 
 Hyper (`⌘⌃⌥⇧`) is produced by Karabiner-Elements from `caps_lock`
@@ -232,11 +245,7 @@ and `close-window` if `Mod+W` ever migrates). Currently unrealised.
 
 ### Hardware media keys
 
-`Print`, `Ctrl+Print`, `Alt+Print` (screenshot), `XF86Audio*` (volume),
-`XF86MonBrightness*` (brightness): left unbound until the corresponding
-tooling is installed. These will likely land in the `Hyper` namespace
-(via niri spawn binds to `wpctl`, `brightnessctl`, `grim`+`slurp`,
-etc.) when those tools arrive.
+`Print`, `Ctrl+Print`, `Alt+Print` are now bound to niri's built-in screenshot actions — see §"Screenshots" under Active bindings (#100). `XF86Audio*` (volume) and `XF86MonBrightness*` (brightness) remain unbound until the corresponding tooling lands (via niri spawn binds to `wpctl`, `brightnessctl`, etc.).
 
 ## Cadence
 
