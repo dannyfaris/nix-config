@@ -29,9 +29,9 @@
 let
   # `programs.foot.enable` is true only on desktop hosts (currently just
   # metis). Used as the desktop-session proxy to gate the toolkit-level
-  # (gtk + qt) targets — Stylix's per-app targets above already gate on
-  # their own `programs.<X>.enable`, but gtk/qt have no per-app gate
-  # upstream.
+  # `gtk` target — Stylix's per-app targets above already gate on their own
+  # `programs.<X>.enable`, but `gtk` has no per-app gate upstream. (The `qt`
+  # target was dropped in #103 — see below.)
   desktopSession = config.programs.foot.enable or false;
 in
 {
@@ -97,19 +97,23 @@ in
       enable = true;
       profileNames = [ "default" ];
     };
-    # gtk + qt — toolkit-level theming, no per-app gating upstream
-    # (unlike foot/fuzzel/fnott/waybar/firefox above, which gate on
+    # gtk — toolkit-level theming, no per-app gating upstream (unlike
+    # foot/fuzzel/fnott/waybar/firefox above, which gate on
     # `programs.<X>.enable` and become inert on non-desktop hosts).
     # Gated locally on `desktopSession` so a future desktop-less host
     # importing this file (unlikely under the desktop-env bundle) won't
-    # pull adw-gtk3, gtk+3 (~42 MiB), CUPS, or the Qt5 stack (qtbase +
-    # qtdeclarative + qttools + … ~118 MiB) for theming it can't
-    # render — measured +585 MiB closure on mercury without the gate.
-    # On metis the gate fires and GTK/Qt app chrome (file pickers,
-    # settings dialogs, GTK/Qt apps generally) follows the base16
-    # palette instead of default Adwaita-light.
+    # pull adw-gtk3 / gtk+3 (~42 MiB) for theming it can't render. On
+    # metis the gate fires and GTK app chrome (file pickers, settings
+    # dialogs, GTK apps generally) follows the base16 palette instead of
+    # default Adwaita-light.
+    #
+    # The `qt` target was dropped (#103). The polkit-kde agent was the
+    # only Qt app on metis; swapping it for mate-polkit (GTK) left zero
+    # Qt apps, so `qt` theming themed nothing — removing it (and the
+    # agent's KDE-Frameworks layer) trims a measured 573 MiB. Re-add
+    # `qt.enable = lib.mkIf desktopSession true;` if a Qt app is ever
+    # installed. See docs/desktop/polkit.md.
     gtk.enable = lib.mkIf desktopSession true;
-    qt.enable = lib.mkIf desktopSession true;
   };
 
   # Silence the home-manager `gtk.gtk4.theme` legacy-default deprecation
