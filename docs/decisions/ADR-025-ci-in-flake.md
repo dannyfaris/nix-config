@@ -81,7 +81,7 @@ ADR-023's *rule* is unchanged. Its Implementation section gains a forward-pointe
     - **Closure-size regression gates.** Premature.
     - **Deploy from CI** (deploy-rs / colmena). Separate ADR, separate decision.
     - **Required approving review on PRs.** Solo repo; false ceremony.
-    - **SHA-pinned action versions.** `@vN` major-version pins are sufficient for the current threat model; trigger to revisit is if the repo gains automation that touches real secrets or a specific action's maintainer warrants distrust.
+    - **SHA-pinned action versions.** `@vN` major-version pins are sufficient for the current threat model; trigger to revisit is if the repo gains automation that touches real secrets or a specific action's maintainer warrants distrust. *(Superseded 2026-06-05 — this trigger fired; see §History, "SHA-pinning adopted".)*
     - **GitHub App for the lockfile bot.** Trigger: a second bot worth consolidating under one App identity, or PAT rotation becomes a noticeable burden.
     - **Auto-merge of green `flake.lock` PRs.** Trigger: the manual review consistently surfaces nothing of interest across several months and the friction outweighs the signal.
     - **Sharded check runs** (e.g. `nix-fast-build`, matrix-of-checks rather than one `nix flake check` invocation). Trigger: per-arch `nix flake check` runtime crosses ~15 min.
@@ -129,9 +129,9 @@ then `nix flake check --print-build-logs`. Concurrency group cancels in-progress
 
 **`.github/workflows/flake-lock.yaml`**: schedule `0 4 * * 1`, plus `workflow_dispatch`. Permissions `contents: write, pull-requests: write`. Uses `cachix/install-nix-action@v31` for consistency with the gating workflow, then `DeterminateSystems/update-flake-lock@main` with `token: ${{ secrets.GH_PAT_FLAKE_LOCK }}` (fine-grained PAT scoped to this repo: contents r/w, pull-requests r/w, metadata r), `pr-title: "flake: weekly lockfile bump"`, `pr-labels: dependencies,automated,flake-lock`, and a `pr-body` template surfacing per-input commit range URLs.
 
-**`.github/workflows/gitleaks.yaml`**: triggers on `pull_request` and `push`; uses `gitleaks/gitleaks-action@v2` with default (incremental) scope.
+**`.github/workflows/gitleaks.yaml`**: triggers on `pull_request` and `push`; uses `gitleaks/gitleaks-action` with default (incremental) scope. *(SHA-pinned per §History, 2026-06-05 — the live ref and version live in the workflow file, not restated here.)*
 
-**Action version pinning**: all actions pinned to `@vN` major-version tags. SHA pinning rejected as ceremony beyond the current threat model.
+**Action version pinning**: all actions pinned to `@vN` major-version tags. SHA pinning rejected as ceremony beyond the current threat model. *(Superseded 2026-06-05 — see §History, "SHA-pinning adopted".)*
 
 **Branch protection** (configured on GitHub, recorded here for completeness): require the `flake-check (x86_64-linux)` and `flake-check (aarch64-linux)` status checks to merge; no required approving review (solo); linear history enforced (matches existing git history).
 
