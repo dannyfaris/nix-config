@@ -10,6 +10,7 @@
 #   - desktop-fonts.nix    — Stylix font selections (mono/sans/emoji) + install wiring.
 #   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
 #   - libsecret.nix        — secret-tool CLI for the (transitively-enabled) Secret Service.
+#   - removable-media.nix  — udisks2 + filesystem helpers (auto-mount is home-side udiskie). See docs/desktop/removable-media.md (#105).
 #
 # The home-side companion bundle is at home/nixos/bundles/desktop-env.nix.
 #
@@ -21,5 +22,6 @@
     ../desktop-fonts.nix
     ../electron-wayland.nix
     ../libsecret.nix
+    ../removable-media.nix
   ];
 }
