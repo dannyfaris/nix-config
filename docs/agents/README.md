@@ -28,6 +28,12 @@ the sharp edges, cross-link references.
 |---|---|---|
 | [cursor-statusline.md](./cursor-statusline.md) | Cursor CLI statusline — model-tier mapping, signal selection, asymmetry vs Claude Code | _pending — #58_ |
 
+## Project skills
+
+Beyond the per-surface selection docs above, this repo checks in **project Agent Skills** under [`.claude/skills/<name>/SKILL.md`](../../.claude/skills/). Claude Code auto-discovers a skill and loads it when a task matches its `description`; skills are git-tracked (via `.gitignore`'s deliberate `.claude/` carve-out) so they sync across every host — consistent with this repo's "agent knowledge lives in git, not per-host local state" principle.
+
+- [`selecting-tooling`](../../.claude/skills/selecting-tooling/SKILL.md) — the process for assessing and choosing a tool/package/service to adopt, swap, or keep (first-principles + prior-art + verification against the actual flake pins). First project skill; distilled from the #96/#99/#103/#105 selection work.
+
 ## See also
 
 - [ADR-008](../decisions/ADR-008-agent-clis.md) — agent-CLI base/extras split.
