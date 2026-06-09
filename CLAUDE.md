@@ -62,6 +62,10 @@ Per-host values (e.g. flake path, hostname for nixd) flow from each host's
 Tight-from-the-start. Prefer explicit > implicit, declarative > imperative,
 whitelist > blanket.
 
+## Scope discipline — implement only what was asked
+
+Implement exactly the change requested — nothing more. Do not add unrequested config, options, files, default values, sections, keybindings, or doc touches, even when they look like sensible defaults or a natural extension. Unrequested scope directly violates this project's explicit > implicit, whitelist > blanket philosophy: every addition must be a deliberate, endorsed choice, never an agent's guess at what might be wanted. If you believe extra scope is warranted, *suggest* it in prose and wait for express endorsement before touching anything. When in doubt, do less and ask.
+
 ## Deliberate stances — do not relax without asking
 
 | Stance | Rationale |
