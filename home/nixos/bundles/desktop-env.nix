@@ -32,6 +32,9 @@
 #     xdg-desktop-portal `color-scheme` interface via dconf so
 #     portal-querying apps (Firefox, Zen, libadwaita) follow the
 #     host's polarity. Closes the gap #141 left unresolved.
+#   - polkit-agent.nix — mate-polkit (GTK3) authentication agent,
+#     replacing niri-flake's default KDE agent (disabled system-side
+#     in modules/nixos/niri.nix). See docs/desktop/polkit.md (#103).
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + fuzzel + fnott + waybar
@@ -56,6 +59,7 @@
     ../zen-browser.nix
     ../cursor-ide.nix
     ../portal-color-scheme.nix
+    ../polkit-agent.nix
     # Desktop-only Stylix targets — co-located with the bundle that
     # enables them, so desktop hosts pick them up transitively. The
     # cross-platform TUI targets stay in `home/shared/stylix-targets.nix`.
