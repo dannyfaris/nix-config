@@ -10,7 +10,7 @@
 let
   # Same accessor + semantic mapping the multiplexer/prompt use, so the
   # whole TUI reads from one palette. base05 fg / base04 dim-fg / base03
-  # muted / base02 selection-bg / base01 faint-line / base00 bg;
+  # muted / base02 selection-bg / base01 faint-line;
   # base08 red / base0B green / base0D blue-accent (matches niri focus-ring).
   c = config.lib.stylix.colors;
   hex = slot: "#${c."${slot}-hex"}";
