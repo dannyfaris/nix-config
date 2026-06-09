@@ -41,7 +41,7 @@ This is a decision-only landing — the configuration already implements it. The
 - ✗ **No "set and forget" stability.** Reviewing the weekly flake-lock PR is non-optional. Skipping it for ~a month and merging a backlog at once defeats the per-input attribution that makes regression diagnosis cheap.
 - ⚠ **Migration trigger 1 — repeated Stylix breakage.** If a Stylix-master bump breaks two consecutive flake-lock PRs without an upstream fix landing in the same week, the trust assumption above (that Stylix's master is close enough to this repo's nixpkgs that breakage is rare and quickly fixed) is wrong. Revisit: pin Stylix to a specific stable rev, or switch the channel.
 - ⚠ **Migration trigger 2 — Darwin lands.** macOS hosts via nix-darwin (epic #11) will introduce a fourth platform with its own release-line considerations. nix-darwin tracks nixpkgs's release branches; if the Darwin host's stability expectations differ materially from the Linux fleet, the right shape may be a per-host channel pin via flake-parts, not a fleet-wide one. Revisit at Darwin onboarding time.
-- ⚠ **Migration trigger 3 — uptime-critical workload lands.** If any host onboards a workload where a broken `nh os switch` is materially costly (production service, long-running compute the operator doesn't want to lose), the unstable channel's "weekly small breakage" profile becomes the wrong default. Revisit per-host rather than fleet-wide.
+- ⚠ **Migration trigger 3 — uptime-critical workload lands.** If any host onboards a workload where a broken `nh os switch` is materially costly (production service, long-running compute the operator doesn't want to lose), the unstable channel's "weekly small breakage" profile becomes the wrong default. Revisit per-host rather than fleet-wide. *Examined proactively for Mercury on 2026-06-09 — decision held (stay unstable); see §History.*
 
 ## Implementation
 
@@ -52,3 +52,13 @@ No code change. The configuration already implements this decision:
 - **`.github/workflows/flake-lock.yaml`** — weekly schedule (Mondays 04:00 UTC), opens a PR; merge is manual after green CI. See ADR-025's narrative for the rationale on manual merge.
 
 Cross-reference: [ADR-025](./ADR-025-ci-in-flake.md) §Implementation (flake-lock workflow), [ADR-028](./ADR-028-stylix-foundation-and-desktop-env.md) §Consequences (the existing acknowledgement of the unstable risk for Stylix targets).
+
+## History
+
+### Per-host stable channel evaluated for Mercury — decision held (2026-06-09)
+
+Prompted by the operator's intuition that long-lived hosts wanting predictable uptime — Mercury first (work-only headless AWS box), Metis later — might warrant `nixos-25.11` while only a future desktop stays on unstable. This is the per-host revisit that §Consequences "migration trigger 3" anticipated, examined proactively rather than on a costly workload actually landing.
+
+**The evaluation upheld the original decision: stay on `nixos-unstable` fleet-wide.** What it changed is emphasis. §Rationale lists "reduced freshness for agent-CLI tooling" as one of several reasons against stable; it is in fact *the binding one*. Running the latest `claude-code`, `cursor`, `helix`, `nh` and peers at all times is why the fleet is on unstable, and Mercury — a work box that imports `agent-clis.nix` — is no exception. The uptime worry weighed against it needs no stable pin to address: `flake-lock.yaml` is manual-merge, each bump carries per-input attribution for triage, and break-glass is per-host (EC2 Instance Connect). A hybrid (stable base + unstable overlay for the agent CLIs) fails on the same logic the §Rationale "why not hybrid" already gives — once the tooling tracks unstable anyway, the cadence-decoupling that would justify a split collapses, leaving only its maintenance overhead.
+
+Metis is explicitly not settled by this entry. Mercury is headless, so it sidesteps the Stylix/niri deal-breaker; Metis *is* the niri desktop, where a stable pin would reintroduce the Stylix-on-stable mismatch §Rationale rejects. If revisited it is a separate, harder decision — not a foregone extension of this one.
