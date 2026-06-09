@@ -40,11 +40,10 @@ rationale.
 
 The alternatives ruled out at `docs/desktop/firefox.md`
 §"Alternatives considered" are ruled out for Zen for the same
-reasons — engine, ecosystem, and project-posture arguments that
+reasons — ecosystem and project-posture arguments that
 don't change between Firefox and Zen:
 
-- **Brave** — Chromium engine; no engine-diversity contribution;
-  BAT/crypto ad-network defaults.
+- **Brave** — Chromium engine; BAT/crypto ad-network defaults.
 - **Chromium** — largest closure; Chromium-engine; uBlock Origin's
   MV3 future worse than on Firefox.
 - **LibreWolf** — Firefox-derived; privacy hardening

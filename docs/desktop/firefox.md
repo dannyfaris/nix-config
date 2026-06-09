@@ -19,13 +19,6 @@ chrome-theming opt-ins (`colorTheme.enable`,
 
 ## Rationale
 
-**Non-Chromium engine.** Gecko is the only mainstream rendering
-engine that isn't a Chromium derivative. Defaulting to Firefox is
-a small contribution to engine-diversity at the ecosystem level;
-the alternative (Brave, Chromium, Vivaldi, Edge) would have us
-running Blink like everyone else. Not a strong personal-preference
-argument — a values-level vote for keeping a second engine alive.
-
 **First-class Wayland support, current.** Firefox enabled native
 Wayland by default in version 121 (Dec 2023). Nixpkgs ships
 Firefox 150-class builds on `nixos-unstable`; the wrapper script
@@ -53,8 +46,7 @@ under Configuration.
 
 **Brave** — Chromium fork with privacy-leaning defaults
 (ad-blocking, tracker-blocking on by default). Passed over for
-three reasons: Chromium engine (no engine-diversity contribution);
-larger closure than Firefox; built-in BAT/crypto-rewards
+two reasons: larger closure than Firefox; built-in BAT/crypto-rewards
 ad-network the operator would have to disable on every install.
 The defaults that look privacy-positive ship alongside revenue
 defaults that aren't.
