@@ -65,4 +65,15 @@
   # before start, populating PATH at runtime). See issue #67 for the
   # incident write-up that motivated this shape.
   systemd.packages = [ config.programs.niri.package ];
+
+  # niri-flake also runs a polkit authentication agent by default — the KDE
+  # agent, via the `niri-flake-polkit` user service. Disable it (the
+  # niri-flake-documented lever): on this non-Plasma host the KDE/Kirigami
+  # agent renders off-theme (it reads kdeglobals, which Stylix doesn't write,
+  # so it falls back to stock Breeze), and it is the host's only Qt app —
+  # 573 MiB of Qt/KDE for one dialog. It is replaced by mate-polkit (GTK,
+  # base16-themed) in home/nixos/polkit-agent.nix, and the now-vestigial
+  # Stylix `qt` target is dropped in stylix-targets-desktop.nix. See
+  # docs/desktop/polkit.md (#103).
+  systemd.user.services.niri-flake-polkit.enable = false;
 }

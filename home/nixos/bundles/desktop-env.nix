@@ -32,6 +32,9 @@
 #     xdg-desktop-portal `color-scheme` interface via dconf so
 #     portal-querying apps (Firefox, Zen, libadwaita) follow the
 #     host's polarity. Closes the gap #141 left unresolved.
+#   - polkit-agent.nix — mate-polkit (GTK3) authentication agent,
+#     replacing niri-flake's default KDE agent (disabled system-side
+#     in modules/nixos/niri.nix). See docs/desktop/polkit.md (#103).
 #   - removable-media.nix — udiskie auto-mount + notifications (tray-less)
 #     and the mount.yazi unmount/eject plugin. Pairs with the system-side
 #     udisks2 + fs helpers. See docs/desktop/removable-media.md (#105).
@@ -59,6 +62,7 @@
     ../zen-browser.nix
     ../cursor-ide.nix
     ../portal-color-scheme.nix
+    ../polkit-agent.nix
     ../removable-media.nix
     # Desktop-only Stylix targets — co-located with the bundle that
     # enables them, so desktop hosts pick them up transitively. The
