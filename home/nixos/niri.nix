@@ -77,5 +77,25 @@ _: {
     # Discovery
     "Mod+O".action.toggle-overview = { };
     "Mod+Shift+Slash".action.show-hotkey-overlay = { };
+
+    # Screenshots — niri's built-in capture, no external tool. The Print
+    # family reproduces niri's defaults (save to disk per the default
+    # screenshot-path + copy to clipboard); the Mod+Ctrl+Shift+N family
+    # mirrors macOS's clipboard-screenshot chords via write-to-disk=false
+    # (clipboard only). Region capture is niri's interactive overlay, which
+    # always does both disk+clipboard with no per-bind split — hence Print
+    # and Mod+Ctrl+Shift+4 are equivalent. See docs/desktop/keybinds.md
+    # §Screenshots (#100). The macOS file-variant chords (Mod+Shift+3/4/5)
+    # are taken by move-window-to-workspace; remap candidate in #323.
+    "Print".action.screenshot = { };
+    "Ctrl+Print".action.screenshot-screen = { };
+    "Alt+Print".action.screenshot-window = { };
+    "Mod+Ctrl+Shift+4".action.screenshot = { };
+    "Mod+Ctrl+Shift+3".action.screenshot-screen = {
+      write-to-disk = false;
+    };
+    "Mod+Ctrl+Shift+5".action.screenshot-window = {
+      write-to-disk = false;
+    };
   };
 }
