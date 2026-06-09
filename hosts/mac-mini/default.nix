@@ -24,6 +24,11 @@ _: {
     # TERM=xterm-256color.
     ../../modules/darwin/sshd.nix
     ../../modules/darwin/linux-builder.nix
+    # TEMPORARY, reversible: pin claude-code to 2.1.170 so Claude Fable 5
+    # appears in the `/model` picker (Fable needs >= 2.1.170; the channel
+    # was at 2.1.161 when this landed). Delete this import + the module to
+    # revert. See modules/darwin/claude-code-fable-override.nix.
+    ../../modules/darwin/claude-code-fable-override.nix
     # nix-homebrew + declarative cask list per ADR-031. Owns Ghostty,
     # Tailscale (`tailscale-app`), and 1Password on Darwin, plus the
     # Sparkle silent-update keys for the two Sparkle-driven apps. See
