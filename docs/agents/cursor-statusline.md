@@ -88,22 +88,18 @@ gpt-5.5-high - GPT-5.5 1M High
 
 Mapping:
 
-| Pattern (in `model.id`, case-insensitive) | Family | Colour | Rationale |
+| Pattern (in lowercase `model.id`) | Family | Colour | Rationale |
 |---|---|---|---|
+| `*fable*` | Anthropic Fable (frontier) | RED | tier above Opus on the warmth ladder; matches Claude convention (line-1 RED = Fable). No fable id ships in the pinned cursor-cli yet — future-proofing. See ADR-024 §Implementation (2026-06-10) |
 | `*sonnet*` | Anthropic Sonnet | TEAL | matches Claude convention (line-1 TEAL = Sonnet) |
 | `*opus*` | Anthropic Opus | ORANGE | matches Claude convention (line-1 ORANGE = Opus) |
 | `*composer*` | Cursor native | BLUE | Cursor's house model; deserves a colour distinct from OpenAI / Anthropic variants. BLUE is the line-2 path + nix-shell colour today; adopting it for the model slot on line 1 mirrors the existing dual-role pattern (ORANGE: untracked+Opus, TEAL: branch+Sonnet) |
 | `*codex*` (any GPT codex variant) | OpenAI code-specialised | YELLOW | code-specialised = "attention" hue; covers `gpt-5.3-codex`, `gpt-5.2-codex`, `gpt-5.1-codex-max`, all effort + `-fast` suffix variants |
-| `*gpt-5*` non-codex | OpenAI general | MAUVE | distinct from codex; MAUVE's only existing role is the SSH-host glyph on line 2, so cross-line collision is small |
+| `*gpt-5*` non-codex | OpenAI general | ORANGE | Opus's tier-mate — generalist models are coloured by tier, not vendor identity (ADR-024 §Implementation, 2026-06-10). Was MAUVE; reassigned so MAUVE returns to SSH-host-only across both agent-CLI surfaces |
 | `*gemini*` | Google | default fg | day-1 deferral. The seven-colour palette is fully spoken-for after the assignments above; the only remaining slot (GREEN) clashes on line 1 with the low-context bar. Gemini is marginal in the operator's current usage (default model is `composer-2.5-fast`); leave on default fg until either Gemini becomes a daily driver or the palette grows |
 | `auto` / unknown | no explicit choice | default fg | silence-as-signal — matches Claude's Haiku/unknown fall-through |
 
-Match order matters and is non-obvious: `*sonnet*` and `*opus*`
-first (so a hypothetical `*-opus-codex-*` would colour as Opus, not
-Codex — Anthropic-family identity dominates); then `*codex*` (so
-`gpt-5.3-codex-*` colours as YELLOW not MAUVE); then `*composer*`,
-`*gpt-5*`; `*gemini*` and `auto` and unknown all fall through to
-default fg.
+Match order matters and is non-obvious: `*fable*`, `*sonnet*` and `*opus*` first (so a hypothetical `*-opus-codex-*` would colour as Opus, not Codex — Anthropic-family identity dominates); then `*codex*` (so `gpt-5.3-codex-*` colours as YELLOW not ORANGE); then `*composer*`, `*gpt-5*`; `*gemini*` and `auto` and unknown all fall through to default fg.
 
 **Effort derivation.** Cursor's effort lives in the model id as a
 `-low` / `-medium` / `-high` / `-xhigh` / `-max` suffix; the

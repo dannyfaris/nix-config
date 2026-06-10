@@ -116,13 +116,15 @@ pad2() {
 
 # Model name colour — per-tier so the active model is identifiable at a
 # glance. Substring match so future variants ("Claude 5 Opus", "Sonnet
-# 4.7", etc.) inherit their tier's colour. Order encodes precedence:
+# 4.7", etc.) inherit their tier's colour. Fable (frontier, above Opus)
+# wears RED — the warmth ladder's top rung. Order encodes precedence:
 # the first pattern to match wins, so an Opus-tuned Sonnet (hypothetical
 # `Sonnet (Opus-tuned)`) would match `*Sonnet*` first — keep Sonnet
 # before Opus if you need that. Haiku and unknown models hit the `*)`
 # fall-through and render in default foreground. See ADR-024
 # §Implementation.
 case "$MODEL" in
+*Fable*) MODEL_COL="$RED" ;;
 *Sonnet*) MODEL_COL="$TEAL" ;;
 *Opus*) MODEL_COL="$ORANGE" ;;
 *) MODEL_COL="" ;;
