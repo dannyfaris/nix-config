@@ -50,6 +50,10 @@ in
     autoEnable = false;
     base16Scheme = "${pkgs.base16-schemes}/share/themes/${scheme}.yaml";
     inherit (palette) polarity;
+    # Per-host slot corrections for ports that violate base16 slot
+    # intents, merged over the scheme by base16.nix. Empty for
+    # conformant hosts. See ADR-028 §History (2026-06-10, #331).
+    override = palette.overrides.${palette.polarity} or { };
 
     # Carve-out: silence Stylix's release-check warning on Darwin until
     # LnL7/nix-darwin master bumps its version.json from "26.05" to

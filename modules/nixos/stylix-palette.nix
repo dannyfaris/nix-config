@@ -62,5 +62,9 @@ in
     # chrome, GTK file pickers, Qt platform theme) follow the host's
     # actual visual intent. Also drives the scheme selection above.
     inherit (palette) polarity;
+    # Per-host slot corrections for ports that violate base16 slot
+    # intents, merged over the scheme by base16.nix. Empty for
+    # conformant hosts. See ADR-028 §History (2026-06-10, #331).
+    override = palette.overrides.${palette.polarity} or { };
   };
 }
