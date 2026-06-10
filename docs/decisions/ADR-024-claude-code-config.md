@@ -151,8 +151,9 @@ deliberate divergence: `BLUE`/path → `base0D`, `TEAL`/branch →
 host → `base0E`. `MAUVE` originally mapped to untracked per base16
 convention; untracked moved to `ORANGE` (base09) so the SSH host
 marker (added later — see ADR-002 History) is the only purple
-element on line 2. The seven-binding mapping above is the current
-canonical list.
+element on line 2. The seven-binding mapping above was the canonical
+list until 2026-06-10, when an eighth binding (`MUTED`/base04) was
+added — see the account-label entry below.
 
 **Model name colour by tier (2026-05-28).** Line 1's leading `✦ <model
 name>` segment is coloured per Anthropic model tier so the active
@@ -198,3 +199,13 @@ starship prompt's signal stack so the two surfaces read the same way:
   block); `(worktree)` lands on the **statusline only** (starship has
   no worktree module wired). The canonical convention statement lives
   in ADR-002 History.
+
+**Account label + two-cluster layout (2026-06-10).** Line 1 gains a leading account label — `Personal` / `Grey St.` per the identity split in [docs/identities.md](../identities.md) — and both lines move to a left-cluster / right-cluster layout with the right cluster flush against the terminal edge.
+
+*Account label.* The statusline stdin JSON carries no account info; the address `/status` reports lives in `~/.claude.json` at `.oauthAccount.emailAddress` (the same single-identity store documented in docs/identities.md §"Tools that opted out"), so the script reads it with one extra `jq` per render. Mapping: `daniel@faris.co.nz` → `Personal`, `daniel.faris@gotaxi.co.nz` → `Grey St.`; an unmapped address renders as the raw email (visibly unmapped, never silently wrong); an unreadable or absent file omits the segment and its separator entirely. Both labels render in a single muted tone — the words do the distinguishing. Claude-side only; the Cursor statusline is untouched (its JSON/config has no equivalent account surface wired).
+
+*`MUTED` colour role (base04).* All seven accent bindings already carry roles the label would echo — GREEN mirrors the adjacent context bar, TEAL/ORANGE read as model tiers, MAUVE is the SSH host marker, RED/YELLOW are alarm/effort — and ORANGE and TEAL are at capacity per the dual-role note above. base0F was rejected: it has no stable base16 semantic and lands on red (tokyo-night), orange (gruvbox), or a near-invisible dark (rose-pine) across the fleet's schemes. base04 is the base16 *"Dark Foreground (Used for status bars)"* slot — the one non-accent option, consistent and legible across every fleet scheme and polarity — so the label reads as static metadata rather than a live signal. Per-account *distinct* colours were considered and dropped: distinguishing two accounts needs two slots, and there is only one free.
+
+*Two-cluster layout.* Line 1 is `account │ ✦ model │ effort` left and `<ctx%> <bar>` flush right; line 2 is `host ❯ path on branch <counts>` left and `<clock> <5h%> <countdown>` flush right. The grouping reads identity/config on the left and live meters on the right, and stacks the two budget percentages (context window above 5-hour window) in one right-edge meters column; the clock glyph on the 5h segment is load-bearing — it disambiguates the two stacked percentages. The context-bar cluster is ordered *number before bar* deliberately: the bar is fixed-width, so anchoring it flush right keeps both bar edges pinned while only the percentage digits float in the gap — bar-first would wobble the whole cluster as the percentage gains digits.
+
+*Width mechanics.* Claude Code ≥ 2.1.153 sets `$COLUMNS`/`$LINES` to the live terminal size before each render and re-renders on resize (the stdin JSON has no width field; `tput cols` cannot see the terminal from inside the captured script). The fleet's flake pin satisfies the floor. Padding targets `COLUMNS − 1` because writing the final cell triggers auto-wrap on some terminals. Visible width is measured by stripping SGR escapes and counting code points — Nerd Font glyphs are assumed width 1, so a double-width rendering would drift the right edge by one column, cosmetic only. The gap clamps to ≥ 1 space: on narrow terminals the right cluster degrades to left-flow (and may soft-wrap if content alone exceeds the width, matching pre-cluster behaviour).

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # ~/.claude/statusline.sh
-# Two-line statusline for Claude Code.
-# Line 1: model │ effort │ context bar % │ 5h-window clock + countdown
-# Line 2: host │ repo-rooted path on branch (worktree) !conflicts +staged ~modified ?untracked
+# Two-line, two-cluster statusline for Claude Code. Left clusters hold
+# identity/config, right clusters (flush right, padded to $COLUMNS) hold
+# the live meters. Layout rationale: ADR-024 §Implementation.
+# Line 1: account │ model │ effort          ···   <ctx%> <bar>
+# Line 2: host ❯ path on branch counts      ···   <clock> <5h%> <countdown>
 #
 # Cross-platform: works on macOS and Linux. Requires jq and a Nerd Font.
 # Schema reference: https://code.claude.com/docs/en/statusline
@@ -13,9 +15,10 @@ hostname=$(hostname -s)
 
 # Palette-driven colour bindings — sourced from a Nix-generated file at
 # startup; mapping lives in home/shared/agent-clis.nix. The file
-# defines BLUE / GREEN / YELLOW / RED / MAUVE / TEAL as truecolor SGR
-# escapes derived from config.lib.stylix.colors. See ADR-024
-# §Implementation and ADR-028 slice 6 for the migration rationale.
+# defines BLUE / GREEN / YELLOW / RED / MAUVE / ORANGE / TEAL / MUTED
+# as truecolor SGR escapes derived from config.lib.stylix.colors. See
+# ADR-024 §Implementation and ADR-028 slice 6 for the migration
+# rationale.
 # shellcheck source=/dev/null
 source ~/.claude/statusline-colours.sh
 DIM='' # dim SGR too low-contrast in practice; keep var for one-point reintro
@@ -48,6 +51,50 @@ if [ "$(session-type 2>/dev/null)" = ssh ]; then
   HOST_GLYPH=$SSH_GLYPH
   HOST_COLOUR=$MAUVE
 fi
+
+# ─── Account label — leading line-1 segment ───────────────────────
+# The statusline stdin JSON carries no account info; the address
+# /status shows lives in ~/.claude.json (.oauthAccount.emailAddress).
+# Identity↔label set is the personal/work split from docs/identities.md.
+# Unknown address → raw email (visibly unmapped, never silently wrong);
+# unreadable/absent → segment and its separator are omitted entirely.
+ACCOUNT_SEG=""
+ACCOUNT_EMAIL=$(jq -r '.oauthAccount.emailAddress // empty' "$HOME/.claude.json" 2>/dev/null)
+if [ -n "$ACCOUNT_EMAIL" ]; then
+  case "$ACCOUNT_EMAIL" in
+  daniel@faris.co.nz) ACCOUNT_LABEL="Personal" ;;
+  daniel.faris@gotaxi.co.nz) ACCOUNT_LABEL="Grey St." ;;
+  *) ACCOUNT_LABEL="$ACCOUNT_EMAIL" ;;
+  esac
+  ACCOUNT_SEG="${MUTED}${ACCOUNT_LABEL}${RST}${SEP}"
+fi
+
+# ─── Two-cluster padding ──────────────────────────────────────────
+# Claude Code sets $COLUMNS to the live terminal width before each
+# render (≥ 2.1.153) and re-renders on resize, so flush-right padding
+# stays correct. Pad to COLUMNS−1: writing the final cell triggers
+# auto-wrap on some terminals.
+vw() {
+  # Visible width: SGR escapes stripped, then chars counted. Counts
+  # code points (Nerd Font glyphs assumed width 1) — a double-width
+  # rendering would drift the right edge by a column, cosmetic only.
+  local s
+  s=$(printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g')
+  printf '%s' "${#s}"
+}
+pad2() {
+  # left-cluster, gap, right-cluster. Gap clamps to ≥1 space: on narrow
+  # terminals the right cluster degrades to left-flow (and may soft-wrap
+  # if content alone exceeds the width — same as pre-cluster behaviour).
+  local left=$1 right=$2 gap
+  if [ -z "$right" ]; then
+    printf '%s\n' "$left"
+    return
+  fi
+  gap=$((${COLUMNS:-80} - 1 - $(vw "$left") - $(vw "$right")))
+  [ "$gap" -lt 1 ] && gap=1
+  printf '%s%*s%s\n' "$left" "$gap" '' "$right"
+}
 
 {
   read -r MODEL
@@ -191,10 +238,13 @@ for ((i = 0; i < F; i++)); do BAR+="█"; done
 for ((i = 0; i < E; i++)); do BAR+="░"; done
 
 # ─── 5h rate limit with reset countdown ───────────────────────────
+# Line 2's right cluster. The clock glyph stays load-bearing here: it
+# disambiguates this percentage from the context % stacked directly
+# above it at the right edge.
 RLIM=""
 if [ -n "$FIVE_PCT" ]; then
   FI=$(printf '%.0f' "$FIVE_PCT" 2>/dev/null || echo 0)
-  RLIM="${SEP}${CLOCK_GLYPH}  ${FI}%"
+  RLIM="${CLOCK_GLYPH}  ${FI}%"
   case "$FIVE_RESET" in
   '' | *[!0-9]*) ;;
   *)
@@ -206,14 +256,14 @@ if [ -n "$FIVE_PCT" ]; then
   esac
 fi
 
-# ═══ LINE 1: model │ effort │ context │ rate-limit ═══════════════
-printf '%s✦ %s%s%s%s%s%s%s %d%%%s\n' \
-  "$MODEL_COL" "$MODEL" "$RST" \
-  "$EFFORT_SEG" "$SEP" \
-  "$BC" "$BAR" "$RST" \
-  "$PCT" "$RLIM"
+# ═══ LINE 1: account │ model │ effort ··· ctx% bar ════════════════
+# Right cluster is <pct%> <bar> — number BEFORE bar, so the fixed-width
+# bar is the flush-right anchor and only the digits float in the gap.
+# Bar-first would wobble the whole cluster as the % gains digits.
+pad2 "${ACCOUNT_SEG}${MODEL_COL}✦ ${MODEL}${RST}${EFFORT_SEG}" \
+  "${PCT}% ${BC}${BAR}${RST}"
 
-# ═══ LINE 2: host │ path on branch ════════════════════════════════
+# ═══ LINE 2: host ❯ path on branch ··· 5h% countdown ══════════════
 # Nix-shell indicator — `(❄️)` as path-metadata immediately after the
 # cwd, mirroring the starship prompt's nix_shell module placement (see
 # ADR-002's `(…)`-as-metadata convention). $IN_NIX_SHELL set by
@@ -224,4 +274,4 @@ NIX_SHELL_SEG=""
 
 LINE2="${HOST_COLOUR}${HOST_GLYPH}  ${hostname}${RST}"
 [ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${NIX_SHELL_SEG}${GIT_SEG}"
-printf '%s\n' "$LINE2"
+pad2 "$LINE2" "$RLIM"

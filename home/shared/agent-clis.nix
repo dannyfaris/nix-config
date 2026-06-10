@@ -36,7 +36,7 @@ let
     slot:
     "\\033[38;2;${toString c."${slot}-rgb-r"};${toString c."${slot}-rgb-g"};${toString c."${slot}-rgb-b"}m";
 
-  # Seven statusline colour bindings derived from the host's base16
+  # Eight statusline colour bindings derived from the host's base16
   # palette. Role → base16 slot mapping mostly follows the standard
   # base16 semantic convention (08=red, 09=orange, 0A=yellow, 0B=green,
   # 0C=cyan, 0D=blue, 0E=magenta) so the colours come out semantically
@@ -44,6 +44,10 @@ let
   # was added — and untracked moved to it — so the SSH host marker
   # (MAUVE/base0E) is the only purple element on line 2; see
   # `home/shared/prompt.nix` for the matching prompt change.
+  # MUTED (base04 — the base16 "status bar" foreground, the one
+  # non-accent slot) marks the account label as static metadata rather
+  # than a live signal; all seven accents already carry roles it would
+  # echo. See ADR-024 §Implementation (account-label entry).
   #
   # Two slots carry a deliberate dual role across the two lines:
   #   - ORANGE: untracked counter (line 2) + Opus model label (line 1)
@@ -64,6 +68,7 @@ let
     MAUVE=$'${fgEscape "base0E"}'
     ORANGE=$'${fgEscape "base09"}'
     TEAL=$'${fgEscape "base0C"}'
+    MUTED=$'${fgEscape "base04"}'
   '';
 in
 {
