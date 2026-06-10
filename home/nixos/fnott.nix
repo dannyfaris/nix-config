@@ -45,4 +45,13 @@ in
     "summary-font" = monoPopup;
     "body-font" = monoPopup;
   };
+
+  # Restart fnott when its rendered config changes. fnott reads config
+  # only at startup (no file-watch, no reload signal) and its ExecStart
+  # is a stable symlink, so without this an `nh os switch` font/colour
+  # edit leaves the daemon serving stale settings until a manual
+  # restart. See docs/desktop/fnott.md §Sharp edges.
+  systemd.user.services.fnott.Unit.X-Restart-Triggers = [
+    config.xdg.configFile."fnott/fnott.ini".source
+  ];
 }
