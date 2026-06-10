@@ -147,6 +147,8 @@ session-target-pulled. To verify the daemon is wired correctly,
 send a test notification: `notify-send test`. The unit activates
 and the status flips to *active (running)*.
 
+**Config changes need a daemon restart — wired via `X-Restart-Triggers`.** fnott reads its config only at startup; it neither watches the file nor reloads on a signal. Its `ExecStart` points at the stable `~/.config/fnott/fnott.ini` symlink, so a content-only edit (e.g. a font-size change) leaves the systemd unit byte-identical and `nh os switch` sees no reason to restart the daemon — it keeps serving the old settings until a manual `systemctl --user restart fnott.service` or a reboot. `home/nixos/fnott.nix` therefore lists the rendered config file as an `X-Restart-Triggers` on the unit: its store path (and so the unit hash) changes on any content edit, and sd-switch restarts fnott during activation. Restarting the notification daemon is cheap and stateless — the opposite call from the compositor (`modules/nixos/niri.nix`), which deliberately *suppresses* restart-on-switch because it would tear down the live session.
+
 **First post-install `notify-send` may fail with `ServiceUnknown`
 until dbus-broker rescans.** `dbus-broker` scans D-Bus service
 directories at session start and caches the result for the
