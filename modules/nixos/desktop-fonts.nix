@@ -34,8 +34,10 @@
     # for the terminal being larger than chrome, and foot's pinned
     # `dpi-aware = no` sizes by the output scale factor — the same
     # factor the chrome apps scale by — so one number reads
-    # consistently across all four. `applications` (GTK/Qt/Firefox)
-    # keeps the Stylix default. See docs/desktop/fonts.md §Sizing.
+    # consistently across all four. `applications` keeps the Stylix
+    # default — it sizes Firefox's web body text (and Qt apps, of which
+    # there are none); GTK app-UI is reassigned to the mono Nerd Font
+    # separately. See docs/desktop/fonts.md §Sizing.
     sizes = {
       terminal = 11;
       desktop = 11;

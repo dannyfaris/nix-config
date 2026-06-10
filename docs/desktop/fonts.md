@@ -23,9 +23,11 @@ since nothing on those hosts renders fonts directly — SSH clients use
 their own.
 
 **Sans-serif — Inter.** Modern humanist UI typeface optimised for
-on-screen reading at small sizes. Used by GTK/Qt application chrome
-via Stylix's targets. Common choice for Linux desktop UI;
-well-supported by fontconfig.
+on-screen reading at small sizes. Backs the `sansSerif` fontconfig
+slot — web/document sans-serif body text (Firefox/Zen page content)
+and the `sans-serif` alias generally. (GTK *application* chrome was
+reassigned to the mono Nerd Font for cohesion — see §Sizing.) Common
+choice for Linux desktop UI; well-supported by fontconfig.
 
 **Serif — Stylix default (DejaVu Serif).** No explicit selection.
 Serif is rarely consulted on this desktop — niri/foot/GTK apps don't
@@ -45,8 +47,23 @@ point size (11)** for cross-surface cohesion. Stylix exposes a size
 taxonomy (`fonts.sizes.{terminal,desktop,popups,applications}`); the
 three slots those four surfaces consume (`terminal`, `desktop`,
 `popups`) are pinned equal in `modules/nixos/desktop-fonts.nix`.
-`applications` (GTK/Qt/Firefox chrome) keeps the Stylix default — it's
-a different role and out of scope for desktop-chrome cohesion.
+`applications` (the Stylix size slot, 12) keeps its default — on metis
+it now sizes Firefox's variable (body) web text (Stylix derives
+`font.size.variable.x-western` from this slot) and would size Qt apps
+if any existed (none today). GTK app-UI no longer consumes it (see
+below).
+
+**GTK application UI also uses the mono Nerd Font.** GTK app chrome —
+the polkit prompt, GTK file pickers, GTK app dialogs — would otherwise
+render in the `sansSerif` slot (Inter 12) that Stylix's `gtk` target
+defaults to, standing out against the mono chrome. It's overridden to
+the mono Nerd Font at 11 (a `gtk.font` `lib.mkForce` in
+`home/nixos/stylix-targets-desktop.nix`), so GTK dialogs match
+foot/waybar/fuzzel/fnott. This realizes the #108 "how far does Nerd
+Font go into app-UI" boundary for GTK app-UI; **web/document body text
+is unaffected** — that is the `sansSerif` *fontconfig* slot, still
+Inter. Qt theming would be a separate lever (none needed — no Qt apps
+on metis).
 
 **Why one size, not a larger terminal.** There is no documented
 typographic basis for a terminal to sit *larger* than surrounding
