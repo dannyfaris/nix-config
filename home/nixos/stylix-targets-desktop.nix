@@ -115,4 +115,21 @@ in
     # installed. See docs/desktop/polkit.md.
     gtk.enable = lib.mkIf desktopSession true;
   };
+
+  # GTK app-UI uses the desktop's one mono Nerd Font, not the sansSerif
+  # slot (Inter 12) Stylix's gtk target defaults to — so GTK chrome (the
+  # polkit prompt, GTK file pickers, GTK app dialogs) matches
+  # foot/waybar/fuzzel/fnott instead of standing out in Inter. Size 11 is
+  # the unified chrome size (#349), deliberately below the applications
+  # slot's 12. This is the #108 "Nerd Font into app-UI" boundary, decided
+  # for GTK app-UI; web/document body text is unaffected (the sansSerif
+  # fontconfig slot, still Inter). mkForce because Stylix's gtk target
+  # also writes gtk.font. See docs/desktop/fonts.md §Sizing.
+  gtk.font = lib.mkIf desktopSession (
+    lib.mkForce {
+      name = config.stylix.fonts.monospace.name;
+      package = config.stylix.fonts.monospace.package;
+      size = 11;
+    }
+  );
 }
