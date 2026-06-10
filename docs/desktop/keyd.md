@@ -61,7 +61,7 @@ The load-bearing choice recorded here is the mapping (`caps_lock → Super+Ctrl+
 
 ## Sharp edges
 
-**Inert until a bind exists — validate the modifier directly.** Realizing Hyper changes nothing visible until a `Mod+Ctrl+Alt+Shift+…` bind is added. Confirm the remap works on first activation with `sudo keyd monitor` (hold Caps Lock, watch the four modifiers report) or a Wayland event viewer (`wev`) inside niri. Don't assume it landed just because activation succeeded.
+**Inert until a bind exists — validate the modifier directly.** Realizing Hyper changes nothing visible until a `Mod+Ctrl+Alt+Shift+…` bind is added. Confirm the remap works on first activation with `sudo keyd monitor` (hold Caps Lock, watch the four modifiers report) or a Wayland event viewer (`wev`) inside niri. Don't assume it landed just because activation succeeded. (`services.keyd` wires only the daemon, so this module adds `pkgs.keyd` to `environment.systemPackages` to put the `keyd` CLI — `monitor`, `reload` — on `PATH`.)
 
 **Break-glass sits behind this remap — verify login still works.** metis break-glass is the physical console (CLAUDE.md §Break-glass), and keyd remaps at evdev *including the greeter and TTYs*. Two things bound the risk: only `caps_lock` is touched (every other key passes through), and keyd ships an in-kernel panic escape — `backspace+escape+enter` terminates keyd and restores raw input at the console (keyd upstream). keyd does *not* fail closed (a bad binding is logged and skipped, not a refusal to start), so the first activation should be verified by actually logging in at the console, not trusted blind.
 

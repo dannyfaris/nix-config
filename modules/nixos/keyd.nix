@@ -20,7 +20,14 @@
 # alternative, and break-glass notes (keyd is not fail-closed; the
 # in-kernel `backspace+escape+enter` chord terminates it). Bind
 # manifest: docs/desktop/keybinds.md.
-_: {
+{ pkgs, ... }:
+{
+  # The `keyd` CLI on PATH — `services.keyd` wires only the daemon, so
+  # `keyd monitor` (live keycode diagnostics) and `keyd reload` would
+  # otherwise need the package's full store path. On a keyboard-remap
+  # host the diagnostic is worth a stable command.
+  environment.systemPackages = [ pkgs.keyd ];
+
   services.keyd = {
     enable = true;
     keyboards.default = {
