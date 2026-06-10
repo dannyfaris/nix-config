@@ -28,14 +28,19 @@
       name = "Noto Color Emoji";
     };
 
-    # foot 1.15.0 changed `dpi-aware` from `auto` to `no`, which
-    # Stylix's foot target adopts verbatim. Under that default,
-    # `:size=N` (points) is multiplied by the compositor scale rather
-    # than the monitor DPI; on a scale-1 output the historical sizing
-    # reads smaller than it used to. 11pt approximates the prior
-    # visual size; operator may retune as monitor / scale changes
-    # accumulate. Original landing: PR #63.
-    sizes.terminal = 11;
+    # Desktop chrome + terminal share one point size for cross-surface
+    # cohesion: foot (terminal slot), waybar (desktop slot), fuzzel +
+    # fnott (popups slot) all render at 11. There is no design basis
+    # for the terminal being larger than chrome, and foot's pinned
+    # `dpi-aware = no` sizes by the output scale factor — the same
+    # factor the chrome apps scale by — so one number reads
+    # consistently across all four. `applications` (GTK/Qt/Firefox)
+    # keeps the Stylix default. See docs/desktop/fonts.md §Sizing.
+    sizes = {
+      terminal = 11;
+      desktop = 11;
+      popups = 11;
+    };
   };
 
   # Wire 1: enable Stylix's fontconfig target so the font names
