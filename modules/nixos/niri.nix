@@ -58,22 +58,39 @@
   # package via `environment.systemPackages` only, so without this NixOS
   # never symlinks the shipped units into `/etc/systemd/user/` and greetd
   # → niri-session's `systemctl --user --wait start niri.service` fails
-  # with "Unit not found". NixOS only layers a `PATH=` drop-in onto a unit
-  # when `systemd.user.services.niri.<anything>` is also set; we
-  # deliberately don't, so the package's `ExecStart=niri --session` runs
-  # verbatim (niri-session itself runs `systemctl --user import-environment`
-  # before start, populating PATH at runtime). See issue #67 for the
-  # incident write-up that motivated this shape.
+  # with "Unit not found". See issue #67 for the incident write-up.
   systemd.packages = [ config.programs.niri.package ];
 
-  # niri-flake also runs a polkit authentication agent by default — the KDE
-  # agent, via the `niri-flake-polkit` user service. Disable it (the
-  # niri-flake-documented lever): on this non-Plasma host the KDE/Kirigami
-  # agent renders off-theme (it reads kdeglobals, which Stylix doesn't write,
-  # so it falls back to stock Breeze), and it is the host's only Qt app —
-  # 573 MiB of Qt/KDE for one dialog. It is replaced by mate-polkit (GTK,
-  # base16-themed) in home/nixos/polkit-agent.nix, and the now-vestigial
-  # Stylix `qt` target is dropped in stylix-targets-desktop.nix. See
-  # docs/desktop/polkit.md (#103).
-  systemd.user.services.niri-flake-polkit.enable = false;
+  # Don't let `nh os switch` SIGTERM the live compositor. switch-to-
+  # configuration otherwise restarts niri.service when it changes, tearing
+  # down the whole graphical-session.target mid-session (and wedging greetd
+  # on recovery). `restartIfChanged = false` marks the unit
+  # X-RestartIfChanged so switch leaves the running session alone; changes
+  # are picked up on the next login.
+  #
+  # The override must be a *drop-in*: the default full-replace strategy
+  # shadows the package unit with a NixOS-generated stub that has no
+  # ExecStart= — the exact #67 failure. `overrideStrategy = "asDropin"`
+  # keeps the package's `ExecStart=niri --session`. `enableDefaultPath =
+  # false` stops NixOS injecting a minimal `PATH=` that would shadow the
+  # full session PATH niri-session populates at runtime via `systemctl
+  # --user import-environment` (else foot/waybar/fuzzel spawns break).
+  systemd.user.services = {
+    niri = {
+      overrideStrategy = "asDropin";
+      restartIfChanged = false;
+      enableDefaultPath = false;
+    };
+
+    # niri-flake also runs a polkit authentication agent by default — the KDE
+    # agent, via the `niri-flake-polkit` user service. Disable it (the
+    # niri-flake-documented lever): on this non-Plasma host the KDE/Kirigami
+    # agent renders off-theme (it reads kdeglobals, which Stylix doesn't write,
+    # so it falls back to stock Breeze), and it is the host's only Qt app —
+    # 573 MiB of Qt/KDE for one dialog. It is replaced by mate-polkit (GTK,
+    # base16-themed) in home/nixos/polkit-agent.nix, and the now-vestigial
+    # Stylix `qt` target is dropped in stylix-targets-desktop.nix. See
+    # docs/desktop/polkit.md (#103).
+    niri-flake-polkit.enable = false;
+  };
 }
