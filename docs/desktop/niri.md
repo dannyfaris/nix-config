@@ -65,8 +65,13 @@ polish for our use.
 **User layer** — `home/nixos/niri.nix`:
 - Sets `programs.niri.settings.binds` directly. Full bind taxonomy +
   modifier-namespace philosophy lives in [keybinds.md](./keybinds.md).
-- Other niri settings (layout, input, cursor) flow from niri-flake's
-  defaults; we override per-host only where deliberate.
+- Deliberate layout/decoration overrides: `prefer-no-csd = true` (niri
+  draws its own focus-ring border instead of clients' titlebars —
+  wasted space when tiling) and `layout.default-column-width =
+  proportion 0.66` (new windows open at two-thirds; niri otherwise
+  honours each client's preferred size, which opened foot narrow at its
+  ~80×24 default). Remaining layout/input/cursor settings still flow
+  from niri-flake defaults.
 
 **Stylix integration** — niri-flake's nixosModule auto-injects
 `homeModules.config`, which Stylix's targets bridge into for
