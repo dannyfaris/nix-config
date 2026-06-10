@@ -9,8 +9,10 @@
 #     which reads /Library/Fonts directly; fontconfig isn't the
 #     resolver, so stylix.targets.fontconfig.enable would write a
 #     defaultFonts map nothing on this platform consults. Omitted.
-#   - No sizes.terminal. That value is a foot DPI accommodation (see
-#     the NixOS module); on Darwin Ghostty owns its own font sizing.
+#   - No font sizes. The NixOS module unifies the desktop surfaces
+#     (foot/waybar/fuzzel/fnott) on one point size for cohesion; on
+#     Darwin Ghostty owns its own font sizing, so there's nothing to
+#     mirror. See docs/desktop/fonts.md §Sizing.
 #
 # What this module *does*: install config.stylix.fonts.packages into
 # nix-darwin's fonts.packages, which symlinks the faces into
