@@ -14,7 +14,7 @@
 # 573 MiB Qt-stack removal — lives in docs/desktop/polkit.md.
 #
 # Per #103.
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   systemd.user.services.mate-polkit = {
     Unit = {
@@ -22,6 +22,15 @@
       Documentation = [ "man:polkit(8)" ];
       PartOf = [ "graphical-session.target" ];
       After = [ "graphical-session.target" ];
+      # Restart the agent when its GTK font/theme config changes — it
+      # reads them only at startup, and a gtk.font/palette change doesn't
+      # touch this unit, so without this an `nh os switch` leaves the
+      # dialog on a stale font/theme until relogin. See
+      # docs/desktop/polkit.md §Sharp edges (same pattern as fnott #350).
+      X-Restart-Triggers = [
+        config.xdg.configFile."gtk-3.0/settings.ini".source
+        config.xdg.configFile."gtk-3.0/gtk.css".source
+      ];
     };
     Service = {
       Type = "simple";
