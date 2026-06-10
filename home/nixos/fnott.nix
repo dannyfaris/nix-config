@@ -1,13 +1,16 @@
 # fnott — Wayland-native notification daemon.
 #
 # Stylix theming is wired centrally via `stylix.targets.fnott.enable
-# = true` in home/nixos/stylix-targets-desktop.nix; Stylix writes
-# three fonts (title/summary/body all Inter at popups size), full
-# base16 colour palette including per-urgency-level border accents
-# (low → base03, normal → base0D, critical → base08), and the
-# polarity-driven icon-theme (when stylix.icons is configured). We
-# deliberately don't override Stylix's writes — this module is
-# enable-only.
+# = true` in home/nixos/stylix-targets-desktop.nix; Stylix writes the
+# full base16 colour palette including per-urgency-level border accents
+# (low → base03, normal → base0D, critical → base08) and the polarity-
+# driven icon-theme (when stylix.icons is configured). We don't
+# override Stylix's colour writes.
+#
+# Font: we DO override Stylix here. Stylix would default fnott's three
+# font keys to the sansSerif slot (Inter); instead the Wayland chrome
+# uses the one mono Nerd Font (JetBrainsMono Nerd Font), matching foot,
+# waybar, and fuzzel. See docs/desktop/fnott.md.
 #
 # Lives under nixos/ because fnott is Wayland-only and doesn't
 # compile off Linux — same placement reasoning as foot.nix and
@@ -27,6 +30,19 @@
 # selection rationale and sharp edges.
 #
 # Per #74.
-_: {
+{ config, lib, ... }:
+let
+  # Mono Nerd Font (monospace slot + popups size), overriding Stylix's
+  # sansSerif default for fnott's three font keys so notifications
+  # match the rest of the chrome. mkForce: Stylix's fnott target also
+  # writes these.
+  monoPopup = lib.mkForce "${config.stylix.fonts.monospace.name}:size=${toString config.stylix.fonts.sizes.popups}";
+in
+{
   services.fnott.enable = true;
+  services.fnott.settings.main = {
+    "title-font" = monoPopup;
+    "summary-font" = monoPopup;
+    "body-font" = monoPopup;
+  };
 }
