@@ -6,6 +6,7 @@
 # beside this file:
 #
 #   - niri.nix             — compositor (system enablement + cache opt-out).
+#   - keyd.nix             — Caps Lock → Hyper modifier (keyboard parity with the mac's Karabiner).
 #   - greetd.nix           — display manager (tuigreet on tty1).
 #   - desktop-fonts.nix    — Stylix font selections (mono/sans/emoji) + install wiring.
 #   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
@@ -18,6 +19,7 @@
 {
   imports = [
     ../niri.nix
+    ../keyd.nix
     ../greetd.nix
     ../desktop-fonts.nix
     ../electron-wayland.nix
