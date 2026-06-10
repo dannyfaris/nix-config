@@ -171,28 +171,56 @@ let
     '';
   };
 
-  # Floating cheatsheet for the agent layout's custom Alt+g/d/e/k binds.
+  ghDashEnabled = config.programs.gh-dash.enable;
+  zellijAgentHelpLines = [
+    ""
+    "        Agent layout — keys"
+    ""
+    "          Alt+← ↑ ↓ →     navigate panes"
+    "          Alt+g           lazygit (floating)"
+    "          Alt+d           lazydocker (floating)"
+  ]
+  ++ lib.optional ghDashEnabled "          Alt+Shift+g     gh-dash (floating)"
+  ++ [
+    "          Alt+e           capture scrollback to $EDITOR"
+    "          Alt+k           this help"
+    ""
+    "        Press any key to dismiss."
+    ""
+  ];
+  zellijAgentHelpScript = builtins.concatStringsSep "\n" (
+    [ "cat <<'EOF'" ]
+    ++ zellijAgentHelpLines
+    ++ [
+      "EOF"
+      "read -r -n1 -s"
+      ""
+    ]
+  );
+  ghDashKeybind = lib.optionalString ghDashEnabled (
+    builtins.concatStringsSep "\n" [
+      "              bind \"Alt Shift g\" {"
+      "                  Run \"gh-dash\" {"
+      "                      floating true"
+      "                      close_on_exit true"
+      "                      width \"85%\""
+      "                      height \"85%\""
+      "                      x \"7%\""
+      "                      y \"7%\""
+      "                  }"
+      "              }"
+      ""
+    ]
+  );
+
+  # Floating cheatsheet for the agent layout's custom tool/help binds.
   # Invoked from Alt+k via the `Run … floating true` pattern (same shape
-  # as the Alt+g/d binds below). Mod+k as the help binding mirrors a
+  # as the floating tool binds below). Mod+k as the help binding mirrors a
   # convention already familiar from other tools, so no on-screen
   # discovery hint is needed in the layout itself.
   zellijAgentHelp = pkgs.writeShellApplication {
     name = "zellij-agent-help";
-    text = ''
-      cat <<'EOF'
-
-        Agent layout — keys
-
-          Alt+← ↑ ↓ →     navigate panes
-          Alt+g           lazygit (floating)
-          Alt+d           lazydocker (floating)
-          Alt+e           capture scrollback to $EDITOR
-          Alt+k           this help
-
-        Press any key to dismiss.
-      EOF
-      read -r -n1 -s
-    '';
+    text = zellijAgentHelpScript;
   };
 in
 {
@@ -222,55 +250,57 @@ in
     #   Alt+g / Alt+d — floating lazygit / lazydocker, scoped to the
     #     focused pane's cwd; close_on_exit avoids an `(exited)` corpse.
     #     Sized 85% centred (x/y 7%) — the default float is too cramped.
+    #   Alt+Shift+g — floating gh-dash, same geometry, gated to hosts where
+    #     the GitHub workflow surface is enabled.
     #   Alt+e — drop the current pane's scrollback straight into $EDITOR
     #     (helix, per ADR-005) for capture/annotation.
     #   Alt+k — floating cheatsheet for these custom binds (zellij-agent-help
     #     script defined in the `let` block above).
     extraConfig = ''
-      keybinds {
-          // Tabs are unused in the agent workflow (one workspace per
-          // session) and the zjstatus bar renders no tab list, so make
-          // tab creation unreachable. `NewTab` exists only inside Tab mode
-          // and tmux mode, whose sole entry keys are Ctrl+t and Ctrl+b —
-          // unbinding both seals every path, including the indirect
-          // tmux → "," (rename) → Esc → Tab mode → "n" back-door, because
-          // rename mode is itself only reachable from those two modes
-          // (verified via `zellij setup --dump-config`). Side effect: the
-          // tmux-compat keytable goes with it, which this zellij-native
-          // setup doesn't use. The custom Alt+g/d/e/k binds below live in
-          // `shared_except "locked"`, unaffected.
-          unbind "Ctrl t" "Ctrl b"
+            keybinds {
+                // Tabs are unused in the agent workflow (one workspace per
+                // session) and the zjstatus bar renders no tab list, so make
+                // tab creation unreachable. `NewTab` exists only inside Tab mode
+                // and tmux mode, whose sole entry keys are Ctrl+t and Ctrl+b —
+                // unbinding both seals every path, including the indirect
+                // tmux → "," (rename) → Esc → Tab mode → "n" back-door, because
+                // rename mode is itself only reachable from those two modes
+                // (verified via `zellij setup --dump-config`). Side effect: the
+                // tmux-compat keytable goes with it, which this zellij-native
+                // setup doesn't use. The custom tool/help binds below live in
+                // `shared_except "locked"`, unaffected.
+                unbind "Ctrl t" "Ctrl b"
 
-          shared_except "locked" {
-              bind "Alt g" {
-                  Run "lazygit" {
-                      floating true
-                      close_on_exit true
-                      width "85%"
-                      height "85%"
-                      x "7%"
-                      y "7%"
-                  }
-              }
-              bind "Alt d" {
-                  Run "lazydocker" {
-                      floating true
-                      close_on_exit true
-                      width "85%"
-                      height "85%"
-                      x "7%"
-                      y "7%"
-                  }
-              }
-              bind "Alt e" { EditScrollback; }
-              bind "Alt k" {
-                  Run "zellij-agent-help" {
-                      floating true
-                      close_on_exit true
-                  }
-              }
-          }
-      }
+                shared_except "locked" {
+                    bind "Alt g" {
+                        Run "lazygit" {
+                            floating true
+                            close_on_exit true
+                            width "85%"
+                            height "85%"
+                            x "7%"
+                            y "7%"
+                        }
+                    }
+                    bind "Alt d" {
+                        Run "lazydocker" {
+                            floating true
+                            close_on_exit true
+                            width "85%"
+                            height "85%"
+                            x "7%"
+                            y "7%"
+                        }
+                    }
+      ${ghDashKeybind}              bind "Alt e" { EditScrollback; }
+                    bind "Alt k" {
+                        Run "zellij-agent-help" {
+                            floating true
+                            close_on_exit true
+                        }
+                    }
+                }
+            }
     '';
   };
 
@@ -315,7 +345,7 @@ in
   # Bottom bar unchanged: the stock `zellij:status-bar` is a single WASM
   # rendering two rows (mode-indicator + keybind hints on top, rotating
   # "Tip:" on bottom), so its pane stays `size=2` — less clips the hints.
-  # Custom binds from `extraConfig` (Alt+g/d/e/k) live in the Alt+k
+  # Custom binds from `extraConfig` (tool/help shortcuts) live in the Alt+k
   # cheatsheet, not the layout chrome.
   xdg.configFile."zellij/layouts/agent.kdl".text = ''
     layout {
