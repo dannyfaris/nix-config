@@ -37,6 +37,49 @@ defaults. Coincidentally also provided by NixOS's
 `fonts.enableDefaultPackages = true`, so installed on every host (not
 just desktop).
 
+## Sizing
+
+The four desktop surfaces — foot (terminal), waybar (status bar),
+fuzzel (launcher), fnott (notifications) — render at **one shared
+point size (11)** for cross-surface cohesion. Stylix exposes a size
+taxonomy (`fonts.sizes.{terminal,desktop,popups,applications}`); the
+three slots those four surfaces consume (`terminal`, `desktop`,
+`popups`) are pinned equal in `modules/nixos/desktop-fonts.nix`.
+`applications` (GTK/Qt/Firefox chrome) keeps the Stylix default — it's
+a different role and out of scope for desktop-chrome cohesion.
+
+**Why one size, not a larger terminal.** There is no documented
+typographic basis for a terminal to sit *larger* than surrounding
+chrome; design-system practice sizes type by role and content-length,
+and the continuously-read body surface (the terminal) warrants a size
+*at least equal to* chrome, never smaller — equal satisfies that. A
+deliberate per-surface delta would be a legibility preference, not a
+rule; absent one, a single number reads consistently and is the
+simpler default.
+
+**Why a bare number works here (the dpi-aware story, corrected).**
+foot pins `dpi-aware = no` (written by Stylix's foot target;
+documented in `home/nixos/foot.nix`). Under `no`, `:size=N` is sized
+by the **output scale factor**, not the monitor's physical DPI — the
+same factor the Wayland chrome apps scale by — so a numerically-equal
+size scales together across all four surfaces and reads consistently
+regardless of the display's scale. Pinning `no` is a deliberate
+*portability*
+choice: under foot's former `auto` default an identical `:size=N`
+rendered at different apparent sizes across monitors of differing
+DPI/scale (foot issue #714); `no` makes it reproducible.
+
+A prior revision of this doc claimed the value `11` "approximates the
+prior visual size" lost when foot 1.15.0 flipped `dpi-aware` from
+`auto` to `no`. That rationale was unfounded: `auto` only used
+DPI-based sizing when *every* output was at scale 1, and used
+scale-factor sizing otherwise — so on any scaled output (metis runs
+at scale 1.5) the `auto → no` change was a **no-op**: foot rendered
+`:size=N` identically before and after. The `11` is a deliberate
+legibility/cohesion choice, not DPI compensation. (The
+1.15.0 default change itself is real — confirmed against foot's
+CHANGELOG and `foot.ini(5)` — only the causal sizing story was wrong.)
+
 ## Installation model
 
 Stylix's design distinguishes *naming* (what fontconfig advertises
@@ -96,9 +139,10 @@ Book.
 The fontconfig wire is deliberately absent: macOS resolves fonts via
 Core Text, which reads `/Library/Fonts` directly, so
 `stylix.targets.fontconfig.enable` would write a `defaultFonts` map
-nothing on the platform consults. `sizes.terminal` is likewise omitted
-— that's a foot DPI accommodation, and on Darwin Ghostty owns its own
-sizing.
+nothing on the platform consults. Font sizes are likewise omitted —
+the NixOS module unifies the desktop surfaces on one point size (see
+§Sizing) and on Darwin Ghostty owns its own sizing, so there's nothing
+to mirror.
 
 Consequence: Darwin installs the faces but has no alias layer, and
 Ghostty bundles its own JetBrainsMono — so the practical effect is
@@ -123,12 +167,13 @@ respect). Per #209.
   it — be alert.
 
 - **foot's `dpi-aware = no` default.** foot 1.15.0 changed `dpi-aware`
-  from `auto` to `no`, which Stylix's foot target adopts verbatim.
-  Under that default, `:size=N` (points) is multiplied by the
-  compositor scale rather than the monitor DPI; on a scale-1 output
-  the historical sizing reads smaller. `stylix.fonts.sizes.terminal =
-  11` approximates the prior visual size on metis. May retune as
-  monitor / scale changes accumulate. Original landing: PR #63.
+  from `auto` to `no` (and removed `auto`), which Stylix's foot target
+  adopts verbatim. Under `no`, `:size=N` is sized by the output scale
+  factor, not the monitor DPI — a deliberate portability win (foot
+  issue #714), and the basis for one shared size reading consistently
+  across surfaces. See §Sizing for the full story, including why an
+  earlier "11 compensates for the 1.15.0 change" rationale was
+  unfounded. Original landing: PR #63.
 
 - **No universal monospace.** Earlier iterations claimed monospace
   was a foundation-level concern (universal across all hosts); this
