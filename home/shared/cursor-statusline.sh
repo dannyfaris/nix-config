@@ -14,9 +14,9 @@ hostname=$(hostname -s)
 
 # Palette-driven colour bindings — sourced from a Nix-generated file at
 # startup; mapping lives in home/shared/agent-clis.nix. The file defines
-# BLUE / GREEN / YELLOW / RED / MAUVE / ORANGE / TEAL as truecolor SGR
-# escapes derived from config.lib.stylix.colors. Same derivation as
-# Claude's; no second palette source.
+# BLUE / GREEN / YELLOW / RED / MAUVE / ORANGE / TEAL / MUTED as
+# truecolor SGR escapes derived from config.lib.stylix.colors. Same
+# derivation as Claude's; no second palette source.
 # shellcheck source=/dev/null
 source ~/.cursor/statusline-colours.sh
 DIM='' # dim SGR too low-contrast in practice; keep var for one-point reintro
@@ -61,15 +61,18 @@ fi
 
 # ─── Model-tier colour ────────────────────────────────────────────
 # Match order per docs/agents/cursor-statusline.md: Anthropic-family
-# identity dominates (sonnet/opus first); then codex (before gpt-5
-# so codex variants colour as YELLOW not MAUVE); then composer, gpt-5;
-# gemini / auto / unknown fall through to default fg.
+# identity dominates (fable/sonnet/opus first); then codex (before
+# gpt-5 so codex variants colour as YELLOW not ORANGE); then composer,
+# gpt-5 (ORANGE — Opus's tier-mate, coloured by tier not vendor; see
+# ADR-024 §Implementation 2026-06-10); gemini / auto / unknown fall
+# through to default fg.
 case "$MODEL_ID" in
+*fable*) MODEL_COL="$RED" ;;
 *sonnet*) MODEL_COL="$TEAL" ;;
 *opus*) MODEL_COL="$ORANGE" ;;
 *codex*) MODEL_COL="$YELLOW" ;;
 *composer*) MODEL_COL="$BLUE" ;;
-*gpt-5*) MODEL_COL="$MAUVE" ;;
+*gpt-5*) MODEL_COL="$ORANGE" ;;
 *) MODEL_COL="" ;;
 esac
 

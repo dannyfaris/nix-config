@@ -160,7 +160,8 @@ name>` segment is coloured per Anthropic model tier so the active
 model is identifiable at a glance:
 
 - `*Sonnet*` → `TEAL` — calm "label" hue, pairs with branch on line 2.
-- `*Opus*`   → `ORANGE` — top of the visual tier ladder, warmest hue.
+- `*Opus*`   → `ORANGE` — warmest hue and top of the visual tier
+  ladder until Fable 5 took `RED` above it (2026-06-10 — see below).
 - **Haiku** → default foreground (intentional). Absence of styling
   is itself a signal — the lightweight tier is the "workhorse with no
   flourish." Reducing visual chrome for the most common use case is
@@ -169,6 +170,8 @@ model is identifiable at a glance:
   *Review this mapping when Anthropic ships a new tier name* (e.g. a
   "Pro" or "Lite" between Sonnet and Opus, or a successor naming
   scheme entirely) — the current case statement won't recognise it.
+  (Exercised 2026-06-10: Fable 5 landed as the tier above Opus — see
+  the Fable entry below.)
 
 Substring match (not exact) so future variants ("Claude 5 Opus",
 "Sonnet 4.7", etc.) inherit their tier's colour without an update.
@@ -181,7 +184,10 @@ roles are deliberate — both pair "label / attention" semantics across
 the two lines at distinct positions. **ORANGE and TEAL are at
 capacity** for line-1 categorical pairing — if a future line-1 slot
 needs colour, prefer MAUVE or default-fg rather than triple-loading
-either of these.
+either of these. (2026-06-10: the next slot went to RED instead —
+Fable; MAUVE was re-examined and rejected as the now-most-loaded
+identity slot. Future line-1 slots: default-fg. See the Fable entry
+below.)
 
 The originally-used `MAUVE`/Opus was dropped because MAUVE is now the
 SSH host marker, and both elements are leftmost-line-anchors —
@@ -209,3 +215,11 @@ starship prompt's signal stack so the two surfaces read the same way:
 *Two-cluster layout.* Line 1 is `account │ ✦ model │ effort` left and `<ctx%> <bar>` flush right; line 2 is `host ❯ path on branch <counts>` left and `<clock> <5h%> <countdown>` flush right. The grouping reads identity/config on the left and live meters on the right, and stacks the two budget percentages (context window above 5-hour window) in one right-edge meters column; the clock glyph on the 5h segment is load-bearing — it disambiguates the two stacked percentages. The context-bar cluster is ordered *number before bar* deliberately: the bar is fixed-width, so anchoring it flush right keeps both bar edges pinned while only the percentage digits float in the gap — bar-first would wobble the whole cluster as the percentage gains digits.
 
 *Width mechanics.* Claude Code ≥ 2.1.153 sets `$COLUMNS`/`$LINES` to the live terminal size before each render and re-renders on resize (the stdin JSON has no width field; `tput cols` cannot see the terminal from inside the captured script). The fleet's flake pin satisfies the floor. Padding targets `COLUMNS − 1` because writing the final cell triggers auto-wrap on some terminals. Visible width is measured by stripping SGR escapes and counting code points — Nerd Font glyphs are assumed width 1, so a double-width rendering would drift the right edge by one column, cosmetic only. The gap clamps to ≥ 1 space: on narrow terminals the right cluster degrades to left-flow (and may soft-wrap if content alone exceeds the width, matching pre-cluster behaviour).
+
+**Fable tier colour — RED; cursor mapping moves tier-based (2026-06-10).** Fable 5 (the frontier tier, above Opus) wears `RED`/base08 in both statuslines: `*Fable*` on `.model.display_name` in `claude-statusline.sh`, `*fable*` on `.model.id` in `cursor-statusline.sh` (future-proofing — no fable id ships in the pinned cursor-cli yet).
+
+*Why RED.* It extends the recorded warmth-ladder grammar — teal → orange → red — and the choice was deliberately deferred (#330, #331) until the ADR-028 slot corrections (2026-06-10) made base08 render distinctly from base09 on all four hosts; before them, mercury's 08/09 were both foreground-adjacent. Accepted cost: the badge shares base08 with the conditional alarm signals (conflict counter, ≥ 80 % context bar, xhigh/max effort) — they remain shape- and position-distinct, and the badge is the only *permanent* red on screen.
+
+*Why not MAUVE.* base0E is now the most-loaded identity slot: the SSH host marker fleet-wide, deliberately sharing with the path on metis (ADR-028 §History 2026-06-10). And in the Cursor statusline — which has no account label offsetting line 1 — a 0E model badge at column 0 stacks directly above the 0E SSH marker at line 2 column 0, the geometry that originally killed MAUVE/Opus (see above).
+
+*Cursor goes tier-based for the Anthropic-comparable generalists.* `*gpt-5*` non-codex moves MAUVE → ORANGE: models are coloured by tier, not vendor identity, and GPT-5.5 is Opus's tier-mate. MAUVE thereby returns to SSH-host-only across both agent-CLI surfaces. The codex (YELLOW) and composer (BLUE) family colours are deliberately retained — tier-binning them was considered and deferred because their bins are genuinely fuzzy; revisit if the half-tier/half-family mapping grates. `docs/agents/cursor-statusline.md`'s mapping table is updated to match.
