@@ -19,6 +19,11 @@
 #     adw-gtk3 dark-variant selection, etc.). Stylix's third polarity
 #     value `"either"` is intentionally NOT used here — leaving polarity
 #     unset is precisely the bug #123 fixed.
+#   - overrides — optional; per-polarity attrset of base16 slot
+#     corrections merged over the selected scheme via `stylix.override`.
+#     For ports that violate base16 slot intents; corrective hues come
+#     only from the theme's own upstream palette. See ADR-028 §History
+#     (2026-06-10, #331).
 #
 # Scheme names match files under
 # ${pkgs.base16-schemes}/share/themes/<name>.yaml. Flipping polarity is
@@ -47,12 +52,38 @@
       dark = "tokyo-night-dark";
       light = "tokyo-night-light";
     };
+    # Port corrections — these ports park the theme's red in base0F and
+    # render accents off-intent (dark 08/09/0A, with 09 byte-identical
+    # to the base05 fg; light 08/0A). See ADR-028 §History (2026-06-10, #331).
+    overrides = {
+      dark = {
+        base08 = "f7768e"; # red — from this port's own base0F
+        base09 = "ff9e64"; # upstream orange (as in tokyo-night-terminal-dark)
+        base0A = "e0af68"; # upstream yellow (ditto)
+      };
+      light = {
+        base08 = "8c4351"; # red — from this port's own base0F
+        base0A = "8f5e15"; # upstream yellow (as in tokyo-night-terminal-light)
+      };
+    };
   };
   metis = {
     polarity = "dark";
     schemes = {
       dark = "rose-pine";
       light = "rose-pine-dawn";
+    };
+    # Rose-pine has six accents for seven used slots, so one collision
+    # is unavoidable; the port ships 09==0E (gold). Relocate it to
+    # 0D==0E (iris) so the SSH marker is purple-family like every other
+    # host. See ADR-028 §History (2026-06-10, #331).
+    overrides = {
+      dark = {
+        base0E = "c4a7e7"; # iris — deliberately shares with base0D (path)
+      };
+      light = {
+        base0E = "907aa9"; # dawn iris — same relocation, light polarity
+      };
     };
   };
   # Visibly distinct from the existing three (catppuccin / tokyo-night /
