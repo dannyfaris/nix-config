@@ -23,7 +23,7 @@ extract a shared helper).
 
 Line layout mirrors Claude's:
 
-- **Line 1** — `model │ effort │ context bar %`
+- **Line 1** — `model [max] │ effort  ···  ctx% bar` (two-cluster, flush-right)
 - **Line 2** — `host │ repo-rooted path on branch (worktree) !conflicts +staged ~modified ?untracked`
 
 Two structural differences from Claude land deliberately:
@@ -39,15 +39,15 @@ Two structural differences from Claude land deliberately:
 
 ## Rationale
 
-**Palette coherence across agent-CLIs is the goal, not feature
-parity.** ADR-008 frames the agent-CLI set as deliberately
-non-converging — each tool keeps its native strengths. The statusline
-asymmetry between Claude and Cursor is fine; what's *not* fine is
-two parallel agent-CLI surfaces signalling host context in different
-visual vocabularies. Sourcing the same `statusline-colours.sh` from
-both scripts means the per-host Stylix palette is the single source
-of truth — host glyph + colour, branch colour, git-state counters all
-match across the two CLIs on the same host.
+**Palette coherence across agent-CLIs is the goal.** Sourcing the same
+`statusline-colours.sh` from both scripts means the per-host Stylix palette
+is the single source of truth — host glyph + colour, branch colour, and
+git-state counters all match across the two CLIs on the same host.
+
+**Layout converges too**, to the extent each payload allows (#354): both
+scripts use the two-cluster flush-right composition and an identical glyph
+display-width model, diverging only where the payloads genuinely differ —
+cursor-only max-mode, and Claude-only account label and rate-limit segment.
 
 **Duplicate first.** Cursor is the second statusline consumer.
 Most of `claude-statusline.sh` is vendor-neutral — palette / glyph
@@ -262,6 +262,30 @@ Claude's jq query (`.workspace.git_worktree`) would silently lose
 worktree info on cursor, and reading `.worktree` directly would
 emit raw JSON. The implementing script must read `.worktree.name`.
 
+**No cost/spend field in the statusline payload.** Cursor computes billing
+internally (`total_cost_cents`, `total_request_cost`, `percent_of_burst_used`)
+but those live in a server-side usage message, *not* the statusline stdin
+payload — which exposes only `context_window` token fields (`total_input_tokens`
+is derived from `used_percentage`; `total_output_tokens` is frequently null;
+`current_usage` is last-call only). So a token/cost segment is deferred until
+cursor surfaces cost, and is the real reason line 2's right cluster stays empty
+(#354). Verified against `cursor-cli 0-unstable-2026-05-24`.
+
+**Width signal is `render_width_chars`, not `$COLUMNS`.** Cursor's payload
+carries `render_width_chars` ("usable terminal columns minus built-in padding")
+and a `statusLine.padding` config (default 0). That is the authoritative pad
+target for the flush-right layout; the script pads to it rather than `$COLUMNS`,
+which cursor does not set (Claude has no equivalent and pads to `COLUMNS-1`). A
+standard `wcwidth` (libc, perl, python) is *not* a usable substitute for the
+glyph-width half: it reports the Nerd Font PUA glyphs, `✦`, and the `│`
+separator as width 1, reproducing the truncation bug — so the display-width
+correction is an explicit per-glyph table (`WIDE_GLYPHS`) consumed by an
+identical `vw()` in both scripts; the tables differ only in that cursor's omits
+the rate-limit clock glyph it never renders (#354). The bar's `█`/`░` are
+deliberately excluded: though also
+East-Asian-ambiguous like `│`, the renderer counts them as one cell, so a
+naive "ambiguous = wide" rule would over-pad and mangle the bar.
+
 ## References
 
 - **#58** — the issue this doc closes Phase 1 of and authors Phase 2a's
@@ -271,7 +295,7 @@ emit raw JSON. The implementing script must read `.worktree.name`.
 - **#165** — landed the nixpkgs bump (cursor-cli `2026-04-08` →
   `2026-05-16`) that unblocked this work.
 - [ADR-008](../decisions/ADR-008-agent-clis.md) — base/extras split
-  for agent-CLIs; framed the deliberate non-convergence stance.
+  for agent-CLIs.
 - [ADR-024](../decisions/ADR-024-claude-code-config.md) — Claude
   Code statusline contract; the load-bearing reference for both
   scripts' shared sections.

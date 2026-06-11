@@ -37,6 +37,17 @@ CLOCK_GLYPH=$'\xef\x80\x97'   # U+F017 nf-fa-clock_o (rate-limit marker)
 # glyphs above.
 NIX_GLYPH=$'\xef\x8b\x9c' # U+F2DC nf-fa-snowflake (nix-shell marker)
 
+# Presentation-wide glyphs — render as TWO terminal cells in a Nerd Font but
+# are single code points, which vw() corrects for (#354). The set: the PUA
+# glyphs above, the ✦ model marker, and the │ separator (box-drawing, wide in
+# this font). The bar's █/░ are intentionally ABSENT — though also East-Asian-
+# ambiguous like │, the renderer counts them as one cell (a doubled bar would
+# mis-render), so listing them would over-pad. A standard wcwidth reports all
+# of these as width 1 (the bug), so the correction is an explicit per-glyph
+# table, not a wcwidth call — see docs/agents/cursor-statusline.md §Sharp edges.
+# A new wide glyph MUST be added here, or its line over-pads and truncates.
+WIDE_GLYPHS=("$BRANCH_GLYPH" "$DESKTOP_GLYPH" "$SSH_GLYPH" "$CLOCK_GLYPH" "$NIX_GLYPH" "✦" "│")
+
 # Host marker — glyph + colour by connection type, via the shared
 # `session-type` command (home/shared/session-type.nix). Inside zellij it
 # reads the live client's connection, so the marker is correct after a
@@ -75,12 +86,17 @@ fi
 # stays correct. Pad to COLUMNS−1: writing the final cell triggers
 # auto-wrap on some terminals.
 vw() {
-  # Visible width: SGR escapes stripped, then chars counted. Counts
-  # code points (Nerd Font glyphs assumed width 1) — a double-width
-  # rendering would drift the right edge by a column, cosmetic only.
-  local s
+  # Visible display width: SGR escapes stripped, code points counted, then
+  # +1 per presentation-wide glyph (WIDE_GLYPHS) — each renders as two cells
+  # but counts as one code point. The flush-right pad below leaves zero
+  # slack, so an undercount overflows and the line truncates (#354). The
+  # scripts emit no other wide chars (no CJK/combining), so code points plus
+  # this fixed correction equals true display width.
+  local s stripped g
   s=$(printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g')
-  printf '%s' "${#s}"
+  stripped=$s
+  for g in "${WIDE_GLYPHS[@]}"; do stripped=${stripped//$g/}; done
+  printf '%s' "$((${#s} + ${#s} - ${#stripped}))"
 }
 pad2() {
   # left-cluster, gap, right-cluster. Gap clamps to ≥1 space: on narrow
