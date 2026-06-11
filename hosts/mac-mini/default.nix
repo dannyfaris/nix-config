@@ -73,6 +73,12 @@ _: {
     # module header.
     ../../modules/darwin/system-prefs.nix
 
+    # macOS keyboard shortcuts (com.apple.symbolichotkeys) — the
+    # screenshot file/clipboard chord swap and the Switch-to-Desktop
+    # N enablement. Authoritative for the symbolichotkeys domain; see
+    # the module header and docs/desktop/keybinds.md §Screenshots.
+    ../../modules/darwin/keyboard-shortcuts.nix
+
     # Power / sleep / recovery for the always-on builder + SSH-bastion
     # role. Auto-restart after outage, never sleep the computer,
     # display sleep at factory default. Values here are wrong for a
@@ -139,8 +145,8 @@ _: {
       # modifier. Enumerated bindings live in docs/desktop/keybinds.md
       # §"Active bindings — macOS clients". See docs/desktop/hammerspoon.md.
       ../../home/darwin/hammerspoon.nix
-      # Ensures ~/Screenshots exists; pairs with screencapture.location
-      # in modules/darwin/system-prefs.nix.
+      # Ensures ~/Pictures/Screenshots exists; pairs with
+      # screencapture.location in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream-published

@@ -19,12 +19,18 @@
 #
 # See #69 for the niri-only baseline close-out under which this
 # curated bind set was established.
-{ config, ... }:
+{ config, lib, ... }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
 in
 {
   programs.niri.settings = {
+    # Capture target, set explicitly so it stays in lockstep with the
+    # directory created below — niri creates only the last path component
+    # and silently drops the shot when the parent is missing (niri #807).
+    # See docs/desktop/keybinds.md §Screenshots.
+    screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
+
     # Layout primitives — column width, border, and inter-window gap in one
     # block (one `layout` key; the geometry/spacing values come from tokens).
     layout = {
@@ -109,16 +115,19 @@ in
       "Mod+8".action.focus-workspace = 8;
       "Mod+9".action.focus-workspace = 9;
 
-      # Workspaces — move window to
-      "Mod+Shift+1".action.move-window-to-workspace = 1;
-      "Mod+Shift+2".action.move-window-to-workspace = 2;
-      "Mod+Shift+3".action.move-window-to-workspace = 3;
-      "Mod+Shift+4".action.move-window-to-workspace = 4;
-      "Mod+Shift+5".action.move-window-to-workspace = 5;
-      "Mod+Shift+6".action.move-window-to-workspace = 6;
-      "Mod+Shift+7".action.move-window-to-workspace = 7;
-      "Mod+Shift+8".action.move-window-to-workspace = 8;
-      "Mod+Shift+9".action.move-window-to-workspace = 9;
+      # Workspaces — move window to. On Mod+Ctrl (the move modifier, paired
+      # with the Mod+Ctrl move-column binds above) rather than Mod+Shift,
+      # which is freed for the macOS-style clipboard screenshot chords
+      # below. See docs/desktop/keybinds.md §Workspaces / §Screenshots (#323).
+      "Mod+Ctrl+1".action.move-window-to-workspace = 1;
+      "Mod+Ctrl+2".action.move-window-to-workspace = 2;
+      "Mod+Ctrl+3".action.move-window-to-workspace = 3;
+      "Mod+Ctrl+4".action.move-window-to-workspace = 4;
+      "Mod+Ctrl+5".action.move-window-to-workspace = 5;
+      "Mod+Ctrl+6".action.move-window-to-workspace = 6;
+      "Mod+Ctrl+7".action.move-window-to-workspace = 7;
+      "Mod+Ctrl+8".action.move-window-to-workspace = 8;
+      "Mod+Ctrl+9".action.move-window-to-workspace = 9;
 
       # Spawn — terminal + application launcher
       "Mod+Return".action.spawn = "foot";
@@ -164,25 +173,34 @@ in
       "Mod+O".action.toggle-overview = { };
       "Mod+Shift+Slash".action.show-hotkey-overlay = { };
 
-      # Screenshots — niri's built-in capture, no external tool. The Print
-      # family reproduces niri's defaults (save to disk per the default
-      # screenshot-path + copy to clipboard); the Mod+Ctrl+Shift+N family
-      # mirrors macOS's clipboard-screenshot chords via write-to-disk=false
-      # (clipboard only). Region capture is niri's interactive overlay, which
-      # always does both disk+clipboard with no per-bind split — hence Print
-      # and Mod+Ctrl+Shift+4 are equivalent. See docs/desktop/keybinds.md
-      # §Screenshots (#100). The macOS file-variant chords (Mod+Shift+3/4/5)
-      # are taken by move-window-to-workspace; remap candidate in #323.
+      # Screenshots — niri's built-in capture, no external tool. Mirrors
+      # macOS after the file/clipboard swap: bare Mod+Shift+N copies to
+      # clipboard (write-to-disk=false), Mod+Ctrl+Shift+N saves to disk
+      # (+ clipboard). +5 is window capture (niri has no capture-options bar).
+      # Region capture is the interactive overlay, which always does both
+      # disk+clipboard — so Mod+Shift+4 and Mod+Ctrl+Shift+4 are equivalent.
+      # The Print family stays on niri's defaults (disk+clipboard). See
+      # docs/desktop/keybinds.md §Screenshots (#100, #323).
+      "Mod+Shift+3".action.screenshot-screen = {
+        write-to-disk = false;
+      };
+      "Mod+Shift+4".action.screenshot = { };
+      "Mod+Shift+5".action.screenshot-window = {
+        write-to-disk = false;
+      };
+      "Mod+Ctrl+Shift+3".action.screenshot-screen = { };
+      "Mod+Ctrl+Shift+4".action.screenshot = { };
+      "Mod+Ctrl+Shift+5".action.screenshot-window = { };
       "Print".action.screenshot = { };
       "Ctrl+Print".action.screenshot-screen = { };
       "Alt+Print".action.screenshot-window = { };
-      "Mod+Ctrl+Shift+4".action.screenshot = { };
-      "Mod+Ctrl+Shift+3".action.screenshot-screen = {
-        write-to-disk = false;
-      };
-      "Mod+Ctrl+Shift+5".action.screenshot-window = {
-        write-to-disk = false;
-      };
     };
   };
+
+  # Create the screenshot target so niri's save actually lands — see the
+  # screenshot-path note above. Mirrors home/darwin/screenshots-dir.nix (the
+  # same silent-fallback class on macOS's screencapture).
+  home.activation.ensureNiriScreenshotsDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p $VERBOSE_ARG "$HOME/Pictures/Screenshots"
+  '';
 }
