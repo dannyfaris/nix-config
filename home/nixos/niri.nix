@@ -148,11 +148,10 @@ in
       "Mod+Ctrl+Alt+Shift+Space".action.spawn = "fuzzel";
       # Hyper+Return → foot, mirroring the mac's Hyper+Return → Ghostty.
       "Mod+Ctrl+Alt+Shift+Return".action.spawn = "foot";
-      # Hyper+B → the system default browser (currently Firefox per
-      # home/nixos/firefox.nix's xdg.mimeApps; follows the #127 audit). A
-      # neutral https URL resolves through xdg-open to whatever is registered
-      # as the default handler, so the bind follows the default rather than
-      # pinning a browser. Spawn-only; focus-or-spawn is out of scope.
+      # Hyper+B → the system default browser. A neutral https URL resolves
+      # through xdg-open to whatever is the registered default handler, so the
+      # bind follows the default rather than pinning a browser. See
+      # docs/desktop/keybinds.md §Hyper for the Firefox/#127 provenance.
       "Mod+Ctrl+Alt+Shift+B".action.spawn = [
         "xdg-open"
         "https://"
