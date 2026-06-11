@@ -19,39 +19,56 @@
 #
 # See #69 for the niri-only baseline close-out under which this
 # curated bind set was established.
-_: {
+{ config, ... }:
+let
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+in
+{
   programs.niri.settings = {
-    # Window open-width — new windows open at two-thirds of the workspace
-    # (a niri preset proportion), leaving a third for a companion column.
-    # niri otherwise honours each client's own preferred size, which is
-    # why foot (its ~80×24 default) opened narrow. This overrides that
-    # for all windows. See docs/desktop/niri.md §Configuration.
-    layout.default-column-width.proportion = 0.66;
+    # Layout primitives — column width, border, and inter-window gap in one
+    # block (one `layout` key; the geometry/spacing values come from tokens).
+    layout = {
+      # Window open-width — new windows open at two-thirds of the workspace
+      # (a niri preset proportion), leaving a third for a companion column.
+      # niri otherwise honours each client's own preferred size, which is
+      # why foot (its ~80×24 default) opened narrow. This overrides that
+      # for all windows. See docs/desktop/niri.md §Configuration.
+      default-column-width.proportion = 0.66;
+
+      # Window border — colour comes from the whitelisted Stylix niri target
+      # (active base0D / inactive base03, focus-ring off); width from the
+      # geometry token (Carbon spacing-01; crisp on 4K/1.5 — rationale in
+      # theme-tokens.nix and docs/desktop/niri.md §Window decorations).
+      border.width = tokens.geometry.borderWidth;
+
+      # Inter-window gap — explicit token (= Carbon spacing-05) rather than
+      # niri's implicit default 16, so the value lives in one place. See
+      # theme-tokens.nix and docs/desktop/visual-identity.md §Spacing.
+      gaps = tokens.layout.gap;
+    };
 
     # No client-side decorations — niri asks clients to drop their own
     # titlebars and draws its focus-ring border instead. Titlebars are
     # wasted space when tiling; foot honours this and drops its top bar.
     prefer-no-csd = true;
 
-    # Window border — colour comes from the whitelisted Stylix niri target
-    # (active base0D / inactive base03, focus-ring off); we set the width.
-    # 2px renders crisp on metis's 4K panel at scale 1.5 — an even logical
-    # width lands on whole physical pixels (1px → 1.5px, grainy). See
-    # docs/desktop/niri.md §Window decorations.
-    layout.border.width = 2;
-
     # Rounded corners on every window. The border (and focus ring, if on)
     # follow this radius; clip-to-geometry trims each client's square
     # surface to the rounded rect so corners don't poke past the border.
-    # 10px matches fuzzel's launcher radius for cross-surface cohesion.
+    # Radius from the geometry token (M3 ladder, shared with fuzzel/fnott);
+    # niri's corners are float-typed, so coerce the int token with `+ 0.0`.
     window-rules = [
       {
-        geometry-corner-radius = {
-          top-left = 10.0;
-          top-right = 10.0;
-          bottom-right = 10.0;
-          bottom-left = 10.0;
-        };
+        geometry-corner-radius =
+          let
+            r = tokens.geometry.cornerRadius + 0.0;
+          in
+          {
+            top-left = r;
+            top-right = r;
+            bottom-right = r;
+            bottom-left = r;
+          };
         clip-to-geometry = true;
       }
     ];

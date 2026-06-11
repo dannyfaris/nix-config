@@ -81,12 +81,15 @@ enable; that was never true (#333). With the target enabled, Stylix
 writes the window **border** — active `base0D` (the focus accent) /
 inactive `base03` — and **disables the focus-ring**, so the
 active-window accent rides the idiomatic `base0D` slot instead of
-niri's built-in blue. On top of that, `home/nixos/niri.nix` sets
-`layout.border.width = 2` (2px renders crisp on metis's 4K panel at
-scale 1.5 — an even logical width maps to whole physical pixels) and a
-catch-all `window-rule` with `geometry-corner-radius = 10` +
-`clip-to-geometry = true` (rounded corners on every window, client
-content trimmed to the rounded rect). The focus/attention colour
+niri's built-in blue. On top of that, `home/nixos/niri.nix` draws its
+border width, inter-window gap, and corner radius from the design tokens
+(`lib/theme-tokens.nix`, #369): `layout.border.width` = 2 (Carbon
+`spacing-01`; 2px renders crisp on metis's 4K panel at scale 1.5 — an
+even logical width maps to whole physical pixels), `layout.gaps` = 16
+(Carbon `spacing-05`, formerly niri's implicit default), and a catch-all
+`window-rule` with `geometry-corner-radius` from the M3-ladder radius
+token (`md` = 12) + `clip-to-geometry = true` (rounded corners on every
+window, client content trimmed to the rounded rect). The focus/attention colour
 vocabulary is defined in the visual-identity north-star (#108); cursor
 theme/size cohesion (`stylix.cursor`) remains unwired (#110).
 

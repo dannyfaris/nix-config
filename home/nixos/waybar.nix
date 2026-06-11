@@ -31,7 +31,10 @@
 # trade-off).
 #
 # Per #75.
-{ lib, ... }:
+{ config, lib, ... }:
+let
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+in
 {
   programs.waybar = {
     enable = true;
@@ -56,13 +59,13 @@
       clock.format = "{:%I:%M %p  %a %d %b}"; # 02:23 PM  Fri 29 May
     };
 
-    # Active workspace indicator → base0D accent. Stylix's waybar target
-    # colours the focused/active workspace underline @base05 (foreground);
-    # re-point it to the idiomatic accent slot so it matches niri's active
-    # border. Appended (mkAfter) with the same selectors as Stylix's rules
-    # — equal specificity, later in the sheet → wins. Colour only: width
-    # (3px) and the urgent @base08 state stay as Stylix writes them. See
-    # docs/desktop/waybar.md and the accent map (#108).
+    # Active workspace indicator → the focus role (base0D, via theme-tokens).
+    # Stylix's waybar target colours the focused/active workspace underline
+    # @base05 (foreground); re-point it to the idiomatic accent slot so it
+    # matches niri's active border. Appended (mkAfter) with the same selectors
+    # as Stylix's rules — equal specificity, later in the sheet → wins. Colour
+    # only: width (3px) and the urgent @base08 state stay as Stylix writes them.
+    # See theme-tokens.nix, docs/desktop/waybar.md, and the accent map (#108).
     style = lib.mkAfter ''
       .modules-left #workspaces button.focused,
       .modules-left #workspaces button.active,
@@ -70,7 +73,7 @@
       .modules-center #workspaces button.active,
       .modules-right #workspaces button.focused,
       .modules-right #workspaces button.active {
-        border-bottom-color: @base0D;
+        border-bottom-color: @${tokens.color.role.focus.slot};
       }
     '';
   };
