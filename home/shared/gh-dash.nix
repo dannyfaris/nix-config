@@ -15,6 +15,7 @@ let
   # niri's active-window border).
   c = config.lib.stylix.colors;
   hex = slot: "#${c."${slot}-hex"}";
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
 in
 {
   programs.gh-dash = {
@@ -34,10 +35,15 @@ in
         success = hex "base0B"; # green
       };
       background.selected = hex "base02"; # selection background
+      # primary/secondary use the focus/muted roles (via theme-tokens); faint is
+      # a structural hairline, not a role, so it stays on the hex helper — as
+      # does text.faint (base03) above, which reaches the same slot structurally,
+      # not as the muted *role*. Labelling both paths keeps the split deliberate
+      # (the drift class #369 targets).
       border = {
-        primary = hex "base0D"; # focused section — the base0D focus accent (as niri's active-window border)
-        secondary = hex "base03"; # unfocused section
-        faint = hex "base01"; # hairline separators
+        primary = hex tokens.color.role.focus.slot; # focused section (focus role)
+        secondary = hex tokens.color.role.muted.slot; # unfocused section (muted role)
+        faint = hex "base01"; # hairline separators (structural)
       };
     };
   };

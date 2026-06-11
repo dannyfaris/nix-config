@@ -23,6 +23,9 @@
 #
 # Per #73.
 { config, lib, ... }:
+let
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+in
 {
   programs.fuzzel = {
     enable = true;
@@ -39,15 +42,17 @@
         font = lib.mkForce "${config.stylix.fonts.monospace.name}:size=${toString config.stylix.fonts.sizes.popups}";
       };
 
-      # Border → base0D so the launcher frame uses the idiomatic accent
-      # slot and matches niri's window border; 2px for a crisp render on
-      # 4K/1.5 (same reason as the niri border). mkForce: Stylix's fuzzel
-      # target writes colors.border = base0E. On metis base0D==base0E
-      # (per-host 0D/0E override) so the colour is a visual no-op here —
-      # correct by slot for portability; the 2px width is the visible
-      # change. See docs/desktop/fuzzel.md and the accent map (#108).
-      border.width = 2;
-      colors.border = lib.mkForce "${config.lib.stylix.colors."base0D-hex"}ff";
+      # Border → the "focus" role (base0D) so the launcher frame uses the
+      # idiomatic accent slot and matches niri's window border; width + radius
+      # from the geometry tokens (shared with niri/fnott). mkForce: Stylix's
+      # fuzzel target writes colors.border = base0E. On metis base0D==base0E
+      # (per-host 0D/0E override) so the colour is a visual no-op here — correct
+      # by slot for portability. fuzzel rode its own default radius (10); pin it
+      # to the token so it doesn't diverge once the radius moves off 10. See
+      # theme-tokens.nix, docs/desktop/fuzzel.md, and the accent map (#108).
+      border.width = tokens.geometry.borderWidth;
+      border.radius = tokens.geometry.cornerRadius;
+      colors.border = lib.mkForce "${tokens.color.role.focus.hex}ff";
     };
   };
 }

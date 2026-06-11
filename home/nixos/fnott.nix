@@ -40,6 +40,8 @@
   ...
 }:
 let
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+
   # Mono Nerd Font (monospace slot + popups size), overriding Stylix's
   # sansSerif default for fnott's three font keys so notifications
   # match the rest of the chrome. mkForce: Stylix's fnott target also
@@ -60,18 +62,18 @@ in
         "summary-font" = monoPopup;
         "body-font" = monoPopup;
 
-        # Border 2px + 10px radius, matching the niri/fuzzel chrome. 2px
-        # renders crisp on metis's 4K panel at scale 1.5 (1px lands on the
-        # half-pixel grid); fnott 1.8 supports both, Stylix sets neither
-        # (defaults: thin, square). See docs/desktop/fnott.md.
-        "border-size" = 2;
-        "border-radius" = 10;
+        # Border + radius from the geometry tokens, matching the niri/fuzzel
+        # chrome (Carbon spacing-01 width; M3-ladder radius). fnott 1.8 supports
+        # both; Stylix sets neither (defaults: thin, square). See
+        # theme-tokens.nix and docs/desktop/fnott.md.
+        "border-size" = tokens.geometry.borderWidth;
+        "border-radius" = tokens.geometry.cornerRadius;
       };
 
-      # Normal-urgency border → base09 ("attention"), distinct from the
-      # base0D "focus" accent (see header). mkForce: Stylix's fnott target
-      # writes normal → base0D. Format is RRGGBBAA.
-      normal."border-color" = lib.mkForce "${config.lib.stylix.colors."base09-hex"}ff";
+      # Normal-urgency border → the "attention" role (base09), distinct from the
+      # base0D "focus" accent (see header). mkForce: Stylix's fnott target writes
+      # normal → base0D. Format is RRGGBBAA.
+      normal."border-color" = lib.mkForce "${tokens.color.role.attention.hex}ff";
     };
   };
 
