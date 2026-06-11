@@ -43,6 +43,7 @@
   nixpkgs.config.allowUnfreePredicate =
     pkg:
     builtins.elem (lib.getName pkg) [
+      "1password" # 1Password desktop GUI on metis (lib.getName of _1password-gui; #112). See docs/desktop/1password.md
       "claude-code"
       "cursor"
       "cursor-cli"

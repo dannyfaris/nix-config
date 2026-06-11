@@ -12,6 +12,7 @@
 #   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
 #   - libsecret.nix        — secret-tool CLI for the (transitively-enabled) Secret Service.
 #   - removable-media.nix  — udisks2 + filesystem helpers (auto-mount is home-side udiskie). See docs/desktop/removable-media.md (#105).
+#   - onepassword-gui.nix  — 1Password desktop password manager (GUI only). See docs/desktop/1password.md (#112).
 #
 # The home-side companion bundle is at home/nixos/bundles/desktop-env.nix.
 #
@@ -25,5 +26,6 @@
     ../electron-wayland.nix
     ../libsecret.nix
     ../removable-media.nix
+    ../onepassword-gui.nix
   ];
 }

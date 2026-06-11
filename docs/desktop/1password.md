@@ -248,8 +248,7 @@ users.users.dbf.extraGroups = [ "onepassword" ];  # module does NOT add it
 ```nix
 # modules/shared/nix-daemon.nix — unfree whitelist (currently
 # claude-code / cursor / cursor-cli). Add the GUI, never blanket allowUnfree:
-"_1password-gui"
-# (verify getName output for the GUI browser-support extension at wire-time)
+"1password"   # lib.getName of _1password-gui — its pname is "1password", not "_1password-gui"
 ```
 
 ```nix
