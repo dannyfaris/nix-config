@@ -1,6 +1,6 @@
 # Keybindings
 
-Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the first, `Hyper+Return`, with the rest migrating in). Living document — updated with every new binding.
+Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the nav family + launcher + browser + terminal, with only `Hyper+Down` lacking a niri analogue). Living document — updated with every new binding.
 
 ## Philosophy
 
@@ -56,17 +56,17 @@ metis, the Mission Control family on macOS.
 
 ## Cross-platform Hyper mapping
 
-The canonical mapping: each `Hyper` chord and its analogous action per platform. niri binds land per the one-bind-per-ceremony cadence — ✓ marks those already implemented; the rest are the migration backlog.
+The canonical mapping: each `Hyper` chord and its analogous action per platform. niri binds land per the one-bind-per-ceremony cadence — ✓ marks those implemented on niri; `Hyper+Down` is the only chord with no niri analogue.
 
 | `Hyper` chord | macOS | niri analogue | niri status |
 |---|---|---|---|
-| `Hyper+Left` / `Right` | move between Spaces | focus-column-left / right | planned |
-| `Hyper+1`–`9` | switch to Space N | focus-workspace N | planned |
-| `Hyper+Up` | Mission Control overview | toggle-overview | planned |
+| `Hyper+Left` / `Right` | move between Spaces | focus-column-left / right | ✓ |
+| `Hyper+1`–`9` | switch to Space N | focus-workspace N | ✓ |
+| `Hyper+Up` | Mission Control overview | toggle-overview | ✓ |
 | `Hyper+Down` | application-windows exposé | *(no analogue — niri has no per-app window group)* | n/a |
-| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | spawn fuzzel (launcher) | planned — migrates `Mod+Space` |
+| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | spawn fuzzel (launcher) | ✓ — migrates `Mod+Space` |
 | `Hyper+Return` | new terminal window | spawn foot | ✓ |
-| `Hyper+B` | Chrome window | spawn / focus browser | planned |
+| `Hyper+B` | Chrome window | spawn default browser | ✓ — spawn-only |
 
 **niri-specific `Hyper` binds** (no Mac mirror) live in the same namespace and land as their tools arrive — e.g. `Hyper+Escape` → power/session menu (#98), a lock-now bind, clipboard / notification / screenshot actions. niri's own extra navigation (e.g. vertical window-focus within a column) either stays on `Super` or gets a niri-only `Hyper` bind, decided per bind.
 
@@ -76,14 +76,14 @@ The canonical mapping: each `Hyper` chord and its analogous action per platform.
 |---|---|---|---|
 | `Super` (niri manipulation) | Active | n/a (macOS owns WM) | Move/resize/consume/close — niri-specific. Navigation is migrating out to `Hyper`. |
 | `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
-| `Hyper` (cross-platform: nav + spawn + system) | **Active** (modifier via keyd; `Hyper+Return`, nav migrating in) | **Active** (modifier + binds) | Realized via keyd on metis ([keyd.md](./keyd.md)) + Karabiner/Hammerspoon on macOS. The paired mapping above is the source of truth. |
+| `Hyper` (cross-platform: nav + spawn + system) | **Active** (modifier via keyd; nav + launcher + browser + terminal bound) | **Active** (modifier + binds) | Realized via keyd on metis ([keyd.md](./keyd.md)) + Karabiner/Hammerspoon on macOS. The paired mapping above is the source of truth. |
 | `Super+Hyper` (extended WM) | Reserved | n/a | Hyper modifier now realized on metis (keyd); no extended-WM binds made yet. |
 
-**Transitional bindings** — currently on `Super`, migrating to `Hyper` per the cross-platform analogy (one bind per ceremony):
+**Transitional bindings** — the `Hyper` target is now bound; the `Super` home is retained alongside until the migration settles, then retired (the `Mod+Return`/`Hyper+Return` pattern, applied across the nav family):
 
-- Navigation: `Mod+Left`/`Right` (focus-column), `Mod+1`–`9` (focus-workspace), `Mod+O` (overview) → `Hyper+Left`/`Right`, `Hyper+1`–`9`, `Hyper+Up`.
-- `Mod+Space` → fuzzel → `Hyper+Space` (the Spotlight-equivalent).
-- `Mod+Return` → foot: `Hyper+Return` is already added; `Mod+Return` is retained until the migration settles, then retired.
+- Navigation: `Hyper+Left`/`Right` (focus-column), `Hyper+1`–`9` (focus-workspace), `Hyper+Up` (overview) added; `Mod+Left`/`Right` + vim `Mod+H`/`L`, `Mod+1`–`9`, and `Mod+O` retained.
+- `Hyper+Space` → fuzzel added (the Spotlight-equivalent); `Mod+Space` retained.
+- `Hyper+Return` → foot and `Mod+Return` coexist as before.
 
 **Letter-space deviation** (separate from the migration): `Mod+W` → `close-window` sits in the reserved `Super+letter` space (it would clash with a hypothetical `Super+W` → `Ctrl+W`). close is manipulation, so it stays on `Super`; the philosophical target is `Super+Hyper+W`.
 
@@ -169,7 +169,12 @@ The `Hyper` namespace is realized on metis via keyd (Caps Lock → `Super+Ctrl+A
 
 | Key | Action | Notes |
 |---|---|---|
-| `Hyper+Return` | spawn `foot` (terminal) | First metis Hyper bind. Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained for now. |
+| `Hyper+Left` / `Hyper+Right` | focus-column-left / -right | Mirrors the mac's `Hyper+Left`/`Right` (move between Spaces). `Mod+Left`/`Right` (Navigation, above) retained. |
+| `Hyper+1` … `Hyper+9` | focus-workspace 1–9 | Mirrors the mac's Switch-to-Desktop N. `Mod+1`–`9` (Workspaces, above) retained. |
+| `Hyper+Up` | toggle-overview | Mirrors the mac's Mission Control. `Mod+O` (Discovery, above) retained. |
+| `Hyper+Space` | spawn `fuzzel` (launcher) | The Spotlight-equivalent. `Mod+Space` (Spawn, above) retained. |
+| `Hyper+Return` | spawn `foot` (terminal) | Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained. |
+| `Hyper+B` | spawn default browser (`xdg-open https://`) | Opens the system default browser — currently Firefox per `xdg.mimeApps` (`home/nixos/firefox.nix`); follows the #127 audit outcome automatically. Spawn-only; focus-or-spawn out of scope. No `Super` original. |
 
 ## Active bindings — macOS clients
 
