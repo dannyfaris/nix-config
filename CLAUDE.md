@@ -4,7 +4,7 @@
 
 Evergreen NixOS + nix-darwin configuration. Four live hosts: `nixos-vm`
 (UTM/aarch64 refinement target), `mercury` (AWS EC2/x86_64 work-only
-headless), `metis` (HP ProDesk/x86_64 personal dev box), and `mac-mini`
+headless), `metis` (HP ProDesk/x86_64 shared work + personal dev box), and `mac-mini`
 (Apple Silicon, first nix-darwin host, onboarded 2026-06-02). Metis is
 the first desktop host, running niri per
 [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends
