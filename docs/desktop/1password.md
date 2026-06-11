@@ -11,7 +11,7 @@ build — NOT the MAS variant), declared in `modules/darwin/homebrew.nix`
 per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s
 **clause 2** (this doc owns the carve-out — see Rationale).
 
-NixOS desktop adoption: `programs._1password-gui` + `programs._1password` (nixpkgs) — strategy landed below in §"NixOS desktop adoption (metis)" (#112); implementation not yet wired.
+NixOS desktop adoption: `programs._1password-gui` (nixpkgs) — the desktop password manager for metis; strategy landed below in §"NixOS desktop adoption (metis)" (#112), implementation not yet wired. The `op` CLI and 1Password-as-SSH-agent were weighed there and set aside (deferred and rejected respectively).
 
 ## Rationale
 
@@ -173,7 +173,7 @@ trigger 1 fires. Until that verification exists, cask stays.
 
 ## NixOS desktop adoption (metis) — strategy & options (#112)
 
-This section re-litigates the #112 intent per its own `[!IMPORTANT]` mandate: adopt 1Password on metis as password manager, `op` CLI, and SSH agent. The conclusion below **keeps the first two and declines the third** — it decouples the SSH-agent role from 1Password — for the reasons in Decision 2. Verified against the metis pin and live host on 2026-06-11.
+This section re-litigated the #112 intent per its own `[!IMPORTANT]` mandate: adopt 1Password on metis as password manager, `op` CLI, and SSH agent. **Settled outcome (2026-06-11):** adopt the **GUI as the desktop password manager**; **defer the `op` CLI** (no current need — the only candidate use, plaintext-token cleanup, is tracked in #364 and looks better served by sops); and **reject 1Password as the SSH agent** — SSH stays on per-host ed25519 keys (Decision 2). #112 was re-scoped to the GUI slice on this basis. Verified against the metis pin and live host on 2026-06-11.
 
 ### Triggering need
 
@@ -184,39 +184,41 @@ metis (and any future NixOS host with a desktop environment) must be able to SSH
 | Capability | Decision | Why |
 |---|---|---|
 | Interactive password manager (GUI) | **Adopt** `programs._1password-gui` | Operator already runs 1Password on macOS; one vault, one UX. The uncontested win. |
-| `op` CLI | **Adopt** | Programmatic retrieval (`op read`/`op run`/`op inject`); the headless-capable half. |
-| SSH agent / `SSH_AUTH_SOCK` ownership | **Decline — decouple** | Per-host ed25519 keys fit this repo's blast-radius posture better than one centralized vault key. See Decision 2. |
+| `op` CLI | **Defer** | No current workflow needs it (sops owns secrets-at-rest; git is HTTPS+token). Revisit on a concrete interactive-retrieval need; see #364. |
+| SSH agent / `SSH_AUTH_SOCK` ownership | **Reject (settled)** | The "keys out of the repo" appeal was illusory, it can't be uniform fleet-wide (headless hosts), and the actual need is met by per-host keys. See Decision 2. |
 | metis outbound SSH | **Per-host ed25519 key**, authorized in `lib/operator.nix` | Directly satisfies the triggering need; what ADR-010 / `ssh.nix` already prescribe. |
 | gcr-ssh-agent eviction | **Not needed** | Follows from declining 1Password's agent — the incumbent keeps the socket. |
 | git commit signing via 1Password | **Out of scope** (defer) | Net-new; repo signs nothing today (git auth is HTTPS+token per ADR-009; commit signing was never adopted). A separate decision, not a requirement of this work. |
 | sudo via `pam_ssh_agent_auth` | **Out of scope** (defer) | Net-new privilege-path change; weigh separately. |
 | sops "Option C" (service-account token) | **Out of scope** (defer) | Parked behind #279's recovery-key thread and ADR-018; separate thread. |
 
-### Decision 1 — password manager + `op` CLI: adopt
+### Decision 1 — password manager (GUI): adopt; `op` CLI: defer
 
 The interactive-password-manager role has no real contender. The operator already pays for and runs 1Password on macOS; the FOSS alternatives (KeePassXC, Bitwarden/Vaultwarden, `rbw`) would mean a *second* vault beside the one the operator already lives in, which `gnome-keyring.md` already rejected on "no redundant second vault" grounds. Cross-host single-vault is the whole point of #112's user story.
 
-- GUI: `programs._1password-gui` (nixpkgs `_1password-gui`, **8.12.22** in the metis pin, unfree). The module creates the `onepassword` group, installs the setgid `1Password-BrowserSupport` wrapper for browser native-messaging, and exposes `polkitPolicyOwners` for polkit-backed unlock.
-- CLI: `programs._1password` (nixpkgs `_1password-cli`, **2.34.0** in the pin, unfree). The module installs the setgid `op` wrapper in the `onepassword-cli` group — this wrapper, not a bare `op` in `systemPackages`, is what the desktop-app ↔ CLI biometric/system-auth handshake checks for.
-- Operator must be added to the `onepassword` group (`users.users.dbf.extraGroups`) — the module does **not** do this, and browser/CLI integration silently breaks without it.
+- GUI (**adopt**): `programs._1password-gui` (nixpkgs `_1password-gui`, **8.12.22** in the metis pin, unfree). The module creates the `onepassword` group, installs the setgid `1Password-BrowserSupport` wrapper for browser native-messaging, and exposes `polkitPolicyOwners` for polkit-backed unlock.
+- CLI (**deferred** — see Decision 4): `programs._1password` (nixpkgs `_1password-cli`, **2.34.0** in the pin, unfree) would install the setgid `op` wrapper in the `onepassword-cli` group — that wrapper, not a bare `op` in `systemPackages`, is what the desktop-app ↔ CLI biometric/system-auth handshake checks for. Not wired now: no current workflow needs it.
+- Operator must be added to the `onepassword` group (`users.users.dbf.extraGroups`) — the module does **not** do this, and browser integration silently breaks without it.
 
-### Decision 2 — SSH agent ownership: decouple (THE fork)
+### Decision 2 — SSH agent ownership: rejected (settled)
 
-**The contested decision, and the one that reverses #112's headline.** This is a fleet posture, not a metis-only choice: the default stance across all hosts is that 1Password is the password manager + `op` CLI, and SSH runs on per-host ed25519 keys — 1Password does not own `SSH_AUTH_SOCK`. 1Password *can* own it (`IdentityAgent ~/.1password/agent.sock`), serving a vault-held key whose private half never touches disk and whose every use is gated by an explicit approval. That's attractive. But for *this* config it loses to per-host ed25519 keys on three counts:
+**Settled: 1Password does not own `SSH_AUTH_SOCK` on any host.** SSH runs on per-host ed25519 keys; 1Password is the password manager only. This *was* the issue's headline ("password manager AND SSH agent"); it was re-litigated and rejected. The honest reasons, kept here as the record:
 
-1. **Blast radius.** 1Password serves one centralized identity available on every host where the vault is unlocked — compromise the unlocked vault and the same key authenticates everywhere. Per-host ed25519 keys confine each host to its own identity; revoking a host is pulling one line from `lib/operator.nix`. The repo's stated posture is whitelist > blanket, tight blast radius — that points at per-host.
-2. **It's what we already prescribe.** `home/shared/ssh.nix` and ADR-010 already say, in as many words: "generate fresh ed25519 keys on this box, use a passphrase + ssh-agent." Per-host identity is the established model; 1Password-as-agent would be the deviation.
-3. **No agent to evict, fewer sharp edges.** Declining 1Password's agent means the incumbent `gcr-ssh-agent` (which already owns `SSH_AUTH_SOCK` on metis, pulled in transitively by gnome-keyring) simply keeps the socket — no masking, no priority race. It also dodges 1Password's SSH-agent sharp edges (agent stops when the app locks; the 6-key OpenSSH attempt limit needing `agent.toml` scoping; approval popups rendering on the physical display when you're SSH'd in while the desktop is locked).
+1. **The headline appeal was illusory.** The draw of "1Password owns SSH, so keys leave the public repo" doesn't hold — what's in the repo is *public* keys (audited: no private key material is committed), which are designed to be published. Each destination host must declare the authorized *public* keys at build time regardless of where the *private* key lives, so 1Password removes nothing from the repo.
+2. **It can't be uniform fleet-wide.** 1Password's SSH agent needs the desktop app, so the headless hosts (mercury, nixos-vm) can never use it. "One vault key for all SSH" was never achievable; some hosts keep per-host keys regardless — so the whole fleet may as well.
+3. **The triggering need is met without it.** The thing that started this — metis reaching mercury / mac-mini — is solved by a per-host ed25519 key + one authorized line (Decision 3). 1Password buys nothing for the actual requirement.
+4. **Poor Linux ergonomics where it would run.** On metis the approval is GUI-bound: an SSH'd-in-while-locked or unattended signing request stalls because the prompt renders on the physical display with no TTY fallback; the agent also stops when the app locks, and the 6-key OpenSSH limit needs `agent.toml` scoping.
+5. **Keeping per-host keys is zero-disruption.** The incumbent `gcr-ssh-agent` already owns `SSH_AUTH_SOCK` on metis, so nothing has to be evicted.
 
-**Recommendation: 1Password does not own `SSH_AUTH_SOCK`.** Adopt it for the password-manager + `op` roles, leave its SSH-agent feature disabled, and let SSH run on per-host ed25519 keys via the incumbent gcr-ssh-agent. This is a deliberate reversal of the issue's "password manager AND SSH agent" framing, sanctioned by the issue's own re-litigation mandate.
+Blast radius (one unlocked-vault key authenticating everywhere vs. per-host isolation) is sometimes cited too, but it cuts both ways — a vault key gated by per-use approval is hard to exfiltrate — so it is not doing the deciding here; the points above are.
 
-> Operator decision required. If single-vault convenience and key-never-on-disk outweigh per-host blast radius for you, the alternative is: enable 1Password's agent, mask `gcr-ssh-agent.socket` at the user-systemd layer, and accept the 6-key/agent.toml management. The rest of this doc assumes the decouple recommendation; flagging here so the choice is yours, not the doc's.
+> Should this ever be revisited (e.g. you decide Touch-ID-to-SSH on the GUI hosts is worth it), the override is: enable 1Password's agent, mask `gcr-ssh-agent.socket` at the user-systemd layer, and accept the 6-key/`agent.toml` management and the Linux locked-session edges. Recorded for the future, not an open question today.
 
-**Per-platform note (Darwin) — a genuine second fork, deferred.** The three things that make decoupling clean on metis — no Linux biometric, a `gcr-ssh-agent` to evict, Wayland lock-screen approval popups — largely *do not apply* on macOS, where Touch ID + 1Password's agent is the platform's strong suit. So whether the Mac follows this decouple stance or lets 1Password own `SSH_AUTH_SOCK` there is a real second decision, not a foregone copy of the metis one. It is deferred to the Phase-1 `op`-on-Mac slice (Decision 4), where Touch-ID ergonomics get weighed against the two rationales that remain fleet-wide: blast radius and model uniformity. The Mac runs the per-host `dbf@mac` key today, with no 1Password SSH integration, so deferring this changes nothing operationally.
+**Per-platform note (Darwin).** The Mac reaches the same verdict — and for an additional Mac-specific reason (sops pins an on-disk key there regardless, neutralizing the key-never-on-disk benefit) — settled in §"Darwin adoption (mac-mini)" below.
 
 ### Decision 3 — metis outbound SSH (the triggering need)
 
-Independent of Decision 2's verdict, the mechanism is the same:
+With 1Password's agent rejected (Decision 2), metis's outbound SSH uses a per-host key — the mechanism ADR-010 already prescribes:
 
 1. Generate a fresh passphrase-protected ed25519 on metis (`ssh-keygen -t ed25519`), per ADR-010.
 2. Add its **public** key to `lib/operator.nix authorizedKeys` (the single source of truth that renders authorized_keys on every host). After `nh os switch` fleet-wide, mercury and mac-mini accept metis.
@@ -224,10 +226,9 @@ Independent of Decision 2's verdict, the mechanism is the same:
 
 `gcr-ssh-agent` (incumbent) loads the key on first use and should cache the passphrase via gnome-keyring (smoke-test on first use); no new SSH agent tooling is required. Plain `ssh-agent` is the fallback if gcr-ssh-agent proves unsatisfactory.
 
-### Decision 4 — `op` CLI install per platform
+### Decision 4 — `op` CLI: deferred
 
-- **NixOS (metis):** `programs._1password` as in Decision 1 (setgid wrapper for desktop integration).
-- **Darwin (mac-mini):** the operator currently has the GUI cask but no `op`. Wiring `op` on the Mac is a portable, off-metis slice (the natural Phase 1) and is **deferred to its own commit** — install path there (Homebrew `1password-cli` cask vs. nixpkgs) is a separate ADR-031-flavored sub-decision, not load-bearing for the metis adoption. The Darwin SSH-agent fork (Decision 2's per-platform note) rides along with this slice.
+`op` is deferred on both platforms — no current workflow needs it (sops owns secrets-at-rest; git is HTTPS+token). The one candidate use, pulling the plaintext GitLab token out of `~/.config/glab-cli/`, is tracked in #364 and looks better served by sops (declarative, headless-capable) than by `op`. If a concrete interactive-retrieval need does arise, the install path would be `programs._1password` on NixOS (the setgid wrapper) and nixpkgs `_1password-cli` (or the Homebrew `1password-cli` cask) on Darwin — a future decision, not part of this adoption.
 
 ### Scope boundaries (deliberately excluded)
 
@@ -237,7 +238,6 @@ git commit signing, passwordless-sudo via `pam_ssh_agent_auth`, and the sops ser
 
 ```nix
 # metis desktop bundle (illustrative — wire-time details verified then)
-programs._1password.enable = true;
 programs._1password-gui = {
   enable = true;
   polkitPolicyOwners = [ "dbf" ];   # mate-polkit is the live agent (#103)
@@ -247,9 +247,8 @@ users.users.dbf.extraGroups = [ "onepassword" ];  # module does NOT add it
 
 ```nix
 # modules/shared/nix-daemon.nix — unfree whitelist (currently
-# claude-code / cursor / cursor-cli). Add, never blanket allowUnfree:
+# claude-code / cursor / cursor-cli). Add the GUI, never blanket allowUnfree:
 "_1password-gui"
-"_1password-cli"
 # (verify getName output for the GUI browser-support extension at wire-time)
 ```
 
@@ -265,55 +264,55 @@ authorizedKeys = [
 
 - **Linux unlock is password-based here, not biometric.** metis has no enrolled fingerprint reader; unlock rides mate-polkit → PAM → master password. Do not promise Touch-ID-style biometrics on this host. The Dec-2025 "system authentication failed under Wayland" failure mode is pre-empted by mate-polkit being live (verified active on metis), but smoke-test it on first activation — polkit.md still flags mate-polkit's niri activation as smoke-test-pending.
 - **Group membership is a silent failure.** Forgetting `extraGroups = [ "onepassword" ]` breaks browser/CLI integration with no loud error.
-- **gcr-ssh-agent stays — by decision, not accident.** Under the decouple recommendation it keeps `SSH_AUTH_SOCK`; the eviction analysis in `gnome-keyring.md` / the #112 thread only applies if Decision 2 is overridden toward 1Password owning the socket.
+- **gcr-ssh-agent stays — by decision, not accident.** Under the settled decision it keeps `SSH_AUTH_SOCK`; the eviction analysis in `gnome-keyring.md` / the #112 thread only applies if Decision 2 is ever overridden toward 1Password owning the socket.
 - **Unfree package-name drift.** `lib.getName` output for the GUI's bundled browser-support extension may differ from `_1password-gui`; confirm the exact names at wire-time so the whitelist doesn't miss one.
 
 ### References
 
-- #112 — adopt 1Password (this doc is its Phase-0 selection deliverable).
+- #112 — deploy 1Password GUI to metis (this doc is its selection record); #364 — GitLab plaintext-token cleanup (the deferred-`op` candidate use).
 - ADR-010 — outbound SSH deferred; prescribes per-host ed25519 (Decision 2/3).
 - [gnome-keyring.md](./gnome-keyring.md) — gcr-ssh-agent socket ownership; the eviction punt to #112.
 - [polkit.md](./polkit.md) — mate-polkit, the live unlock dependency (#103).
 - `home/shared/ssh.nix`, `lib/operator.nix` — outbound config + the authorized-key source of truth.
 
-## Darwin adoption (mac-mini) — `op` CLI + the SSH-agent fork (#112)
+## Darwin adoption (mac-mini) — SSH-agent verdict + `op` (deferred) (#112)
 
-The 1Password GUI is already managed on mac-mini (Homebrew cask, above). This section resolves the two net-new questions #112 raises for the Mac — the `op` CLI, and whether 1Password should own `SSH_AUTH_SOCK` here — i.e. the per-platform second fork the NixOS section (Decision 2) deferred to this slice. Strategy only; no code wired.
+The 1Password GUI is already managed on mac-mini (Homebrew cask, above). This section records the Mac's verdict on the two net-new questions #112 raised — whether 1Password should own `SSH_AUTH_SOCK` here, and the `op` CLI. Both are settled: SSH stays on the existing per-host `dbf@mac` key (same as metis, plus a Mac-specific reason), and `op` is deferred. Strategy only; no code wired.
 
 ### Decision summary
 
 | Capability | Decision | Why |
 |---|---|---|
-| `op` CLI | **Adopt** (nixpkgs `_1password-cli`) | Same programmatic-retrieval win as metis; desktop-app biometric integration is driven by the macOS app regardless of install path. |
-| SSH agent / `SSH_AUTH_SOCK` ownership | **Decline — decouple, same as metis** | Fleet uniformity + blast radius, and 1Password's "key never on disk" benefit is moot here (see below). |
+| SSH agent / `SSH_AUTH_SOCK` ownership | **Reject (settled), same as metis** | Plus a Mac-specific reason: the "key never on disk" benefit is moot — sops pins an on-disk key regardless (see below). |
 | SSH outbound | **Keep the existing per-host `dbf@mac` on-disk key** | Already authorized fleet-wide and already works; no change. |
+| `op` CLI | **Defer** | No current need (same as metis); #364 may cover the only candidate use via sops. Install path noted below for if/when. |
 
-### The SSH-agent fork — why the Mac lands the same way as metis
+### SSH agent on the Mac — why it lands the same way as metis
 
-The NixOS section flagged the Mac as a *genuine second fork*: on macOS the metis decouple rationale weakens, because Touch ID + 1Password's agent is excellent, there's no `gcr-ssh-agent` to evict, and no Wayland lock-screen popup failure mode. Taken alone, that's a real pull toward letting 1Password own SSH on the Mac.
+On macOS the metis reasoning weakens: Touch ID + 1Password's agent is excellent, there's no `gcr-ssh-agent` to evict, and no Wayland lock-screen popup failure mode. Taken alone, that's a real pull toward letting 1Password own SSH on the Mac.
 
 What tips it back to decouple is a Mac-specific fact: **`~/.ssh/id_ed25519` is load-bearing for sops on this host.** It is the `dbf@mac` key, and the Mac's sops age identity is derived from it (`ssh-to-age -private-key`; see `modules/darwin/sops.nix` and `.sops.yaml`). That on-disk key therefore **must** exist regardless of any SSH choice. So 1Password's headline SSH benefit — the private key never touches disk — buys little here: the disk already holds a mandatory key. Adopting 1Password's agent would mean either importing that key into the vault (same key, two homes) or generating a *second* SSH identity to manage, carrying the vault-key blast radius either way.
 
 So the honest balance on the Mac:
 
 - **For 1Password-owns-SSH:** Touch-ID-to-SSH ergonomics — genuinely nice.
-- **Against:** fleet model uniformity (metis decoupled); vault-key blast radius; the key-never-on-disk benefit is moot because sops pins an on-disk key anyway; and decoupling is zero-work (the `dbf@mac` key already authenticates everywhere).
+- **Against:** fleet model uniformity (metis rejected it); the key-never-on-disk benefit is moot because sops pins an on-disk key anyway; and keeping the per-host key is zero-work (the `dbf@mac` key already authenticates everywhere). (Blast radius is a wash, as on metis.)
 
-**Recommendation: decouple on the Mac too.** 1Password is the password manager + `op` CLI; SSH stays on the existing per-host `dbf@mac` key. The only thing forgone is Touch-ID-to-SSH, which is ergonomics, not security. This makes the fleet posture uniform — per-host on-disk ed25519 keys for SSH everywhere, 1Password never owning `SSH_AUTH_SOCK`.
+**Verdict: rejected on the Mac too.** 1Password is the password manager; SSH stays on the existing per-host `dbf@mac` key. The only thing forgone is Touch-ID-to-SSH, which is ergonomics, not security. The fleet posture is uniform — per-host on-disk ed25519 keys for SSH everywhere, 1Password never owning `SSH_AUTH_SOCK`.
 
-> Operator decision required (the second fork). If Touch-ID-to-SSH on your daily-driver Mac is worth a split model, the alternative is: enable 1Password's SSH agent on macOS (it exposes its own agent socket via `IdentityAgent`), keep `~/.ssh/id_ed25519` for sops only, and accept that metis and mac-mini then run different SSH-agent models by design. Defensible — just deliberately non-uniform.
+> Should this ever be revisited: if Touch-ID-to-SSH on the Mac becomes worth a split model, the override is to enable 1Password's SSH agent on macOS (it exposes its own agent socket via `IdentityAgent`), keep `~/.ssh/id_ed25519` for sops only, and accept that metis and mac-mini then run different SSH-agent models by design. Defensible, but deliberately non-uniform — recorded for the future, not open today.
 
-### `op` CLI install path
+### `op` CLI install path (for if/when it's adopted)
 
-nixpkgs `_1password-cli` (the same package metis uses) is the recommended install on the Mac too — one attribute, cross-platform parity, and on macOS the desktop-app ↔ CLI biometric handshake is driven by the app, so the CLI's install path is *not* the finicky vendor-integration surface the GUI's browser native-messaging is (which is why the GUI stays a cask per ADR-031 clause 2). The Homebrew `1password-cli` cask is the fallback if the nixpkgs CLI's app-integration ever misbehaves.
+`op` is deferred (see the decision summary). If it is later adopted, nixpkgs `_1password-cli` is the recommended install on the Mac — one attribute, cross-platform parity, and on macOS the desktop-app ↔ CLI biometric handshake is driven by the app, so the CLI's install path is *not* the finicky vendor-integration surface the GUI's browser native-messaging is (which is why the GUI stays a cask per ADR-031 clause 2). The Homebrew `1password-cli` cask is the fallback if the nixpkgs CLI's app-integration ever misbehaves.
 
 ### Sharp edges
 
-- **Do not break `~/.ssh/id_ed25519`.** It is the sops decryption identity on mac-mini; losing or rotating it without re-deriving the age key breaks `sops -d` fleet-wide. The decouple recommendation deliberately leaves this key exactly where it is.
-- **`op` is unfree — covered by the same shared whitelist.** `_1password-cli` is unfree; it rides the one `allowUnfreePredicate` entry the NixOS section adds to `modules/shared/nix-daemon.nix` (shared across both platforms), not a separate Darwin entry. Never blanket `allowUnfree`.
+- **Do not break `~/.ssh/id_ed25519`.** It is the sops decryption identity on mac-mini; losing or rotating it without re-deriving the age key breaks `sops -d` fleet-wide. The settled decision deliberately leaves this key exactly where it is.
+- **`op` (if later adopted) is unfree.** `_1password-cli` is unfree; it would ride one `allowUnfreePredicate` entry in `modules/shared/nix-daemon.nix` (shared across both platforms), not a separate Darwin entry. Never blanket `allowUnfree`.
 
 ### References
 
-- §"NixOS desktop adoption (metis)" above — the fleet posture and Decision 2's per-platform note this section resolves.
-- #112 — adopt 1Password (this is the Phase-1 Darwin slice's strategy).
+- §"NixOS desktop adoption (metis)" above — the fleet posture and Decision 2's per-platform note this section settles.
+- #112 — deploy 1Password GUI to metis (the re-scoped issue); #364 — GitLab plaintext-token cleanup (the deferred-`op` candidate use).
 - `modules/darwin/sops.nix`, `.sops.yaml` — the `~/.ssh/id_ed25519`-derived age identity that pins the on-disk key.
