@@ -48,6 +48,20 @@ _: {
       id = 0;
       isDefault = true;
     };
+
+    # 1Password browser extension, installed declaratively via Firefox's
+    # managed-policy mechanism (HM `policies` → the wrapper's extraPolicies →
+    # policies.json) — no NUR input pulled in for one addon. `normal_installed`
+    # installs it but leaves the operator in control (not `force_installed`,
+    # which would lock it on — overkill for a personal box). The GUID is the
+    # addon's AMO id (verified, not the slug). Declarative *install* only; the
+    # native-messaging handshake to the desktop app rides the setgid
+    # BrowserSupport wrapper + onepassword group from modules/nixos/
+    # onepassword-gui.nix. See docs/desktop/1password.md §"Browser extension".
+    policies.ExtensionSettings."{d634138d-c276-4fc8-924b-40a0ea21d284}" = {
+      install_url = "https://addons.mozilla.org/firefox/downloads/latest/1password-x-password-manager/latest.xpi";
+      installation_mode = "normal_installed";
+    };
   };
 
   xdg.mimeApps = {

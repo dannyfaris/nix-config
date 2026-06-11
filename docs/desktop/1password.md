@@ -230,6 +230,22 @@ With 1Password's agent rejected (Decision 2), metis's outbound SSH uses a per-ho
 
 `op` is deferred on both platforms — no current workflow needs it (sops owns secrets-at-rest; git is HTTPS+token). The one candidate use, pulling the plaintext GitLab token out of `~/.config/glab-cli/`, is tracked in #364 and looks better served by sops (declarative, headless-capable) than by `op`. If a concrete interactive-retrieval need does arise, the install path would be `programs._1password` on NixOS (the setgid wrapper) and nixpkgs `_1password-cli` (or the Homebrew `1password-cli` cask) on Darwin — a future decision, not part of this adoption.
 
+### Browser extension (Firefox) — declarative install
+
+The GUI's headline job on metis is browser autofill, which needs the 1Password Firefox extension. It is installed declaratively via Firefox's managed-policy mechanism — home-manager's `programs.firefox.policies` feeds the wrapped package's `extraPolicies`, which renders `policies.json`, and Firefox installs the extension from its AMO id on next launch (`home/nixos/firefox.nix`).
+
+```nix
+programs.firefox.policies.ExtensionSettings."{d634138d-c276-4fc8-924b-40a0ea21d284}" = {
+  install_url = "https://addons.mozilla.org/firefox/downloads/latest/1password-x-password-manager/latest.xpi";
+  installation_mode = "normal_installed";   # installs it; operator stays in control
+};
+```
+
+- **Mechanism: managed policy, not NUR.** The alternative — `programs.firefox.profiles.<name>.extensions.packages` with `nur.repos.rycee.firefox-addons.onepassword-password-manager` — gives a nix-pinned, hash-checked install, but only by adding NUR (a large, community-maintained registry) as a flake input for a single addon. That cuts against this repo's tight / minimal-inputs posture. The policy route needs zero new inputs and is the standard managed-Firefox path; the cost is that it tracks AMO "latest" rather than a nix-pinned revision — acceptable, and arguably preferable, for a security-sensitive password-manager extension.
+- **`normal_installed`, not `force_installed`.** `force_installed` locks the extension on and bars the operator from removing it — appropriate for a locked-down fleet endpoint, not for a personal box. `normal_installed` installs it declaratively while leaving the operator in control (explicit > implicit, without the lockdown).
+- **The GUID is the addon's AMO id**, not the slug — `{d634138d-c276-4fc8-924b-40a0ea21d284}` keys the policy, while the slug `1password-x-password-manager` appears only in the `install_url`. Easy to conflate; confirm the id against the AMO API if it ever needs changing.
+- **Install ≠ connection.** The policy only *installs* the extension. Autofill additionally needs the extension to reach the desktop app over native messaging, which rides the setgid `1Password-BrowserSupport` wrapper and `onepassword` group membership (Decision 1). On first launch the app shows a "connect with 1Password in the browser" prompt — approve it once.
+
 ### Scope boundaries (deliberately excluded)
 
 git commit signing, passwordless-sudo via `pam_ssh_agent_auth`, and the sops service-account-token thread are each net-new capability the repo does not have today and #112 only lists as *possible* reach. Per the project's scope discipline they are explicitly **out of scope** for this adoption and tracked as follow-on threads if the operator wants them — not folded in by default.
