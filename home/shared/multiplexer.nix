@@ -180,7 +180,7 @@ let
     "          Alt+g           lazygit (floating)"
     "          Alt+d           lazydocker (floating)"
   ]
-  ++ lib.optional ghDashEnabled "          Alt+Shift+g     gh-dash (floating)"
+  ++ lib.optional ghDashEnabled "          Alt+r           gh-dash (floating)"
   ++ [
     "          Alt+e           capture scrollback to $EDITOR"
     "          Alt+k           this help"
@@ -199,7 +199,7 @@ let
   );
   ghDashKeybind = lib.optionalString ghDashEnabled (
     builtins.concatStringsSep "\n" [
-      "              bind \"Alt Shift g\" {"
+      "              bind \"Alt r\" {"
       "                  Run \"gh-dash\" {"
       "                      floating true"
       "                      close_on_exit true"
@@ -240,6 +240,16 @@ in
       # and each pane's viewport are restorable after a kill.
       session_serialization = true;
       pane_viewport_serialization = true;
+      # zellij's enhanced Kitty Keyboard Protocol handling misbehaves on
+      # foot — it leaks the agent-layer Alt-key binds straight through to the
+      # inner pane instead of acting on them, and drops Shift+Return en route
+      # to agent CLIs. Disabling drops zellij to legacy key encoding, which
+      # fixes both. Applied fleet-wide, not just on foot: legacy is the
+      # universally-supported baseline (this config's binds are all bare
+      # Alt+letter, which it handles fine), so it can't regress the other
+      # hosts' terminals. Upstream: zellij #3723.
+      # NOTE: "Requires restart" — a live session won't re-read this.
+      support_kitty_keyboard_protocol = false;
     };
 
     # Keybinds live in raw KDL rather than `settings.keybinds`: the
@@ -250,8 +260,10 @@ in
     #   Alt+g / Alt+d — floating lazygit / lazydocker, scoped to the
     #     focused pane's cwd; close_on_exit avoids an `(exited)` corpse.
     #     Sized 85% centred (x/y 7%) — the default float is too cramped.
-    #   Alt+Shift+g — floating gh-dash, same geometry, gated to hosts where
-    #     the GitHub workflow surface is enabled.
+    #   Alt+r — floating gh-dash (mnemonic: PR/review dashboard), same
+    #     geometry, gated to hosts where gh-dash is enabled. Bare Alt-letter
+    #     that's free in both zellij and fish (Alt+s is fish's prepend-sudo);
+    #     see ADR-006.
     #   Alt+e — drop the current pane's scrollback straight into $EDITOR
     #     (helix, per ADR-005) for capture/annotation.
     #   Alt+k — floating cheatsheet for these custom binds (zellij-agent-help
