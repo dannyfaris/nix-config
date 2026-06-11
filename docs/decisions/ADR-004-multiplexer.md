@@ -87,7 +87,7 @@ bridging. Custom layouts are declarative (KDL) — when a project's
 repeating workflow justifies one, declare it in `programs.zellij.settings`
 or in a project-local KDL file.
 
-zellij provides session persistence across any disconnect — network blip, laptop sleep, or reboot: reconnect over SSH, then `zellij attach`. (This originally paired with mosh for no-reconnect roaming; mosh was removed in #47 — see ADR-011.)
+zellij provides session persistence across a *disconnect* — network blip, laptop sleep — because the session's server keeps running: reconnect over SSH, then `zellij attach`. (This originally paired with mosh for no-reconnect roaming; mosh was removed in #47 — see ADR-011.) Persistence across a *reboot* (which does kill the server) would require on-disk serialization — deliberately **off** for the agent layout; see "Session serialization disabled" below.
 
 ### Session naming (2026-06-08)
 
@@ -101,3 +101,13 @@ Two consequences follow, and they are the reason the surrounding code looks the 
 The `:` separator is CLI- and filesystem-safe: the session name doubles as a unix socket filename, and zellij 0.44.3 accepts `:` (its `validate_session_name` rejects only empty / `.` / `..` / names containing `/`).
 
 Code: `home/shared/shell.nix` (`za`, `fish_title`) and `home/shared/multiplexer.nix` (the `{command_path}` widget). Renaming the session orphans any pre-existing bare-named session — `zellij delete-session <old>` once after first switch.
+
+### Session serialization disabled (2026-06-11)
+
+`session_serialization` and `pane_viewport_serialization` are **off**. They were originally enabled to carry the agent workspace across a server restart, but resurrection actively *degrades* the `agent` layout, so the cost outweighs a benefit that barely applied.
+
+The mechanism (reproduced on metis, zellij 0.44.3): the `agent` and `terminal` panes are bare shell panes — no `command` — while `yazi` carries `command "yazi"`. zellij destroys a shell pane the instant its shell exits, but *holds* a command pane open after its process dies. On reboot every process is signalled at once; the `fish` shells in the two shell panes exit and those panes are removed, leaving `yazi` as the sole content pane, so zellij collapses the vertical split and promotes yazi to sit alone between the two bars. That single-pane wreck — with yazi itself resurrected *suspended* — is what serializes, and `za`'s `attach` faithfully restores it. Because each resurrect re-serializes the degraded state, it never heals on its own: the only escape was to `zellij delete-session` and start over.
+
+The advertised "survive `nh os switch`" benefit was largely illusory — a switch doesn't kill an interactively-launched zellij server (it is an ordinary user process, not a managed service), so the live session is untouched regardless. Disabling serialization makes `za`'s `attach` miss after a server restart, so the `or` arm rebuilds `agent.kdl` fresh every time, which is the wanted behavior. Live detach/reattach (network blip, laptop sleep) is unaffected: the server keeps running and the session stays addressable.
+
+The verified evidence (fresh launch, detach, graceful `kill-session`, server SIGTERM, and isolated shell-pane death — only the last degrades) lives in the PR that landed this. Code: the two `*_serialization` flags in `home/shared/multiplexer.nix`. One-time cleanup after first switch: `zellij delete-session --force <host>:<repo>` once to discard any already-degraded dump.

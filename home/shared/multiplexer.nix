@@ -236,10 +236,11 @@ in
       # Explicit: frames stay on for every pane, so the named-pane headers
       # read `agent`/`yazi`/`terminal` rather than the underlying command.
       pane_frames = true;
-      # Survive zellij crashes / `nh os switch` restarts — both the session
-      # and each pane's viewport are restorable after a kill.
-      session_serialization = true;
-      pane_viewport_serialization = true;
+      # Serialization OFF: resurrecting the agent layout degrades it — the
+      # bare-shell `agent`/`terminal` panes die on reboot and collapse the
+      # split to a lone suspended `yazi`, which self-perpetuates. See ADR-004.
+      session_serialization = false;
+      pane_viewport_serialization = false;
       # zellij's enhanced Kitty Keyboard Protocol handling misbehaves on
       # foot — it leaks the agent-layer Alt-key binds straight through to the
       # inner pane instead of acting on them, and drops Shift+Return en route
