@@ -39,6 +39,13 @@ in
     # foot — desktop-host-only (metis). Inert on non-desktop hosts via
     # upstream Stylix's `programs.foot.enable` gate.
     foot.enable = true;
+    # niri — brings the compositor onto the palette. Stylix writes the
+    # window border (active base0D / inactive base03) and disables the
+    # focus-ring, so the active-window accent rides the idiomatic base0D
+    # slot. Border width + corner radius are set in home/nixos/niri.nix.
+    # Desktop-only by virtue of this file's import path. See
+    # docs/desktop/niri.md §Window decorations.
+    niri.enable = true;
     # fuzzel — gates on `programs.fuzzel.enable`. Stylix writes font
     # (Inter at popups size), full base16 palette across 11 slots, and
     # polarity-driven icon-theme.

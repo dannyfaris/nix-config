@@ -4,8 +4,11 @@
 # = true` in home/nixos/stylix-targets-desktop.nix; Stylix writes the
 # full base16 colour palette including per-urgency-level border accents
 # (low → base03, normal → base0D, critical → base08) and the polarity-
-# driven icon-theme (when stylix.icons is configured). We don't
-# override Stylix's colour writes.
+# driven icon-theme (when stylix.icons is configured). We override the
+# normal-urgency border to base09 (the "attention" accent — distinct from
+# the base0D "focus" accent so notifications don't blend into the focused
+# window's border); low/critical stay as Stylix writes them. See
+# docs/desktop/fnott.md and the accent map (#108).
 #
 # Font: we DO override Stylix here. Stylix would default fnott's three
 # font keys to the sansSerif slot (Inter); instead the Wayland chrome
@@ -30,7 +33,12 @@
 # selection rationale and sharp edges.
 #
 # Per #74.
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   # Mono Nerd Font (monospace slot + popups size), overriding Stylix's
   # sansSerif default for fnott's three font keys so notifications
@@ -39,11 +47,32 @@ let
   monoPopup = lib.mkForce "${config.stylix.fonts.monospace.name}:size=${toString config.stylix.fonts.sizes.popups}";
 in
 {
-  services.fnott.enable = true;
-  services.fnott.settings.main = {
-    "title-font" = monoPopup;
-    "summary-font" = monoPopup;
-    "body-font" = monoPopup;
+  # notify-send (libnotify) so the operator can send and test notifications
+  # from the terminal; pairs with the fnott daemon. Desktop-only — headless
+  # hosts have no notification daemon to talk to.
+  home.packages = [ pkgs.libnotify ];
+
+  services.fnott = {
+    enable = true;
+    settings = {
+      main = {
+        "title-font" = monoPopup;
+        "summary-font" = monoPopup;
+        "body-font" = monoPopup;
+
+        # Border 2px + 10px radius, matching the niri/fuzzel chrome. 2px
+        # renders crisp on metis's 4K panel at scale 1.5 (1px lands on the
+        # half-pixel grid); fnott 1.8 supports both, Stylix sets neither
+        # (defaults: thin, square). See docs/desktop/fnott.md.
+        "border-size" = 2;
+        "border-radius" = 10;
+      };
+
+      # Normal-urgency border → base09 ("attention"), distinct from the
+      # base0D "focus" accent (see header). mkForce: Stylix's fnott target
+      # writes normal → base0D. Format is RRGGBBAA.
+      normal."border-color" = lib.mkForce "${config.lib.stylix.colors."base09-hex"}ff";
+    };
   };
 
   # Restart fnott when its rendered config changes. fnott reads config

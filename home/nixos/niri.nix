@@ -33,6 +33,29 @@ _: {
     # wasted space when tiling; foot honours this and drops its top bar.
     prefer-no-csd = true;
 
+    # Window border — colour comes from the whitelisted Stylix niri target
+    # (active base0D / inactive base03, focus-ring off); we set the width.
+    # 2px renders crisp on metis's 4K panel at scale 1.5 — an even logical
+    # width lands on whole physical pixels (1px → 1.5px, grainy). See
+    # docs/desktop/niri.md §Window decorations.
+    layout.border.width = 2;
+
+    # Rounded corners on every window. The border (and focus ring, if on)
+    # follow this radius; clip-to-geometry trims each client's square
+    # surface to the rounded rect so corners don't poke past the border.
+    # 10px matches fuzzel's launcher radius for cross-surface cohesion.
+    window-rules = [
+      {
+        geometry-corner-radius = {
+          top-left = 10.0;
+          top-right = 10.0;
+          bottom-right = 10.0;
+          bottom-left = 10.0;
+        };
+        clip-to-geometry = true;
+      }
+    ];
+
     binds = {
       # Navigation — focus (arrow + vim-style mirrors)
       "Mod+Left".action.focus-column-left = { };

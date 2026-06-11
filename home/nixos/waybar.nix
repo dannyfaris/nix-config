@@ -31,7 +31,8 @@
 # trade-off).
 #
 # Per #75.
-_: {
+{ lib, ... }:
+{
   programs.waybar = {
     enable = true;
     systemd.enable = true;
@@ -54,5 +55,23 @@ _: {
       tray.spacing = 10;
       clock.format = "{:%I:%M %p  %a %d %b}"; # 02:23 PM  Fri 29 May
     };
+
+    # Active workspace indicator → base0D accent. Stylix's waybar target
+    # colours the focused/active workspace underline @base05 (foreground);
+    # re-point it to the idiomatic accent slot so it matches niri's active
+    # border. Appended (mkAfter) with the same selectors as Stylix's rules
+    # — equal specificity, later in the sheet → wins. Colour only: width
+    # (3px) and the urgent @base08 state stay as Stylix writes them. See
+    # docs/desktop/waybar.md and the accent map (#108).
+    style = lib.mkAfter ''
+      .modules-left #workspaces button.focused,
+      .modules-left #workspaces button.active,
+      .modules-center #workspaces button.focused,
+      .modules-center #workspaces button.active,
+      .modules-right #workspaces button.focused,
+      .modules-right #workspaces button.active {
+        border-bottom-color: @base0D;
+      }
+    '';
   };
 }

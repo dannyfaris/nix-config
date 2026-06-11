@@ -11,7 +11,8 @@ let
   # Same accessor + semantic mapping the multiplexer/prompt use, so the
   # whole TUI reads from one palette. base05 fg / base04 dim-fg / base03
   # muted / base02 selection-bg / base01 faint-line;
-  # base08 red / base0B green / base0D blue-accent (matches niri focus-ring).
+  # base08 red / base0B green / base0D focus-accent (base16 primary; also
+  # niri's active-window border).
   c = config.lib.stylix.colors;
   hex = slot: "#${c."${slot}-hex"}";
 in
@@ -34,7 +35,7 @@ in
       };
       background.selected = hex "base02"; # selection background
       border = {
-        primary = hex "base0D"; # focused section — echoes niri focus-ring accent
+        primary = hex "base0D"; # focused section — the base0D focus accent (as niri's active-window border)
         secondary = hex "base03"; # unfocused section
         faint = hex "base01"; # hairline separators
       };
