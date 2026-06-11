@@ -275,3 +275,45 @@ authorizedKeys = [
 - [gnome-keyring.md](./gnome-keyring.md) — gcr-ssh-agent socket ownership; the eviction punt to #112.
 - [polkit.md](./polkit.md) — mate-polkit, the live unlock dependency (#103).
 - `home/shared/ssh.nix`, `lib/operator.nix` — outbound config + the authorized-key source of truth.
+
+## Darwin adoption (mac-mini) — `op` CLI + the SSH-agent fork (#112)
+
+The 1Password GUI is already managed on mac-mini (Homebrew cask, above). This section resolves the two net-new questions #112 raises for the Mac — the `op` CLI, and whether 1Password should own `SSH_AUTH_SOCK` here — i.e. the per-platform second fork the NixOS section (Decision 2) deferred to this slice. Strategy only; no code wired.
+
+### Decision summary
+
+| Capability | Decision | Why |
+|---|---|---|
+| `op` CLI | **Adopt** (nixpkgs `_1password-cli`) | Same programmatic-retrieval win as metis; desktop-app biometric integration is driven by the macOS app regardless of install path. |
+| SSH agent / `SSH_AUTH_SOCK` ownership | **Decline — decouple, same as metis** | Fleet uniformity + blast radius, and 1Password's "key never on disk" benefit is moot here (see below). |
+| SSH outbound | **Keep the existing per-host `dbf@mac` on-disk key** | Already authorized fleet-wide and already works; no change. |
+
+### The SSH-agent fork — why the Mac lands the same way as metis
+
+The NixOS section flagged the Mac as a *genuine second fork*: on macOS the metis decouple rationale weakens, because Touch ID + 1Password's agent is excellent, there's no `gcr-ssh-agent` to evict, and no Wayland lock-screen popup failure mode. Taken alone, that's a real pull toward letting 1Password own SSH on the Mac.
+
+What tips it back to decouple is a Mac-specific fact: **`~/.ssh/id_ed25519` is load-bearing for sops on this host.** It is the `dbf@mac` key, and the Mac's sops age identity is derived from it (`ssh-to-age -private-key`; see `modules/darwin/sops.nix` and `.sops.yaml`). That on-disk key therefore **must** exist regardless of any SSH choice. So 1Password's headline SSH benefit — the private key never touches disk — buys little here: the disk already holds a mandatory key. Adopting 1Password's agent would mean either importing that key into the vault (same key, two homes) or generating a *second* SSH identity to manage, carrying the vault-key blast radius either way.
+
+So the honest balance on the Mac:
+
+- **For 1Password-owns-SSH:** Touch-ID-to-SSH ergonomics — genuinely nice.
+- **Against:** fleet model uniformity (metis decoupled); vault-key blast radius; the key-never-on-disk benefit is moot because sops pins an on-disk key anyway; and decoupling is zero-work (the `dbf@mac` key already authenticates everywhere).
+
+**Recommendation: decouple on the Mac too.** 1Password is the password manager + `op` CLI; SSH stays on the existing per-host `dbf@mac` key. The only thing forgone is Touch-ID-to-SSH, which is ergonomics, not security. This makes the fleet posture uniform — per-host on-disk ed25519 keys for SSH everywhere, 1Password never owning `SSH_AUTH_SOCK`.
+
+> Operator decision required (the second fork). If Touch-ID-to-SSH on your daily-driver Mac is worth a split model, the alternative is: enable 1Password's SSH agent on macOS (it exposes its own agent socket via `IdentityAgent`), keep `~/.ssh/id_ed25519` for sops only, and accept that metis and mac-mini then run different SSH-agent models by design. Defensible — just deliberately non-uniform.
+
+### `op` CLI install path
+
+nixpkgs `_1password-cli` (the same package metis uses) is the recommended install on the Mac too — one attribute, cross-platform parity, and on macOS the desktop-app ↔ CLI biometric handshake is driven by the app, so the CLI's install path is *not* the finicky vendor-integration surface the GUI's browser native-messaging is (which is why the GUI stays a cask per ADR-031 clause 2). The Homebrew `1password-cli` cask is the fallback if the nixpkgs CLI's app-integration ever misbehaves.
+
+### Sharp edges
+
+- **Do not break `~/.ssh/id_ed25519`.** It is the sops decryption identity on mac-mini; losing or rotating it without re-deriving the age key breaks `sops -d` fleet-wide. The decouple recommendation deliberately leaves this key exactly where it is.
+- **`op` is unfree — covered by the same shared whitelist.** `_1password-cli` is unfree; it rides the one `allowUnfreePredicate` entry the NixOS section adds to `modules/shared/nix-daemon.nix` (shared across both platforms), not a separate Darwin entry. Never blanket `allowUnfree`.
+
+### References
+
+- §"NixOS desktop adoption (metis)" above — the fleet posture and Decision 2's per-platform note this section resolves.
+- #112 — adopt 1Password (this is the Phase-1 Darwin slice's strategy).
+- `modules/darwin/sops.nix`, `.sops.yaml` — the `~/.ssh/id_ed25519`-derived age identity that pins the on-disk key.
