@@ -101,7 +101,10 @@ Stylix writes `programs.waybar.style` (the CSS) with:
 - Default background = `@base00` with desktop opacity applied.
 - Default text colour = `@base05`.
 - Workspaces module: bottom border on each button, `@base05` for
-  focused/active, `@base08` for urgent.
+  focused/active, `@base08` for urgent. **`waybar.nix` overrides the
+  focused/active colour to `@base0D`** (the focus accent), so the active
+  workspace matches niri's active-window border instead of reading
+  monochrome; urgent stays `@base08`. See the accent map (#108).
 - Tooltip styling (background, text, border via `@base0D`).
 - A base CSS ruleset (line spacing, padding, hover behaviour) bundled
   by Stylix.

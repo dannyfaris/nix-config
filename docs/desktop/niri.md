@@ -73,10 +73,22 @@ polish for our use.
   ~80×24 default). Remaining layout/input/cursor settings still flow
   from niri-flake defaults.
 
-**Stylix integration** — niri-flake's nixosModule auto-injects
-`homeModules.config`, which Stylix's targets bridge into for
-focus-ring colour + cursor theme. No explicit Stylix-niri target
-enable required.
+**Window decorations** — niri is a whitelisted Stylix target
+(`stylix.targets.niri.enable = true` in
+`home/nixos/stylix-targets-desktop.nix`). An earlier revision of this
+doc claimed Stylix themed niri's focus-ring with no explicit target
+enable; that was never true (#333). With the target enabled, Stylix
+writes the window **border** — active `base0D` (the focus accent) /
+inactive `base03` — and **disables the focus-ring**, so the
+active-window accent rides the idiomatic `base0D` slot instead of
+niri's built-in blue. On top of that, `home/nixos/niri.nix` sets
+`layout.border.width = 2` (2px renders crisp on metis's 4K panel at
+scale 1.5 — an even logical width maps to whole physical pixels) and a
+catch-all `window-rule` with `geometry-corner-radius = 10` +
+`clip-to-geometry = true` (rounded corners on every window, client
+content trimmed to the rounded rect). The focus/attention colour
+vocabulary is defined in the visual-identity north-star (#108); cursor
+theme/size cohesion (`stylix.cursor`) remains unwired (#110).
 
 ## Sharp edges
 

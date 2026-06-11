@@ -110,15 +110,25 @@ Stylix writes three sets of `services.fnott.settings`:
   (background, title-color, summary-color, body-color,
   progress-color) plus per-urgency-level border accents:
   - `low.border-color` → base03 (subdued, informational)
-  - `normal.border-color` → base0D (accent blue, default notifications)
+  - `normal.border-color` → **base09** ("attention" — an `fnott.nix`
+    override of Stylix's base0D; see below)
   - `critical.border-color` → base08 (accent red, urgent)
 - **Icon theme** — picked from `stylix.polarity` via
   `stylix.icons.{dark,light}`.
 
-The urgency-level border accents are a fnott-specific theming
-feature; the visual signal (red border for critical, blue for
-normal, muted for low) carries information without requiring custom
-prose in the notification body.
+`fnott.nix` adds two deviations from the Stylix defaults: **border
+geometry** (`border-size = 2`, `border-radius = 10` — Stylix sets
+neither) to match the niri/fuzzel chrome, 2px rendering crisp on metis's
+4K panel at scale 1.5; and the **normal-urgency border colour**, moved
+from base0D (the *focus* accent) to base09 (the *attention* accent) so a
+notification — which appears without taking focus — reads as distinct
+from the focused window's border rather than blending into it.
+low/critical keep Stylix's writes. The focus/attention vocabulary is
+defined in the visual-identity north-star (#108).
+
+The urgency-level border accents carry information without custom prose
+in the body: muted for low, attention (gold) for normal, red for
+critical.
 
 **Auto-start via D-Bus activation** — HM's `services.fnott` module
 ships an `org.freedesktop.Notifications` D-Bus service file pointing

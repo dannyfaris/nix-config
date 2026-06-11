@@ -100,13 +100,18 @@ Stylix writes two sets of `programs.fuzzel.settings`:
 - `main.icon-theme` — picked from `stylix.polarity` via
   `stylix.icons.{dark,light}`.
 
-The **font is the one override**: `home/nixos/fuzzel.nix` sets
-`main.font` to the mono Nerd Font (`JetBrainsMono Nerd Font` at
+`home/nixos/fuzzel.nix` makes a few overrides. **Font**: `main.font` is
+set to the mono Nerd Font (`JetBrainsMono Nerd Font` at
 `stylix.fonts.sizes.popups`) via `lib.mkForce`, rather than the
-sansSerif slot (Inter) Stylix defaults to — so the launcher and power
-menu use the one Nerd Font the rest of the chrome uses (foot, waybar).
-Colours come from Stylix unchanged. The operator-facing settings
-(layer/anchor/terminal) are behaviour, not theming.
+sansSerif slot (Inter) Stylix defaults to — so the launcher matches the
+rest of the chrome (foot, waybar). **Border**: `border.width = 2` (crisp
+on metis's 4K panel at scale 1.5) and `colors.border → base0D`, the
+idiomatic focus accent, matching niri's window border. Stylix maps the
+border to base0E; the two slots are equal on metis's palette today, so
+the colour is a no-op *there* but correct by slot for portability. Other
+colours come from Stylix unchanged; the operator-facing settings
+(layer/anchor/terminal) are behaviour, not theming. See the accent map
+(#108).
 
 **Keybind** — `home/nixos/niri.nix`:
 
