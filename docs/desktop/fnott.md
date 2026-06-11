@@ -117,9 +117,9 @@ Stylix writes three sets of `services.fnott.settings`:
   `stylix.icons.{dark,light}`.
 
 `fnott.nix` adds two deviations from the Stylix defaults: **border
-geometry** (`border-size = 2`, `border-radius = 10` — Stylix sets
-neither) to match the niri/fuzzel chrome, 2px rendering crisp on metis's
-4K panel at scale 1.5; and the **normal-urgency border colour**, moved
+geometry** (`border-size = 2`, `border-radius = 12` — from the design
+tokens, `lib/theme-tokens.nix` #369; Stylix sets neither) to match the
+niri/fuzzel chrome, 2px rendering crisp on metis's 4K panel at scale 1.5; and the **normal-urgency border colour**, moved
 from base0D (the *focus* accent) to base09 (the *attention* accent) so a
 notification — which appears without taking focus — reads as distinct
 from the focused window's border rather than blending into it.
