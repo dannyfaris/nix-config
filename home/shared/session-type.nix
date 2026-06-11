@@ -12,7 +12,7 @@
 # $SSH_CONNECTION — is captured at zellij-*server* start and never
 # refreshed, so it goes stale the moment you detach and reattach from a
 # different connection context (SSH-born session reattached locally keeps
-# the SSH glyph, and vice-versa). `za`'s resurrect-and-reattach workflow
+# the SSH glyph, and vice-versa). `za`'s detach-and-reattach workflow
 # makes that routine, not an edge case. The pane can't recover the live
 # context by walking its own process tree (panes hang off the server
 # daemon: pane -> zellij --server -> init), so we instead locate the live

@@ -55,16 +55,17 @@ _: {
     # the outer terminal title — see ADR-004 §Session naming. A function
     # rather than an abbreviation because
     # attach-or-create needs a conditional: re-running `za` where a
-    # same-named session already exists attaches to it (resurrecting it if
-    # it had exited, per session_serialization) instead of erroring on the
-    # duplicate name. See home/shared/multiplexer.nix and GH #5.
+    # same-named session is still live attaches to it instead of erroring on
+    # the duplicate name; once the session is gone (serialization is off, so
+    # there is nothing to resurrect — see ADR-004) it rebuilds fresh from the
+    # `agent` layout. See home/shared/multiplexer.nix and GH #5.
     functions.za = {
       description = "Zellij agent workspace, session named <host>:<repo>";
       body = ''
         set -l name (hostname -s)":"(basename $PWD)
-        # Ask `attach` directly: it attaches to this repo's session
-        # (resurrecting it if it had exited) and, when none exists, exits
-        # non-zero with its error on stderr — so the `or` creates it. This
+        # Ask `attach` directly: it attaches to this repo's live session
+        # and, when none exists, exits non-zero with its error on stderr —
+        # so the `or` creates it. This
         # avoids depending on how `zellij ls` renders the session list,
         # which the previous `contains`-over-`zellij ls` check got wrong (it
         # could disagree with what `attach` can actually reach and tried to
