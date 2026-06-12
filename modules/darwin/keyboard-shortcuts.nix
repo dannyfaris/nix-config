@@ -59,20 +59,72 @@ in
 {
   system.defaults.CustomUserPreferences."com.apple.symbolichotkeys".AppleSymbolicHotKeys = {
     # Screenshots — swapped: clipboard = bare ⌘⇧, file = ⌃⌘⇧.
-    "28" = hotkey [ 51 20 ctrlShiftCmd ]; # screen → file (⌃⌘⇧3)
-    "29" = hotkey [ 51 20 shiftCmd ]; # screen → clipboard (⌘⇧3)
-    "30" = hotkey [ 52 21 ctrlShiftCmd ]; # area → file (⌃⌘⇧4)
-    "31" = hotkey [ 52 21 shiftCmd ]; # area → clipboard (⌘⇧4)
+    "28" = hotkey [
+      51
+      20
+      ctrlShiftCmd
+    ]; # screen → file (⌃⌘⇧3)
+    "29" = hotkey [
+      51
+      20
+      shiftCmd
+    ]; # screen → clipboard (⌘⇧3)
+    "30" = hotkey [
+      52
+      21
+      ctrlShiftCmd
+    ]; # area → file (⌃⌘⇧4)
+    "31" = hotkey [
+      52
+      21
+      shiftCmd
+    ]; # area → clipboard (⌘⇧4)
 
     # Switch to Desktop N — Ctrl+1..9, declared enabled.
-    "118" = hotkey [ 49 18 ctrl ]; # Desktop 1 (⌃1)
-    "119" = hotkey [ 50 19 ctrl ]; # Desktop 2 (⌃2)
-    "120" = hotkey [ 51 20 ctrl ]; # Desktop 3 (⌃3)
-    "121" = hotkey [ 52 21 ctrl ]; # Desktop 4 (⌃4)
-    "190" = hotkey [ 53 23 ctrl ]; # Desktop 5 (⌃5)
-    "191" = hotkey [ 54 22 ctrl ]; # Desktop 6 (⌃6)
-    "192" = hotkey [ 55 26 ctrl ]; # Desktop 7 (⌃7)
-    "193" = hotkey [ 56 28 ctrl ]; # Desktop 8 (⌃8)
-    "194" = hotkey [ 57 25 ctrl ]; # Desktop 9 (⌃9)
+    "118" = hotkey [
+      49
+      18
+      ctrl
+    ]; # Desktop 1 (⌃1)
+    "119" = hotkey [
+      50
+      19
+      ctrl
+    ]; # Desktop 2 (⌃2)
+    "120" = hotkey [
+      51
+      20
+      ctrl
+    ]; # Desktop 3 (⌃3)
+    "121" = hotkey [
+      52
+      21
+      ctrl
+    ]; # Desktop 4 (⌃4)
+    "190" = hotkey [
+      53
+      23
+      ctrl
+    ]; # Desktop 5 (⌃5)
+    "191" = hotkey [
+      54
+      22
+      ctrl
+    ]; # Desktop 6 (⌃6)
+    "192" = hotkey [
+      55
+      26
+      ctrl
+    ]; # Desktop 7 (⌃7)
+    "193" = hotkey [
+      56
+      28
+      ctrl
+    ]; # Desktop 8 (⌃8)
+    "194" = hotkey [
+      57
+      25
+      ctrl
+    ]; # Desktop 9 (⌃9)
   };
 }
