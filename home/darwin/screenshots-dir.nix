@@ -1,10 +1,11 @@
-# Ensure ~/Screenshots exists so the system-side
+# Ensure ~/Pictures/Screenshots exists so the system-side
 # `system.defaults.screencapture.location` set in
 # `modules/darwin/system-prefs.nix` actually resolves. macOS's
-# `screencapture` (⌘⇧3 / ⌘⇧4 / ⌘⇧5) silently falls back to ~/Desktop
-# when the configured save location doesn't exist — without this
-# activation hook, the system-side setting would be inert on a fresh
-# Mac the first time a screenshot is captured.
+# `screencapture` silently falls back to ~/Desktop when the configured
+# save location doesn't exist — without this activation hook, the
+# system-side setting would be inert on a fresh Mac the first time a
+# screenshot is captured. ~/Pictures/Screenshots is the fleet-wide
+# location, matching the niri side (home/nixos/niri.nix screenshot-path).
 #
 # Per-user concern, so home-manager is the right layer (the system
 # module deals in domain-wide `defaults` keys; the directory itself
@@ -18,11 +19,11 @@
 #
 # `mkdir -p` is idempotent — re-running activation is a no-op once the
 # directory exists, and existing contents are untouched. Removing this
-# module later leaves ~/Screenshots in place (we don't auto-remove
-# user data).
+# module later leaves ~/Pictures/Screenshots in place (we don't
+# auto-remove user data).
 { lib, ... }:
 {
   home.activation.ensureScreenshotsDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p $VERBOSE_ARG "$HOME/Screenshots"
+    run mkdir -p $VERBOSE_ARG "$HOME/Pictures/Screenshots"
   '';
 }

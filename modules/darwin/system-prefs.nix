@@ -45,15 +45,18 @@
 #   - Boot chime: muted on activation; takes effect at next boot. On
 #     Apple Silicon some firmware revisions ignore this; the setting
 #     is cheap regardless.
-#   - Screenshot save location: keeps ⌘⇧3 / ⌘⇧4 / ⌘⇧5 captures out
-#     of ~/Desktop and into a dedicated ~/Screenshots folder. macOS's
+#   - Screenshot save location: keeps file captures out of ~/Desktop
+#     and into ~/Pictures/Screenshots — the fleet-wide location,
+#     matching the niri side's `screenshot-path`. macOS's
 #     `screencapture` silently falls back to ~/Desktop if the
 #     configured path doesn't resolve, so the directory must exist
 #     for the setting to take effect. Directory creation lives in
 #     the home-manager module `home/darwin/screenshots-dir.nix`
 #     (the directory is per-user, so home-manager is the natural
 #     layer; mirrors the `ensureProjectDirs` pattern in
-#     `home/shared/git-identity-dual.nix`).
+#     `home/shared/git-identity-dual.nix`). The screenshot *chords*
+#     (and the file/clipboard swap) live in
+#     `modules/darwin/keyboard-shortcuts.nix`.
 _:
 
 let
@@ -117,11 +120,11 @@ in
       };
 
       screencapture = {
-        # Save screenshots to ~/Screenshots instead of ~/Desktop.
+        # Save screenshots to ~/Pictures/Screenshots instead of ~/Desktop.
         # Absolute path because `defaults write` doesn't expand `~`
         # and macOS resolves the path literally. The directory is
         # created by the matching home-manager module — see header.
-        location = "${operator.darwinHome}/Screenshots";
+        location = "${operator.darwinHome}/Pictures/Screenshots";
       };
     };
   };

@@ -1,6 +1,6 @@
 # Keybindings
 
-Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the first, `Hyper+Return`, with the rest migrating in). Living document — updated with every new binding.
+Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the nav family + launcher + browser + terminal, with only `Hyper+Down` lacking a niri analogue). Living document — updated with every new binding.
 
 ## Philosophy
 
@@ -56,17 +56,17 @@ metis, the Mission Control family on macOS.
 
 ## Cross-platform Hyper mapping
 
-The canonical mapping: each `Hyper` chord and its analogous action per platform. niri binds land per the one-bind-per-ceremony cadence — ✓ marks those already implemented; the rest are the migration backlog.
+The canonical mapping: each `Hyper` chord and its analogous action per platform. niri binds land per the one-bind-per-ceremony cadence — ✓ marks those implemented on niri; `Hyper+Down` is the only chord with no niri analogue.
 
 | `Hyper` chord | macOS | niri analogue | niri status |
 |---|---|---|---|
-| `Hyper+Left` / `Right` | move between Spaces | focus-column-left / right | planned |
-| `Hyper+1`–`9` | switch to Space N | focus-workspace N | planned |
-| `Hyper+Up` | Mission Control overview | toggle-overview | planned |
+| `Hyper+Left` / `Right` | move between Spaces | focus-column-left / right | ✓ |
+| `Hyper+1`–`9` | switch to Space N | focus-workspace N | ✓ |
+| `Hyper+Up` | Mission Control overview | toggle-overview | ✓ |
 | `Hyper+Down` | application-windows exposé | *(no analogue — niri has no per-app window group)* | n/a |
-| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | spawn fuzzel (launcher) | planned — migrates `Mod+Space` |
+| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | spawn fuzzel (launcher) | ✓ — migrates `Mod+Space` |
 | `Hyper+Return` | new terminal window | spawn foot | ✓ |
-| `Hyper+B` | Chrome window | spawn / focus browser | planned |
+| `Hyper+B` | Chrome window | spawn default browser | ✓ — spawn-only |
 
 **niri-specific `Hyper` binds** (no Mac mirror) live in the same namespace and land as their tools arrive — e.g. `Hyper+Escape` → power/session menu (#98), a lock-now bind, clipboard / notification / screenshot actions. niri's own extra navigation (e.g. vertical window-focus within a column) either stays on `Super` or gets a niri-only `Hyper` bind, decided per bind.
 
@@ -76,14 +76,14 @@ The canonical mapping: each `Hyper` chord and its analogous action per platform.
 |---|---|---|---|
 | `Super` (niri manipulation) | Active | n/a (macOS owns WM) | Move/resize/consume/close — niri-specific. Navigation is migrating out to `Hyper`. |
 | `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
-| `Hyper` (cross-platform: nav + spawn + system) | **Active** (modifier via keyd; `Hyper+Return`, nav migrating in) | **Active** (modifier + binds) | Realized via keyd on metis ([keyd.md](./keyd.md)) + Karabiner/Hammerspoon on macOS. The paired mapping above is the source of truth. |
+| `Hyper` (cross-platform: nav + spawn + system) | **Active** (modifier via keyd; nav + launcher + browser + terminal bound) | **Active** (modifier + binds) | Realized via keyd on metis ([keyd.md](./keyd.md)) + Karabiner/Hammerspoon on macOS. The paired mapping above is the source of truth. |
 | `Super+Hyper` (extended WM) | Reserved | n/a | Hyper modifier now realized on metis (keyd); no extended-WM binds made yet. |
 
-**Transitional bindings** — currently on `Super`, migrating to `Hyper` per the cross-platform analogy (one bind per ceremony):
+**Transitional bindings** — the `Hyper` target is now bound; the `Super` home is retained alongside until the migration settles, then retired (the `Mod+Return`/`Hyper+Return` pattern, applied across the nav family):
 
-- Navigation: `Mod+Left`/`Right` (focus-column), `Mod+1`–`9` (focus-workspace), `Mod+O` (overview) → `Hyper+Left`/`Right`, `Hyper+1`–`9`, `Hyper+Up`.
-- `Mod+Space` → fuzzel → `Hyper+Space` (the Spotlight-equivalent).
-- `Mod+Return` → foot: `Hyper+Return` is already added; `Mod+Return` is retained until the migration settles, then retired.
+- Navigation: `Hyper+Left`/`Right` (focus-column), `Hyper+1`–`9` (focus-workspace), `Hyper+Up` (overview) added; `Mod+Left`/`Right` + vim `Mod+H`/`L`, `Mod+1`–`9`, and `Mod+O` retained.
+- `Hyper+Space` → fuzzel added (the Spotlight-equivalent); `Mod+Space` retained.
+- `Hyper+Return` → foot and `Mod+Return` coexist as before.
 
 **Letter-space deviation** (separate from the migration): `Mod+W` → `close-window` sits in the reserved `Super+letter` space (it would clash with a hypothetical `Super+W` → `Ctrl+W`). close is manipulation, so it stays on `Super`; the philosophical target is `Super+Hyper+W`.
 
@@ -128,7 +128,7 @@ focused column.
 | Key | Action |
 |---|---|
 | `Mod+1` … `Mod+9` | focus-workspace 1..9 |
-| `Mod+Shift+1` … `Mod+Shift+9` | move-window-to-workspace 1..9 |
+| `Mod+Ctrl+1` … `Mod+Ctrl+9` | move-window-to-workspace 1..9 |
 
 ### Spawn
 
@@ -152,16 +152,21 @@ focused column.
 
 ### Screenshots
 
-Capture uses niri's **built-in** screenshot actions — screen, window, and region are all native, and niri already backs the `org.freedesktop.portal.Screenshot` portal interface for apps, so no external capture tool (grim/slurp) is installed and annotation is deliberately out of scope (#100). The `Print` family reproduces niri's own defaults: save to disk (niri's default `screenshot-path`, `~/Pictures/Screenshots/`, which niri creates on first use) **and** copy to the clipboard. The `Mod+Ctrl+Shift+N` family echoes macOS's `Cmd+Ctrl+Shift+N` chord shape — where `+Ctrl` means *to clipboard* — so `write-to-disk=false` makes them clipboard-only; note `+5` is repurposed to window capture here (macOS uses it for the capture-options bar, which has no niri analogue). Region capture is niri's interactive overlay, which always does both disk + clipboard with no per-bind split, so its two chords (`Print`, `Mod+Ctrl+Shift+4`) are equivalent. macOS's *file*-variant chords (`Cmd+Shift+3/4/5`) would map to `Mod+Shift+3/4/5`, which are taken by `move-window-to-workspace` here — remap candidate tracked in #323.
+Capture uses niri's **built-in** screenshot actions — screen, window, and region are all native, and niri already backs the `org.freedesktop.portal.Screenshot` portal interface for apps, so no external capture tool (grim/slurp) is installed and annotation is deliberately out of scope (#100). Screenshots save to `~/Pictures/Screenshots/` — set explicitly via `screenshot-path` and created by a `home.activation` hook in `home/nixos/niri.nix`, because niri creates only the *last* path component and **silently drops the capture when the parent is missing** ([niri #807](https://github.com/YaLTeR/niri/issues/807)). `~/Pictures/Screenshots` is the fleet-wide save location, matching the Mac's `screencapture.location`.
+
+The chord layout mirrors macOS's screenshot shortcuts **after the file/clipboard swap** (see [§Active bindings — macOS clients → Screenshots](#screenshots-1)): the bare `Mod+Shift+N` family copies **to clipboard** (the accessible default), and `Mod+Ctrl+Shift+N` saves **to disk** (+ clipboard). `+5` is repurposed to window capture (macOS uses it for the capture-options bar, which has no niri analogue). Region capture is niri's interactive overlay, which always does both disk + clipboard with no per-bind split, so `Mod+Shift+4` and `Mod+Ctrl+Shift+4` are equivalent. The bare `Mod+Shift+N` chords are free because `move-window-to-workspace` relocated to `Mod+Ctrl+N` (resolving the #323 clash). The hardware `Print` family stays bound to niri's defaults (disk + clipboard).
 
 | Key | Action | Notes |
 |---|---|---|
-| `Print` | screenshot | Interactive overlay — pick region / window / output; → disk + clipboard |
-| `Ctrl+Print` | screenshot-screen | Whole focused output → disk + clipboard |
-| `Alt+Print` | screenshot-window | Focused window → disk + clipboard |
-| `Mod+Ctrl+Shift+4` | screenshot | Interactive overlay (macOS-style chord); also saves to disk — region can't be clipboard-only |
-| `Mod+Ctrl+Shift+3` | screenshot-screen (`write-to-disk=false`) | Whole focused output → clipboard only |
-| `Mod+Ctrl+Shift+5` | screenshot-window (`write-to-disk=false`) | Focused window → clipboard only |
+| `Mod+Shift+3` | screenshot-screen (`write-to-disk=false`) | Whole focused output → clipboard only |
+| `Mod+Shift+4` | screenshot | Interactive overlay — pick region / window / output; → disk + clipboard |
+| `Mod+Shift+5` | screenshot-window (`write-to-disk=false`) | Focused window → clipboard only |
+| `Mod+Ctrl+Shift+3` | screenshot-screen | Whole focused output → disk + clipboard |
+| `Mod+Ctrl+Shift+4` | screenshot | Interactive overlay; equivalent to `Mod+Shift+4` (region can't be clipboard-only) |
+| `Mod+Ctrl+Shift+5` | screenshot-window | Focused window → disk + clipboard |
+| `Print` | screenshot | Hardware key — interactive overlay → disk + clipboard |
+| `Ctrl+Print` | screenshot-screen | Hardware key — whole output → disk + clipboard |
+| `Alt+Print` | screenshot-window | Hardware key — focused window → disk + clipboard |
 
 ### Hyper
 
@@ -169,7 +174,12 @@ The `Hyper` namespace is realized on metis via keyd (Caps Lock → `Super+Ctrl+A
 
 | Key | Action | Notes |
 |---|---|---|
-| `Hyper+Return` | spawn `foot` (terminal) | First metis Hyper bind. Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained for now. |
+| `Hyper+Left` / `Hyper+Right` | focus-column-left / -right | Mirrors the mac's `Hyper+Left`/`Right` (move between Spaces). `Mod+Left`/`Right` (Navigation, above) retained. |
+| `Hyper+1` … `Hyper+9` | focus-workspace 1–9 | Mirrors the mac's Switch-to-Desktop N. `Mod+1`–`9` (Workspaces, above) retained. |
+| `Hyper+Up` | toggle-overview | Mirrors the mac's Mission Control. `Mod+O` (Discovery, above) retained. |
+| `Hyper+Space` | spawn `fuzzel` (launcher) | The Spotlight-equivalent. `Mod+Space` (Spawn, above) retained. |
+| `Hyper+Return` | spawn `foot` (terminal) | Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained. |
+| `Hyper+B` | spawn default browser (`xdg-open https://`) | Opens the system default browser — currently Firefox per `xdg.mimeApps` (`home/nixos/firefox.nix`); follows the #127 audit outcome automatically. Spawn-only; focus-or-spawn out of scope. No `Super` original. |
 
 ## Active bindings — macOS clients
 
@@ -227,7 +237,19 @@ The bind-relevant pairings:
 | `Hyper+Right` | Move to space to the right | Karabiner remap to `Ctrl+Right` | as above, "Move right a space" (ID `81`). |
 | `Hyper+Up`    | Mission Control overview (all windows + Spaces strip) | Karabiner remap to `Ctrl+Up` | macOS native "Mission Control" (symbolichotkey ID `32`); enabled by macOS default. Same toggle binding as a four-finger swipe up / F3 on the function row. |
 | `Hyper+Down`  | Application windows (current-app exposé) | Karabiner remap to `Ctrl+Down` | macOS native "Application windows" (symbolichotkey ID `33`); enabled by macOS default. Shows all windows belonging to the currently-focused app — useful for "give me every Chrome / Ghostty / IDE window I have open." |
-| `Hyper+1` … `Hyper+9` | Switch to Mission Control Desktop 1..9 | Karabiner remap to `Ctrl+1` … `Ctrl+9` | macOS Mission Control's "Switch to Desktop N" (symbolichotkey IDs `118`–`121` for Desktops 1–4, `190`–`194` for 5–9 — the full `190`–`197` block extends up through Desktop 12 but this bind targets 1–9). **Disabled by macOS default** — one-time operator setup required at System Settings → Keyboard → Keyboard Shortcuts → Mission Control → tick each "Switch to Desktop N" you want navigable. Per-Mac, manual. **Until enabled, the chord falls through to the focused app**: macOS's symbolichotkey intercept only fires when the entry is enabled, so an unset `Ctrl+N` is received by whatever app is foreground — VS Code / Cursor bind `Ctrl+1`–`9` to "Focus N-th editor group", JetBrains IDEs bind them to tool windows. Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds. |
+| `Hyper+1` … `Hyper+9` | Switch to Mission Control Desktop 1..9 | Karabiner remap to `Ctrl+1` … `Ctrl+9` | macOS Mission Control's "Switch to Desktop N" (symbolichotkey IDs `118`–`121` for Desktops 1–4, `190`–`194` for 5–9 — the full `190`–`197` block extends up through Desktop 12 but this bind targets 1–9). **Declared enabled** via `modules/darwin/keyboard-shortcuts.nix`, folding in what macOS leaves disabled-by-default and would otherwise need a one-time manual System-Settings step (the repo's no-manual-state stance). Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds. |
+
+### Screenshots
+
+macOS's screenshot shortcuts are **swapped** from their factory defaults so *copy to clipboard* is the accessible bare-`⌘⇧` chord and *save to file* takes the `⌃⌘⇧` chord — the inverse of the macOS default (where `⌘⇧` saves a file and adding `Ctrl` copies to the clipboard). This matches the niri side, where the bare `Mod+Shift+N` chords are the clipboard captures. Realized declaratively via symbolic hotkeys in `modules/darwin/keyboard-shortcuts.nix` (IDs 28–31). Files save to `~/Pictures/Screenshots` (`screencapture.location` in `modules/darwin/system-prefs.nix`) — the fleet-wide location matching the niri side.
+
+| Key | Action | Notes |
+|---|---|---|
+| `⌘⇧3` | Copy screen to clipboard | ID 29; swapped from its default (save-to-file) |
+| `⌘⇧4` | Copy selected area to clipboard | ID 31; swapped from default |
+| `⌃⌘⇧3` | Save screen to file | ID 28; swapped from default (clipboard) |
+| `⌃⌘⇧4` | Save selected area to file | ID 30; swapped from default |
+| `⌘⇧5` | Screenshot & recording options bar | ID 184; unchanged (no file/clipboard variant to swap) |
 
 ## Reserved keys
 
