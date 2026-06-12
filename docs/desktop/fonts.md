@@ -5,29 +5,56 @@ change or installation model evolves.
 
 ## Selections
 
-| Family | Package | Name (fontconfig) |
-|---|---|---|
-| Monospace | `pkgs.nerd-fonts.jetbrains-mono` | `JetBrainsMono Nerd Font` |
-| Sans-serif | `pkgs.inter` | `Inter` |
-| Serif | `pkgs.dejavu_fonts` | `DejaVu Serif` |
-| Emoji | `pkgs.noto-fonts-color-emoji` | `Noto Color Emoji` |
+| Family | Package | Name (fontconfig) | Role |
+|---|---|---|---|
+| Monospace | `pkgs.nerd-fonts.monaspace` | `MonaspiceAr Nerd Font` | terminal + TUIs, status bar, launcher |
+| Sans-serif | `pkgs.ibm-plex` | `IBM Plex Sans` | notifications, GTK dialogs, web/document body |
+| Serif | `pkgs.dejavu_fonts` | `DejaVu Serif` | Stylix default (rarely consulted) |
+| Emoji | `pkgs.noto-fonts-color-emoji` | `Noto Color Emoji` | — |
+
+The governing rule is a **hybrid** split: **mono for the shell
+chrome you drive — terminal / status bar / launcher (Omarchy-style);
+sans for content surfaces — notifications / dialogs / web
+(macOS-style).** Monospace (Monaspace Argon Nerd Font) backs foot and
+the TUIs inside it (gh-dash, zellij, starship) *and* waybar *and*
+fuzzel; the mono Nerd Font carries waybar's network/tray glyphs
+directly, so there is no separate symbols-fallback face. Sans (IBM
+Plex Sans) backs the content surfaces: fnott notifications, GTK
+dialogs, and web/document body.
+
+This is the third stance on the question. The earlier universal-mono
+setup (#283 / #349 / #351) put the terminal's mono face on *every*
+chrome surface; the #369 typography pass then reversed it to
+all-sans-chrome (mono confined to the terminal). The current hybrid
+keeps the sans on content surfaces but returns the *driven* chrome —
+bar and launcher — to mono, alongside the terminal, dropping the
+`Symbols Nerd Font` fallback the all-sans bar had needed.
 
 ## Rationale
 
-**Monospace — JetBrains Mono Nerd Font.** Primary terminal face. Nerd
-Font variant brings the icon glyphs (powerline, devicons, file-type
-markers) that starship/zellij/lazygit and other TUI chrome rely on.
-Ligature support is welcome for code work in foot. Confined to desktop
-hosts (metis); not installed on headless hosts (mercury, nixos-vm)
-since nothing on those hosts renders fonts directly — SSH clients use
-their own.
+**Monospace — Monaspace Argon Nerd Font.** The face for the
+terminal (foot plus the TUIs inside it) *and* the driven chrome — the
+status bar (waybar) and the launcher (fuzzel). Monaspace is GitHub's
+monospace superfamily; Argon is its humanist variant — a warmer, more
+readable code face than the geometric JetBrains Mono it replaces,
+while still a true fixed-width font. The Nerd Font variant
+(`MonaspiceAr Nerd Font`, the family's abbreviated naming) brings the
+powerline / devicon / file-type glyphs that starship / zellij / lazygit
+rely on — and, on the bar, carries waybar's network/tray glyphs
+directly, so no separate glyph-fallback face is installed. Confined to
+desktop hosts (metis); not installed on headless hosts (mercury,
+nixos-vm), which render no fonts directly.
 
-**Sans-serif — Inter.** Modern humanist UI typeface optimised for
-on-screen reading at small sizes. Backs the `sansSerif` fontconfig
-slot — web/document sans-serif body text (Firefox/Zen page content)
-and the `sans-serif` alias generally. (GTK *application* chrome was
-reassigned to the mono Nerd Font for cohesion — see §Sizing.) Common
-choice for Linux desktop UI; well-supported by fontconfig.
+**Sans-serif — IBM Plex Sans.** The content-surface face and the
+`sansSerif` fontconfig slot. Plex Sans is IBM's open humanist sans; it
+coheres with the IBM Carbon spacing scale already adopted for
+geometry/spacing (visual-identity.md) — distinctive but restrained at
+small sizes. It backs the content surfaces — fnott notifications and
+GTK dialogs (see §Sizing) — and web/document body text (Firefox/Zen)
+via the `sans-serif` alias. Replaces Inter, which under the prior
+universal-mono stance backed only the web body. (The driven chrome —
+bar and launcher — is *not* sans; it rides the terminal mono. See the
+governing rule above.)
 
 **Serif — Stylix default (DejaVu Serif).** No explicit selection.
 Serif is rarely consulted on this desktop — niri/foot/GTK apps don't
@@ -41,60 +68,90 @@ just desktop).
 
 ## Sizing
 
-The four desktop surfaces — foot (terminal), waybar (status bar),
-fuzzel (launcher), fnott (notifications) — render at **one shared
-point size (11)** for cross-surface cohesion. Stylix exposes a size
-taxonomy (`fonts.sizes.{terminal,desktop,popups,applications}`); the
-three slots those four surfaces consume (`terminal`, `desktop`,
-`popups`) are pinned equal in `modules/nixos/desktop-fonts.nix`.
-`applications` (the Stylix size slot, 12) keeps its default — on metis
-it now sizes Firefox's variable (body) web text (Stylix derives
-`font.size.variable.x-western` from this slot) and would size Qt apps
-if any existed (none today). GTK app-UI no longer consumes it (see
-below).
+The per-surface font sizes are **display-profile-driven**, not fixed
+literals. metis runs a **2× niri output scale** (chosen after an
+on-panel A/B against 1× and 1.5× — see visual-identity.md §Typography
+and niri.md), and one switchable knob, `lib/display-profiles.nix`,
+couples the scale to the surface sizes (and the geometry) so they move
+in lockstep. The profiles hold *apparent* size constant across scales:
+the 1.5× profile carries the agreed on-vocab band, and the 1× / 2×
+profiles scale those values by ≈1/scale to render at the same apparent
+size at each scale.
 
-**GTK application UI also uses the mono Nerd Font.** GTK app chrome —
-the polkit prompt, GTK file pickers, GTK app dialogs — would otherwise
-render in the `sansSerif` slot (Inter 12) that Stylix's `gtk` target
-defaults to, standing out against the mono chrome. It's overridden to
-the mono Nerd Font at 11 (a `gtk.font` `lib.mkForce` in
-`home/nixos/stylix-targets-desktop.nix`), so GTK dialogs match
-foot/waybar/fuzzel/fnott. This realizes the #108 "how far does Nerd
-Font go into app-UI" boundary for GTK app-UI; **web/document body text
-is unaffected** — that is the `sansSerif` *fontconfig* slot, still
-Inter. Qt theming would be a separate lever (none needed — no Qt apps
-on metis).
+At metis's active **2×** profile the rendered sizes are:
 
-**Why one size, not a larger terminal.** There is no documented
-typographic basis for a terminal to sit *larger* than surrounding
-chrome; design-system practice sizes type by role and content-length,
-and the continuously-read body surface (the terminal) warrants a size
-*at least equal to* chrome, never smaller — equal satisfies that. A
-deliberate per-surface delta would be a legibility preference, not a
-rule; absent one, a single number reads consistently and is the
-simpler default.
+- **foot** (terminal) — `terminal` slot, **8**.
+- **waybar** (the bar, mono) — `desktop` slot, **10**.
+- **fuzzel** (the launcher, mono) — its own profile value (`launcher`),
+  **11** — the one deliberately-larger focal element (Spotlight-style).
+- **fnott / GTK dialogs** (the sans content surfaces) — `popups` slot,
+  **9**.
 
-**Why a bare number works here (the dpi-aware story, corrected).**
-foot pins `dpi-aware = no` (written by Stylix's foot target;
-documented in `home/nixos/foot.nix`). Under `no`, `:size=N` is sized
-by the **output scale factor**, not the monitor's physical DPI — the
-same factor the Wayland chrome apps scale by — so a numerically-equal
-size scales together across all four surfaces and reads consistently
-regardless of the display's scale. Pinning `no` is a deliberate
-*portability*
-choice: under foot's former `auto` default an identical `:size=N`
-rendered at different apparent sizes across monitors of differing
-DPI/scale (foot issue #714); `no` makes it reproducible.
+The 1.5× profile carries the same band one scale up — foot 11 /
+waybar 13 / fuzzel 14 / fnott + GTK 12 — which is the on-vocab
+reference the other profiles are calibrated against.
 
-A prior revision of this doc claimed the value `11` "approximates the
-prior visual size" lost when foot 1.15.0 flipped `dpi-aware` from
-`auto` to `no`. That rationale was unfounded: `auto` only used
-DPI-based sizing when *every* output was at scale 1, and used
-scale-factor sizing otherwise — so on any scaled output (metis runs
-at scale 1.5) the `auto → no` change was a **no-op**: foot rendered
-`:size=N` identically before and after. The `11` is a deliberate
-legibility/cohesion choice, not DPI compensation. (The
-1.15.0 default change itself is real — confirmed against foot's
+**Sizing philosophy: macOS-style restraint, not a dramatic ramp.** The
+sizes form a flat band of close values in regular weights, with the
+launcher the single intentionally-larger element (Spotlight's prompt).
+There is no large role-step ramp — the surfaces sit close together,
+and hierarchy comes from the launcher's focal size and from layout, not
+from a steep type scale.
+
+Stylix exposes the chrome size taxonomy
+(`fonts.sizes.{terminal,desktop,popups,applications}`); the slots are
+set from the active profile in `modules/nixos/desktop-fonts.nix`, and
+the `type.size` tokens (theme-tokens.nix) alias them. fuzzel's mono
+size is read from the profile directly in `home/nixos/fuzzel.nix` (it is
+not a Stylix slot). `applications` (the Stylix slot) keeps its default —
+it sizes Firefox's variable (body) web text (Stylix derives
+`font.size.variable.x-western` from it) and would size Qt apps if any
+existed (none today). A re-tune — or a scale change — is a one-line
+edit to `display-profiles.nix`.
+
+**GTK application UI uses the sans content face at the popups size.**
+GTK app chrome — the polkit prompt, file pickers, app dialogs —
+renders in `IBM Plex Sans` at the `popups` size (2× profile: 9), a
+`gtk.font` `lib.mkForce` in `home/nixos/stylix-targets-desktop.nix`, so
+dialogs match the fnott notification body. GTK is a *content* surface
+under the hybrid split (it stays sans), not driven chrome (which is
+mono). This is distinct from the earlier mono-app-UI boundary, under
+which GTK app-UI was reassigned to the mono Nerd Font (#349; the #108
+"how far does Nerd Font go into app-UI" question). Web/document body
+text is the `sansSerif` *fontconfig* slot (also IBM Plex Sans). Qt
+theming would be a separate lever (none needed — no Qt apps on metis).
+
+**Why the bar and launcher are mono, sized close to the rest.** The
+driven chrome (terminal / bar / launcher) shares the terminal's mono
+face — an Omarchy-style cohesion across the surfaces the operator
+actively drives — while content surfaces (notifications / dialogs /
+web) stay sans (macOS-style). Within the mono chrome, the bar sits
+small and the launcher larger; the terminal is sized on its own
+legibility terms. The band stays flat by intent (see the sizing
+philosophy above), so the surfaces read as one family rather than a
+stepped scale.
+
+**Why foot's size is a profile value, not a bare literal (the
+dpi-aware story).** foot pins `dpi-aware = no` (written by Stylix's
+foot target; documented in `home/nixos/foot.nix`). Under `no`,
+`:size=N` is sized by the **output scale factor**, not the monitor's
+physical DPI — the same factor the Wayland apps scale by — so the
+profile's per-scale calibration (size ∝ 1/scale) lands a consistent
+apparent size across surfaces and scales. Pinning `no` is a deliberate
+*portability* choice: under foot's former `auto` default an identical
+`:size=N` rendered at different apparent sizes across monitors of
+differing DPI/scale (foot issue #714); `no` makes it reproducible, and
+is what lets the display profile own the sizing.
+
+A prior revision of this doc claimed a fixed value (`11`)
+"approximates the prior visual size" lost when foot 1.15.0 flipped
+`dpi-aware` from `auto` to `no`. That rationale was unfounded: `auto`
+only used DPI-based sizing when *every* output was at scale 1, and used
+scale-factor sizing otherwise — so on any scaled output (metis is
+scaled) the `auto → no` change was a **no-op**: foot rendered `:size=N`
+identically before and after. The terminal size is a deliberate
+legibility choice carried by the display profile, not DPI compensation.
+(The 1.15.0 default change itself is real — confirmed against foot's
 CHANGELOG and `foot.ini(5)` — only the causal sizing story was wrong.)
 
 ## Installation model
@@ -134,6 +191,12 @@ Both wires live in `desktop-fonts.nix`, so desktop hosts get the
 selections and the install; headless hosts (mercury, nixos-vm) don't
 import the module and don't pay the font-package closure cost.
 
+No glyph-only face is installed. Under the all-sans-chrome stance the
+bar's sans needed a `nerd-fonts.symbols-only` fallback for its
+network/tray glyphs; the hybrid model returns the bar to the mono Nerd
+Font (Monaspace Argon), which carries those glyphs inline, so the
+extra package was dropped along with the fallback.
+
 The general (non-desktop-specific) font base comes from NixOS's
 `fonts.enableDefaultPackages = true` (set as `mkDefault true` by
 niri-flake): `dejavu_fonts`, `freefont_ttf`, `gyre-fonts`,
@@ -157,16 +220,20 @@ The fontconfig wire is deliberately absent: macOS resolves fonts via
 Core Text, which reads `/Library/Fonts` directly, so
 `stylix.targets.fontconfig.enable` would write a `defaultFonts` map
 nothing on the platform consults. Font sizes are likewise omitted —
-the NixOS module unifies the desktop surfaces on one point size (see
-§Sizing) and on Darwin Ghostty owns its own sizing, so there's nothing
-to mirror.
+the NixOS module sizes its surfaces from the active display profile
+(see §Sizing) and on Darwin Ghostty owns its own sizing, so there's
+nothing to mirror.
 
-Consequence: Darwin installs the faces but has no alias layer, and
-Ghostty bundles its own JetBrainsMono — so the practical effect is
-*availability + parity*, not an automatic re-render anywhere. The
-module is imported from `modules/darwin/foundation.nix` rather than a
-desktop bundle, because every Darwin host is GUI (no headless gate to
-respect). Per #209.
+Consequence: Darwin installs the faces but has no fontconfig alias
+layer. Stylix's ghostty target *does* set Ghostty's font-family from
+the monospace slot (`home/darwin/ghostty.nix`), so the terminal
+re-renders to Monaspace Argon — one terminal face across hosts (the
+operator keeps Ghostty's own size pin). The sans is availability-only:
+macOS chrome uses the system font, so IBM Plex Sans backs the
+sans-serif alias for fontconfig-aware apps rather than re-skinning
+native UI. The module is imported from `modules/darwin/foundation.nix`
+rather than a desktop bundle, because every Darwin host is GUI (no
+headless gate to respect). Per #209.
 
 ## Sharp edges
 
@@ -187,18 +254,18 @@ respect). Per #209.
   from `auto` to `no` (and removed `auto`), which Stylix's foot target
   adopts verbatim. Under `no`, `:size=N` is sized by the output scale
   factor, not the monitor DPI — a deliberate portability win (foot
-  issue #714), and the basis for one shared size reading consistently
-  across surfaces. See §Sizing for the full story, including why an
-  earlier "11 compensates for the 1.15.0 change" rationale was
-  unfounded. Original landing: PR #63.
+  issue #714), and what lets the display profile own the terminal's
+  sizing (size ∝ 1/scale, holding apparent size). See §Sizing for the
+  full story, including why an earlier "fixed size compensates for the
+  1.15.0 change" rationale was unfounded. Original landing: PR #63.
 
 - **No universal monospace.** Earlier iterations claimed monospace
   was a foundation-level concern (universal across all hosts); this
-  was a misread. Headless NixOS hosts don't render fonts. JetBrains
-  Mono Nerd Font configuration lives on *GUI* hosts only — every
-  desktop NixOS host (via the desktop-env bundle) and every Darwin
-  host (via foundation, since all Darwin hosts are GUI). Headless
-  NixOS hosts (mercury, nixos-vm) still get nothing.
+  was a misread. Headless NixOS hosts don't render fonts. The mono
+  face (Monaspace Argon) configuration lives on *GUI* hosts only —
+  every desktop NixOS host (via the desktop-env bundle) and every
+  Darwin host (via foundation, since all Darwin hosts are GUI).
+  Headless NixOS hosts (mercury, nixos-vm) still get nothing.
 
 ## Cadence
 

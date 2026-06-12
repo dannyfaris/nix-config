@@ -64,22 +64,26 @@ replacement for fnott + a separate notification-center add-on.
 **HM module** — `home/nixos/fnott.nix`:
 
 ```nix
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
-  monoPopup = lib.mkForce
-    "${config.stylix.fonts.monospace.name}:size=${toString config.stylix.fonts.sizes.popups}";
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
 in {
   services.fnott.enable = true;
-  services.fnott.settings.main = {
-    "title-font" = monoPopup;
-    "summary-font" = monoPopup;
-    "body-font" = monoPopup;
+  services.fnott.settings = {
+    main = {
+      "border-size" = tokens.geometry.borderWidth;
+      "border-radius" = tokens.geometry.cornerRadius;
+    };
+    normal."border-color" = lib.mkForce "${tokens.color.role.attention.hex}ff";
   };
 }
 ```
 
-Near-minimal — colours and icons flow through Stylix; the one local
-override is the chrome font (mono Nerd Font, above).
+Near-minimal — fonts, colours, and icons flow through Stylix; the only
+local overrides are the normal-urgency border colour (the attention
+accent) and the border geometry (tokens), both below. Notifications are
+a *content* surface under the hybrid font model, so they keep Stylix's
+sans default — no font override here.
 
 Layout values (anchor, timing, urgency-level handling) stay at
 fnott's defaults — explicitly not tuned day-1. The defaults position
@@ -101,11 +105,14 @@ stylix.targets.fnott.enable = true;
 
 Stylix writes three sets of `services.fnott.settings`:
 
-- **Fonts** — `title-font`, `summary-font`, `body-font` are overridden
-  in `home/nixos/fnott.nix` to the mono Nerd Font (`JetBrainsMono Nerd
-  Font` at `stylix.fonts.sizes.popups`) via `lib.mkForce`, so
-  notifications match the rest of the chrome (foot, waybar, fuzzel)
-  rather than the sansSerif slot (Inter) Stylix defaults to.
+- **Fonts** — `title-font`, `summary-font`, `body-font` follow Stylix's
+  default: the sansSerif content face (`IBM Plex Sans`) at the `popups`
+  slot. No override — under the hybrid font model notifications are a
+  *content* surface, so they ride the proportional sans (macOS-style)
+  rather than the terminal's mono (which the driven chrome — terminal /
+  bar / launcher — uses). The size is display-profile-driven (the
+  `popups` slot tracks the active scale); at metis's 2× profile it
+  renders size 9.
 - **Colours** — base16 palette mapped to fnott's colour slots
   (background, title-color, summary-color, body-color,
   progress-color) plus per-urgency-level border accents:
@@ -117,12 +124,15 @@ Stylix writes three sets of `services.fnott.settings`:
   `stylix.icons.{dark,light}`.
 
 `fnott.nix` adds two deviations from the Stylix defaults: **border
-geometry** (`border-size = 2`, `border-radius = 12` — from the design
-tokens, `lib/theme-tokens.nix` #369; Stylix sets neither) to match the
-niri/fuzzel chrome, 2px rendering crisp on metis's 4K panel at scale 1.5; and the **normal-urgency border colour**, moved
-from base0D (the *focus* accent) to base09 (the *attention* accent) so a
-notification — which appears without taking focus — reads as distinct
-from the focused window's border rather than blending into it.
+geometry** (`border-size`, `border-radius` — from the design tokens,
+`lib/theme-tokens.nix` #369; Stylix sets neither) to match the
+niri/fuzzel chrome. The tokens are display-profile-scaled (the on-vocab
+reference is border 2 / `md` radius 12); at metis's 2× profile they
+render border 2 / radius 9. The second deviation is the
+**normal-urgency border colour**, moved from base0D (the *focus*
+accent) to base09 (the *attention* accent) so a notification — which
+appears without taking focus — reads as distinct from the focused
+window's border rather than blending into it.
 low/critical keep Stylix's writes. The focus/attention vocabulary is
 defined in the visual-identity north-star (#108).
 
