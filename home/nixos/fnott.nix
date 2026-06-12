@@ -10,10 +10,11 @@
 # window's border); low/critical stay as Stylix writes them. See
 # docs/desktop/fnott.md and the accent map (#108).
 #
-# Font: we DO override Stylix here. Stylix would default fnott's three
-# font keys to the sansSerif slot (Inter); instead the Wayland chrome
-# uses the one mono Nerd Font (JetBrainsMono Nerd Font), matching foot,
-# waybar, and fuzzel. See docs/desktop/fnott.md.
+# Font: Stylix's default, no override. The fnott target writes the three
+# font keys to the sansSerif slot (IBM Plex Sans) at the popups size —
+# which, since the #369 typography pass, IS the chrome face. Notifications
+# are UI chrome, so they ride the proportional sans like waybar/fuzzel/GTK
+# rather than the terminal's mono. See docs/desktop/fnott.md.
 #
 # Lives under nixos/ because fnott is Wayland-only and doesn't
 # compile off Linux — same placement reasoning as foot.nix and
@@ -41,12 +42,6 @@
 }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
-
-  # Mono Nerd Font (monospace slot + popups size), overriding Stylix's
-  # sansSerif default for fnott's three font keys so notifications
-  # match the rest of the chrome. mkForce: Stylix's fnott target also
-  # writes these.
-  monoPopup = lib.mkForce "${config.stylix.fonts.monospace.name}:size=${toString config.stylix.fonts.sizes.popups}";
 in
 {
   # notify-send (libnotify) so the operator can send and test notifications
@@ -58,10 +53,6 @@ in
     enable = true;
     settings = {
       main = {
-        "title-font" = monoPopup;
-        "summary-font" = monoPopup;
-        "body-font" = monoPopup;
-
         # Border + radius from the geometry tokens, matching the niri/fuzzel
         # chrome (Carbon spacing-01 width; M3-ladder radius). fnott 1.8 supports
         # both; Stylix sets neither (defaults: thin, square). See

@@ -83,15 +83,21 @@ inactive `base03` — and **disables the focus-ring**, so the
 active-window accent rides the idiomatic `base0D` slot instead of
 niri's built-in blue. On top of that, `home/nixos/niri.nix` draws its
 border width, inter-window gap, and corner radius from the design tokens
-(`lib/theme-tokens.nix`, #369): `layout.border.width` = 2 (Carbon
-`spacing-01`; 2px renders crisp on metis's 4K panel at scale 1.5 — an
-even logical width maps to whole physical pixels), `layout.gaps` = 16
-(Carbon `spacing-05`, formerly niri's implicit default), and a catch-all
-`window-rule` with `geometry-corner-radius` from the M3-ladder radius
-token (`md` = 12) + `clip-to-geometry = true` (rounded corners on every
-window, client content trimmed to the rounded rect). The focus/attention colour
-vocabulary is defined in the visual-identity north-star (#108); cursor
-theme/size cohesion (`stylix.cursor`) remains unwired (#110).
+(`lib/theme-tokens.nix`, #369): `layout.border.width` (Carbon
+`spacing-01` on-vocab), `layout.gaps` (Carbon `spacing-05` on-vocab,
+formerly niri's implicit default), and a catch-all `window-rule` with
+`geometry-corner-radius` from the M3-ladder radius token (`md` on-vocab)
++ `clip-to-geometry = true` (rounded corners on every window, client
+content trimmed to the rounded rect). These geometry tokens are
+**display-profile-scaled** (`lib/display-profiles.nix`, #106): the
+on-vocab reference is border 2 / gap 16 / radius 12 at 1.5×, and at
+metis's active **2×** profile they render **border 2 / gap 12 / radius
+9** — the same apparent size. (The output scale itself is pinned by the
+same profile, `outputs."DP-1".scale`.) An even logical border width maps
+to whole physical pixels, which is why the border value stays even
+across scales. The focus/attention colour vocabulary is defined in the
+visual-identity north-star (#108); cursor theme/size cohesion
+(`stylix.cursor`) remains unwired (#110).
 
 ## Sharp edges
 

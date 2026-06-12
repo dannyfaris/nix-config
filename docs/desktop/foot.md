@@ -72,9 +72,12 @@ stylix.targets.foot.enable = true;
 ```
 
 Stylix writes `programs.foot.settings.main`:
-- `font = "JetBrainsMono Nerd Font:size=11"` (from
-  `stylix.fonts.monospace.name` + `stylix.fonts.sizes.terminal` —
-  see [fonts.md](./fonts.md))
+- `font = "MonaspiceAr Nerd Font:size=N"` (from
+  `stylix.fonts.monospace.name` + `stylix.fonts.sizes.terminal`). The
+  size is **display-profile-driven**, not a fixed literal — the
+  `terminal` slot tracks the active niri output scale via
+  `lib/display-profiles.nix`; at metis's 2× profile it is size 8 (the
+  on-vocab reference is 11 at 1.5×). See [fonts.md](./fonts.md) §Sizing.
 - `dpi-aware = "no"` (Stylix's default; see Sharp edges)
 - `initial-color-theme` + per-polarity colour palette from the base16
   scheme
@@ -90,16 +93,18 @@ with Stylix's option-priority handling; current state has no need.
 foot 1.15.0's upstream default change (the toggle flipped from
 `auto` to `no` in that release). Under this default, the `:size=N`
 points value is multiplied by the compositor scale rather than the
-monitor DPI; on a scale-1 output, the historical sizing reads
-smaller. Mitigated by `stylix.fonts.sizes.terminal = 11` in
-`modules/nixos/desktop-fonts.nix` (PR #63). On a HiDPI external
-display the operator may want to retune. The lever is Stylix's font
-surface, NOT `programs.foot.settings.main` (which would conflict
-with the Stylix-set values). Full story in [fonts.md](./fonts.md)
-§"Sharp edges".
+monitor DPI. This is exactly what lets the display profile own the
+terminal's sizing: `stylix.fonts.sizes.terminal` is set from the
+active profile in `modules/nixos/desktop-fonts.nix` (size ∝ 1/scale,
+holding apparent size), so a scale change retunes the size in one
+place (PR #63 landed the original pin; #106 made it profile-driven).
+The lever is Stylix's font surface, NOT
+`programs.foot.settings.main` (which would conflict with the
+Stylix-set values). Full story in [fonts.md](./fonts.md) §"Sharp
+edges".
 
 **Font-availability dependency.** Foot reads
-`stylix.fonts.monospace.name` ("JetBrainsMono Nerd Font") and asks
+`stylix.fonts.monospace.name` ("MonaspiceAr Nerd Font") and asks
 fontconfig for it. If the package isn't installed (the gap that
 surfaced post-#69 baseline), fontconfig substitutes to whatever it
 has — historically DejaVu Sans (proportional), triggering foot's

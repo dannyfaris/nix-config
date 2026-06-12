@@ -108,11 +108,13 @@ Stylix writes `programs.waybar.style` (the CSS) with:
 - Tooltip styling (background, text, border via `@base0D`).
 - A base CSS ruleset (line spacing, padding, hover behaviour) bundled
   by Stylix.
-- Font defaults to `monospace` (JetBrains Mono Nerd Font from our
-  Stylix `fonts.monospace`). This is deliberate — status icons in the
-  network and tray modules render as Nerd Font glyphs, which Inter
-  doesn't carry. The monospace font reads fine at 10pt in a status
-  bar.
+- Font: Stylix defaults the bar to `monospace` — and `waybar.nix`
+  keeps it there: the bar renders the mono face (`Monaspace Argon Nerd
+  Font`), sized by the `desktop` slot. Under the hybrid font model the
+  bar is *driven* chrome (Omarchy-style), so it rides the terminal's
+  mono alongside foot and fuzzel rather than the content sans. The mono
+  Nerd Font carries the network/tray glyphs directly, so there is no
+  `Symbols Nerd Font` fallback. See fonts.md §Selections.
 
 **Auto-start via systemd** — `programs.waybar.systemd.enable = true`
 adds a systemd user unit bound to `graphical-session.target`. Unlike
@@ -148,13 +150,18 @@ is different from how the bar looks under sway (fixed 1..10
 workspaces). Don't be surprised when the workspace count in the bar
 fluctuates as you open/close workspaces.
 
-**Font choice trade-off.** Stylix defaults the bar font to
-`monospace` (JetBrains Mono Nerd Font), giving us icon-glyph
-coverage. Aesthetically a sans-serif (Inter) would match macOS
-menu-bar styling more closely, but Inter lacks the Nerd Font glyphs
-used in the status modules. The monospace default is the right
-trade-off; flagged here so a future contributor doesn't switch
-fonts without realising the icons break.
+**Font glyphs are carried inline by the mono Nerd Font.** The bar
+renders the mono face (`Monaspace Argon Nerd Font`, the driven-chrome
+font under the hybrid model), whose Nerd Font variant includes the
+network/tray glyph codepoints — so the status-module icons render
+without any glyph-only fallback. This is the simple case: Stylix's own
+default is `monospace`, and the bar keeps it. (Under the prior
+all-sans-chrome stance the bar rendered `IBM Plex Sans`, which carries
+no Nerd glyphs and so needed a separate `Symbols Nerd Font` fallback;
+the hybrid model dropped both that fallback and the
+`nerd-fonts.symbols-only` package.) The only remaining caution: if the
+mono face were ever swapped for a non-Nerd build, the glyphs would
+break — keep the bar's font on a Nerd Font variant.
 
 **Clock format restricted to C++20 chrono specifiers, not GNU
 strftime extensions.** Waybar's clock module uses fmt's chrono
@@ -178,7 +185,8 @@ consistency.
   — bundle import.
 - [niri.md](./niri.md) — compositor; waybar's `niri/workspaces`
   module reads niri's IPC.
-- [fonts.md](./fonts.md) — font selection backdrop; the monospace
-  default explained above ties to JetBrains Mono Nerd Font.
+- [fonts.md](./fonts.md) — font selection backdrop; the bar's
+  driven-chrome mono face (Monaspace Argon, glyphs carried inline) is
+  recorded there.
 - waybar upstream — https://github.com/Alexays/Waybar
 - waybar wiki (modules + config) — https://github.com/Alexays/Waybar/wiki

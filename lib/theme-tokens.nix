@@ -46,6 +46,11 @@ let
     md = 12; # M3 md
     lg = 16; # M3 lg
   };
+
+  # Geometry below is scaled by the active display profile (∝ 1/scale to hold
+  # apparent size), so the design language renders at metis's 2× scale. The
+  # static spacing/radius let-bindings above remain as the vocabulary.
+  profile = import ./display-profiles.nix;
 in
 {
   # IBM Carbon spacing scale (visual-identity.md §Spacing). Static. "Stay on the
@@ -62,26 +67,27 @@ in
     muted = role "base03"; # inactive
   };
 
-  # Font sizes ALIAS stylix.fonts.sizes.* (modules/nixos/desktop-fonts.nix).
-  # Dynamic. PR1 aliases today's sizes (all 11); the M3 role ramp grows here in
-  # the typography follow-up (#369 PR2), where the font-line consumers rewire to
-  # read these. Defined now, not yet consumed.
+  # Font sizes ALIAS stylix.fonts.sizes.* (modules/nixos/desktop-fonts.nix),
+  # which the active display profile drives. Defined as the named view over the
+  # slots; not yet consumed by any surface — foot/waybar/fnott/GTK size via their
+  # Stylix slot, fuzzel via profile.fonts.launcher directly. The values noted are
+  # the 1.5× on-vocab band; the active 2× profile resolves smaller.
   type.size = {
-    chrome = config.stylix.fonts.sizes.desktop; # waybar
-    popup = config.stylix.fonts.sizes.popups; # fnott + fuzzel
-    terminal = config.stylix.fonts.sizes.terminal; # foot / TUI
+    chrome = config.stylix.fonts.sizes.desktop; # waybar slot (1.5× on-vocab: 13)
+    popup = config.stylix.fonts.sizes.popups; # fnott + GTK slot (1.5× on-vocab: 12)
+    terminal = config.stylix.fonts.sizes.terminal; # foot / TUI slot (1.5× on-vocab: 11)
   };
 
   # Line weight & radii (visual-identity.md §Line weight & radii). Static.
   geometry = {
-    borderWidth = spacing.s01; # = Carbon spacing-01; even width → crisp on 4K/1.5
-    cornerRadius = radius.md; # the chrome's corner radius — selects one ladder rung
+    borderWidth = profile.geometry.border; # display-profile-scaled; on-vocab is Carbon spacing-01
+    cornerRadius = profile.geometry.radius; # display-profile-scaled; on-vocab is radius.md
     inherit radius; # the M3 ladder vocabulary (sm/md/lg)
   };
 
   # niri layout primitive (visual-identity.md §Spacing — niri collapses
   # gutter+margin into one gaps value, so this is not a responsive grid). Static.
-  layout.gap = spacing.s05; # niri inter-window gap (= Carbon spacing-05)
+  layout.gap = profile.geometry.gap; # display-profile-scaled; on-vocab is Carbon spacing-05
 
   # Motion taxonomy (visual-identity.md §Motion). Structure only — duration tiers
   # and easings land under #111, decided against rendered reality.

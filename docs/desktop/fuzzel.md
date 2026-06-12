@@ -100,22 +100,26 @@ Stylix writes two sets of `programs.fuzzel.settings`:
 - `main.icon-theme` — picked from `stylix.polarity` via
   `stylix.icons.{dark,light}`.
 
-`home/nixos/fuzzel.nix` makes a few overrides. **Font**: `main.font` is
-set to the mono Nerd Font (`JetBrainsMono Nerd Font` at
-`stylix.fonts.sizes.popups`) via `lib.mkForce`, rather than the
-sansSerif slot (Inter) Stylix defaults to — so the launcher matches the
-rest of the chrome (foot, waybar). **Border**: `border.width = 2` (crisp
-on metis's 4K panel at scale 1.5), `border.radius = 12` (the M3-ladder
-radius token — fuzzel previously rode its own default 10, now pinned to
-the shared token so it matches niri/fnott), and `colors.border → base0D`,
-the idiomatic focus accent, matching niri's window border. Width and
-radius come from the design tokens (`lib/theme-tokens.nix`, #369). Stylix
-maps the border to base0E; the two slots are equal on metis's palette
-today, so the colour is a no-op *there* but correct by slot for
-portability. Other
-colours come from Stylix unchanged; the operator-facing settings
-(layer/anchor/terminal) are behaviour, not theming. See the accent map
-(#108).
+`home/nixos/fuzzel.nix` overrides the font and the border. **Font**:
+`main.font` is `lib.mkForce`d to the **mono** face (`Monaspace Argon
+Nerd Font`) — Stylix's fuzzel target writes the sansSerif slot, but
+under the hybrid font model the launcher is *driven* chrome
+(Omarchy-style), so it rides the terminal's mono alongside foot and
+waybar rather than the content sans. Its size is the launcher's own
+**display-profile** value (not a Stylix slot): the launcher is the one
+deliberately-larger focal element (Spotlight-style), so it sits a step
+above the rest of the band — at metis's 2× profile, size 11. **Border**:
+`border.width` and `border.radius` come from the geometry tokens
+(`lib/theme-tokens.nix`, #369), which are display-profile-scaled — at
+metis's 2× profile that renders width 2 / radius 9 (the on-vocab
+reference is 2 / `md` 12; fuzzel previously rode its own default radius
+10, now pinned to the shared token so it matches niri/fnott).
+`colors.border → base0D`, the idiomatic focus accent, matching niri's
+window border. Stylix maps the border to base0E; the two slots are
+equal on metis's palette today, so the colour is a no-op *there* but
+correct by slot for portability. Other colours come from Stylix
+unchanged; the operator-facing settings (layer/anchor/terminal) are
+behaviour, not theming. See the accent map (#108).
 
 **Keybind** — `home/nixos/niri.nix`:
 

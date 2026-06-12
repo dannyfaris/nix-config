@@ -19,9 +19,10 @@
 # /Library/Fonts (the system-wide font directory). After activation
 # the faces are selectable by name in any Mac app via Core Text /
 # Font Book. Consumers are thinner than on NixOS — there's no
-# fontconfig alias layer and Ghostty bundles its own JetBrainsMono —
-# so the practical effect is availability + parity, not an automatic
-# re-render anywhere.
+# fontconfig alias layer — but Stylix's ghostty target sets Ghostty's
+# font-family from the monospace slot (home/darwin/ghostty.nix), so the
+# terminal face tracks this module: the #369 swap to Monaspace Argon
+# re-renders Ghostty (the operator's own font-size pin stays).
 #
 # (config.stylix.fonts.packages carries the full Stylix set, so the
 # serif default — DejaVu Serif — rides along with the three named
@@ -43,13 +44,18 @@
 { config, pkgs, ... }:
 {
   stylix.fonts = {
+    # Terminal face — Monaspace Argon Nerd Font (matches foot on NixOS).
+    # Stylix's ghostty target renders Ghostty from this slot (see header).
     monospace = {
-      package = pkgs.nerd-fonts.jetbrains-mono;
-      name = "JetBrainsMono Nerd Font";
+      package = pkgs.nerd-fonts.monaspace;
+      name = "MonaspiceAr Nerd Font";
     };
+    # UI/web sans — IBM Plex Sans, installed for parity. macOS chrome uses
+    # the system font; this backs the sans-serif alias for any
+    # fontconfig-aware app, not native UI.
     sansSerif = {
-      package = pkgs.inter;
-      name = "Inter";
+      package = pkgs.ibm-plex;
+      name = "IBM Plex Sans";
     };
     emoji = {
       package = pkgs.noto-fonts-color-emoji;

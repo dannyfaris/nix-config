@@ -5,11 +5,10 @@
 # CSS (programs.waybar.style) with the full base16 palette as
 # @define-color variables, default background (@base00 with desktop
 # opacity), text (@base05), tooltips, and per-state workspace-button
-# styling (focused/active border @base05; urgent @base08). The font
-# defaults to monospace (JetBrains Mono Nerd Font on this host),
-# which is the right call for Nerd Font glyphs in network + tray.
-# We deliberately don't override Stylix's writes — the settings
-# below are behaviour-only.
+# styling (focused/active border @base05; urgent @base08). The font is
+# Stylix's monospace default (Monaspace Argon Nerd Font), sized by the
+# desktop slot — the bar rides the terminal mono (Omarchy-style), and the
+# Nerd Font carries the network/tray glyphs directly (no fallback needed).
 #
 # Lives under nixos/ because waybar is Linux-only — same placement
 # reasoning as foot.nix, fuzzel.nix, and fnott.nix. macOS hosts rely
@@ -59,12 +58,11 @@ in
       clock.format = "{:%I:%M %p  %a %d %b}"; # 02:23 PM  Fri 29 May
     };
 
-    # Active workspace indicator → the focus role (base0D, via theme-tokens).
-    # Stylix's waybar target colours the focused/active workspace underline
-    # @base05 (foreground); re-point it to the idiomatic accent slot so it
-    # matches niri's active border. Appended (mkAfter) with the same selectors
-    # as Stylix's rules — equal specificity, later in the sheet → wins. Colour
-    # only: width (3px) and the urgent @base08 state stay as Stylix writes them.
+    # Active-workspace underline → the focus role (base0D, via tokens).
+    # Appended (mkAfter — same selectors as Stylix's rules, later in the sheet
+    # → wins). Stylix colours the underline @base05 (foreground); re-point it to
+    # the idiomatic accent so it matches niri's active border. Colour only:
+    # width (3px) and the urgent @base08 state stay as Stylix writes them.
     # See theme-tokens.nix, docs/desktop/waybar.md, and the accent map (#108).
     style = lib.mkAfter ''
       .modules-left #workspaces button.focused,

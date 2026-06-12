@@ -105,7 +105,7 @@ The Stylix `ghostty` target writes the active base16 scheme into
 Ghostty's 16 ANSI slots (`theme = "stylix"` + a generated
 `themes.stylix` block covering background / foreground / cursor /
 selection / palette) and sets `font-family` to the Stylix monospace +
-emoji faces (`JetBrainsMono Nerd Font`, `Noto Color Emoji` — the faces
+emoji faces (`MonaspiceAr Nerd Font`, `Noto Color Emoji` — the faces
 `modules/darwin/desktop-fonts.nix` installs system-wide, #209). The
 palette tracks scheme + polarity flips with no extra wiring (#256).
 (The target also writes `background-opacity = 1.0` from
@@ -239,7 +239,7 @@ defaults read com.mitchellh.ghostty SUEnableAutomaticChecks  # → 1
 # Stylix theming (#256): base16 palette + Nerd Font, pinned size:
 grep -E 'theme|font-family|font-size' ~/.config/ghostty/config
 #   → theme = stylix
-#   → font-family = JetBrainsMono Nerd Font
+#   → font-family = MonaspiceAr Nerd Font
 #   → font-family = Noto Color Emoji
 #   → font-size = 13
 # and the macchina palette row (#206) now shows base16, not Ghostty defaults.

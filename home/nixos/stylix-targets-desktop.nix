@@ -47,8 +47,8 @@ in
     # docs/desktop/niri.md §Window decorations.
     niri.enable = true;
     # fuzzel — gates on `programs.fuzzel.enable`. Stylix writes font
-    # (Inter at popups size), full base16 palette across 11 slots, and
-    # polarity-driven icon-theme.
+    # (IBM Plex Sans at popups size — the chrome sans, #369), full base16
+    # palette across 11 slots, and polarity-driven icon-theme.
     fuzzel.enable = true;
     # fnott — gates on `services.fnott.enable`. Stylix writes three
     # fonts (title/summary/body), full colour palette including
@@ -59,9 +59,10 @@ in
     # (programs.waybar.style) with the full base16 palette as
     # @define-color variables, default background + text + tooltip
     # styling, and per-state workspace-button styling (focused/active
-    # @base05 border; urgent @base08). Font defaults to monospace
-    # (JetBrains Mono Nerd Font) for Nerd Font glyph coverage in
-    # network/tray modules.
+    # @base05 border; urgent @base08). Font is Stylix's monospace default
+    # (Monaspace Argon Nerd Font) — under the hybrid model the bar is driven
+    # chrome and rides the terminal mono, whose Nerd glyphs cover network/tray
+    # directly, so waybar.nix adds no font override or symbols fallback (#369).
     waybar.enable = true;
     # swaylock — gates on `programs.swaylock.enable` (set in
     # home/nixos/screen-lock.nix). Stylix writes the lock screen's
@@ -123,20 +124,20 @@ in
     gtk.enable = lib.mkIf desktopSession true;
   };
 
-  # GTK app-UI uses the desktop's one mono Nerd Font, not the sansSerif
-  # slot (Inter 12) Stylix's gtk target defaults to — so GTK chrome (the
-  # polkit prompt, GTK file pickers, GTK app dialogs) matches
-  # foot/waybar/fuzzel/fnott instead of standing out in Inter. Size 11 is
-  # the unified chrome size (#349), deliberately below the applications
-  # slot's 12. This is the #108 "Nerd Font into app-UI" boundary, decided
-  # for GTK app-UI; web/document body text is unaffected (the sansSerif
-  # fontconfig slot, still Inter). mkForce because Stylix's gtk target
-  # also writes gtk.font. See docs/desktop/fonts.md §Sizing.
+  # GTK app-UI uses the sansSerif chrome face (IBM Plex Sans), matching
+  # waybar/fnott/fuzzel since the #369 typography pass — GTK chrome (the
+  # polkit prompt, GTK file pickers, GTK app dialogs) is UI chrome, so it
+  # rides the proportional sans rather than the terminal's mono. Sized at the
+  # popups slot (the chrome body size, M3 body) so dialogs match the
+  # notification/launcher body, not the applications slot (12, which sizes
+  # web body text). This inverts the earlier mono-app-UI boundary (#349,
+  # #108). mkForce because Stylix's gtk target also writes gtk.font. See
+  # docs/desktop/fonts.md §Sizing.
   gtk.font = lib.mkIf desktopSession (
     lib.mkForce {
-      name = config.stylix.fonts.monospace.name;
-      package = config.stylix.fonts.monospace.package;
-      size = 11;
+      name = config.stylix.fonts.sansSerif.name;
+      package = config.stylix.fonts.sansSerif.package;
+      size = config.stylix.fonts.sizes.popups;
     }
   );
 }
