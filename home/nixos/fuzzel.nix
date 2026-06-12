@@ -6,10 +6,10 @@
 # slots) and `programs.fuzzel.settings.main.icon-theme` (polarity-
 # driven). We don't override Stylix's colour writes.
 #
-# Font: we DO override Stylix here. Stylix would default fuzzel to the
-# sansSerif slot (Inter); instead the whole Wayland chrome uses the one
-# mono Nerd Font (JetBrainsMono Nerd Font), so the launcher and the
-# power menu match foot and waybar. See docs/desktop/fuzzel.md.
+# Font: mono (Monaspace Argon), set below via mkForce. Stylix's fuzzel target
+# writes main.font to the sansSerif slot, but in the hybrid font model the
+# launcher rides the mono alongside the terminal (foot) and bar (waybar) —
+# Omarchy-style — not the sans. See docs/desktop/fuzzel.md.
 #
 # Lives under nixos/ because fuzzel is Wayland-only and doesn't
 # compile off Linux — same placement reasoning as foot.nix. macOS
@@ -25,6 +25,7 @@
 { config, lib, ... }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
+  profile = import ../../lib/display-profiles.nix; # active display profile — launcher size
 in
 {
   programs.fuzzel = {
@@ -35,11 +36,11 @@ in
         anchor = "top";
         terminal = "foot";
 
-        # Mono Nerd Font (monospace slot + popups size), overriding
-        # Stylix's sansSerif default so the launcher/menu matches the
-        # rest of the chrome. mkForce: Stylix's fuzzel target also
-        # writes main.font.
-        font = lib.mkForce "${config.stylix.fonts.monospace.name}:size=${toString config.stylix.fonts.sizes.popups}";
+        # Launcher → mono (Monaspace Argon), Omarchy-style — the bar/launcher
+        # ride the terminal mono, not the sans. mkForce: Stylix's fuzzel target
+        # writes main.font (sansSerif). Size from the active display profile (the
+        # launcher is the deliberately-large focal element).
+        font = lib.mkForce "${config.stylix.fonts.monospace.name}:size=${toString profile.fonts.launcher}";
       };
 
       # Border → the "focus" role (base0D) so the launcher frame uses the

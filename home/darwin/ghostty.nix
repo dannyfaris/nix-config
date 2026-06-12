@@ -16,7 +16,7 @@
   # the base16 palette into Ghostty's 16 ANSI slots (theme = "stylix"
   # + themes.stylix), plus background/foreground/cursor/selection, and
   # tracks polarity automatically (#256). It also sets font-family
-  # (JetBrainsMono Nerd Font + Noto Color Emoji, the faces #209
+  # (MonaspiceAr Nerd Font + Noto Color Emoji, the faces #209
   # installs system-wide) so TUI glyphs render — desirable.
   #
   # Placement: the enable lives here, colocated with the Ghostty

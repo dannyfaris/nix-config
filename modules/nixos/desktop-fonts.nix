@@ -13,35 +13,48 @@
 #
 # Per ADR-028; this slice landed under #69.
 { config, pkgs, ... }:
+let
+  # The three surface font sizes come from the active display profile, so they
+  # stay coupled to the niri output scale (metis runs 2×). See
+  # lib/display-profiles.nix.
+  profile = import ../../lib/display-profiles.nix;
+in
 {
   stylix.fonts = {
+    # Mono face — Monaspace Argon (humanist mono), Nerd Font variant for the
+    # powerline/devicon/file-type glyphs starship/zellij/lazygit rely on. In the
+    # hybrid font model it backs the terminal (foot) + the bar (waybar) +
+    # the launcher (fuzzel); the Nerd Font carries waybar's network/tray glyphs
+    # directly, so no Symbols fallback is needed. The fontconfig name is the Nerd
+    # Font's abbreviation: "MonaspiceAr" = Monaspace Argon.
     monospace = {
-      package = pkgs.nerd-fonts.jetbrains-mono;
-      name = "JetBrainsMono Nerd Font";
+      package = pkgs.nerd-fonts.monaspace;
+      name = "MonaspiceAr Nerd Font";
     };
+    # Sans + web-body face — IBM Plex Sans (coheres with the Carbon spacing scale
+    # already adopted). In the hybrid font model it backs notifications (fnott) +
+    # GTK dialogs + web/document body, and the sans-serif fontconfig alias.
     sansSerif = {
-      package = pkgs.inter;
-      name = "Inter";
+      package = pkgs.ibm-plex;
+      name = "IBM Plex Sans";
     };
     emoji = {
       package = pkgs.noto-fonts-color-emoji;
       name = "Noto Color Emoji";
     };
 
-    # Desktop chrome + terminal share one point size for cross-surface
-    # cohesion: foot (terminal slot), waybar (desktop slot), fuzzel +
-    # fnott (popups slot) all render at 11. There is no design basis
-    # for the terminal being larger than chrome, and foot's pinned
-    # `dpi-aware = no` sizes by the output scale factor — the same
-    # factor the chrome apps scale by — so one number reads
-    # consistently across all four. `applications` keeps the Stylix
-    # default — it sizes Firefox's web body text (and Qt apps, of which
-    # there are none); GTK app-UI is reassigned to the mono Nerd Font
-    # separately. See docs/desktop/fonts.md §Sizing.
+    # M3 type ramp (role-derived steps; #369), sized by the active display
+    # profile so the band stays coupled to the niri scale: waybar (desktop slot,
+    # mono) ≈ M3 label-medium; fnott + GTK dialogs (popups slot, sans) ≈ M3 body;
+    # foot (terminal slot, mono) sized on its own legibility terms. The on-vocab
+    # band (foot 11 / bar 13 / notif + dialog 12) lives on the 1.5× profile and
+    # is scaled per profile. `applications` keeps the Stylix default (12) — it
+    # sizes Firefox's web body text. The type.size tokens alias these. See
+    # docs/desktop/fonts.md §Sizing, theme-tokens.nix, and lib/display-profiles.nix.
     sizes = {
-      terminal = 11;
-      desktop = 11;
-      popups = 11;
+      terminal = profile.fonts.terminal; # foot (mono)
+      desktop = profile.fonts.desktop; # waybar (mono)
+      popups = profile.fonts.popups; # fnott + GTK dialogs (sans)
     };
   };
 

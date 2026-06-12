@@ -22,6 +22,7 @@
 { config, lib, ... }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
+  profile = import ../../lib/display-profiles.nix; # active display profile — output scale
 in
 {
   programs.niri.settings = {
@@ -30,6 +31,11 @@ in
     # and silently drops the shot when the parent is missing (niri #807).
     # See docs/desktop/keybinds.md §Screenshots.
     screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
+
+    # Output scale from the active display profile (metis runs 2×, overriding
+    # niri's auto-detected 1.5×). DP-1 is the LG UltraFine 4K. See
+    # lib/display-profiles.nix.
+    outputs."DP-1".scale = profile.scale;
 
     # Layout primitives — column width, border, and inter-window gap in one
     # block (one `layout` key; the geometry/spacing values come from tokens).

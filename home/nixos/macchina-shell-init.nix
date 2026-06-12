@@ -49,7 +49,7 @@ in
   # NixOS logo — two-tone pure-ASCII art displayed to the left of
   # system info. Glyph layout is the `NixOS2` logo from
   # fastfetch-cli/fastfetch (MIT), chosen for being 7-bit ASCII
-  # (` _/\` only) — every character is in JetBrainsMono Nerd Font
+  # (` _/\` only) — every character is in MonaspiceAr Nerd Font
   # natively, so foot never engages fontconfig fallback for this
   # banner. Sidesteps issue #161. Colour escapes (base0D / base0C
   # from the Stylix palette) applied here. Written to the generic
