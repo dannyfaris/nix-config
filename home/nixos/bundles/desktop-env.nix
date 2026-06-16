@@ -54,6 +54,10 @@
     ../fnott.nix
     ../screen-lock.nix
     ../waybar.nix
+    # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). Brought up
+    # alongside waybar/fuzzel/fnott/swaylock during the non-destructive
+    # migration; those are decommissioned in later slices.
+    ../noctalia-shell.nix
     ../firefox.nix
     ../cursor-ide.nix
     ../portal-color-scheme.nix

@@ -37,6 +37,11 @@ in
     # lib/display-profiles.nix.
     outputs."DP-1".scale = profile.scale;
 
+    # Noctalia Shell — spawned at session start (ADR-036, #385). The binary
+    # is `noctalia-shell` (a wrapper over Quickshell's qs). Non-destructive
+    # bring-up: runs alongside the existing bar/launcher until the cutover.
+    spawn-at-startup = [ { command = [ "noctalia-shell" ]; } ];
+
     # Layout primitives — column width, border, and inter-window gap in one
     # block (one `layout` key; the geometry/spacing values come from tokens).
     layout = {

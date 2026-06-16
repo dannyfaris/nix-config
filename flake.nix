@@ -79,6 +79,15 @@
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Noctalia Shell (v4 Quickshell line) — cohesive Wayland desktop shell
+    # for the Linux desktop (ADR-036, #385). Pinned to `legacy-v4`: `main`
+    # is the v5 C++ alpha (ADR-036 migration trigger). The input's own
+    # `noctalia-qs` runtime fork follows this nixpkgs, co-locking shell↔runtime.
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell/legacy-v4";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
