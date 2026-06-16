@@ -6,7 +6,7 @@
 # (xdg-desktop-portal-gnome — niri's chosen portal backend) reads
 # `/org/gnome/desktop/interface/color-scheme` from dconf and exposes
 # its value through the portal API. Apps that query the portal —
-# Firefox + Zen for both chrome and the web-content
+# Firefox for both chrome and the web-content
 # `prefers-color-scheme` CSS media query, libadwaita apps, GTK4 apps
 # via newer GTK builds — use that value to drive their dark/light
 # theming.
@@ -24,7 +24,7 @@
 # Without this bridge, `stylix.polarity = "dark"` (set per #141 +
 # the paired-schemes refactor #142) propagates to Stylix's per-tool
 # targets (foot, fuzzel, fnott, waybar) and the GTK base16 CSS, but
-# NOT to the portal — so Firefox / Zen / web-content
+# NOT to the portal — so Firefox / web-content
 # `prefers-color-scheme` queries report no preference and apps
 # render in their light defaults. This module closes the gap that
 # #141 left unresolved.

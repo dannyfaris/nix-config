@@ -50,7 +50,7 @@ nixos-vm), which render no fonts directly.
 coheres with the IBM Carbon spacing scale already adopted for
 geometry/spacing (visual-identity.md) — distinctive but restrained at
 small sizes. It backs the content surfaces — fnott notifications and
-GTK dialogs (see §Sizing) — and web/document body text (Firefox/Zen)
+GTK dialogs (see §Sizing) — and web/document body text (Firefox)
 via the `sans-serif` alias. Replaces Inter, which under the prior
 universal-mono stance backed only the web body. (The driven chrome —
 bar and launcher — is *not* sans; it rides the terminal mono. See the

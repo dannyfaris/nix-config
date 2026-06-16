@@ -14,7 +14,7 @@
 # under bundles/ at birth (PR #30, pre-lint) and reclassified here per
 # #65 — see ADR-027 §History for the rationale.
 #
-# Desktop targets (firefox, zen-browser, foot, fuzzel, fnott, waybar,
+# Desktop targets (firefox, foot, fuzzel, fnott, waybar,
 # gtk, qt) live in `home/nixos/stylix-targets-desktop.nix` because their
 # option paths only exist on hosts that import the desktop-env home
 # bundle. Splitting them out keeps this file evaluable on Darwin (where

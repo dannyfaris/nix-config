@@ -78,7 +78,7 @@ a contributor wants to verify the equivalence test in §Rationale.
 services and Widevine. Not a substitute for the operator's work
 workflow. Out.
 
-**Firefox / Zen / Arc / Safari** — out of scope; switching
+**Firefox / Arc / Safari** — out of scope; switching
 browsers is its own decision.
 
 ## Configuration
