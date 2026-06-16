@@ -6,9 +6,9 @@ Cohesive Wayland desktop shell built on [Quickshell](https://quickshell.org/). O
 
 ## Selection
 
-**Noctalia Shell, the v4 (Quickshell) line**, on the Linux desktop — adopted as both the cohesive shell *and* the sole theming authority there. Consumed via Noctalia's **own flake**, not the nixpkgs package: the declarative surface (`programs.noctalia-shell.{settings,colors,user-templates}`) lives in Noctalia's `nix/home-module.nix`, and the flake pins `noctalia-qs` — Noctalia's own Quickshell fork — so shell and runtime are co-locked in one input *(v4.7.7)*. Launched from niri via `spawn-at-startup`; the v4 systemd assets are removed upstream, so there is no systemd unit to manage.
+**Noctalia Shell, the v4 (Quickshell) line**, on the Linux desktop — adopted as both the cohesive shell *and* the sole theming authority there. Consumed via Noctalia's **own flake**, not the nixpkgs package: the declarative surface (`programs.noctalia-shell.{settings,colors,user-templates}`) lives in Noctalia's `nix/home-module.nix`, and the flake pins `noctalia-qs` — Noctalia's own Quickshell fork — so shell and runtime are co-locked in one input *(v4.7.7)*. Launched from niri via `spawn-at-startup` (the binary is `noctalia-shell`, a wrapper over Quickshell's `qs`); the module's systemd unit is opt-in and left off (the v4 systemd path is deprecated upstream). The home module installs the binary only when `programs.noctalia-shell.package` is set, so the package is wired explicitly from the flake input.
 
-Stylix, the curated base16 palette, and the hybrid mono/sans typography retreat to every other host (mercury, nixos-vm, mac-mini today). On the Linux desktop, Noctalia owns colour, runtime polarity, and fonts, driven from its bundled **Rose Pine predefined scheme**.
+On the Linux desktop, Noctalia owns colour, runtime polarity, and fonts, driven from its bundled **Rose Pine predefined scheme**; Stylix stops theming the desktop. The other hosts (mercury, nixos-vm, mac-mini) keep pure declarative Stylix unchanged. Initial implementation is **E1**: Stylix stays *enabled* on the desktop as a static colour table for a handful of TUI statuslines while every Stylix desktop target-writer is removed — see Sharp edges.
 
 ## Rationale
 
@@ -51,7 +51,7 @@ Planned wiring; lands in reviewable slices behind ADR-036, each validated on the
 - **Live refresh** — foot and helix get `user-template` `post_hook`s (`pkill -USR1 foot`; helix config-reload) because Noctalia writes the theme file but sends *no* reload signal of its own; already-open instances stay on the old colours until signalled *(v4.7.7; on-box pending)*.
 - **Fonts** — Noctalia owns its own surfaces' fonts; foot's font is re-homed onto `foot.nix` directly (Noctalia's templating is colour-only and cannot set a terminal font) *(v4.7.7)*.
 
-**Stylix removal on the Linux desktop** — host-gate `home/shared/stylix-targets.nix` to exclude the desktop host; drop the desktop host's entry from `lib/host-palettes.nix`; re-source `lib/theme-tokens.nix` sizing from `lib/display-profiles.nix` for the desktop; move font *installation* off `stylix.fonts` to a plain `fonts.packages` set.
+**Stylix target-writer excision on the Linux desktop (E1)** — remove `home/shared/stylix-targets.nix` from the desktop host's `extraHomeModules` and `home/nixos/stylix-targets-desktop.nix` from the desktop home bundle (import-splits); move font *installation* off `stylix.fonts` to `fonts.packages` + `fontconfig.defaultFonts`; source niri geometry/sizing from `lib/display-profiles.nix`. Keep `stylix.enable` + the host's palette entry as a static colour table for the TUI statuslines. Full literal removal (E2) is deferred — see Sharp edges.
 
 **Keybinds** — repoint `Mod+Space` / `Hyper+Space` (launcher) and bar/notification actions to `noctalia-shell ipc call …` (arguments passed as lists, per upstream). The Hyper namespace (#376) and the screenshot chords are unaffected; screenshots stay niri-native.
 
@@ -67,9 +67,11 @@ Planned wiring; lands in reviewable slices behind ADR-036, each validated on the
 
 **zellij / bat / fzf ship no upstream template.** All three are hand-authored `user-templates` we own and maintain, reload signals included *(v4.7.7)*.
 
+**Stylix isn't fully removed on the desktop (E1, initial implementation).** Four cross-platform TUI statuslines — zellij's zjstatus bar (`multiplexer.nix`), `gh-dash.nix`, the Claude statusline (`agent-clis.nix`), `macchina-shell-init.nix` — read `config.lib.stylix.colors` at Nix eval time and have no Noctalia equivalent (Noctalia themes by writing files; these read Nix values). So E1 keeps `stylix.enable` + the rose-pine palette entry as a static build-time colour table for those statuslines while removing every Stylix *desktop target-writer*; Noctalia themes every rendered surface, so there is no two-writer seam. Full literal removal — re-home those four `shared/` modules onto a standalone rose-pine table and drop the palette entry — is the deferred **E2** refinement. See ADR-036 §Refinement.
+
 **Qt returns to the Linux desktop.** v4 is Quickshell is Qt — this walks back the Qt-free property #103 helped secure and ADR-029 called an "unambiguous win." The closure grows on the desktop host (mate-polkit stays — Noctalia is not a polkit agent). Conscious cost, recorded in ADR-036.
 
-**v4 is frozen into maintenance upstream.** Development has moved to v5; v4 receives no new features and only limited fixes. We adopt a deliberately-frozen codebase — stable, but a waypoint, not a destination.
+**v4 is frozen into maintenance upstream; pin the `legacy-v4` branch.** Development has moved to v5 — the repo's `main` is now `noctalia-5.0.0` (the Qt-free C++ alpha), so the flake input must pin `github:noctalia-dev/noctalia-shell/legacy-v4` (latest v4 tag: `v4.7.7`), never bare `HEAD`. We adopt a deliberately-frozen codebase — stable, but a waypoint, not a destination.
 
 **Lock needs no manual PAM entry.** Noctalia auto-detects NixOS and reuses the system `/etc/pam.d/login` service for password unlock (`NOCTALIA_PAM_SERVICE` overrides); the NixOS module adds no PAM service of its own. So password unlock works without a `security.pam.services.noctalia` entry — but nothing Noctalia-specific is created either, so a fingerprint/bespoke stack is on us *(v4.7.7; on-box pending — confirm lock before decommissioning swaylock)*.
 
