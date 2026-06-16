@@ -34,9 +34,11 @@ in
     backupFileExtension = "hm-bak";
 
     # `inputs` is forwarded so HM modules can import flake-provided HM
-    # modules internally (e.g. `inputs.zen-browser.homeModules.default`
-    # in home/nixos/zen-browser.nix). Repo-local HM modules that don't
-    # need flake-input access can ignore the arg.
+    # modules internally (an `inputs.<flake>.homeModules.default` import
+    # inside a home/ module). No HM module consumes it today — the
+    # zen-browser module that did was retired (#127) — but it is kept as
+    # the extension point for future flake-input HM modules. Repo-local
+    # HM modules that don't need flake-input access ignore the arg.
     #
     # `zellijCacheDir` is the platform-specific dir where zellij reads/
     # writes permissions.kdl; passed in so home/shared/multiplexer.nix can

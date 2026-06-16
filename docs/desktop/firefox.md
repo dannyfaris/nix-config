@@ -73,10 +73,12 @@ sidebar features aren't earning their keep against Firefox's
 own vertical-tabs experiment.
 
 **Zen** — Firefox-derived, modern split-view + workspaces UI;
-gaining notable nixpkgs-community traction in 2025-2026. Passed
-over because it's still pre-1.0, no Stylix target, and the
-workflow features (split view, tab workspaces) overlap with
-niri's tiling — niri does that job at the WM layer.
+gaining notable nixpkgs-community traction in 2025-2026. Trialled
+on metis as a parallel audit install with its own Stylix target
+(#127) and retired: its split-view / tab-workspace workflow
+overlaps with niri's tiling — niri does that job at the WM layer —
+so it didn't earn displacing Firefox. See [zen.md](./zen.md) for
+the retirement record.
 
 **Mullvad Browser** — Tor-Browser-derived hardened Firefox built
 with Mullvad; closer to LibreWolf in stance but without the

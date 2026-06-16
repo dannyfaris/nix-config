@@ -5,7 +5,7 @@
 #
 # Lives under `home/nixos/` because every entry here is driven by a
 # module that's Linux-only today (foot/fuzzel/fnott/waybar via Wayland;
-# firefox/zen-browser via the launcher integration in `home/nixos/`;
+# firefox via the launcher integration in `home/nixos/`;
 # gtk/qt theming as part of the niri session). Imported by
 # `home/nixos/bundles/desktop-env.nix` so desktop hosts pick it up
 # transitively without needing a separate import line.
@@ -82,26 +82,6 @@ in
     # `programs.firefox.profiles.default` in firefox.nix) must stay in
     # lockstep.
     firefox = {
-      enable = true;
-      profileNames = [ "default" ];
-    };
-    # zen-browser — audit-phase parallel installation alongside Firefox
-    # per #127. Stylix's `targets.zen-browser` *option* is always
-    # declared via the autoload mechanism; what gates is the target's
-    # *config* emission, which is wrapped in
-    # `lib.optionals (options.programs ? zen-browser) [ … ]` inside
-    # `modules/zen-browser/hm.nix` upstream — and `programs.zen-browser`
-    # only exists where the flake HM module is imported (metis, via
-    # `home/nixos/zen-browser.nix`). Net: writes prefs on metis only.
-    # profileNames must match the profile declared in zen-browser.nix.
-    # Stylix writes font name prefs, reader-mode colours, userChrome.css
-    # (full base16 mapping into Zen's own --zen-* variable surface), and
-    # userContent.css (about:-page chrome styling). `enableCss = true`
-    # is the upstream default and intentionally not restated — disabling
-    # it would defeat the audit. Unlike Firefox's target, Zen's does NOT
-    # write font.size — Zen falls back to its built-in font sizing; see
-    # docs/desktop/zen.md §Sharp edges.
-    zen-browser = {
       enable = true;
       profileNames = [ "default" ];
     };

@@ -21,16 +21,12 @@
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
-#   - zen-browser.nix — programs.zen-browser.enable + stub default
-#     profile. Audit-phase parallel installation alongside Firefox
-#     per #127; HM module sourced from the 0xc000022070 community
-#     flake. See docs/desktop/zen.md.
 #   - cursor-ide.nix — home.packages addition for pkgs.code-cursor
 #     (AI-coding-focused vscode fork; Wayland via host-wide
 #     NIXOS_OZONE_WL set in modules/nixos/electron-wayland.nix).
 #   - portal-color-scheme.nix — bridges `stylix.polarity` to the
 #     xdg-desktop-portal `color-scheme` interface via dconf so
-#     portal-querying apps (Firefox, Zen, libadwaita) follow the
+#     portal-querying apps (Firefox, libadwaita) follow the
 #     host's polarity. Closes the gap #141 left unresolved.
 #   - polkit-agent.nix — mate-polkit (GTK3) authentication agent,
 #     replacing niri-flake's default KDE agent (disabled system-side
@@ -59,7 +55,6 @@
     ../screen-lock.nix
     ../waybar.nix
     ../firefox.nix
-    ../zen-browser.nix
     ../cursor-ide.nix
     ../portal-color-scheme.nix
     ../polkit-agent.nix

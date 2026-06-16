@@ -58,8 +58,8 @@ in
     enable = true;
     autoEnable = false;
     base16Scheme = "${pkgs.base16-schemes}/share/themes/${scheme}.yaml";
-    # Per-host polarity so dark-aware apps (Firefox web content, Zen
-    # chrome, GTK file pickers, Qt platform theme) follow the host's
+    # Per-host polarity so dark-aware apps (Firefox web content, GTK
+    # file pickers, Qt platform theme) follow the host's
     # actual visual intent. Also drives the scheme selection above.
     inherit (palette) polarity;
     # Per-host slot corrections for ports that violate base16 slot

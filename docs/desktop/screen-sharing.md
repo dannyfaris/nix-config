@@ -9,7 +9,7 @@ Screen sharing in browsers and calls for the niri desktop on metis (#101). Cover
 The chain, end to end:
 
 ```
-app (Firefox / Zen)
+app (Firefox)
   → xdg-desktop-portal            (frontend, org.freedesktop.portal.ScreenCast)
   → xdg-desktop-portal-gnome      (backend, org.freedesktop.impl.portal.ScreenCast)
   → org.gnome.Mutter.ScreenCast   (implemented by niri itself)
@@ -22,7 +22,7 @@ app (Firefox / Zen)
 
 **It is already what niri-flake selects, so "keep" is the lowest-surprise call.** `xdg.portal` arrives from niri-flake and the repo deliberately does not re-assert it — `libsecret.nix` records exactly this "inherited and not re-asserted" precedent for `xdg.portal`. The screencast backend and PipeWire arrive through the same transitive wiring. Re-declaring `services.pipewire.enable` or pinning `xdg.portal.config.screencast` in this repo would duplicate upstream defaults that could later drift out of sync, for no behavioural gain. The consistent stance is to **rely on niri-flake's wiring and document the dependency here**, rather than re-state it in Nix. If niri-flake ever stops providing the backend, this doc plus the empirical test below is what catches it.
 
-**The browser surface needs no wiring.** metis browses with Firefox and Zen (both Gecko, both native Wayland). Gecko 121+ enables PipeWire/Wayland screen sharing by default and auto-detects `WAYLAND_DISPLAY` — no `media.webrtc` prefs, no flags. There is no Chromium daily-driver on metis, so the Chromium-specific "must run native Ozone Wayland to use the portal" caveat does not apply today; if a Chromium-based app is added later, that becomes its concern to document.
+**The browser surface needs no wiring.** metis browses with Firefox (Gecko, native Wayland). Gecko 121+ enables PipeWire/Wayland screen sharing by default and auto-detects `WAYLAND_DISPLAY` — no `media.webrtc` prefs, no flags. There is no Chromium daily-driver on metis, so the Chromium-specific "must run native Ozone Wayland to use the portal" caveat does not apply today; if a Chromium-based app is added later, that becomes its concern to document.
 
 ## Alternatives considered
 
