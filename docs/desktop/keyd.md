@@ -30,7 +30,7 @@ keyd remaps at the **evdev layer**, below libinput and the compositor, so the mo
 
 **keyd with tap-Escape (`overload(hyper, esc)`)** — the popular "tap Caps = Escape, hold = Hyper." Deliberately *not* adopted, to stay in lockstep with the mac, which is hold-only today (karabiner.md flags `to_if_alone` tap-Escape as a future *symmetric* extension, not a current one). If tap-Escape is ever wanted, it should land on both platforms together so parity holds.
 
-**kanata** — a more capable (QMK-like, layers/tap-hold/chords) Rust remapper. Heavier and more configuration surface than this single mapping needs; keyd's one-line remap is the thin transparent layer, the same minimalism that picked a single Karabiner rule over Goku/Hammerspoon-for-remaps on the mac side. Revisit only if the remap needs grow into real layering.
+**kanata** — a more capable (QMK-like, layers/tap-hold/chords) Rust remapper. Heavier and more configuration surface than this single mapping needs; keyd's one-line remap is the thin transparent layer, the same minimalism that picked a single Karabiner rule over Goku/Hammerspoon-for-remaps on the mac side. Its one apparent edge — a single remapper for both hosts — is weaker than it looks: kanata on macOS runs *on* Karabiner's DriverKit driver, so adopting it would not even remove the Karabiner dependency (and nixpkgs ships no nix-darwin module), trading two short single-purpose configs for one tool plus a hand-rolled root daemon. Revisit only if the remap needs grow into real layering — the one case where kanata's shared layered/leader DSL across both platforms would justify that macOS cost.
 
 ## Configuration
 
