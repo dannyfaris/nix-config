@@ -140,9 +140,19 @@ in
       "Mod+Ctrl+8".action.move-window-to-workspace = 8;
       "Mod+Ctrl+9".action.move-window-to-workspace = 9;
 
-      # Spawn — terminal + application launcher
+      # Spawn — terminal + application launcher. The launcher is now
+      # Noctalia's IPC-driven app launcher (ADR-036, #385): `noctalia-shell
+      # ipc call launcher toggle`. Passed as an argv list — niri spawns it
+      # directly (no shell). fuzzel stays installed until decommission, so
+      # this repoint is reversible.
       "Mod+Return".action.spawn = "foot";
-      "Mod+Space".action.spawn = "fuzzel";
+      "Mod+Space".action.spawn = [
+        "noctalia-shell"
+        "ipc"
+        "call"
+        "launcher"
+        "toggle"
+      ];
 
       # Hyper — the cross-platform layer (nav/spawn/system; see keybinds.md).
       # keyd realizes Caps Lock → Hyper
@@ -165,7 +175,13 @@ in
       "Mod+Ctrl+Alt+Shift+7".action.focus-workspace = 7;
       "Mod+Ctrl+Alt+Shift+8".action.focus-workspace = 8;
       "Mod+Ctrl+Alt+Shift+9".action.focus-workspace = 9;
-      "Mod+Ctrl+Alt+Shift+Space".action.spawn = "fuzzel";
+      "Mod+Ctrl+Alt+Shift+Space".action.spawn = [
+        "noctalia-shell"
+        "ipc"
+        "call"
+        "launcher"
+        "toggle"
+      ];
       # Hyper+Return → foot, mirroring the mac's Hyper+Return → Ghostty.
       "Mod+Ctrl+Alt+Shift+Return".action.spawn = "foot";
       # Hyper+B → the system default browser. A neutral https URL resolves
