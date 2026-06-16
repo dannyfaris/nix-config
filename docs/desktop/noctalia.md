@@ -8,7 +8,7 @@ Cohesive Wayland desktop shell built on [Quickshell](https://quickshell.org/). O
 
 **Noctalia Shell, the v4 (Quickshell) line**, on the Linux desktop — adopted as both the cohesive shell *and* the sole theming authority there. Consumed via Noctalia's **own flake**, not the nixpkgs package: the declarative surface (`programs.noctalia-shell.{settings,colors,user-templates}`) lives in Noctalia's `nix/home-module.nix`, and the flake pins `noctalia-qs` — Noctalia's own Quickshell fork — so shell and runtime are co-locked in one input *(v4.7.7)*. Launched from niri via `spawn-at-startup` (the binary is `noctalia-shell`, a wrapper over Quickshell's `qs`); the module's systemd unit is opt-in and left off (the v4 systemd path is deprecated upstream). The home module installs the binary only when `programs.noctalia-shell.package` is set, so the package is wired explicitly from the flake input.
 
-On the Linux desktop, Noctalia owns colour, runtime polarity, and fonts, driven from its bundled **Rose Pine predefined scheme**; Stylix stops theming the desktop. The other hosts (mercury, nixos-vm, mac-mini) keep pure declarative Stylix unchanged. Initial implementation is **E1**: Stylix stays *enabled* on the desktop as a static colour table for a handful of TUI statuslines while every Stylix desktop target-writer is removed — see Sharp edges.
+On the Linux desktop, Noctalia owns colour, runtime polarity, and fonts in its default, idiomatic look (no ported palette, no forced scheme); Stylix stops theming the desktop. The other hosts (mercury, nixos-vm, mac-mini) keep pure declarative Stylix unchanged. Initial implementation is **E1**: Stylix stays *enabled* on the desktop as a static colour table for a handful of TUI statuslines while every Stylix desktop target-writer is removed — see Sharp edges.
 
 ## Rationale
 
@@ -44,10 +44,10 @@ Planned wiring; lands in reviewable slices behind ADR-036, each validated on the
 
 **Flake + module** — add the Noctalia flake input (`inputs.nixpkgs.follows = "nixpkgs"`, per repo convention); import `homeModules.default`; set `programs.noctalia-shell.enable = true`; spawn from niri via `spawn-at-startup`.
 
-**Theming** — select Noctalia's bundled **Rose Pine predefined scheme** so the terminal templates resolve against a *real* 16-colour ANSI palette (predefined mode), not the Material-3 approximation that wallpaper-derived mode emits *(v4.7.7)*. Surface coverage:
+**Theming** — vanilla Noctalia: its **default** look (default scheme / wallpaper-derived, managed at runtime via its control centre) plus its **built-in templates** for external apps. No predefined-scheme selection, no palette porting, no terminal-palette fidelity chase. Surface coverage:
 
-- **Native + built-in templates** — Noctalia's own chrome, plus niri borders, GTK, foot, helix (Noctalia ships templates for these) *(v4.7.7)*. This moots the niri-chrome-colours work (#110) on the Linux desktop: Noctalia's niri template owns the border colours.
-- **Hand-authored `user-templates`** — zellij, bat, fzf (no built-in template upstream) *(v4.7.7)*. Declared in Nix (attrset → TOML), each with its own reload `post_hook`.
+- **Native + built-in templates** — Noctalia's own chrome, plus niri borders, GTK, foot, helix, starship, yazi, btop (Noctalia ships built-in templates for these) *(v4.7.7)*. This moots the niri-chrome-colours work (#110) on the Linux desktop: Noctalia's niri template owns the border colours.
+- **Gaps (no upstream template)** — zellij, bat, fzf: left at their app defaults under the vanilla call, or given small `user-templates` (Nix attrset → TOML, each with its own reload `post_hook`) if wanted *(v4.7.7)*.
 - **Live refresh** — foot and helix get `user-template` `post_hook`s (`pkill -USR1 foot`; helix config-reload) because Noctalia writes the theme file but sends *no* reload signal of its own; already-open instances stay on the old colours until signalled *(v4.7.7; on-box pending)*.
 - **Fonts** — Noctalia owns its own surfaces' fonts; foot's font is re-homed onto `foot.nix` directly (Noctalia's templating is colour-only and cannot set a terminal font) *(v4.7.7)*.
 
@@ -59,7 +59,7 @@ Planned wiring; lands in reviewable slices behind ADR-036, each validated on the
 
 ## Sharp edges
 
-**Predefined mode is mandatory for a real terminal palette.** Noctalia's flagship wallpaper-derived mode exposes only Material-3 slots and *fakes* a 16-colour ANSI palette by mapping it onto those slots; only the predefined-scheme path carries a genuine `terminal.{normal,bright}` block. Drive from a bundled predefined scheme or the terminal palette is an approximation *(v4.7.7)*.
+**The terminal palette is whatever Noctalia's default produces (deliberately not engineered).** Noctalia's wallpaper-derived mode maps ANSI onto its M3 slots (an approximation); only its predefined-scheme mode carries a genuine `terminal.{normal,bright}` block *(v4.7.7)*. Per the operator's vanilla call we use Noctalia's default and don't chase fidelity — selecting a predefined scheme remains the lever if a faithful terminal palette is ever wanted.
 
 **No default reload signal.** The per-app applier writes theme files but only signals a subset (kitty, ghostty, GTK, btop, hyprland, sway). **foot and helix are write-only** — Noctalia does not `pkill -USR1` them. Live repaint of open terminals depends entirely on our own `post_hook`s, which must be validated on the box *(v4.7.7; on-box pending)*.
 
