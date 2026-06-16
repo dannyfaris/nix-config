@@ -1,0 +1,90 @@
+# ADR-036: Noctalia shell on the Linux desktop — a cohesive Quickshell shell as sole theming authority
+
+**Date**: 2026-06-16
+**Status**: Accepted, Implementation pending
+
+> Adopts [Noctalia Shell](https://github.com/noctalia-dev/noctalia-shell) (the v4 Quickshell line) on the Linux desktop environment (per ADR-028/029) as a single cohesive shell — bar, launcher, notifications, lock, OSD, control-centre, clipboard, tray, dock, wallpaper, idle — *and* as the sole theming authority there. Stylix and the curated base16 palette retreat from the desktop and remain authoritative on every other host; on the desktop, Noctalia owns colour, runtime polarity, and fonts, driven from its bundled Rose Pine predefined scheme. **Supersedes [ADR-035](./ADR-035-runtime-theme-polarity.md)** (tinty): Noctalia subsumes the runtime-polarity layer on the desktop surface it targeted. **Amends [ADR-029](./ADR-029-niri-only-desktop.md)** (a cohesive shell returns to the Linux desktop; the per-tool status-bar/launcher/notification/lock selections are subsumed there) **and [ADR-028](./ADR-028-stylix-foundation-and-desktop-env.md) §Decision item 1** (Stylix is no longer the Linux-desktop theming source of truth). Scoped to the Linux desktop environment; theming on every other host is untouched.
+
+## Context
+
+ADR-029 retracted Dank Material Shell and committed the Linux desktop to a niri-only, per-tool stack — waybar + fuzzel + fnott + swaylock, each themed by Stylix's per-host base16 palette. That stack is live and works. ADR-035 then *proposed* tinty as a runtime polarity/scheme layer over the Stylix base, to deliver the interactive flip (#143) the declarative model can't — but it is unbuilt, carries prerequisite wiring (foot `[colors-light]`, zellij `theme_dark`/`theme_light`), and bypasses the per-host slot corrections (#331).
+
+The operator's reframing: stop hand-composing the desktop surface tool-by-tool and adopt a cohesive shell, *if* one exists that doesn't re-import the failure mode that sank DMS. Noctalia v4 was evaluated against that bar (see `docs/desktop/noctalia.md` for the full selection record). The hard question this ADR must answer is not "is Noctalia nice" but **why a Quickshell-based cohesive shell is acceptable now when ADR-029 retracted one for structural version-skew and called dropping Qt + Quickshell an "unambiguous win."**
+
+A second decision rides along. Once a shell owns the chrome *and* can drive a runtime polarity flip natively, the question becomes how far its authority should reach. The operator chose the maximal, coherent end: Noctalia as the *sole* theming authority on the Linux desktop, displacing Stylix there entirely — accepting the loss of the curated palette, the per-host slot corrections, and the hybrid mono/sans typography on the desktop, in exchange for a single runtime conductor with no two-writer seam.
+
+## Decision
+
+**1. Adopt Noctalia v4 on the Linux desktop as the cohesive shell.** It owns bar, launcher, notifications, lock, OSD, control-centre, clipboard history, tray, dock, wallpaper, desktop widgets, session menu, and idle. Launched via niri `spawn-at-startup` (not systemd; the v4 systemd assets are removed upstream), with only benign `window-rule`/`layer-rule` entries — **no `include` injection into niri's config**. Screenshots stay niri-native.
+
+**2. Consume Noctalia via its own flake input, not the nixpkgs package.** The declarative surface — `programs.noctalia-shell.{settings,colors,user-templates}` — lives in Noctalia's `nix/home-module.nix`, not in nixpkgs or home-manager. The flake input pins `noctalia-qs` (Noctalia's Quickshell fork) by construction, so shell and runtime are version-matched in one lock. `inputs.nixpkgs.follows = "nixpkgs"` keeps it on our `nixos-unstable` channel (ADR-030), per repo convention; the cachix-vs-`follows` tradeoff is an implementation detail (see §Implementation).
+
+**3. Noctalia is the sole theming authority on the Linux desktop; Stylix is removed there.** Drive Noctalia from its bundled **Rose Pine predefined scheme** so the terminal templates resolve against a *real* 16-colour ANSI palette (predefined mode), not the Material-3 approximation that wallpaper-derived mode produces. Noctalia owns runtime polarity and scheme selection. Surface coverage:
+   - **Native + built-in templates**: its own chrome, plus niri borders, GTK, foot, and helix (Noctalia ships templates for these).
+   - **Hand-authored `user-templates`**: zellij, bat, fzf (no built-in template upstream).
+   - **Live refresh**: foot and helix get `user-template` `post_hook`s (`pkill -USR1 foot`, helix reload) because Noctalia sends no reload signal by default — already-open terminals must be signalled to repaint on a flip.
+   - **Fonts**: Noctalia owns its own surfaces; foot's font is re-homed onto `foot.nix` directly (Noctalia's templating is colour-only and cannot set a terminal font).
+
+**4. Stylix, the curated palette, and the hybrid typography retreat to every other host.** Every host without the Linux desktop (the headless and non-desktop hosts, and the macOS client — mercury, nixos-vm, mac-mini today) keeps pure declarative Stylix unchanged, including the per-host slot corrections (#331). The desktop host's entry leaves `lib/host-palettes.nix`; `home/shared/stylix-targets.nix` (the cross-platform TUI targets) becomes host-gated to exclude the desktop host; the desktop's niri geometry/sizing re-sources from `lib/display-profiles.nix` directly rather than via `stylix.fonts.sizes`.
+
+**5. Supersede ADR-035.** tinty had no home beyond the Linux desktop (headless hosts keep polarity as identity; the macOS client's reach is too thin). With Noctalia owning the runtime flip on the desktop, tinty is retired before implementation — Noctalia ships the engine ADR-035 would have hand-assembled from per-surface signal hooks.
+
+## Rationale
+
+**Why Noctalia clears the bar DMS failed — each limb of the ADR-029 failure is neutralised.** ADR-029's retraction rested on three independently-pinned upstreams (DMS / quickshell / niri-flake) skewing apart:
+- *AppId-pragma skew* (DMS `shell.qml` against a trailing nixpkgs quickshell) → **removed at its source**: the Noctalia flake pins `noctalia-qs` in the *same input* as the shell QML, so shell and runtime bump together in one lock — the *inter-pin* divergence that produced the pragma mismatch is gone. `noctalia-qs` is itself a fork that tracks Quickshell upstream, so a Quickshell-vs-niri protocol change is not impossible — but that is one external pin moving, not three skewing apart.
+- *systemd start-limit crash loop* → **gone**: v4 launches from the compositor; the systemd path is removed upstream.
+- *niri `include` parse-failure → silent default fallback* → **gone**: Noctalia integrates by a spawn line plus benign rules, injecting nothing into niri's config.
+
+**The condition that sank DMS does not hold here.** ADR-029's core premise was "NixOS rewards stable pinned inputs; we cannot ride three trailing upstreams." But we track `nixos-unstable` (ADR-030), and the cohesive shell is now a *single* upstream whose shell and runtime are co-locked in *one* flake input — not three projects (shell / nixpkgs-quickshell / niri-flake) with divergent cadences. The three-pin *combinatorial* skew is gone; what remains is the ordinary risk that `noctalia-qs` lags Quickshell while niri-flake moves — one external seam to watch on a bump, not a divergence lattice.
+
+**Why sole-authority on the desktop, rather than coexisting with Stylix.** A shell that owns runtime polarity *and* a Stylix base that writes colours at build time means two writers per surface and a reassert-on-rebuild flip-flop. Making Noctalia the sole authority on the Linux desktop collapses that to one conductor with no seam. The operator explicitly wants Noctalia to own polarity and colour and is willing to drop the curated palette, slot corrections, and typography on the desktop — so the cleanest model is also the chosen one. The cross-platform palette work is preserved where it still pays: every other host.
+
+**Why predefined mode, not wallpaper-derived.** Noctalia emits a genuine 16-colour terminal palette only when driven from a bundled predefined scheme; its flagship wallpaper-derived mode produces a Material-3 approximation of ANSI. Rose Pine ships as a bundled predefined scheme, so the desktop keeps its visual identity *and* gets a real terminal palette.
+
+**vs keeping Stylix for the in-terminal TUI only** — rejected by the operator. It avoids the module fork and keeps base16 fidelity, but leaves the terminal contents static on a live polarity flip (light chrome over a dark terminal until rebuild). Full coherence was preferred over the split-brain seam.
+
+**vs ADR-035 / tinty** — superseded. tinty would deliver the same flip via hand-assembled per-surface hooks, with prerequisite wiring and a slot-correction bypass to solve. Noctalia ships the runtime engine, and — because Stylix leaves the desktop — the slot-correction-bypass problem evaporates rather than needing a fix.
+
+**Confronting ADR-029's "cohesion didn't pay."** It didn't, *for DMS*, because the payback was eaten by upstream-coordination cost across three projects. Noctalia removes that cost (single flake-pinned upstream + own runtime fork + compositor-spawn + zero config injection). The cost that remains is bounded and local: a handful of `user-templates` and `post_hook`s for the TUI tier, all confined to the desktop. That is a different, smaller bet than the one ADR-029 declined.
+
+## Consequences
+
+- ✓ One cohesive shell ends the hand-stitching; runtime polarity reaches the whole reachable surface, including open terminals (via `post_hook` signals) — the #143 goal, delivered by the shell rather than a bespoke layer.
+- ✓ ADR-035 / tinty retired before implementation: one fewer sanctioned runtime layer to build and maintain; its prerequisite wiring and slot-correction bypass cease to be work.
+- ✓ Blast radius is the Linux desktop only; every other host stays pure declarative Stylix, palette and slot corrections intact.
+- ✓ Declarative-friendly: `settings`/`colors`/`user-templates` are Nix values rendered to read-only store symlinks — Nix stays authoritative, fitting the repo's declare-first ethos. (Trade-off: the GUI scheme-tweaker is not a live source of truth; runtime GUI edits don't persist back.)
+- ✓ #110 (niri chrome colours, previously latent Stylix work) is mooted on the Linux desktop — Noctalia's niri template owns the border colours.
+- ✗ **Qt returns to the Linux desktop.** This directly walks back ADR-029 §Consequences' "Qt6 + Quickshell … leave the closure. Unambiguous win." A conscious reversal: Noctalia v4 *is* Quickshell *is* Qt. The closure grows on the desktop host (other hosts unaffected).
+- ✗ **Two migrations.** v4 (Qt) now; v5 (the Qt-free C++ rewrite) later, once it leaves alpha — and v5 is a fresh install, not an in-place upgrade. Adopting v4 is "Qt now, deliberate re-setup on v5 later," not a one-time move.
+- ✗ **Bespoke template maintenance.** foot/helix `post_hook`s and the zellij/bat/fzf `user-templates` are the operator's to author and keep working; "does an open terminal actually repaint on a flip" must be validated on the box, not assumed (Noctalia sends no reload signal by default).
+- ✗ **A cross-platform module forks.** `home/shared/stylix-targets.nix` gains a desktop-host exclusion (previously uniform across hosts), and `lib/theme-tokens.nix`'s `stylix.fonts.sizes` coupling is re-sourced for the desktop. A small divergence cost, contained to the desktop host's wiring.
+- ✗ **The Linux desktop loses curated base16 fidelity, per-host slot corrections, and the hybrid mono/sans typography** — replaced by Noctalia's bundled Rose Pine and its Material-3 type system. Accepted by the operator for the desktop.
+- ✗ **The v4 line is frozen into maintenance upstream** — active development has moved to v5. We are adopting a deliberately-frozen codebase: stable and unlikely to break, but receiving no new features and only limited fixes until the v5 migration. Taken together with the Qt re-import above and the fact that v5 is a from-scratch reinstall (not an upgrade), this is consciously a known-temporary bet: pay the Qt cost now for a frozen waypoint we already plan to leave.
+- ⚠ **Migration trigger — v5 leaves alpha.** When Noctalia v5 ships a stable tag with NixOS-module and feature parity, migrate: it drops Qt/Quickshell and removes the skew class entirely — the strategically superior target. Until then, v5's alpha status keeps us on v4.
+- ⚠ **Migration trigger — v4 abandoned early or niri support regresses.** If v4 is dropped before v5 is production-ready, or Noctalia's first-class niri support regresses, reopen the selection.
+- ⚠ **Migration trigger — template burden too high.** If maintaining the TUI-tier `user-templates`/`post_hook`s proves heavier than the cohesion is worth, revisit the keep-Stylix-for-TUI hybrid (the rejected option above).
+
+## Implementation
+
+Decision + selection-doc land first (doc-before-code); code follows in reviewable slices, each validated on the desktop host before the next. Tracked under #385.
+
+1. **Flake input** — add the Noctalia flake (`inputs.nixpkgs.follows = "nixpkgs"`, per convention). The `follows` keeps channel consistency at the cost of a local Qt build; adding the `noctalia.cachix.org` substituter (which requires *omitting* `follows`) is the alternative — pick one consciously at wire-up, not in this ADR.
+2. **Shell up, non-destructively** — import `homeModules.default`, `programs.noctalia-shell.enable = true`, niri `spawn-at-startup`; leave the existing waybar/fuzzel/fnott/swaylock running and bind Noctalia to a spare chord first, to dogfood before any teardown.
+3. **Keybinds** — repoint `Mod+Space` / `Hyper+Space` (launcher) and any bar/notification actions to `noctalia-shell ipc call …`; the Hyper namespace (#376) and screenshot chords are unaffected.
+4. **Theming** — select the bundled Rose Pine predefined scheme; author the `user-templates` (zellij/bat/fzf) and the foot/helix `post_hook`s; re-home foot's font onto `foot.nix`.
+5. **Stylix removal on the Linux desktop** — drop the desktop host from the Stylix path: host-gate `home/shared/stylix-targets.nix`, remove the desktop host's entry from `lib/host-palettes.nix`, re-source `lib/theme-tokens.nix` sizing from `lib/display-profiles.nix` for the desktop, and move font *installation* off `stylix.fonts` to a plain `fonts.packages` set.
+6. **Decommission the old stack** — remove waybar, fuzzel, fnott, swaylock/swayidle from the desktop bundle one surface at a time, validating each. (Lock: confirm Noctalia's lock works — on NixOS it auto-detects and reuses `/etc/pam.d/login`, so no manual `security.pam.services` entry is required — before removing swaylock.)
+
+The eval-check stances (ADR-033) are untouched: the #103 Qt-drop was a closure optimisation, not a CLAUDE.md deliberate stance, so re-importing Qt breaks no asserted stance — but the closure growth is called out above as an honest cost.
+
+## References
+
+- ADR-028 — Stylix foundation; **§Decision item 1 amended** (Stylix is no longer the Linux-desktop theming source of truth; stands on every other host).
+- ADR-029 — niri-only / per-tool selection; **amended** (a cohesive shell returns to the Linux desktop; the waybar/fuzzel/fnott/swaylock per-tool selections are subsumed there — their `docs/desktop/*.md` records remain valid for the stack's history and for any future non-Noctalia host).
+- ADR-030 — `nixos-unstable` channel; the condition that makes single-flake co-pinning hold where DMS's three-upstream skew did not.
+- ADR-035 — runtime theme/polarity via tinty; **superseded** (Noctalia subsumes the runtime layer on the desktop surface it targeted; #143's polarity goal is delivered here instead).
+- #103 — the polkit-kde → mate-polkit swap that left the Linux desktop Qt-free; mate-polkit stays (Noctalia is not a polkit agent), but the Qt-free property it helped secure is walked back by this ADR.
+- #110 — niri chrome colours; mooted on the Linux desktop (Noctalia owns niri borders).
+- #143 — interactive polarity flip; the want this delivers, via the shell rather than tinty.
+- `docs/desktop/noctalia.md` — the per-tool selection record (validation of Noctalia's templating reach, version-skew gate, and packaging reality).

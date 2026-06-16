@@ -1,0 +1,87 @@
+# Noctalia
+
+Cohesive Wayland desktop shell built on [Quickshell](https://quickshell.org/). One project owns the bar, launcher, notifications, lock, OSD, control-centre, clipboard history, tray, dock, wallpaper, desktop widgets, session menu, and idle — replacing the per-tool waybar + fuzzel + fnott + swaylock stack on the Linux desktop.
+
+> **Status: selected, implementation pending.** This doc is the selection record; the direction-shaping decision (and its consequences) live in [ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md). Claims tagged *(v4.7.7)* were verified by reading the upstream source at that tag; claims tagged *(on-box pending)* await first-activation confirmation on the desktop host, in the ADR-035 tradition of not asserting runtime repaint before the console proves it.
+
+## Selection
+
+**Noctalia Shell, the v4 (Quickshell) line**, on the Linux desktop — adopted as both the cohesive shell *and* the sole theming authority there. Consumed via Noctalia's **own flake**, not the nixpkgs package: the declarative surface (`programs.noctalia-shell.{settings,colors,user-templates}`) lives in Noctalia's `nix/home-module.nix`, and the flake pins `noctalia-qs` — Noctalia's own Quickshell fork — so shell and runtime are co-locked in one input *(v4.7.7)*. Launched from niri via `spawn-at-startup`; the v4 systemd assets are removed upstream, so there is no systemd unit to manage.
+
+Stylix, the curated base16 palette, and the hybrid mono/sans typography retreat to every other host (mercury, nixos-vm, mac-mini today). On the Linux desktop, Noctalia owns colour, runtime polarity, and fonts, driven from its bundled **Rose Pine predefined scheme**.
+
+## Rationale
+
+**It clears the version-skew gate that retracted DMS.** ADR-029 retracted Dank Material Shell because three independently-pinned upstreams (DMS / quickshell / niri-flake) skewed apart: a QML `pragma AppId` the trailing nixpkgs quickshell couldn't parse, and `include` directives niri 25.08 silently rejected, looping until systemd's start-limit. Noctalia removes two of those limbs outright and narrows the third:
+
+- **Runtime co-locking** — the flake pins `noctalia-qs` in the *same input* as the shell QML, so the shell and its Quickshell runtime bump together in one lock. This removes the *inter-pin* divergence that produced DMS's pragma mismatch *(v4.7.7)*. It does not make skew categorically impossible: `noctalia-qs` is a fork that tracks Quickshell upstream, so a Quickshell-vs-niri protocol change could still bite — but that is one external seam to watch on a bump, not three pins skewing apart.
+- **Compositor-spawn, not systemd** — v4's systemd assets are removed upstream; it launches from niri. No start-limit crash vector.
+- **No config injection** — Noctalia integrates by a spawn line plus benign `window-rule`/`layer-rule` entries; it injects nothing into niri's config, so there is no silent parse-fallback *(v4.7.7)*.
+
+**The condition that sank DMS does not hold.** We track `nixos-unstable` (ADR-030), and the shell is one flake input whose shell and runtime are co-locked — not three projects with divergent cadences. The three-pin *combinatorial* skew is gone; the residual is ordinary single-seam maintenance.
+
+**Sole authority avoids the two-writer seam.** A shell that owns the runtime polarity flip *and* a Stylix base writing colours at build time means two writers per surface and a reassert-on-rebuild flip-flop. Making Noctalia the single authority on the Linux desktop collapses that to one conductor. The cross-platform palette work is preserved where it still earns its keep — every other host.
+
+**Declarative-friendly.** `settings`/`colors`/`user-templates` are Nix values rendered to read-only store symlinks; Nix stays authoritative. (Trade-off: the in-shell GUI scheme-tweaker is not a live source of truth — runtime GUI edits don't persist back; use *Settings → Copy Settings* to extract state and graduate it into Nix.) *(v4.7.7)*
+
+**It ends the stitching.** Noctalia owns a strict superset of the waybar + fuzzel + fnott + swaylock surface in one project, plus surfaces the desktop never had (clipboard history, tray, dock, OSD, control-centre, wallpaper). The per-tool cohesion ADR-029 traded away for stability returns — at a coordination cost that is now bounded and local, not cross-project.
+
+## Alternatives considered
+
+**Keep the per-tool stack (waybar + fuzzel + fnott + swaylock).** The status quo; works today. Passed over because the operator chose to stop hand-composing the surface and accept a cohesive shell, now that one exists without DMS's skew profile. The per-tool docs ([waybar.md](./waybar.md), [fuzzel.md](./fuzzel.md), [fnott.md](./fnott.md), [screen-lock.md](./screen-lock.md), [power-session.md](./power-session.md)) remain valid history and the fallback for any future non-Noctalia host.
+
+**DankMaterialShell (DMS).** The retracted shell. Pulls Quickshell from nixpkgs (a third independently-cadenced pin — the very inter-pin skew that sank it), and its documented niri path leaned on a systemd service + a niri `include` "hack." Re-introduces exactly the upstream-coordination cost ADR-029 walked away from. Passed over.
+
+**Caelestia / end-4 (illogical-impulse).** niri support is third-party, work-in-progress, single-maintainer, build-from-source, with no maintained Nix module. Disqualifying for a low-breakage-tolerance host.
+
+**HyprPanel.** Hyprland-only, and a bar rather than a full shell. Wrong compositor and wrong scope.
+
+**Noctalia v5 (the C++ rewrite).** Strategically the better target — it drops Qt/Quickshell entirely, removing the skew class — but it is alpha, and a v4→v5 move is a fresh install, not an upgrade. Deferred to a migration trigger (ADR-036).
+
+## Configuration
+
+Planned wiring; lands in reviewable slices behind ADR-036, each validated on the desktop host before the next.
+
+**Flake + module** — add the Noctalia flake input (`inputs.nixpkgs.follows = "nixpkgs"`, per repo convention); import `homeModules.default`; set `programs.noctalia-shell.enable = true`; spawn from niri via `spawn-at-startup`.
+
+**Theming** — select Noctalia's bundled **Rose Pine predefined scheme** so the terminal templates resolve against a *real* 16-colour ANSI palette (predefined mode), not the Material-3 approximation that wallpaper-derived mode emits *(v4.7.7)*. Surface coverage:
+
+- **Native + built-in templates** — Noctalia's own chrome, plus niri borders, GTK, foot, helix (Noctalia ships templates for these) *(v4.7.7)*. This moots the niri-chrome-colours work (#110) on the Linux desktop: Noctalia's niri template owns the border colours.
+- **Hand-authored `user-templates`** — zellij, bat, fzf (no built-in template upstream) *(v4.7.7)*. Declared in Nix (attrset → TOML), each with its own reload `post_hook`.
+- **Live refresh** — foot and helix get `user-template` `post_hook`s (`pkill -USR1 foot`; helix config-reload) because Noctalia writes the theme file but sends *no* reload signal of its own; already-open instances stay on the old colours until signalled *(v4.7.7; on-box pending)*.
+- **Fonts** — Noctalia owns its own surfaces' fonts; foot's font is re-homed onto `foot.nix` directly (Noctalia's templating is colour-only and cannot set a terminal font) *(v4.7.7)*.
+
+**Stylix removal on the Linux desktop** — host-gate `home/shared/stylix-targets.nix` to exclude the desktop host; drop the desktop host's entry from `lib/host-palettes.nix`; re-source `lib/theme-tokens.nix` sizing from `lib/display-profiles.nix` for the desktop; move font *installation* off `stylix.fonts` to a plain `fonts.packages` set.
+
+**Keybinds** — repoint `Mod+Space` / `Hyper+Space` (launcher) and bar/notification actions to `noctalia-shell ipc call …` (arguments passed as lists, per upstream). The Hyper namespace (#376) and the screenshot chords are unaffected; screenshots stay niri-native.
+
+**Decommission** — remove waybar, fuzzel, fnott, swaylock/swayidle from the desktop bundle one surface at a time, validating each.
+
+## Sharp edges
+
+**Predefined mode is mandatory for a real terminal palette.** Noctalia's flagship wallpaper-derived mode exposes only Material-3 slots and *fakes* a 16-colour ANSI palette by mapping it onto those slots; only the predefined-scheme path carries a genuine `terminal.{normal,bright}` block. Drive from a bundled predefined scheme or the terminal palette is an approximation *(v4.7.7)*.
+
+**No default reload signal.** The per-app applier writes theme files but only signals a subset (kitty, ghostty, GTK, btop, hyprland, sway). **foot and helix are write-only** — Noctalia does not `pkill -USR1` them. Live repaint of open terminals depends entirely on our own `post_hook`s, which must be validated on the box *(v4.7.7; on-box pending)*.
+
+**Helix theming is Material-3-mapped, always.** Even in predefined mode, the helix template references M3 slot names, not the 16-colour block — so syntax theming is an M3 mapping, never a faithful base16 helix theme *(v4.7.7)*.
+
+**zellij / bat / fzf ship no upstream template.** All three are hand-authored `user-templates` we own and maintain, reload signals included *(v4.7.7)*.
+
+**Qt returns to the Linux desktop.** v4 is Quickshell is Qt — this walks back the Qt-free property #103 helped secure and ADR-029 called an "unambiguous win." The closure grows on the desktop host (mate-polkit stays — Noctalia is not a polkit agent). Conscious cost, recorded in ADR-036.
+
+**v4 is frozen into maintenance upstream.** Development has moved to v5; v4 receives no new features and only limited fixes. We adopt a deliberately-frozen codebase — stable, but a waypoint, not a destination.
+
+**Lock needs no manual PAM entry.** Noctalia auto-detects NixOS and reuses the system `/etc/pam.d/login` service for password unlock (`NOCTALIA_PAM_SERVICE` overrides); the NixOS module adds no PAM service of its own. So password unlock works without a `security.pam.services.noctalia` entry — but nothing Noctalia-specific is created either, so a fingerprint/bespoke stack is on us *(v4.7.7; on-box pending — confirm lock before decommissioning swaylock)*.
+
+**Flake `follows` vs Cachix is a conscious pick.** `inputs.nixpkgs.follows = "nixpkgs"` keeps channel consistency but forgoes the `noctalia.cachix.org` substituter (which requires *omitting* `follows`), so Qt builds locally. Choose at wire-up; this doc doesn't pre-decide it.
+
+## References
+
+- [ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md) — the direction-shaping decision: Noctalia as shell + sole theming authority on the Linux desktop; supersedes ADR-035; amends ADR-029 + ADR-028 §item 1.
+- [ADR-029](../decisions/ADR-029-niri-only-desktop.md) — the DMS retraction and per-tool model this amends; its version-skew rationale is the bar Noctalia had to clear.
+- [ADR-035](../decisions/ADR-035-runtime-theme-polarity.md) — the tinty runtime layer Noctalia subsumes (superseded).
+- [ADR-030](../decisions/ADR-030-nixpkgs-channel.md) — the `nixos-unstable` channel that makes single-flake co-pinning hold.
+- [fonts.md](./fonts.md) / [keybinds.md](./keybinds.md) — the cross-cutting selections Noctalia displaces on the Linux desktop.
+- [waybar.md](./waybar.md) / [fuzzel.md](./fuzzel.md) / [fnott.md](./fnott.md) / [screen-lock.md](./screen-lock.md) / [power-session.md](./power-session.md) — the per-tool stack subsumed on the Linux desktop; retained as history + non-Noctalia fallback.
+- [#103](https://github.com/dannyfaris/nix-config/issues/103) — the Qt-free property this walks back. [#110](https://github.com/dannyfaris/nix-config/issues/110) — niri chrome colours, mooted on the Linux desktop. [#143](https://github.com/dannyfaris/nix-config/issues/143) — the runtime-polarity want, delivered here via the shell.
+- Noctalia upstream — https://github.com/noctalia-dev/noctalia-shell (v4 line) · https://github.com/noctalia-dev/noctalia-qs (the pinned runtime fork).

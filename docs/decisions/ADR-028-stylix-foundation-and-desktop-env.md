@@ -1,7 +1,7 @@
 # ADR-028: Stylix in foundation; desktop environment arrives on metis
 
 **Date**: 2026-05-28
-**Status**: Amended by ADR-029 (item 3 retracted; items 1–2 stand and are implemented)
+**Status**: Amended by ADR-029 (item 3 retracted; items 1–2 stand and are implemented); §Decision item 1 further amended by ADR-036 (Stylix no longer the Linux-desktop theming source of truth; stands on every other host)
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
