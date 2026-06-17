@@ -85,6 +85,17 @@ in
     # `qt.enable = lib.mkIf desktopSession true;` if a Qt app is ever
     # installed. See docs/desktop/polkit.md.
     gtk.enable = lib.mkIf desktopSession true;
+
+    # GTK colours come from Noctalia (ADR-036, #385), layered over Stylix via an
+    # @import at the end of gtk.css — Noctalia's gruvbox @define-colors override
+    # Stylix's earlier ones by cascade (GTK honours a trailing @import). We
+    # declare the @import here rather than leaving Noctalia's gtk-refresh to
+    # inject it: that keeps gtk.css a stable home-manager symlink (Noctalia sees
+    # its import already present and stops rewriting the file), so `nh os switch`
+    # no longer collides on a clobbered gtk.css. The Stylix gtk target stays for
+    # settings.ini (adw-gtk3 + font); only the colours are overridden. Full
+    # target removal is a later refinement. See docs/desktop/noctalia.md.
+    gtk.extraCss = lib.mkIf desktopSession ''@import url("noctalia.css");'';
   };
 
   # GTK app-UI uses the sansSerif chrome face (IBM Plex Sans), the chrome
