@@ -1,18 +1,18 @@
 # Removable media (home side) — udiskie auto-mounts inserted devices and
-# notifies via fnott; the mount.yazi plugin gives in-yazi unmount/eject (the
-# safe-removal affordance, since we run tray-less). The system side (udisks2
-# + filesystem helpers) is modules/nixos/removable-media.nix. See
-# docs/desktop/removable-media.md (#105).
+# notifies via the desktop notification daemon (Noctalia); the mount.yazi
+# plugin gives in-yazi unmount/eject (the safe-removal affordance, since we
+# run tray-less). The system side (udisks2 + filesystem helpers) is
+# modules/nixos/removable-media.nix. See docs/desktop/removable-media.md (#105).
 { pkgs, ... }:
 {
   services.udiskie = {
     enable = true;
     automount = true; # plug in -> mount; the issue's core ask
-    notify = true; # mount/unmount pop-ups via fnott (org.freedesktop.Notifications)
+    notify = true; # mount/unmount pop-ups via the notification daemon (org.freedesktop.Notifications)
     # Tray-less: the home-manager default ("auto") hard-Requires a
-    # tray.target that waybar doesn't register, which fails the unit. Going
-    # tray-less keeps notifications (tray-independent) and drops the ordering
-    # fragility; safe-eject lives in the mount.yazi plugin below instead.
+    # tray.target and brings ordering fragility. We keep udiskie tray-less
+    # (Noctalia provides the system tray) and rely on notifications
+    # (tray-independent) plus the mount.yazi safe-eject affordance below.
     tray = "never";
   };
 

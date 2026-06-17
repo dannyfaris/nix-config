@@ -4,8 +4,8 @@
 # (which carries the cross-platform-safe TUI targets).
 #
 # Lives under `home/nixos/` because every entry here is driven by a
-# module that's Linux-only today (foot/fuzzel/fnott/waybar via Wayland;
-# firefox via the launcher integration in `home/nixos/`;
+# module that's Linux-only today (foot via Wayland; firefox via the
+# launcher integration in `home/nixos/`;
 # gtk/qt theming as part of the niri session). Imported by
 # `home/nixos/bundles/desktop-env.nix` so desktop hosts pick it up
 # transitively without needing a separate import line.
@@ -46,24 +46,8 @@ in
     # Desktop-only by virtue of this file's import path. See
     # docs/desktop/niri.md §Window decorations.
     niri.enable = true;
-    # fuzzel — gates on `programs.fuzzel.enable`. Stylix writes font
-    # (IBM Plex Sans at popups size — the chrome sans, #369), full base16
-    # palette across 11 slots, and polarity-driven icon-theme.
-    fuzzel.enable = true;
-    # fnott — gates on `services.fnott.enable`. Stylix writes three
-    # fonts (title/summary/body), full colour palette including
-    # per-urgency-level border accents (low/normal/critical), and the
-    # polarity-driven icon-theme.
-    fnott.enable = true;
-    # waybar — gates on `programs.waybar.enable`. Stylix writes the CSS
-    # (programs.waybar.style) with the full base16 palette as
-    # @define-color variables, default background + text + tooltip
-    # styling, and per-state workspace-button styling (focused/active
-    # @base05 border; urgent @base08). Font is Stylix's monospace default
-    # (Monaspace Argon Nerd Font) — under the hybrid model the bar is driven
-    # chrome and rides the terminal mono, whose Nerd glyphs cover network/tray
-    # directly, so waybar.nix adds no font override or symbols fallback (#369).
-    waybar.enable = true;
+    # fuzzel/fnott/waybar targets were removed in #385 alongside their
+    # modules — Noctalia now owns the launcher, notifications and bar.
     # swaylock — gates on `programs.swaylock.enable` (set in
     # home/nixos/screen-lock.nix). Stylix writes the lock screen's
     # colour config (~/.config/swaylock/config) so the lock surface
@@ -86,7 +70,7 @@ in
       profileNames = [ "default" ];
     };
     # gtk — toolkit-level theming, no per-app gating upstream (unlike
-    # foot/fuzzel/fnott/waybar/firefox above, which gate on
+    # foot/firefox above, which gate on
     # `programs.<X>.enable` and become inert on non-desktop hosts).
     # Gated locally on `desktopSession` so a future desktop-less host
     # importing this file (unlikely under the desktop-env bundle) won't
@@ -104,8 +88,8 @@ in
     gtk.enable = lib.mkIf desktopSession true;
   };
 
-  # GTK app-UI uses the sansSerif chrome face (IBM Plex Sans), matching
-  # waybar/fnott/fuzzel since the #369 typography pass — GTK chrome (the
+  # GTK app-UI uses the sansSerif chrome face (IBM Plex Sans), the chrome
+  # sans established in the #369 typography pass — GTK chrome (the
   # polkit prompt, GTK file pickers, GTK app dialogs) is UI chrome, so it
   # rides the proportional sans rather than the terminal's mono. Sized at the
   # popups slot (the chrome body size, M3 body) so dialogs match the

@@ -140,11 +140,10 @@ in
       "Mod+Ctrl+8".action.move-window-to-workspace = 8;
       "Mod+Ctrl+9".action.move-window-to-workspace = 9;
 
-      # Spawn — terminal + application launcher. The launcher is now
+      # Spawn — terminal + application launcher. The launcher is
       # Noctalia's IPC-driven app launcher (ADR-036, #385): `noctalia-shell
       # ipc call launcher toggle`. Passed as an argv list — niri spawns it
-      # directly (no shell). fuzzel stays installed until decommission, so
-      # this repoint is reversible.
+      # directly (no shell). fuzzel was decommissioned in #385.
       "Mod+Return".action.spawn = "foot";
       "Mod+Space".action.spawn = [
         "noctalia-shell"

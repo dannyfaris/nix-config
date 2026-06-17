@@ -1,5 +1,7 @@
 # Fnott
 
+> **Decommissioned 2026-06-18** ([ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md), #385). Replaced on the Linux desktop by Noctalia Shell, which owns `org.freedesktop.Notifications` — see [noctalia.md](./noctalia.md). The `home/nixos/fnott.nix` module and its Stylix target were removed (`notify-send`/libnotify re-homed onto `noctalia-shell.nix`); this document is retained as the selection record for the fnott era.
+
 Wayland-native notification daemon. Third member of the dnkl family
 on this desktop (foot + fuzzel + fnott), under one upstream
 maintainer with consistent design idioms.

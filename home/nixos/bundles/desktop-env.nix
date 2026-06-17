@@ -8,16 +8,13 @@
 #   - niri.nix — programs.niri.settings.binds (curated essential set;
 #     see docs/desktop/keybinds.md for the full taxonomy).
 #   - foot.nix — programs.foot.enable.
-#   - fuzzel.nix — programs.fuzzel.enable + launcher behaviour
-#     settings (see docs/desktop/fuzzel.md).
-#   - fnott.nix — services.fnott.enable (notification daemon;
-#     D-Bus-activated; see docs/desktop/fnott.md).
+#   - noctalia-shell.nix — the cohesive Quickshell shell: bar, launcher,
+#     notifications, OSD, lock, wallpaper, idle (ADR-036, #385). Subsumes
+#     the waybar/fuzzel/fnott surfaces, decommissioned in #385.
 #   - screen-lock.nix — programs.swaylock + services.swayidle (session
 #     lock + idle handling: lock on idle, displays off, lock before
-#     sleep; see docs/desktop/screen-lock.md).
-#   - waybar.nix — programs.waybar.enable + status-bar layout
-#     settings (top of screen; tray-bearing; see
-#     docs/desktop/waybar.md).
+#     sleep; see docs/desktop/screen-lock.md). Retired last, once
+#     Noctalia's lock is confirmed (ADR-036).
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
@@ -36,7 +33,7 @@
 #     udisks2 + fs helpers. See docs/desktop/removable-media.md (#105).
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
-# Linux-only (niri, greetd-launched Foot + fuzzel + fnott + waybar
+# Linux-only (niri, greetd-launched Foot + the Noctalia shell
 # all carry Linux paths; firefox's xdg.mimeApps wiring is Linux-only
 # even though pkgs.firefox builds on Darwin; cursor-ide's launcher
 # integration is Linux-only although pkgs.code-cursor builds on
@@ -50,13 +47,11 @@
   imports = [
     ../niri.nix
     ../foot.nix
-    ../fuzzel.nix
-    ../fnott.nix
     ../screen-lock.nix
-    ../waybar.nix
-    # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). Brought up
-    # alongside waybar/fuzzel/fnott/swaylock during the non-destructive
-    # migration; those are decommissioned in later slices.
+    # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). waybar,
+    # fuzzel and fnott were decommissioned in #385 once Noctalia's bar,
+    # launcher and notifications were confirmed; swaylock (screen-lock.nix
+    # above) is retired last, after Noctalia's lock is verified.
     ../noctalia-shell.nix
     ../firefox.nix
     ../cursor-ide.nix

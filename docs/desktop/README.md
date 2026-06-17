@@ -30,9 +30,9 @@ rather than creating a new artifact.
 | [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
-| [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) | #73 |
-| [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) | #74 |
-| [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) | #75 |
+| [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #73 |
+| [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #74 |
+| [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #75 |
 | [noctalia.md](./noctalia.md) | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036 | ADR-036 (pending) |
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |

@@ -1,5 +1,7 @@
 # Fuzzel
 
+> **Decommissioned 2026-06-18** ([ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md), #385). Replaced on the Linux desktop by Noctalia Shell's launcher (Mod+Space → `noctalia-shell ipc call launcher toggle`) — see [noctalia.md](./noctalia.md). The `home/nixos/fuzzel.nix` module and its Stylix target were removed; this document is retained as the selection record for the fuzzel era.
+
 Wayland-native application launcher. Same project family as foot
 (dnkl on codeberg); same philosophy — small closure, no runtime
 ballast, built for the wlroots/niri lineage. Bound to Mod+Space per

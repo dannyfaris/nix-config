@@ -2,11 +2,12 @@
 # (ADR-036, #385). v4 Quickshell line via the flake's home-manager module
 # (`inputs.noctalia`, pinned to `legacy-v4`).
 #
-# Non-destructive bring-up (PR-1): enable the shell + install its binary,
-# spawned from niri (`spawn-at-startup` in home/nixos/niri.nix). Theming
-# (Rose Pine predefined scheme + user-templates), the foot-font re-home, and
-# the launcher-keybind cutover land in later slices; waybar/fuzzel/fnott/
-# swaylock keep running until decommissioned.
+# The shell + its binary are spawned from niri (`spawn-at-startup` in
+# home/nixos/niri.nix). The launcher keybind cutover is done (PR-3);
+# waybar/fuzzel/fnott were decommissioned in #385; swaylock (screen-lock.nix)
+# keeps running until Noctalia's lock is verified. External theming
+# (foot/gtk/yazi/niri via Noctalia's built-in templates) is enabled at runtime
+# by the operator and is not Nix-pinned — see ADR-036 and docs/desktop/noctalia.md.
 #
 # Two upstream quirks the wiring depends on (verified against legacy-v4):
 #   - the HM module installs the binary only when `package` is set
@@ -22,4 +23,9 @@
     enable = true;
     package = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
   };
+
+  # notify-send (libnotify) — the CLI for emitting test notifications to
+  # Noctalia, which now owns org.freedesktop.Notifications. Re-homed here
+  # from the decommissioned fnott.nix (#385); pairs with Noctalia as daemon.
+  home.packages = [ pkgs.libnotify ];
 }
