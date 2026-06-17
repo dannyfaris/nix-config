@@ -36,9 +36,8 @@ let
 in
 {
   stylix.targets = {
-    # foot — desktop-host-only (metis). Inert on non-desktop hosts via
-    # upstream Stylix's `programs.foot.enable` gate.
-    foot.enable = true;
+    # foot's target was removed in #385 — Noctalia owns the terminal palette
+    # (foot.nix declares the include; see docs/desktop/noctalia.md §Theming).
     # niri — brings the compositor onto the palette. Stylix writes the
     # window border (active base0D / inactive base03) and disables the
     # focus-ring, so the active-window accent rides the idiomatic base0D
