@@ -31,11 +31,25 @@
 # costs disappear once the cache is trusted.
 #
 # Per ADR-028.
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  pkgs,
+  ...
+}:
 {
   imports = [ inputs.niri-flake.nixosModules.niri ];
 
   programs.niri.enable = true;
+
+  # niri 26.04 line, via niri-flake's *unstable* channel — niri-flake still
+  # pins its `stable` slot to 25.08, and 26.04 is where `include optional=true`
+  # landed. That directive lets Noctalia theme niri through a declared include
+  # (we own the include line; Noctalia writes the colour file) without anyone
+  # rewriting the read-only config.kdl. Pinned in flake.lock + served by
+  # niri.cachix.org, so "unstable" here means a pinned, cached release commit,
+  # not a moving target. See ADR-036 and docs/desktop/noctalia.md.
+  programs.niri.package = inputs.niri-flake.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
 
   # Own the trust delegation explicitly in nix.settings below; do not
   # let niri-flake add `niri.cachix.org` implicitly via this module's
