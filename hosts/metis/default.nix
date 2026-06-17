@@ -77,7 +77,12 @@
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
       ../../home/shared/bundles/git-multi-identity.nix
-      ../../home/shared/stylix-targets.nix
+      # No stylix-targets.nix here (unlike the other hosts): on the Linux
+      # desktop Noctalia owns the terminal/TUI palette (ADR-036, #385, E1).
+      # Leaving the Stylix `fish` target on in particular would re-emit the
+      # base16 palette via OSC on every shell, overriding Noctalia — see
+      # docs/desktop/noctalia.md §Sharp edges. stylix.enable stays on (the
+      # four eval-time statuslines still read the colour table).
       ../../home/nixos/bundles/desktop-env.nix
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix
