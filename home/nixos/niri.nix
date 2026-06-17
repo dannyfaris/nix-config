@@ -19,12 +19,35 @@
 #
 # See #69 for the niri-only baseline close-out under which this
 # curated bind set was established.
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  options,
+  inputs,
+  ...
+}:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
   profile = import ../../lib/display-profiles.nix; # active display profile — output scale
 in
 {
+  # Hand niri's window-border colour to Noctalia at runtime (ADR-036, #385).
+  # niri-flake's `programs.niri.config` replaces `settings` wholesale and
+  # exposes no settings→KDL renderer, so we reach the rendered document via the
+  # option's own *default* — `settings.render cfg.settings`, which depends on
+  # `settings`, not `config`, so there's no cycle — serialise it, and append a
+  # top-level include. `optional=true` (niri 26.04) keeps the session up before
+  # Noctalia first writes noctalia.kdl; niri watches the file and live-reloads,
+  # so the border follows Noctalia's scheme/polarity. Noctalia's own niri
+  # post-hook can't do this injection itself — it can't write the read-only
+  # config.kdl symlink. See docs/desktop/noctalia.md §Sharp edges.
+  programs.niri.config =
+    inputs.niri-flake.lib.kdl.serialize.nodes options.programs.niri.config.default
+    + ''
+
+      include optional=true "~/.config/niri/noctalia.kdl"
+    '';
+
   programs.niri.settings = {
     # Capture target, set explicitly so it stays in lockstep with the
     # directory created below — niri creates only the last path component
@@ -52,11 +75,15 @@ in
       # for all windows. See docs/desktop/niri.md §Configuration.
       default-column-width.proportion = 0.66;
 
-      # Window border — colour comes from the whitelisted Stylix niri target
-      # (active base0D / inactive base03, focus-ring off); width from the
-      # geometry token (Carbon spacing-01; crisp on 4K/1.5 — rationale in
-      # theme-tokens.nix and docs/desktop/niri.md §Window decorations).
+      # Window decorations — border on, focus-ring off (Stylix used to assert
+      # both via its niri target; re-asserted here now that Noctalia owns the
+      # colour via the runtime include above). Border width from the geometry
+      # token (Carbon spacing-01; crisp on 4K/2× — rationale in theme-tokens.nix
+      # and docs/desktop/niri.md §Window decorations); the active/inactive
+      # colours come from Noctalia's noctalia.kdl.
+      border.enable = true;
       border.width = tokens.geometry.borderWidth;
+      focus-ring.enable = false;
 
       # Inter-window gap — explicit token (= Carbon spacing-05) rather than
       # niri's implicit default 16, so the value lives in one place. See

@@ -36,15 +36,11 @@ let
 in
 {
   stylix.targets = {
-    # foot's target was removed in #385 — Noctalia owns the terminal palette
-    # (foot.nix declares the include; see docs/desktop/noctalia.md §Theming).
-    # niri — brings the compositor onto the palette. Stylix writes the
-    # window border (active base0D / inactive base03) and disables the
-    # focus-ring, so the active-window accent rides the idiomatic base0D
-    # slot. Border width + corner radius are set in home/nixos/niri.nix.
-    # Desktop-only by virtue of this file's import path. See
-    # docs/desktop/niri.md §Window decorations.
-    niri.enable = true;
+    # foot + niri targets were removed in #385 — Noctalia owns both the
+    # terminal palette (foot.nix declares the include) and niri's window-border
+    # colour (niri.nix appends a runtime include; border on / focus-ring off
+    # are re-asserted there since Stylix used to set them). See
+    # docs/desktop/noctalia.md §Theming and docs/desktop/niri.md §Window decorations.
     # fuzzel/fnott/waybar targets were removed in #385 alongside their
     # modules — Noctalia now owns the launcher, notifications and bar.
     # swaylock — gates on `programs.swaylock.enable` (set in
