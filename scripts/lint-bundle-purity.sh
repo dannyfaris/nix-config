@@ -60,9 +60,18 @@ for file in "$@"; do
   # Strict shape: `{ imports = [ <content> ]; }`, optionally inside a
   # function header `(<args>: ...)`. Greedy `.*` in the function-header
   # capture is safe because the only depth-0 `: ` in canonical Nix
-  # output is the args→body separator; greedy `.*` for the list body is
-  # safe because a well-formed body contains exactly one `]; }`.
-  shape_re='^(\(.*: )?\{ imports = \[.*\]; \}\)?$'
+  # output is the args→body separator.
+  #
+  # The list body is `[^{}:]*` — NOT `.*` — so it admits only path /
+  # attr-access imports (which canonicalise to `(/abs/path)` or
+  # `(inputs.x.y)`, never containing `{` or `:`) and rejects an inline
+  # module smuggled into the list: both `[ ({...}: {...}) ]` (lambda
+  # module) and `[ {...} ]` (bare attrset) introduce `{` (the lambda also
+  # `:`), so neither matches. That closes the bypass #344 found, where a
+  # `.*` body let an inline `services.X.enable` through the "no inline
+  # config" claim. (`--no-verify` remains the escape hatch for a genuine
+  # one-off.)
+  shape_re='^(\(.*: )?\{ imports = \[[^{}:]*\]; \}\)?$'
   if [[ ! $parsed =~ $shape_re ]]; then
     echo "ERROR: $file violates bundle-purity (top level must be exactly { imports = [ ... ]; } — no inline config, no extra attributes)." >&2
     echo "  parsed: $parsed" >&2
