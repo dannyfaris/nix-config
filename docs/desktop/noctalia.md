@@ -57,7 +57,7 @@ Planned wiring; lands in reviewable slices behind ADR-036, each validated on the
 
 **Keybinds** — repoint `Mod+Space` / `Hyper+Space` (launcher) and bar/notification actions to `noctalia-shell ipc call …` (arguments passed as lists, per upstream). The Hyper namespace (#376) and the screenshot chords are unaffected; screenshots stay niri-native.
 
-**Decommission** — remove waybar, fuzzel, fnott, swaylock/swayidle from the desktop bundle one surface at a time, validating each.
+**Decommission** — waybar, fuzzel, fnott, and swaylock + swayidle were removed from the desktop bundle one surface at a time, validating each (#385, all done). Noctalia owns those surfaces.
 
 ## Sharp edges
 
@@ -79,7 +79,9 @@ Planned wiring; lands in reviewable slices behind ADR-036, each validated on the
 
 **v4 is frozen into maintenance upstream; pin the `legacy-v4` branch.** Development has moved to v5 — the repo's `main` is now `noctalia-5.0.0` (the Qt-free C++ alpha), so the flake input must pin `github:noctalia-dev/noctalia-shell/legacy-v4` (latest v4 tag: `v4.7.7`), never bare `HEAD`. We adopt a deliberately-frozen codebase — stable, but a waypoint, not a destination.
 
-**Lock needs no manual PAM entry.** Noctalia auto-detects NixOS and reuses the system `/etc/pam.d/login` service for password unlock (`NOCTALIA_PAM_SERVICE` overrides); the NixOS module adds no PAM service of its own. So password unlock works without a `security.pam.services.noctalia` entry — but nothing Noctalia-specific is created either, so a fingerprint/bespoke stack is on us *(v4.7.7; on-box pending — confirm lock before decommissioning swaylock)*.
+**Lock needs no manual PAM entry.** Noctalia auto-detects NixOS and reuses the system `/etc/pam.d/login` service for password unlock (`NOCTALIA_PAM_SERVICE` overrides); the NixOS module adds no PAM service of its own. So password unlock works without a `security.pam.services.noctalia` entry — but nothing Noctalia-specific is created either, so a fingerprint/bespoke stack is on us *(lock + password unlock verified on-box 2026-06-18; swaylock then decommissioned)*.
+
+**Accepted gap: no lock on *externally*-initiated suspend.** Noctalia's `IdleService` covers lock-on-idle, displays-off (DPMS), and lock on *Noctalia*-initiated suspend (its power menu / idle-suspend → `lockAndSuspend`). It does **not** hook logind's `PrepareForSleep`, nor does it honour an external `loginctl lock-session`. So a raw `systemctl suspend` (or a suspend key) does **not** lock before sleeping — the resume lands unlocked. swayidle's `before-sleep`/`lock` events used to cover this; on its removal (#385) the operator **deliberately chose not to replace it** (metis is a desktop with no lid and no auto-suspend; the only way to hit the gap is a manual `systemctl suspend`). This consciously relaxes the "lock before sleep regardless of trigger" guarantee the retired `screen-lock.md` carried — recorded here so it reads as a decision, not an oversight. Re-add a tiny `systemd` `before-sleep` lock hook if the posture is ever wanted back.
 
 **Flake `follows` vs Cachix is a conscious pick.** `inputs.nixpkgs.follows = "nixpkgs"` keeps channel consistency but forgoes the `noctalia.cachix.org` substituter (which requires *omitting* `follows`), so Qt builds locally. Choose at wire-up; this doc doesn't pre-decide it.
 

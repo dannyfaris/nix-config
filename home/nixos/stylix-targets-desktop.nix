@@ -43,11 +43,8 @@ in
     # docs/desktop/noctalia.md §Theming and docs/desktop/niri.md §Window decorations.
     # fuzzel/fnott/waybar targets were removed in #385 alongside their
     # modules — Noctalia now owns the launcher, notifications and bar.
-    # swaylock — gates on `programs.swaylock.enable` (set in
-    # home/nixos/screen-lock.nix). Stylix writes the lock screen's
-    # colour config (~/.config/swaylock/config) so the lock surface
-    # follows the host palette. See docs/desktop/screen-lock.md.
-    swaylock.enable = true;
+    # swaylock's target was removed in #385 — swaylock + swayidle were
+    # decommissioned; Noctalia owns the lock surface and idle handling.
     # firefox — gates on `programs.firefox.enable`. profileNames is
     # operator-declared because Stylix's Firefox module can't auto-
     # detect profile names without infinite recursion (documented in

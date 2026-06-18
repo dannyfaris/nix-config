@@ -10,11 +10,9 @@
 #   - foot.nix — programs.foot.enable.
 #   - noctalia-shell.nix — the cohesive Quickshell shell: bar, launcher,
 #     notifications, OSD, lock, wallpaper, idle (ADR-036, #385). Subsumes
-#     the waybar/fuzzel/fnott surfaces, decommissioned in #385.
-#   - screen-lock.nix — programs.swaylock + services.swayidle (session
-#     lock + idle handling: lock on idle, displays off, lock before
-#     sleep; see docs/desktop/screen-lock.md). Retired last, once
-#     Noctalia's lock is confirmed (ADR-036).
+#     the waybar/fuzzel/fnott/swaylock+swayidle surfaces, all decommissioned
+#     in #385 (lock + idle-lock + displays-off are now Noctalia's IdleService;
+#     see the swaylock note in noctalia.md §Sharp edges for the one accepted gap).
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
@@ -47,11 +45,9 @@
   imports = [
     ../niri.nix
     ../foot.nix
-    ../screen-lock.nix
-    # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). waybar,
-    # fuzzel and fnott were decommissioned in #385 once Noctalia's bar,
-    # launcher and notifications were confirmed; swaylock (screen-lock.nix
-    # above) is retired last, after Noctalia's lock is verified.
+    # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). waybar, fuzzel,
+    # fnott and (last, once Noctalia's lock + idle were verified) swaylock +
+    # swayidle were all decommissioned in #385; Noctalia owns those surfaces.
     ../noctalia-shell.nix
     ../firefox.nix
     ../cursor-ide.nix
