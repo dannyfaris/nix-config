@@ -65,15 +65,35 @@ in
     # bring-up: runs alongside the existing bar/launcher until the cutover.
     spawn-at-startup = [ { command = [ "noctalia-shell" ]; } ];
 
-    # Pointer focus (#366) — hovering focuses a nearby window, but
-    # max-scroll-amount caps how far niri will scroll the workspace to do
-    # so (as a fraction of working-area width), so a large off-screen move
-    # isn't triggered by crossing the pointer over it. 17% is tuned to the
-    # 2/3 default-width geometry and pending live confirmation on metis —
-    # see docs/desktop/niri.md §Configuration.
-    input.focus-follows-mouse = {
-      enable = true;
-      max-scroll-amount = "17%";
+    # Input — pointer focus, plus compositor-layer keyboard + mouse ergonomics
+    # (#107). Device-layer DPI/buttons/onboard profiles live on the G502
+    # (libratbag/ratbagd), not here. See docs/desktop/input.md.
+    input = {
+      # Pointer focus (#366) — hovering focuses a nearby window, but
+      # max-scroll-amount caps how far niri will scroll the workspace to do
+      # so (as a fraction of working-area width), so a large off-screen move
+      # isn't triggered by crossing the pointer over it. 17% is tuned to the
+      # 2/3 default-width geometry and pending live confirmation on metis —
+      # see docs/desktop/niri.md §Configuration.
+      focus-follows-mouse = {
+        enable = true;
+        max-scroll-amount = "17%";
+      };
+
+      keyboard = {
+        # Snappier than niri's sluggish 600ms / 25-per-second defaults.
+        repeat-delay = 250;
+        repeat-rate = 40;
+      };
+
+      mouse = {
+        # Flat (constant) accel so compositor accel doesn't compound with the
+        # G502's onboard DPI; sensitivity is owned by the mouse (accel-speed 0).
+        accel-profile = "flat";
+        accel-speed = 0.0;
+        # Wheel direction matches macOS's natural scrolling (operator runs a Mac).
+        natural-scroll = true;
+      };
     };
 
     # Layout primitives — column width, centering, border, and inter-window
