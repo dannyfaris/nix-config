@@ -1,5 +1,9 @@
 # Clipboard persistence and history
 
+> **Superseded by Noctalia (ADR-036).** The `clipse` selection below was never implemented. [ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md) adopted Noctalia Shell as the cohesive Linux desktop shell, and Noctalia *owns clipboard history* — it bundles `cliphist` + `wl-clipboard` and spawns the `wl-paste --watch cliphist store` watchers (text + image) itself. This delivers #99's whole user story (persistence after the source app closes + recall of recent copies), verified live on metis (watchers running, cliphist `db` persisting). So Noctalia subsumes this selection exactly as it subsumed the waybar/fuzzel/fnott per-tool selections; **#99 is satisfied by Noctalia** and the clipse analysis below stands only as historical rationale.
+>
+> **One real gap remained and is fixed under #360:** Noctalia carries `wl-clipboard` on its *own wrapper's* PATH, not the interactive session PATH, so non-OSC-52 CLI consumers that shell out to `wl-copy` (gh-dash's `y`, scripts) found no utility. `pkgs.wl-clipboard` is now on the session PATH via `home/nixos/noctalia-shell.nix` (co-located with the clipboard owner, mirroring the `libnotify`/`notify-send` pairing for notifications).
+
 Clipboard handling for the niri desktop on metis (#99): copied content surviving the source application closing, plus recall of recent copies. metis had no clipboard manager before this — closing the app you copied from lost the clipboard, and there was no history. The primary (highlight/middle-click) selection and a `wl-clip-persist`-style transparent-paste daemon are deliberately out of scope — see Sharp edges.
 
 ## Selection

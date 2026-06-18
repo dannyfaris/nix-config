@@ -28,5 +28,15 @@
   # notify-send (libnotify) — the CLI for emitting test notifications to
   # Noctalia, which now owns org.freedesktop.Notifications. Re-homed here
   # from the decommissioned fnott.nix (#385); pairs with Noctalia as daemon.
-  home.packages = [ pkgs.libnotify ];
+  #
+  # wl-clipboard (wl-copy/wl-paste) — CLI clipboard access on the session
+  # PATH. Noctalia owns clipboard (its cliphist watcher uses wl-clipboard
+  # from its own wrapper PATH), but that copy isn't on the interactive
+  # PATH, so non-OSC-52 consumers that shell out to wl-copy (gh-dash's `y`,
+  # scripts) found no utility. Surfaced session-wide here, with the
+  # clipboard owner. See docs/desktop/clipboard.md (#360).
+  home.packages = [
+    pkgs.libnotify
+    pkgs.wl-clipboard
+  ];
 }
