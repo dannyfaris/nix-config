@@ -115,6 +115,11 @@ in
     # snapshot between our jq read and the atomic rename, that write is
     # lost. nh switch is operator-driven and rare; accepting the window
     # over more complex coordination. See GH #172 and ADR-024.
+    #
+    # Corrupt-JSON guard (#342): these files are runtime-owned, so a tool
+    # crash mid-write can leave invalid JSON. jq then can't parse it — we
+    # warn-and-skip (leave the file for the tool to regenerate) rather
+    # than leave a stray .tmp behind or silently no-op.
     activation.agentStatuslineSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       for pair in \
         "$HOME/.claude/settings.json:~/.claude/statusline.sh" \
@@ -127,9 +132,14 @@ in
           echo "would set .statusLine in $file"
         else
           [ -f "$file" ] || echo '{}' > "$file"
-          ${pkgs.jq}/bin/jq --arg cmd "$script" \
+          if ${pkgs.jq}/bin/jq --arg cmd "$script" \
             '.statusLine = {type: "command", command: $cmd}' \
-            "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+            "$file" > "$file.tmp"; then
+            mv "$file.tmp" "$file"
+          else
+            rm -f "$file.tmp"
+            warnEcho "agent-clis: $file is not valid JSON; skipping .statusLine merge (the owning tool will regenerate it)."
+          fi
         fi
       done
     '';
