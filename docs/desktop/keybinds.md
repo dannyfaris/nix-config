@@ -1,6 +1,6 @@
 # Keybindings
 
-Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the nav family + launcher + browser + terminal, with only `Hyper+Down` lacking a niri analogue). Living document — updated with every new binding.
+Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the nav family + launcher + browser + terminal, plus a niri-only window-geometry cluster — resize, preset-width cycle, center, fullscreen, maximize — with only `Hyper+Down` lacking a niri analogue). Living document — updated with every new binding.
 
 ## Philosophy
 
@@ -8,11 +8,13 @@ Keybindings separate into three modifier namespaces, each with a distinct
 purpose:
 
 - **`Super`** (written as `Mod` in niri's KDL syntax) — niri-specific
-  window **manipulation**: moving windows and columns, resizing,
+  window **manipulation**: moving windows and columns,
   consuming/expelling from a column, closing. The scrollable-tiling
   operations with no macOS analogue — niri's domain. *Navigation*
   (focus, workspace-switch, overview) is **not** here; it migrates to
-  `Hyper` (see the cross-platform analogy below).
+  `Hyper`. Window **geometry** (resize, preset-width cycle, center,
+  fullscreen, maximize) is also not here — it lives on the `Super+Hyper`
+  extended-WM tier, which on metis is realized as `Hyper` (see below).
 
 - **`Super+letter`** — reserved namespace for application commands
   (copy/paste/save/find/close-tab and similar). Under the philosophy, a
@@ -31,19 +33,26 @@ purpose:
   ([keyd.md](./keyd.md)). Its defining rule is the cross-platform
   analogy below; the paired mapping is the source of truth.
 
-- **`Super+Hyper`** — reserved for extended window management
-  (fullscreen, maximize-column, similar). Same dependency as Hyper.
+- **`Super+Hyper`** — extended window management: the **window-geometry
+  cluster** (column resize, preset-width cycle, center, fullscreen,
+  maximize). On a single-keyboard host this tier **collapses to `Hyper`**:
+  keyd realizes Hyper as `Super+Ctrl+Alt+Shift` ([keyd.md](./keyd.md)) — it
+  already holds Super — so pressing the physical Super key on top adds no
+  modifier and yields the same four-modifier chord. There is therefore no
+  distinct `Super+Hyper` chord, and the tier is realized as `Hyper+<key>`.
+  This is a deliberate move of *resize* out of the `Super` manipulation set
+  (above), so that every geometry op lives together on one modifier.
 
 **Cross-platform analogy — the defining rule for `Hyper`.** Each `Hyper` chord performs the *analogous* action on both platforms, so the muscle memory built on the Mac transfers to niri intact. The Mac's `Hyper+Left/Right` moves between Spaces → on niri it focuses the column left/right; `Hyper+1`–`9` switches Space → focuses workspace N; `Hyper+Up` is Mission Control → niri's overview; `Hyper+Return` opens a terminal on both. The paired table under [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping) is the source of truth.
 
-**Decision — navigation migrates `Super` → `Hyper`.** Because the analogy puts navigation on `Hyper`, niri's navigation binds move off `Super`: focus-column, workspace-switch, and overview migrate to their `Hyper` homes, leaving `Super` for niri-specific *manipulation* (move, resize, consume/expel, close — actions with no Mac counterpart). Per the cadence below this is incremental — one bind per ceremony — so the Active-bindings tables keep each bind's current `Super` home shown with its `Hyper` target until it moves.
+**Decision — navigation migrates `Super` → `Hyper`.** Because the analogy puts navigation on `Hyper`, niri's navigation binds move off `Super`: focus-column, workspace-switch, and overview migrate to their `Hyper` homes, leaving `Super` for niri-specific *manipulation* (move, consume/expel, close — actions with no Mac counterpart). Window geometry similarly lives on the `Super+Hyper` extended-WM tier (realized as `Hyper`), not `Super`. Per the cadence below this is incremental — one bind per ceremony — so the Active-bindings tables keep each bind's current `Super` home shown with its `Hyper` target until it moves.
 
-The framework is a way of thinking, not a roadmap. The remaining
-metis-side unrealised layer (the local `Super+Hyper`) may never be
-implemented. The shape of the bind composition below is
-nonetheless informed by the philosophy — reserved namespaces are
-deliberately left unbound — so that if any of the layers eventually
-land, migration is mechanical rather than disruptive.
+The framework is a way of thinking, not a roadmap. The `Super+letter`
+app-command layer may never be implemented; the `Super+Hyper` extended-WM
+tier is now realized (as `Hyper`, per the collapse above). The shape of the
+bind composition below is nonetheless informed by the philosophy — reserved
+namespaces are deliberately left unbound — so that if any remaining layer
+eventually lands, migration is mechanical rather than disruptive.
 
 Cross-platform portability is now realized: Karabiner on macOS and
 keyd on metis (see [keyd.md](./keyd.md)) produce the same
@@ -68,16 +77,16 @@ The canonical mapping: each `Hyper` chord and its analogous action per platform.
 | `Hyper+Return` | new terminal window | spawn foot | ✓ |
 | `Hyper+B` | Chrome window | spawn default browser | ✓ — spawn-only |
 
-**niri-specific `Hyper` binds** (no Mac mirror) live in the same namespace and land as their tools arrive — e.g. `Hyper+Escape` → power/session menu (#98), a lock-now bind, clipboard / notification / screenshot actions. niri's own extra navigation (e.g. vertical window-focus within a column) either stays on `Super` or gets a niri-only `Hyper` bind, decided per bind.
+**niri-specific `Hyper` binds** (no Mac mirror) live in the same namespace. The **window-geometry cluster** (resize, preset-width cycle, center, fullscreen, maximize — the `Super+Hyper` extended-WM tier realized as `Hyper`) is the first such set; see [§Active bindings — Window geometry](#window-geometry). Others land as their tools arrive — e.g. `Hyper+Escape` → power/session menu (#98), a lock-now bind, clipboard / notification / screenshot actions. niri's own extra navigation (e.g. vertical window-focus within a column) either stays on `Super` or gets a niri-only `Hyper` bind, decided per bind.
 
 ## Implementation status
 
 | Namespace | metis (niri) | macOS clients | Notes |
 |---|---|---|---|
-| `Super` (niri manipulation) | Active | n/a (macOS owns WM) | Move/resize/consume/close — niri-specific. Navigation is migrating out to `Hyper`. |
+| `Super` (niri manipulation) | Active | n/a (macOS owns WM) | Move/consume/close — niri-specific. Navigation migrating out to `Hyper`; geometry moved to `Super+Hyper`. |
 | `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
 | `Hyper` (cross-platform: nav + spawn + system) | **Active** (modifier via keyd; nav + launcher + browser + terminal bound) | **Active** (modifier + binds) | Realized via keyd on metis ([keyd.md](./keyd.md)) + Karabiner/Hammerspoon on macOS. The paired mapping above is the source of truth. |
-| `Super+Hyper` (extended WM) | Reserved | n/a | Hyper modifier now realized on metis (keyd); no extended-WM binds made yet. |
+| `Super+Hyper` (extended WM) | **Active** (realized as `Hyper+key`) | n/a | Window-geometry cluster (resize, preset-cycle, center, fullscreen, maximize). `Super+Hyper` collapses to `Hyper` on a single keyboard — see Philosophy. |
 
 **Transitional bindings** — the `Hyper` target is now bound; the `Super` home is retained alongside until the migration settles, then retired (the `Mod+Return`/`Hyper+Return` pattern, applied across the nav family):
 
@@ -181,6 +190,19 @@ The `Hyper` namespace is realized on metis via keyd (Caps Lock → `Super+Ctrl+A
 | `Hyper+Return` | spawn `foot` (terminal) | Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained. |
 | `Hyper+B` | spawn default browser (`xdg-open https://`) | Opens the system default browser — currently Firefox per `xdg.mimeApps` (`home/nixos/firefox.nix`); follows the #127 audit outcome automatically. Spawn-only; focus-or-spawn out of scope. No `Super` original. |
 
+### Window geometry
+
+The `Super+Hyper` extended-WM tier (§Philosophy), realized as `Hyper+<key>` on metis — niri-only, no Mac mirror. These reshape the focused column/window. `Hyper+R`/`C`/`F` deliberately coexist with the reserved bare-`Super+R`/`C`/`F` app-command slots: a four-modifier Hyper chord is a different exact-modifier match, so it is not a reservation violation. There are no `Hyper+Shift`/`Hyper+Ctrl` variants — Hyper already carries `Ctrl+Alt+Shift+Super`, so `Hyper+<plain key>` is the only available shape (this is why there is no preset back-cycle bind; the `±` resize binds cover bidirectional adjustment). Landed #366.
+
+| Key | Action | Notes |
+|---|---|---|
+| `Hyper+Minus` | set-column-width `-10%` | Shrink the focused column |
+| `Hyper+Equal` | set-column-width `+10%` | Grow the focused column |
+| `Hyper+R` | switch-preset-column-width | Cycle niri's stock presets `1/3 → 1/2 → 2/3` (wraps); forward-only |
+| `Hyper+C` | center-column | Manually center the focused column (vs the automatic `center-focused-column "on-overflow"` — see [niri.md](./niri.md)) |
+| `Hyper+F` | fullscreen-window | True edge-to-edge fullscreen of the focused window |
+| `Hyper+M` | maximize-column | Fill the working area; bar/gaps/other columns remain (distinct from fullscreen) |
+
 ## Active bindings — macOS clients
 
 Hyper (`⌘⌃⌥⇧`) is produced by Karabiner-Elements from `caps_lock`
@@ -263,14 +285,22 @@ future keyd remap can pass them through to applications as
 `Mod+W` is currently bound to `close-window` as an interim deviation
 (see Implementation status).
 
+The bare-`Super+letter` slots stay reserved even though the window-geometry
+cluster binds `Hyper+R`/`C`/`F` (§Active bindings — Window geometry): those
+are four-modifier chords, a different exact-modifier match from `Mod+R`/`C`/`F`,
+so they don't consume the reservation.
+
 ### `Hyper` namespace — now active (not reserved)
 
 `Hyper` is no longer a reserved namespace: it is realized on both platforms and is the cross-platform layer (navigation + spawn + system). Its canonical binds live in [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping); per-platform realization is in the Implementation-status table. Kept here only as a pointer so the reserved-keys list stays complete.
 
-### `Super+Hyper` (extended WM)
+### `Super+Hyper` (extended WM) — now active
 
-Less-common window-management actions (fullscreen, maximize-column,
-and `close-window` if `Mod+W` ever migrates). Currently unrealised.
+Realized as `Hyper+<key>` (the tier collapses to `Hyper` on a single
+keyboard — see Philosophy). Hosts the window-geometry cluster — resize,
+preset-width cycle, center, fullscreen, maximize (§Active bindings —
+Window geometry, #366). `close-window` would join it as `Super+Hyper+W`
+if `Mod+W` ever migrates off the interim `Super+letter` slot.
 
 ### Hardware media keys
 
@@ -282,7 +312,10 @@ This is a living document. Conventions for evolution:
 
 - **One bind per learning ceremony.** New bindings land one at a time
   via deliberate addition (issue + PR + doc update) rather than bulk
-  refresh. Muscle memory gets space to absorb each.
+  refresh. Muscle memory gets space to absorb each. *Deliberate
+  exception:* the window-geometry cluster (six binds, #366) landed as one
+  operator-directed set — it's a single coherent capability (reshape the
+  focused column/window), so it was absorbed as a unit rather than drip-fed.
 - **Doc precedes implementation.** Each new bind lands first as a
   table row here; the implementing commit follows in the same PR.
 - **No silent additions.** If a binding appears in

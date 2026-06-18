@@ -65,15 +65,35 @@ in
     # bring-up: runs alongside the existing bar/launcher until the cutover.
     spawn-at-startup = [ { command = [ "noctalia-shell" ]; } ];
 
-    # Layout primitives — column width, border, and inter-window gap in one
-    # block (one `layout` key; the geometry/spacing values come from tokens).
+    # Pointer focus (#366) — hovering focuses a nearby window, but
+    # max-scroll-amount caps how far niri will scroll the workspace to do
+    # so (as a fraction of working-area width), so a large off-screen move
+    # isn't triggered by crossing the pointer over it. 17% is tuned to the
+    # 2/3 default-width geometry and pending live confirmation on metis —
+    # see docs/desktop/niri.md §Configuration.
+    input.focus-follows-mouse = {
+      enable = true;
+      max-scroll-amount = "17%";
+    };
+
+    # Layout primitives — column width, centering, border, and inter-window
+    # gap in one block (one `layout` key; geometry/spacing from tokens).
     layout = {
-      # Window open-width — new windows open at two-thirds of the workspace
-      # (a niri preset proportion), leaving a third for a companion column.
-      # niri otherwise honours each client's own preferred size, which is
-      # why foot (its ~80×24 default) opened narrow. This overrides that
-      # for all windows. See docs/desktop/niri.md §Configuration.
-      default-column-width.proportion = 0.66;
+      # Window open-width — new windows open at the 2/3 preset proportion,
+      # leaving a third for a companion column. Exactly 2/3 (not ~0.66) so a
+      # freshly-opened window sits on niri's switch-preset-column-width
+      # cycle (Hyper+R). niri otherwise honours each client's own preferred
+      # size, which is why foot (its ~80×24 default) opened narrow. This
+      # overrides that for all windows. See docs/desktop/niri.md §Configuration.
+      default-column-width.proportion = 2. / 3.;
+
+      # Auto-centering (#366) — center the focused column only when it
+      # doesn't fit on screen alongside the previously-focused column
+      # (on-overflow), and always center a lone column rather than scroll
+      # it to an edge. The manual Hyper+C center-column bind is separate.
+      # See docs/desktop/niri.md §Configuration.
+      center-focused-column = "on-overflow";
+      always-center-single-column = true;
 
       # Window decorations — border on, focus-ring off (Stylix used to assert
       # both via its niri target; re-asserted here now that Noctalia owns the
@@ -218,6 +238,19 @@ in
         "xdg-open"
         "https://"
       ];
+
+      # Window geometry — the Super+Hyper extended-WM tier, realized as
+      # Hyper since that chord collapses to Hyper on a single keyboard.
+      # Reshape the focused column/window: fine resize, preset-width cycle
+      # (niri's stock 1/3→1/2→2/3, wraps), center, fullscreen, maximize.
+      # niri-only (no Mac mirror). See docs/desktop/keybinds.md §Window
+      # geometry for the namespace rationale (#366).
+      "Mod+Ctrl+Alt+Shift+Minus".action.set-column-width = "-10%";
+      "Mod+Ctrl+Alt+Shift+Equal".action.set-column-width = "+10%";
+      "Mod+Ctrl+Alt+Shift+R".action.switch-preset-column-width = { };
+      "Mod+Ctrl+Alt+Shift+C".action.center-column = { };
+      "Mod+Ctrl+Alt+Shift+F".action.fullscreen-window = { };
+      "Mod+Ctrl+Alt+Shift+M".action.maximize-column = { };
 
       # Session — quit (niri shows a confirmation dialog by default)
       "Mod+Shift+E".action.quit = { };
