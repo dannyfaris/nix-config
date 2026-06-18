@@ -33,7 +33,7 @@ rather than creating a new artifact.
 | [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #73 |
 | [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #74 |
 | [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #75 |
-| [noctalia.md](./noctalia.md) | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036 | ADR-036 (pending) |
+| [noctalia.md](./noctalia.md) | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036 | ADR-036 (#385) |
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
 | [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |

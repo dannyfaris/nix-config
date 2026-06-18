@@ -2,7 +2,7 @@
 
 Cohesive Wayland desktop shell built on [Quickshell](https://quickshell.org/). One project owns the bar, launcher, notifications, lock, OSD, control-centre, clipboard history, tray, dock, wallpaper, desktop widgets, session menu, and idle — replacing the per-tool waybar + fuzzel + fnott + swaylock stack on the Linux desktop.
 
-> **Status: selected, implementation pending.** This doc is the selection record; the direction-shaping decision (and its consequences) live in [ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md). Claims tagged *(v4.7.7)* were verified by reading the upstream source at that tag; claims tagged *(on-box pending)* await first-activation confirmation on the desktop host, in the ADR-035 tradition of not asserting runtime repaint before the console proves it.
+> **Status: selected, implemented** (#385; E1 — see the font/colour-severance deferral in [#390](https://github.com/dannyfaris/nix-config/issues/390)). This doc is the selection record; the direction-shaping decision (and its consequences) live in [ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md). Claims tagged *(v4.7.7)* were verified by reading the upstream source at that tag; claims tagged *(on-box pending)* await first-activation confirmation on the desktop host, in the ADR-035 tradition of not asserting runtime repaint before the console proves it.
 
 ## Selection
 

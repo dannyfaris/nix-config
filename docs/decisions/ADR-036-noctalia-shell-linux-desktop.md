@@ -1,7 +1,7 @@
 # ADR-036: Noctalia shell on the Linux desktop — a cohesive Quickshell shell as sole theming authority
 
 **Date**: 2026-06-16
-**Status**: Accepted, Implementation pending
+**Status**: Accepted, Implemented (#385; E1 — font re-home + full colour removal E2 deferred to #390)
 
 > Adopts [Noctalia Shell](https://github.com/noctalia-dev/noctalia-shell) (the v4 Quickshell line) on the Linux desktop environment (per ADR-028/029) as a single cohesive shell — bar, launcher, notifications, lock, OSD, control-centre, clipboard, tray, dock, wallpaper, idle — *and* as the sole theming authority there. Stylix stops theming the desktop and stays authoritative on every other host; on the desktop, Noctalia owns colour, runtime polarity, and fonts in its default, idiomatic look (no ported palette, no forced scheme). **Supersedes [ADR-035](./ADR-035-runtime-theme-polarity.md)** (tinty): Noctalia subsumes the runtime-polarity layer on the desktop surface it targeted. **Amends [ADR-029](./ADR-029-niri-only-desktop.md)** (a cohesive shell returns to the Linux desktop; the per-tool status-bar/launcher/notification/lock selections are subsumed there) **and [ADR-028](./ADR-028-stylix-foundation-and-desktop-env.md) §Decision item 1** (Stylix is no longer the Linux-desktop theming source of truth). Scoped to the Linux desktop environment; theming on every other host is untouched.
 
