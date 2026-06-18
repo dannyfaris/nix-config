@@ -18,6 +18,8 @@
 # nix-daemon stances (`warn-dirty`, the unfree whitelist) are shared.
 { lib }:
 let
+  operator = import ./operator.nix;
+
   # Record a violation message unless the condition holds.
   want = cond: msg: lib.optional (!cond) msg;
 
@@ -71,11 +73,24 @@ let
           in
           t != "" && !(lib.hasPrefix "#" t)
         ) (lib.splitString "\n" config.services.openssh.extraConfig);
-        has = directive: lib.any (l: lib.hasInfix directive l) activeLines;
+        # Exact-token match, not infix. `hasInfix "MaxAuthTries 3"` also
+        # matched "MaxAuthTries 30" (#344); normalise each active line's
+        # internal whitespace and compare for equality so "MaxAuthTries 3"
+        # is the whole directive, not a prefix of it.
+        normalize =
+          l:
+          lib.concatStringsSep " " (
+            lib.filter (w: lib.isString w && w != "") (builtins.split "[[:space:]]+" (lib.trim l))
+          );
+        normalizedLines = map normalize activeLines;
+        has = directive: lib.elem directive normalizedLines;
       in
       want (has "PasswordAuthentication no") "sshd: extraConfig must set PasswordAuthentication no"
       ++ want (has "PermitRootLogin no") "sshd: extraConfig must set PermitRootLogin no"
-      ++ want (has "AllowUsers ") "sshd: extraConfig must set an AllowUsers whitelist"
+      # Operator whitelist specifically — sourced from operator.nix (as
+      # modules/darwin/sshd.nix does), so a bare/different AllowUsers list
+      # no longer satisfies the stance (#344).
+      ++ want (has "AllowUsers ${operator.name}") "sshd: extraConfig must set AllowUsers ${operator.name} (operator whitelist)"
       ++ want (has "MaxAuthTries 3") "sshd: extraConfig must set MaxAuthTries 3"
       ++ want (has "LoginGraceTime 30s") "sshd: extraConfig must set LoginGraceTime 30s"
     );
