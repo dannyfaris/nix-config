@@ -45,6 +45,9 @@
   imports = [
     ../niri.nix
     ../foot.nix
+    # set-font — runtime remap of a fontconfig generic (the conductor's
+    # friendly front-end; #390). See docs/desktop/fonts.md §Runtime UX.
+    ../set-font.nix
     # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). waybar, fuzzel,
     # fnott and (last, once Noctalia's lock + idle were verified) swaylock +
     # swayidle were all decommissioned in #385; Noctalia owns those surfaces.

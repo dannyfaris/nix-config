@@ -38,7 +38,7 @@ Before Noctalia (ADR-036) the desktop ran a per-tool stack (waybar / fuzzel / fn
 
 ## Runtime UX — changing a font
 
-The single runtime knob is `~/.config/fontconfig/conf.d/99-local.conf`, a file you own — home-manager manages its *own* files in that directory and never touches one it didn't create, so this one persists across rebuilds. A `set-font` helper (packaged in Nix) wraps the edit so the everyday change is a one-liner rather than hand-authored XML:
+The runtime knob is `~/.config/fontconfig/conf.d/` — a directory you own (home-manager manages only its *own* files there and never touches yours, so overrides persist across rebuilds). The `set-font` helper (packaged in Nix, on every desktop host) is the everyday front-end: it writes a small per-generic override file (`99-setfont-<generic>.conf`) so a change is a one-liner rather than hand-authored XML:
 
 ```bash
 set-font sans Inter            # remap the sans-serif generic
@@ -47,7 +47,7 @@ set-font --reset               # remove the override, fall back to the Nix basel
 set-font --show                # fc-match the generics
 ```
 
-The *tool* is declarative (Nix); the *selection it writes* is the mutable user-space seam. To use a face that isn't in the Nix baseline, drop it into `~/.local/share/fonts`, run `fc-cache -f`, then `set-font`.
+The *tool* is declarative (Nix); the *selection it writes* is the mutable user-space seam. `--reset` clears the files it wrote; editing a `conf.d/*.conf` by hand works too — `set-font` just automates the common case. To use a face that isn't in the Nix baseline, drop it into `~/.local/share/fonts`, run `fc-cache -f`, then `set-font`.
 
 **What updates, and when.** The edit is instant for `fc-match`; a surface picks it up when it next starts — fontconfig is not a live-repaint bus (no different from Noctalia's colour story, which signals per app). New foot/GTK windows and a Noctalia reload reflect the change; already-open foot can be nudged with `pkill -USR1 foot`. The override wins over the Nix baseline by fontconfig's **include order** (user `conf.d` is read early, via `/etc/fonts/conf.d/50-user.conf`, and `<prefer>` prepends to the family list) — *not* because of the `99-` number, which is cosmetic.
 
