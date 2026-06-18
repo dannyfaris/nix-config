@@ -3,6 +3,12 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
+> **Amendment (2026-06-18, #364): glab token moves to the OS keyring at rest on graphical hosts.** ADR-009 chose a *helper-managed* token model (gh and glab each store their own token) and accepted that the token state lives outside nix's reach — that stands. What this refines is the at-rest *encoding* of glab's token. As filed, glab persisted its GitLab personal-access token in **plaintext** in `~/.config/glab-cli/config.yml` (mode 600 but an unencrypted `glpat-…` string), while gh's token on the same host is held in the gnome-keyring Secret Service ([#104](../desktop/gnome-keyring.md)). glab 1.101.0 supports that same Secret Service: `glab auth login --use-keyring` stores the token in the OS keyring (Linux: libsecret/gnome-keyring via zalando/go-keyring over D-Bus) and **strips the plaintext `token:` from config.yml**, leaving only `use_keyring: true` — the exact parallel to gh's keyring-backed config. So on metis (and any graphical host running the Secret Service) glab now mirrors gh: still helper-managed, but encrypted at rest. Closes #364.
+>
+> **Headless fallback.** The keyring needs the Secret Service at *every* glab invocation, so it is unusable headless (mercury — no D-Bus Secret Service), exactly like gh's keyring. glab is installed on mercury too (via `git-work` → `git.nix`), so if a headless host ever needs a GitLab token, inject it as `GITLAB_TOKEN` from a sops secret ([ADR-018](./ADR-018-headless-secrets-sops.md)) — not `--use-keyring`. sops, not 1Password `op` (deferred, #112), is the headless mechanism.
+>
+> **Migration + residual risk.** The fix is an operator action, not nix code (glab stays helper-managed; there is still no `programs.glab` module): on metis, run `glab auth login --use-keyring` (re-auth, or feed the existing token via `--stdin`), which migrates the token into the keyring and removes the plaintext copy. **Smoke-test immediately after:** `glab auth status` then `glab api user` must both succeed — glab issue [#8168](https://gitlab.com/gitlab-org/cli/-/issues/8168) reported keyring-stored tokens being sent with the wrong header (→ 401) from v1.84.0 and a fix could not be confirmed; if it 401s, revoke that token and fall back to the `GITLAB_TOKEN`-via-sops path above.
+
 > **Amendment (2026-06-05, #212): work directory `~/work/` → `~/grey-st/`.**
 > The work boundary directory — and the `gitdir:` trigger that keys the
 > work identity off it — is renamed from the generic `~/work/` to
@@ -140,8 +146,10 @@ system` — before it even prompts for the token.
 
 With the helper declaratively in place, `git config` short-circuits when
 glab tries to write the same value, and `glab auth login` completes
-normally. Token persists in `~/.config/glab-cli/hosts.yml` after the
-interactive flow (same compromise as gh — not declarative, but stable).
+normally. The token persists in `~/.config/glab-cli/config.yml` after the
+interactive flow (same compromise as gh — not declarative, but stable) —
+held in the OS keyring rather than plaintext when logged in with
+`--use-keyring` on a graphical host (see the 2026-06-18 / #364 amendment).
 
 ## Consequences
 
@@ -258,7 +266,9 @@ Notes:
   `programs.git.settings.credential."https://gitlab.com".helper` (see
   Rationale § "What about glab?"). Authentication still runs interactively
   via `glab auth login` (token-paste flow); the token persists in
-  `~/.config/glab-cli/hosts.yml`.
+  `~/.config/glab-cli/config.yml` — keyring-backed (no plaintext) when
+  logged in with `--use-keyring` on a graphical host (2026-06-18 / #364
+  amendment).
 - **Project directory convention** — `~/grey-st/` for employer/GitLab work,
   `~/personal/` as the conventional sibling for personal repos. Both
   directories are ensured declaratively via
