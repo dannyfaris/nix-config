@@ -12,10 +12,11 @@
 # ever disabled.)
 #
 # Font + dpi-aware are set here because Noctalia's templating is colour-only:
-# face from the mono slot (stylix.fonts.monospace.name, still defined under
-# E1), size from the active display profile (lib/display-profiles.nix). foot's
-# `dpi-aware = "no"` honours pt-based font sizing but disables per-monitor DPI
-# scaling — kept so the profile's pt sizes render as calibrated.
+# the face is the `monospace` fontconfig generic, resolved by the conductor
+# (so a user ~/.config/fontconfig override remaps it live — docs/desktop/
+# fonts.md), size from the active display profile (lib/display-profiles.nix).
+# foot's `dpi-aware = "no"` honours pt-based font sizing but disables
+# per-monitor DPI scaling — kept so the profile's pt sizes render as calibrated.
 #
 # Lives under nixos/ because foot is Wayland-only and doesn't compile
 # off Linux — there is no cross-platform variant to share. macOS hosts
@@ -29,7 +30,7 @@
 #
 # Per ADR-028 (Implementation amendment — terminal swapped from Ghostty
 # to Foot, 2026-05-28); theming moved to Noctalia per ADR-036.
-{ config, ... }:
+_:
 let
   profile = import ../../lib/display-profiles.nix; # active display profile — terminal size
 in
@@ -37,7 +38,7 @@ in
   programs.foot = {
     enable = true;
     settings.main = {
-      font = "${config.stylix.fonts.monospace.name}:size=${toString profile.fonts.terminal}";
+      font = "monospace:size=${toString profile.fonts.terminal}";
       "dpi-aware" = "no";
       # Noctalia's runtime-written colour theme (see header). foot expands ~.
       include = "~/.config/foot/themes/noctalia";
