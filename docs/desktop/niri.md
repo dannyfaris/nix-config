@@ -72,6 +72,22 @@ polish for our use.
   honours each client's preferred size, which opened foot narrow at its
   ~80×24 default). Remaining layout/input/cursor settings still flow
   from niri-flake defaults.
+- Focus + centering behaviour (#366): `input.focus-follows-mouse`
+  (`max-scroll-amount = "17%"`) lets the pointer focus nearby windows on
+  hover while *not* yanking the workspace on larger off-screen moves —
+  niri measures `max-scroll-amount` as the scroll distance needed to
+  activate the target, as a fraction of working-area width. `17%` is a
+  candidate threshold tuned to the `0.66` default-width geometry (a
+  centered 66% column → adjacent 33% column needs ≈16% scroll; the extra
+  point is headroom for gaps/rounding), **to be confirmed by live testing
+  on metis** — lower it if hover moves too much, raise it if the
+  back-to-adjacent transition fails. `layout.center-focused-column =
+  "on-overflow"` centers the focused column only when it doesn't fit on
+  screen together with the previously-focused column;
+  `layout.always-center-single-column = true` centers a lone column too
+  (rather than scrolling it to an edge). This automatic centering is
+  distinct from the manual `Hyper+C` `center-column` bind
+  ([keybinds.md](./keybinds.md) §Window geometry).
 
 **Window decorations** — niri is a whitelisted Stylix target
 (`stylix.targets.niri.enable = true` in
