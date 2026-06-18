@@ -30,9 +30,10 @@ rather than creating a new artifact.
 | [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
-| [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) | #73 |
-| [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) | #74 |
-| [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) | #75 |
+| [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #73 |
+| [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #74 |
+| [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #75 |
+| [noctalia.md](./noctalia.md) | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036 | ADR-036 (#385) |
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
 | [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |
@@ -40,8 +41,8 @@ rather than creating a new artifact.
 | [screen-sharing.md](./screen-sharing.md) | Screencast backend — keep niri-flake's `xdg-desktop-portal-gnome` driving niri's native `Mutter.ScreenCast` over PipeWire (wiring verified present; RemoteDesktop unsupported upstream) | #101 |
 | [removable-media.md](./removable-media.md) | USB auto-mount — udisks2 + udiskie (tray-less, fnott notifications) + yazi `mount` plugin; exfatprogs/ntfs3g/dosfstools helpers; passwordless (independent of #103) | #105 |
 | [keyd.md](./keyd.md) | keyd caps-lock → Hyper (Super+Ctrl+Alt+Shift) — realizes the keybinds.md Hyper namespace on metis, mirroring the mac's Karabiner | — |
-| [screen-lock.md](./screen-lock.md) | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) | #97 |
-| [power-session.md](./power-session.md) | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) | #98 |
+| [screen-lock.md](./screen-lock.md) | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #97 |
+| [power-session.md](./power-session.md) | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) — _mooted (unbuilt), subsumed by Noctalia (ADR-036, #385)_ | #98 |
 
 ### macOS clients (mac-mini)
 

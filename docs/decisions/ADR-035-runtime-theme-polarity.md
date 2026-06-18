@@ -1,7 +1,7 @@
 # ADR-035: Runtime theme/polarity selection over the declarative Stylix base (metis)
 
 **Date**: 2026-06-09
-**Status**: Proposed
+**Status**: Superseded by ADR-036 (Noctalia subsumes the runtime polarity/theme layer on the Linux desktop — the surface this targeted; tinty retired before implementation)
 
 > Introduces the repo's first sanctioned runtime/session-state layer: a [tinty](https://github.com/tinted-theming/tinty)-driven runtime selector for theme and polarity on metis, layered *over* — not replacing — the declarative Stylix base. Stylix stays source-of-truth for palette depth, fonts, the boot default, and a Nix-pinned theme menu; the runtime layer owns the live selection on surfaces that can re-theme without a rebuild. Scoped to metis; headless hosts and mac-mini are excluded. Resolves the design half of #143.
 

@@ -18,8 +18,8 @@
 # interface (modules/nixos/ntfy-server.nix), so tailnet membership IS the
 # auth — no token/secret is introduced (#199's acceptance constraint).
 # Receiver is metis: an always-on node already on the tailnet, with a
-# human + fnott at its own console so the receiver's own failures aren't
-# blind.
+# human + an on-screen notification daemon (Noctalia) at its own console
+# so the receiver's own failures aren't blind.
 #
 # Not covered, deliberately: sops-install-secrets. On a running host
 # sops-nix installs secrets via an activation script / initrd, not a

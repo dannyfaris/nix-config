@@ -1,5 +1,7 @@
 # Waybar
 
+> **Decommissioned 2026-06-18** ([ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md), #385). Replaced on the Linux desktop by Noctalia Shell, which provides the bar — see [noctalia.md](./noctalia.md). The `home/nixos/waybar.nix` module and its Stylix target were removed; this document is retained as the selection record for the waybar era.
+
 GTK3-based Wayland status bar. The de-facto choice for niri/sway
 desktops. Selected because it's the only mainstream Wayland bar with
 StatusNotifierItem (system tray) support — load-bearing for Slack,

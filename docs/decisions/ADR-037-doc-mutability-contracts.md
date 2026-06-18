@@ -1,4 +1,4 @@
-# ADR-036: Documentation mutability contracts — facts as code, reasons as prose
+# ADR-037: Documentation mutability contracts — facts as code, reasons as prose
 
 **Date**: 2026-06-16
 **Status**: Accepted, Implementation pending

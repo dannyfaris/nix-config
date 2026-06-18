@@ -14,13 +14,13 @@
 # under bundles/ at birth (PR #30, pre-lint) and reclassified here per
 # #65 — see ADR-027 §History for the rationale.
 #
-# Desktop targets (firefox, foot, fuzzel, fnott, waybar,
-# gtk, qt) live in `home/nixos/stylix-targets-desktop.nix` because their
-# option paths only exist on hosts that import the desktop-env home
-# bundle. Splitting them out keeps this file evaluable on Darwin (where
-# none of those options exist) — required for mac-mini onboarding
-# (#11). The desktop file is imported via `home/nixos/bundles/desktop-env.nix`
-# so desktop hosts pick it up transitively.
+# Desktop targets (firefox, foot, niri, gtk) live in
+# `home/nixos/stylix-targets-desktop.nix` because their option paths only
+# exist on hosts that import the desktop-env home bundle. Splitting them out
+# keeps this file evaluable on Darwin (where none of those options exist) —
+# required for mac-mini onboarding (#11). The desktop file is imported via
+# `home/nixos/bundles/desktop-env.nix` so desktop hosts pick it up
+# transitively.
 #
 # The one terminal-emulator target that *does* run on Darwin — Ghostty
 # — is enabled in `home/darwin/ghostty.nix`, colocated with the rest of

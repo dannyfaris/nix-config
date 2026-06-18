@@ -8,16 +8,11 @@
 #   - niri.nix — programs.niri.settings.binds (curated essential set;
 #     see docs/desktop/keybinds.md for the full taxonomy).
 #   - foot.nix — programs.foot.enable.
-#   - fuzzel.nix — programs.fuzzel.enable + launcher behaviour
-#     settings (see docs/desktop/fuzzel.md).
-#   - fnott.nix — services.fnott.enable (notification daemon;
-#     D-Bus-activated; see docs/desktop/fnott.md).
-#   - screen-lock.nix — programs.swaylock + services.swayidle (session
-#     lock + idle handling: lock on idle, displays off, lock before
-#     sleep; see docs/desktop/screen-lock.md).
-#   - waybar.nix — programs.waybar.enable + status-bar layout
-#     settings (top of screen; tray-bearing; see
-#     docs/desktop/waybar.md).
+#   - noctalia-shell.nix — the cohesive Quickshell shell: bar, launcher,
+#     notifications, OSD, lock, wallpaper, idle (ADR-036, #385). Subsumes
+#     the waybar/fuzzel/fnott/swaylock+swayidle surfaces, all decommissioned
+#     in #385 (lock + idle-lock + displays-off are now Noctalia's IdleService;
+#     see the swaylock note in noctalia.md §Sharp edges for the one accepted gap).
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
@@ -36,7 +31,7 @@
 #     udisks2 + fs helpers. See docs/desktop/removable-media.md (#105).
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
-# Linux-only (niri, greetd-launched Foot + fuzzel + fnott + waybar
+# Linux-only (niri, greetd-launched Foot + the Noctalia shell
 # all carry Linux paths; firefox's xdg.mimeApps wiring is Linux-only
 # even though pkgs.firefox builds on Darwin; cursor-ide's launcher
 # integration is Linux-only although pkgs.code-cursor builds on
@@ -50,10 +45,10 @@
   imports = [
     ../niri.nix
     ../foot.nix
-    ../fuzzel.nix
-    ../fnott.nix
-    ../screen-lock.nix
-    ../waybar.nix
+    # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). waybar, fuzzel,
+    # fnott and (last, once Noctalia's lock + idle were verified) swaylock +
+    # swayidle were all decommissioned in #385; Noctalia owns those surfaces.
+    ../noctalia-shell.nix
     ../firefox.nix
     ../cursor-ide.nix
     ../portal-color-scheme.nix

@@ -1,5 +1,7 @@
 # Power and session controls
 
+> **Mooted 2026-06-18** ([ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md), #385). This was an unbuilt #98 proposal — a `fuzzel`-dmenu power menu built on swayidle's `lock`/`before-sleep` events. Both dependencies (fuzzel, swayidle) were decommissioned in #385, and Noctalia provides lock/logout/suspend/reboot/shut-down natively (its session menu + lock-screen session buttons). So this proposal is superseded before implementation; retained as history. (Note the externally-initiated-suspend lock gap recorded in [noctalia.md](./noctalia.md) §Sharp edges.)
+
 Deliberate power- and session-state controls for the niri desktop on metis (#98) — a discoverable way to **lock, log out, suspend, reboot, and shut down** without dropping to a TTY or memorising `systemctl` invocations. This is the *attended* counterpart to the unattended idle/lock automation in [screen-lock.md](./screen-lock.md) (#97); that doc explicitly deferred "a 'lock now' keybind, suspend/reboot/logout controls" to here.
 
 ## Selection

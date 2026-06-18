@@ -19,12 +19,35 @@
 #
 # See #69 for the niri-only baseline close-out under which this
 # curated bind set was established.
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  options,
+  inputs,
+  ...
+}:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
   profile = import ../../lib/display-profiles.nix; # active display profile — output scale
 in
 {
+  # Hand niri's window-border colour to Noctalia at runtime (ADR-036, #385).
+  # niri-flake's `programs.niri.config` replaces `settings` wholesale and
+  # exposes no settings→KDL renderer, so we reach the rendered document via the
+  # option's own *default* — `settings.render cfg.settings`, which depends on
+  # `settings`, not `config`, so there's no cycle — serialise it, and append a
+  # top-level include. `optional=true` (niri 26.04) keeps the session up before
+  # Noctalia first writes noctalia.kdl; niri watches the file and live-reloads,
+  # so the border follows Noctalia's scheme/polarity. Noctalia's own niri
+  # post-hook can't do this injection itself — it can't write the read-only
+  # config.kdl symlink. See docs/desktop/noctalia.md §Sharp edges.
+  programs.niri.config =
+    inputs.niri-flake.lib.kdl.serialize.nodes options.programs.niri.config.default
+    + ''
+
+      include optional=true "~/.config/niri/noctalia.kdl"
+    '';
+
   programs.niri.settings = {
     # Capture target, set explicitly so it stays in lockstep with the
     # directory created below — niri creates only the last path component
@@ -37,6 +60,11 @@ in
     # lib/display-profiles.nix.
     outputs."DP-1".scale = profile.scale;
 
+    # Noctalia Shell — spawned at session start (ADR-036, #385). The binary
+    # is `noctalia-shell` (a wrapper over Quickshell's qs). Non-destructive
+    # bring-up: runs alongside the existing bar/launcher until the cutover.
+    spawn-at-startup = [ { command = [ "noctalia-shell" ]; } ];
+
     # Layout primitives — column width, border, and inter-window gap in one
     # block (one `layout` key; the geometry/spacing values come from tokens).
     layout = {
@@ -47,11 +75,15 @@ in
       # for all windows. See docs/desktop/niri.md §Configuration.
       default-column-width.proportion = 0.66;
 
-      # Window border — colour comes from the whitelisted Stylix niri target
-      # (active base0D / inactive base03, focus-ring off); width from the
-      # geometry token (Carbon spacing-01; crisp on 4K/1.5 — rationale in
-      # theme-tokens.nix and docs/desktop/niri.md §Window decorations).
+      # Window decorations — border on, focus-ring off (Stylix used to assert
+      # both via its niri target; re-asserted here now that Noctalia owns the
+      # colour via the runtime include above). Border width from the geometry
+      # token (Carbon spacing-01; crisp on 4K/2× — rationale in theme-tokens.nix
+      # and docs/desktop/niri.md §Window decorations); the active/inactive
+      # colours come from Noctalia's noctalia.kdl.
+      border.enable = true;
       border.width = tokens.geometry.borderWidth;
+      focus-ring.enable = false;
 
       # Inter-window gap — explicit token (= Carbon spacing-05) rather than
       # niri's implicit default 16, so the value lives in one place. See
@@ -135,9 +167,18 @@ in
       "Mod+Ctrl+8".action.move-window-to-workspace = 8;
       "Mod+Ctrl+9".action.move-window-to-workspace = 9;
 
-      # Spawn — terminal + application launcher
+      # Spawn — terminal + application launcher. The launcher is
+      # Noctalia's IPC-driven app launcher (ADR-036, #385): `noctalia-shell
+      # ipc call launcher toggle`. Passed as an argv list — niri spawns it
+      # directly (no shell). fuzzel was decommissioned in #385.
       "Mod+Return".action.spawn = "foot";
-      "Mod+Space".action.spawn = "fuzzel";
+      "Mod+Space".action.spawn = [
+        "noctalia-shell"
+        "ipc"
+        "call"
+        "launcher"
+        "toggle"
+      ];
 
       # Hyper — the cross-platform layer (nav/spawn/system; see keybinds.md).
       # keyd realizes Caps Lock → Hyper
@@ -160,7 +201,13 @@ in
       "Mod+Ctrl+Alt+Shift+7".action.focus-workspace = 7;
       "Mod+Ctrl+Alt+Shift+8".action.focus-workspace = 8;
       "Mod+Ctrl+Alt+Shift+9".action.focus-workspace = 9;
-      "Mod+Ctrl+Alt+Shift+Space".action.spawn = "fuzzel";
+      "Mod+Ctrl+Alt+Shift+Space".action.spawn = [
+        "noctalia-shell"
+        "ipc"
+        "call"
+        "launcher"
+        "toggle"
+      ];
       # Hyper+Return → foot, mirroring the mac's Hyper+Return → Ghostty.
       "Mod+Ctrl+Alt+Shift+Return".action.spawn = "foot";
       # Hyper+B → the system default browser. A neutral https URL resolves

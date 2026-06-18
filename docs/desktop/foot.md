@@ -7,9 +7,8 @@ terminal.
 ## Selection
 
 **foot** on metis. Enabled via `home/nixos/foot.nix` (HM module
-`programs.foot.enable = true`). Stylix integration via
-`stylix.targets.foot.enable = true` in
-`home/shared/stylix-targets.nix`.
+`programs.foot.enable = true`). Colours come from Noctalia, not Stylix
+(ADR-036, #385) — see Configuration.
 
 The terminfo entry `xterm-ghostty` ships on every NixOS host via
 `modules/nixos/ghostty-terminfo.nix` so SSH'ing from a Ghostty-on-Mac
@@ -55,37 +54,31 @@ aren't earning their keep for a single-OS, single-user desktop.
 
 ## Configuration
 
-**HM module** — `home/nixos/foot.nix`:
+**HM module** — `home/nixos/foot.nix` sets the font, `dpi-aware`, and an
+`include` pointing at Noctalia's runtime-written colour theme:
 
 ```nix
-_: {
-  programs.foot.enable = true;
-}
+programs.foot = {
+  enable = true;
+  settings.main = {
+    font = "${config.stylix.fonts.monospace.name}:size=${toString profile.fonts.terminal}";
+    "dpi-aware" = "no";
+    include = "~/.config/foot/themes/noctalia";
+  };
+};
 ```
 
-Minimal — all real configuration flows through Stylix targets.
-
-**Stylix integration** — `home/shared/stylix-targets.nix`:
-
-```nix
-stylix.targets.foot.enable = true;
-```
-
-Stylix writes `programs.foot.settings.main`:
-- `font = "MonaspiceAr Nerd Font:size=N"` (from
-  `stylix.fonts.monospace.name` + `stylix.fonts.sizes.terminal`). The
-  size is **display-profile-driven**, not a fixed literal — the
-  `terminal` slot tracks the active niri output scale via
-  `lib/display-profiles.nix`; at metis's 2× profile it is size 8 (the
-  on-vocab reference is 11 at 1.5×). See [fonts.md](./fonts.md) §Sizing.
-- `dpi-aware = "no"` (Stylix's default; see Sharp edges)
-- `initial-color-theme` + per-polarity colour palette from the base16
-  scheme
-
-We deliberately don't set `programs.foot.settings.main.*` directly —
-Stylix is the source of truth. If a per-host or per-user override
-that can't go through Stylix is ever needed, it would need to coexist
-with Stylix's option-priority handling; current state has no need.
+**Theming is Noctalia's, not Stylix's** (ADR-036, #385). The Stylix `foot`
+target was removed; foot's colours come from `~/.config/foot/themes/noctalia`,
+which Noctalia writes at runtime and refreshes on a scheme/polarity change.
+We declare the `include` ourselves rather than relying on Noctalia's post-hook,
+which can't edit foot.ini while it's a read-only home-manager symlink — and a
+competing Stylix `[colors-dark]` block in foot.ini was exactly what shadowed
+the include before the target came off. The font face still resolves from the
+mono slot (`stylix.fonts.monospace.name`, retained under E1) and the size from
+the active display profile (`lib/display-profiles.nix` — size 8 at metis's 2×);
+`dpi-aware = "no"` is set here to preserve pt-based sizing. See
+[noctalia.md](./noctalia.md) §Configuration and §Sharp edges.
 
 ## Sharp edges
 
@@ -137,8 +130,8 @@ ship the entry from nixpkgs (see #167 for the move rationale).
 - [`modules/nixos/ghostty-terminfo.nix`](../../modules/nixos/ghostty-terminfo.nix)
   — terminfo for the Ghostty-on-Mac → NixOS SSH path. (NixOS-only;
   Darwin hosts use Ghostty's client-side ssh-terminfo push instead.)
-- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
-  — `stylix.targets.foot.enable = true`.
+- [noctalia.md](./noctalia.md) — Noctalia owns foot's colours (ADR-036,
+  #385); the Stylix `foot` target was removed.
 - [fonts.md](./fonts.md) — font configuration that affects foot's
   appearance + the DejaVu fallback warning that surfaced + the
   dpi-aware nuance.

@@ -64,7 +64,7 @@ The canonical mapping: each `Hyper` chord and its analogous action per platform.
 | `Hyper+1`–`9` | switch to Space N | focus-workspace N | ✓ |
 | `Hyper+Up` | Mission Control overview | toggle-overview | ✓ |
 | `Hyper+Down` | application-windows exposé | *(no analogue — niri has no per-app window group)* | n/a |
-| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | spawn fuzzel (launcher) | ✓ — migrates `Mod+Space` |
+| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | Noctalia launcher (IPC) | ✓ — migrates `Mod+Space` |
 | `Hyper+Return` | new terminal window | spawn foot | ✓ |
 | `Hyper+B` | Chrome window | spawn default browser | ✓ — spawn-only |
 
@@ -82,7 +82,7 @@ The canonical mapping: each `Hyper` chord and its analogous action per platform.
 **Transitional bindings** — the `Hyper` target is now bound; the `Super` home is retained alongside until the migration settles, then retired (the `Mod+Return`/`Hyper+Return` pattern, applied across the nav family):
 
 - Navigation: `Hyper+Left`/`Right` (focus-column), `Hyper+1`–`9` (focus-workspace), `Hyper+Up` (overview) added; `Mod+Left`/`Right` + vim `Mod+H`/`L`, `Mod+1`–`9`, and `Mod+O` retained.
-- `Hyper+Space` → fuzzel added (the Spotlight-equivalent); `Mod+Space` retained.
+- `Hyper+Space` → the Noctalia launcher (the Spotlight-equivalent); `Mod+Space` retained.
 - `Hyper+Return` → foot and `Mod+Return` coexist as before.
 
 **Letter-space deviation** (separate from the migration): `Mod+W` → `close-window` sits in the reserved `Super+letter` space (it would clash with a hypothetical `Super+W` → `Ctrl+W`). close is manipulation, so it stays on `Super`; the philosophical target is `Super+Hyper+W`.
@@ -135,7 +135,7 @@ focused column.
 | Key | Action |
 |---|---|
 | `Mod+Return` | spawn `foot` (terminal) |
-| `Mod+Space` | spawn `fuzzel` (application launcher) |
+| `Mod+Space` | Noctalia launcher — `noctalia-shell ipc call launcher toggle` (ADR-036, #385) |
 
 ### Session
 
@@ -177,7 +177,7 @@ The `Hyper` namespace is realized on metis via keyd (Caps Lock → `Super+Ctrl+A
 | `Hyper+Left` / `Hyper+Right` | focus-column-left / -right | Mirrors the mac's `Hyper+Left`/`Right` (move between Spaces). `Mod+Left`/`Right` (Navigation, above) retained. |
 | `Hyper+1` … `Hyper+9` | focus-workspace 1–9 | Mirrors the mac's Switch-to-Desktop N. `Mod+1`–`9` (Workspaces, above) retained. |
 | `Hyper+Up` | toggle-overview | Mirrors the mac's Mission Control. `Mod+O` (Discovery, above) retained. |
-| `Hyper+Space` | spawn `fuzzel` (launcher) | The Spotlight-equivalent. `Mod+Space` (Spawn, above) retained. |
+| `Hyper+Space` | Noctalia launcher (IPC) | The Spotlight-equivalent. `Mod+Space` (Spawn, above) retained. |
 | `Hyper+Return` | spawn `foot` (terminal) | Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained. |
 | `Hyper+B` | spawn default browser (`xdg-open https://`) | Opens the system default browser — currently Firefox per `xdg.mimeApps` (`home/nixos/firefox.nix`); follows the #127 audit outcome automatically. Spawn-only; focus-or-spawn out of scope. No `Super` original. |
 

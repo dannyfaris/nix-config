@@ -1,5 +1,7 @@
 # Screen lock and idle handling
 
+> **Decommissioned 2026-06-18** ([ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md), #385). swaylock + swayidle were removed; Noctalia owns the lock surface and idle handling (lock-on-idle, displays-off, lock on Noctalia-initiated suspend) — see [noctalia.md](./noctalia.md). One guarantee was deliberately *not* carried over: lock on an externally-initiated `systemctl suspend` (noctalia.md §Sharp edges, "Accepted gap"). This document is retained as the selection record for the swaylock/swayidle era and the fallback for any non-Noctalia host.
+
 Automatic session locking and idle behaviour for the niri desktop on metis (#97). Covers the *unattended* path — lock on idle, displays off on deeper idle, and lock before the system sleeps. Deliberate user actions (a "lock now" keybind, suspend/reboot/logout controls) are out of scope here and belong to the power-and-session-controls work (#98).
 
 ## Selection
