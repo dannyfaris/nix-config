@@ -45,11 +45,12 @@ set-font sans Inter            # remap the sans-serif generic
 set-font mono "JetBrains Mono" # remap monospace; signals open foot
 set-font --reset               # remove the override, fall back to the Nix baseline
 set-font --show                # fc-match the generics
+set-font mono X --reload-shell # any of the above, plus restart Noctalia (opt-in)
 ```
 
 The *tool* is declarative (Nix); the *selection it writes* is the mutable user-space seam. `--reset` clears the files it wrote; editing a `conf.d/*.conf` by hand works too — `set-font` just automates the common case. To use a face that isn't in the Nix baseline, drop it into `~/.local/share/fonts`, run `fc-cache -f`, then `set-font`.
 
-**What updates, and when.** The edit is instant for `fc-match`; a surface picks it up when it next starts — fontconfig is not a live-repaint bus (no different from Noctalia's colour story, which signals per app). New foot/GTK windows and a Noctalia reload reflect the change; already-open foot can be nudged with `pkill -USR1 foot`. The override wins over the Nix baseline by fontconfig's **include order** (user `conf.d` is read early, via `/etc/fonts/conf.d/50-user.conf`, and `<prefer>` prepends to the family list) — *not* because of the `99-` number, which is cosmetic.
+**What updates, and when.** The edit is instant for `fc-match`; a surface picks it up when it next starts — fontconfig is not a live-repaint bus (no different from Noctalia's colour story, which signals per app). New foot/GTK windows reflect the change, and `set-font` nudges already-open foot automatically (`USR1`). **Noctalia caches fonts at process start**, so its bar/launcher re-resolve only on a restart — `set-font … --reload-shell` does that on demand (opt-in; bouncing the shell is disruptive, so it is not the default), and `set-font` prints a hint when a Noctalia is running and the flag was omitted. The override wins over the Nix baseline by fontconfig's **include order** (user `conf.d` is read early, via `/etc/fonts/conf.d/50-user.conf`, and `<prefer>` prepends to the family list) — *not* because of the `99-` number, which is cosmetic.
 
 The mapping is a *global generic* remap, not a per-surface override; a single surface's font is its own (declarative) config. fontconfig conducts the *face*, not the *size* — sizes stay a declarative concern (§Sizing).
 
