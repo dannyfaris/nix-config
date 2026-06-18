@@ -90,6 +90,8 @@ polish for our use.
   distinct from the manual `Hyper+C` `center-column` bind
   ([keybinds.md](./keybinds.md) §Window geometry).
 
+**Display configuration (#106)** — metis drives one output, DP-1 (the LG UltraFine 4K, `3840×2160`). Of the three display knobs — resolution, scale, refresh — only **scale** is pinned. niri auto-detects `1.5×`; the operator runs `2×` (chosen on-panel against 1× and 1.5×), so `outputs."DP-1".scale` carries the active display-profile scale (`lib/display-profiles.nix`). **Resolution and refresh are deliberately left to niri's auto-detection** and not pinned: niri selects the EDID *preferred* mode, which for this panel is `3840×2160 @ 59.997 Hz` — native resolution at the highest mode it advertises (a 60 Hz panel; there is no higher-refresh mode to force). Pinning them would only re-assert that auto-detected value through an exact-match mode string (`3840x2160@59.997`) that silently falls back if it ever fails to match the EDID, and that a monitor swap would force you to hand-edit — maintenance cost with no defect to fix. Scale is the sole knob the hardware can't infer (apparent size is a human preference, not encodable in EDID), so it is the sole knob pinned. Mode-pinning would earn its keep only against an observed defect — a high-refresh panel whose preferred mode is wrongly 60 Hz, EDID mode-flapping, or multi-output placement — none of which apply on metis.
+
 **Window decorations** — niri is a whitelisted Stylix target
 (`stylix.targets.niri.enable = true` in
 `home/nixos/stylix-targets-desktop.nix`). An earlier revision of this

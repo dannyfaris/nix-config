@@ -15,8 +15,10 @@
 # fnott + GTK dialogs + web body. Only sizes + geometry + scale move per profile.
 #
 # Retained switchable for on-panel retuning: flip `active` to "1.0" / "1.5" /
-# "2.0" and `nh os switch`. #106 stays open — display pinning is "2× chosen,
-# harness retained", not closed.
+# "2.0" and `nh os switch`. Scale is the only display knob pinned (#106):
+# resolution and refresh are left to niri's preferred-mode auto-detection, since
+# the hardware already reports native res + max refresh and only apparent size
+# can't be inferred from EDID. Rationale: docs/desktop/niri.md §Display configuration.
 let
   active = "2.0"; # ← THE KNOB: "1.0" | "1.5" | "2.0"
 
