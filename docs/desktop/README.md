@@ -35,6 +35,7 @@ rather than creating a new artifact.
 | [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #75 |
 | [noctalia.md](./noctalia.md) | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036 | ADR-036 (#385) |
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
+| [thunderbird.md](./thunderbird.md) | Thunderbird email client (personal Gmail + iCloud; Gecko toolkit shared with Firefox; runtime/GUI-managed accounts; polarity-follows/palette-vanilla) | #388 |
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
 | [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |
 | [popups.md](./popups.md) | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred) | #308 |
