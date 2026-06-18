@@ -69,7 +69,7 @@ in
     # max-scroll-amount caps how far niri will scroll the workspace to do
     # so (as a fraction of working-area width), so a large off-screen move
     # isn't triggered by crossing the pointer over it. 17% is tuned to the
-    # 0.66 default-width geometry and pending live confirmation on metis —
+    # 2/3 default-width geometry and pending live confirmation on metis —
     # see docs/desktop/niri.md §Configuration.
     input.focus-follows-mouse = {
       enable = true;
@@ -79,12 +79,13 @@ in
     # Layout primitives — column width, centering, border, and inter-window
     # gap in one block (one `layout` key; geometry/spacing from tokens).
     layout = {
-      # Window open-width — new windows open at two-thirds of the workspace
-      # (a niri preset proportion), leaving a third for a companion column.
-      # niri otherwise honours each client's own preferred size, which is
-      # why foot (its ~80×24 default) opened narrow. This overrides that
-      # for all windows. See docs/desktop/niri.md §Configuration.
-      default-column-width.proportion = 0.66;
+      # Window open-width — new windows open at the 2/3 preset proportion,
+      # leaving a third for a companion column. Exactly 2/3 (not ~0.66) so a
+      # freshly-opened window sits on niri's switch-preset-column-width
+      # cycle (Hyper+R). niri otherwise honours each client's own preferred
+      # size, which is why foot (its ~80×24 default) opened narrow. This
+      # overrides that for all windows. See docs/desktop/niri.md §Configuration.
+      default-column-width.proportion = 2. / 3.;
 
       # Auto-centering (#366) — center the focused column only when it
       # doesn't fit on screen alongside the previously-focused column

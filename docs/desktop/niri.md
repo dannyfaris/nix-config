@@ -68,17 +68,18 @@ polish for our use.
 - Deliberate layout/decoration overrides: `prefer-no-csd = true` (niri
   draws its own focus-ring border instead of clients' titlebars —
   wasted space when tiling) and `layout.default-column-width =
-  proportion 0.66` (new windows open at two-thirds; niri otherwise
+  proportion 2/3` (new windows open two-thirds wide; niri otherwise
   honours each client's preferred size, which opened foot narrow at its
-  ~80×24 default). Remaining layout/input/cursor settings still flow
-  from niri-flake defaults.
+  ~80×24 default). Exactly `2/3` (not an approximate `0.66`) so a fresh
+  window lands on niri's stock preset cycle (`Hyper+R`). Remaining
+  layout/input/cursor settings still flow from niri-flake defaults.
 - Focus + centering behaviour (#366): `input.focus-follows-mouse`
   (`max-scroll-amount = "17%"`) lets the pointer focus nearby windows on
   hover while *not* yanking the workspace on larger off-screen moves —
   niri measures `max-scroll-amount` as the scroll distance needed to
   activate the target, as a fraction of working-area width. `17%` is a
-  candidate threshold tuned to the `0.66` default-width geometry (a
-  centered 66% column → adjacent 33% column needs ≈16% scroll; the extra
+  candidate threshold tuned to the `2/3` default-width geometry (a
+  centered 2/3 column → adjacent 1/3 column needs ≈16% scroll; the extra
   point is headroom for gaps/rounding), **to be confirmed by live testing
   on metis** — lower it if hover moves too much, raise it if the
   back-to-adjacent transition fails. `layout.center-focused-column =
