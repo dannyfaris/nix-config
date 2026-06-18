@@ -10,11 +10,16 @@
 #
 # Parametrisation: `hostContext.{flakePath,hostName}` come from each host's
 # `_module.args.hostContext` via the HM extraSpecialArgs forwarder in
-# modules/nixos/home-manager.nix. See ADR-019.
+# modules/{nixos,darwin}/home-manager.nix. `flakeConfigAttr` is forwarded
+# the same way (cf. `zellijCacheDir`) and names the flake's per-platform
+# configurations set — `nixosConfigurations` on NixOS, `darwinConfigurations`
+# on Darwin — so the nixd option-eval exprs below resolve on both (#335).
+# See ADR-019.
 {
   lib,
   pkgs,
   hostContext,
+  flakeConfigAttr,
   ...
 }:
 let
@@ -51,12 +56,14 @@ in
       command = "nixd";
       config.nixd.options = {
         nixos = {
-          expr = ''(builtins.getFlake "${flakePath}").nixosConfigurations.${hostName}.options'';
+          expr = ''(builtins.getFlake "${flakePath}").${flakeConfigAttr}.${hostName}.options'';
         };
         # home-manager options live inside a submodule;
         # .type.getSubOptions [] unwraps them so nixd sees the option tree.
+        # The submodule path is identical on both platforms; only the
+        # top-level configurations attr (`flakeConfigAttr`) differs.
         home-manager = {
-          expr = ''(builtins.getFlake "${flakePath}").nixosConfigurations.${hostName}.options.home-manager.users.type.getSubOptions []'';
+          expr = ''(builtins.getFlake "${flakePath}").${flakeConfigAttr}.${hostName}.options.home-manager.users.type.getSubOptions []'';
         };
       };
     };
