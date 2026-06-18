@@ -16,6 +16,9 @@
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
+#   - thunderbird.nix — programs.thunderbird.enable (install only;
+#     accounts runtime/GUI-managed; Gecko Wayland auto-detect; see
+#     docs/desktop/thunderbird.md). Personal Gmail + iCloud (#388).
 #   - cursor-ide.nix — home.packages addition for pkgs.code-cursor
 #     (AI-coding-focused vscode fork; Wayland via host-wide
 #     NIXOS_OZONE_WL set in modules/nixos/electron-wayland.nix).
@@ -53,6 +56,7 @@
     # swayidle were all decommissioned in #385; Noctalia owns those surfaces.
     ../noctalia-shell.nix
     ../firefox.nix
+    ../thunderbird.nix
     ../cursor-ide.nix
     ../portal-color-scheme.nix
     ../polkit-agent.nix
