@@ -92,6 +92,7 @@ mac-mini keeps Stylix (it is not Stylix-severed) and installs **Monaspace only**
 ## Sharp edges
 
 - **Silent DejaVu fallback (lockstep).** A `defaultFonts` name with no matching installed package resolves silently to `DejaVu Sans`, not an error. Keep the map name and the `fonts.packages` entry in lockstep, and verify with `fc-match` on-box. (Historically this surfaced as foot's "DejaVu Sans: font does not appear to be monospace" when neither the install nor the name wire was active.)
+- **`pkgs.inter` is variable-only.** Its fontconfig family is `Inter Variable`, not `Inter`, and nothing aliases it — so a bare `Inter` in the map / Firefox / GTK would silently resolve to DejaVu. A `localConf` alias in `desktop-fonts.nix` maps `Inter` → `Inter Variable`, so the friendly name works everywhere (the map, the Firefox face pin, GTK's `Sans`, and `set-font sans Inter`).
 - **The override seam wins by include-order, not filename.** A user `~/.config/fontconfig/conf.d/*.conf` beats the system baseline because user `conf.d` is included early (`50-user.conf`) and `<prefer>` prepends — not because of its number. Don't reason about "higher number = higher priority."
 - **Firefox doesn't follow the runtime knob (E1).** Face-swap-only — see §Installation model. It joins the conductor at E2 / Part B.
 - **foot's `dpi-aware = no`.** foot 1.15.0's default, adopted via Stylix's foot target; `:size=N` is scaled by output factor, letting the display profile own terminal sizing. See §Sizing. Original landing: PR #63.

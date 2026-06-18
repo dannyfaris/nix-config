@@ -91,19 +91,17 @@ in
     gtk.extraCss = lib.mkIf desktopSession ''@import url("noctalia.css");'';
   };
 
-  # GTK app-UI uses the sansSerif chrome face (IBM Plex Sans), the chrome
-  # sans established in the #369 typography pass — GTK chrome (the
-  # polkit prompt, GTK file pickers, GTK app dialogs) is UI chrome, so it
-  # rides the proportional sans rather than the terminal's mono. Sized at the
-  # popups slot (the chrome body size, M3 body) so dialogs match the
-  # notification/launcher body, not the applications slot (12, which sizes
-  # web body text). This inverts the earlier mono-app-UI boundary (#349,
-  # #108). mkForce because Stylix's gtk target also writes gtk.font. See
-  # docs/desktop/fonts.md §Sizing.
+  # GTK app-UI (the polkit prompt, file pickers, app dialogs) rides the `Sans`
+  # fontconfig generic, so it follows the font conductor — and any runtime
+  # ~/.config/fontconfig override — like every other surface; today Sans
+  # resolves to Inter (#390; docs/desktop/fonts.md). Sized at the popups slot
+  # (the chrome body size, M3 body) so dialogs match the notification body, not
+  # the applications slot (12, which sizes web body). mkForce because Stylix's
+  # gtk target also writes gtk.font (from stylix.fonts.sansSerif); we force the
+  # generic over it. No package — the conductor's faces install at system level.
   gtk.font = lib.mkIf desktopSession (
     lib.mkForce {
-      name = config.stylix.fonts.sansSerif.name;
-      package = config.stylix.fonts.sansSerif.package;
+      name = "Sans";
       size = config.stylix.fonts.sizes.popups;
     }
   );

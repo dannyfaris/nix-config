@@ -1,76 +1,91 @@
-# desktop-fonts — Stylix font configuration + the two NixOS-surface
-# wires for hosts that render UI text.
+# desktop-fonts — the NixOS-side font wiring for desktop hosts: install the
+# faces and define the fontconfig generic→face map. Imported only by desktop
+# hosts (via the desktop-env bundle), so headless hosts (mercury, nixos-vm)
+# pay no font-package closure.
 #
-# Stylix is the source of truth for font names and packages but
-# reaches NixOS only when the operator wires it through. Two wires
-# both live in this module: enabling the fontconfig target writes
-# stylix.fonts.*.name into fonts.fontconfig.defaultFonts, and the
-# explicit fonts.packages assignment installs the four configured
-# packages. Headless hosts (mercury, nixos-vm) don't import this
-# module and don't pay the font-package closure cost.
+# Fonts are conducted by fontconfig, not Stylix (ADR-036 Amendment; #390):
+# surfaces ask for a generic (monospace / sans-serif), this map resolves it,
+# and a user file in ~/.config/fontconfig/conf.d overrides it at runtime with
+# no rebuild. Three jobs, all explicit here:
+#   - fonts.packages                — install only the consumed faces.
+#   - fonts.fontconfig.defaultFonts — the baseline generic→face map.
+#   - stylix.targets.fontconfig.enable = false — so Stylix writes no competing
+#     map.
 #
-# Full rationale, sharp edges, and cadence: docs/desktop/fonts.md.
+# stylix.fonts is kept — but is no longer the font source of truth — only
+# because two surviving Stylix targets read it under E1: the Firefox target
+# (per-profile font.name; face-swap-only, so Firefox renders Inter but stays
+# pinned, not following the runtime override, until Part B) and the GTK target.
+# stylix.fonts.sizes also feeds the type.size tokens. See docs/desktop/fonts.md.
 #
-# Per ADR-028; this slice landed under #69.
-{ config, pkgs, ... }:
+# Per #390 (Part A); was Stylix-sourced per ADR-028 / #69.
+{ pkgs, ... }:
 let
-  # The three surface font sizes come from the active display profile, so they
-  # stay coupled to the niri output scale (metis runs 2×). See
-  # lib/display-profiles.nix.
+  # Per-surface sizes come from the active display profile (metis: 2×), so they
+  # stay coupled to the niri output scale. See lib/display-profiles.nix.
   profile = import ../../lib/display-profiles.nix;
 in
 {
+  fonts = {
+    # Install only what something consumes (whitelist > blanket): mono for the
+    # terminal/TUIs, Inter for GTK/web, Noto for emoji. Serif is uncurated — it
+    # resolves to the DejaVu that fonts.enableDefaultPackages already ships.
+    packages = [
+      pkgs.nerd-fonts.monaspace
+      pkgs.inter
+      pkgs.noto-fonts-color-emoji
+    ];
+
+    fontconfig = {
+      # The baseline generic→face map — the conductor's defaults. A user
+      # ~/.config/fontconfig/conf.d/*.conf overrides these live (fonts.md
+      # §Runtime UX). Each name must match an installed face above (Inter via
+      # the alias below) or fc-match falls back to DejaVu silently — keep this
+      # in lockstep with packages. serif is intentionally absent (→ DejaVu).
+      defaultFonts = {
+        monospace = [ "MonaspiceAr Nerd Font" ];
+        sansSerif = [ "Inter" ];
+        emoji = [ "Noto Color Emoji" ];
+      };
+
+      # pkgs.inter is variable-only — its fontconfig family is "Inter Variable",
+      # not "Inter", and nothing aliases it. Map the friendly "Inter" name onto
+      # it so the map above, the Firefox face pin, GTK's Sans, and `set-font
+      # sans Inter` all resolve (a bare "Inter" otherwise silently → DejaVu).
+      localConf = ''
+        <?xml version="1.0"?>
+        <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+        <fontconfig>
+          <alias binding="same">
+            <family>Inter</family>
+            <prefer><family>Inter Variable</family></prefer>
+          </alias>
+        </fontconfig>
+      '';
+    };
+  };
+
+  # Stylix is no longer the font writer — disable its fontconfig target so it
+  # doesn't write a competing fonts.fontconfig.defaultFonts.
+  stylix.targets.fontconfig.enable = false;
+
+  # Kept only for the surviving E1 Stylix targets (Firefox font.name; GTK
+  # size) — not the font source of truth. sansSerif = Inter is the face-swap
+  # that makes Firefox's pinned web body render Inter (see header). serif/emoji
+  # are unset (Stylix defaults; the surviving targets don't consume them).
   stylix.fonts = {
-    # Mono face — Monaspace Argon (humanist mono), Nerd Font variant for the
-    # powerline/devicon/file-type glyphs starship/zellij/lazygit rely on. In the
-    # hybrid font model it backs the terminal (foot) + the bar (waybar) +
-    # the launcher (fuzzel); the Nerd Font carries waybar's network/tray glyphs
-    # directly, so no Symbols fallback is needed. The fontconfig name is the Nerd
-    # Font's abbreviation: "MonaspiceAr" = Monaspace Argon.
     monospace = {
       package = pkgs.nerd-fonts.monaspace;
       name = "MonaspiceAr Nerd Font";
     };
-    # Sans + web-body face — IBM Plex Sans (coheres with the Carbon spacing scale
-    # already adopted). In the hybrid font model it backs notifications (fnott) +
-    # GTK dialogs + web/document body, and the sans-serif fontconfig alias.
     sansSerif = {
-      package = pkgs.ibm-plex;
-      name = "IBM Plex Sans";
+      package = pkgs.inter;
+      name = "Inter";
     };
-    emoji = {
-      package = pkgs.noto-fonts-color-emoji;
-      name = "Noto Color Emoji";
-    };
-
-    # M3 type ramp (role-derived steps; #369), sized by the active display
-    # profile so the band stays coupled to the niri scale: waybar (desktop slot,
-    # mono) ≈ M3 label-medium; fnott + GTK dialogs (popups slot, sans) ≈ M3 body;
-    # foot (terminal slot, mono) sized on its own legibility terms. The on-vocab
-    # band (foot 11 / bar 13 / notif + dialog 12) lives on the 1.5× profile and
-    # is scaled per profile. `applications` keeps the Stylix default (12) — it
-    # sizes Firefox's web body text. The type.size tokens alias these. See
-    # docs/desktop/fonts.md §Sizing, theme-tokens.nix, and lib/display-profiles.nix.
     sizes = {
       terminal = profile.fonts.terminal; # foot (mono)
-      desktop = profile.fonts.desktop; # waybar (mono)
-      popups = profile.fonts.popups; # fnott + GTK dialogs (sans)
+      desktop = profile.fonts.desktop; # type.size token (chrome)
+      popups = profile.fonts.popups; # GTK dialogs (sans)
     };
   };
-
-  # Wire 1: enable Stylix's fontconfig target so the font names
-  # configured above are written into
-  # fonts.fontconfig.defaultFonts.{monospace,serif,sansSerif,emoji}.
-  # Without this, fc-match falls through to NixOS defaults and any
-  # app reading the fontconfig aliases (Firefox, GTK/Qt chrome) gets
-  # DejaVu, not the configured selections.
-  stylix.targets.fontconfig.enable = true;
-
-  # Wire 2: install the Stylix-configured font packages. Stylix
-  # populates stylix.fonts.packages (mono/serif/sans/emoji) for our
-  # consumption but does not push to NixOS's fonts.packages itself.
-  # Together with the fontconfig target above, this resolves the
-  # DejaVu Sans fallback warning foot raised pre-fix. See
-  # docs/desktop/fonts.md §Installation model for the full story.
-  fonts.packages = config.stylix.fonts.packages;
 }
