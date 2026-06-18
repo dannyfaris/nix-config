@@ -13,6 +13,7 @@
 #   - libsecret.nix        — secret-tool CLI for the (transitively-enabled) Secret Service.
 #   - removable-media.nix  — udisks2 + filesystem helpers (auto-mount is home-side udiskie). See docs/desktop/removable-media.md (#105).
 #   - onepassword-gui.nix  — 1Password desktop password manager (GUI only). See docs/desktop/1password.md (#112).
+#   - ratbagd.nix          — gaming-mouse device layer (ratbagd + Piper) for the G502 HERO. See docs/desktop/input.md (#107).
 #
 # The home-side companion bundle is at home/nixos/bundles/desktop-env.nix.
 #
@@ -27,5 +28,6 @@
     ../libsecret.nix
     ../removable-media.nix
     ../onepassword-gui.nix
+    ../ratbagd.nix
   ];
 }

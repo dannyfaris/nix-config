@@ -6,7 +6,7 @@ Keyboard and pointer ergonomics on metis (niri): key-repeat, scrolling, pointer 
 
 **Two layers, two tools, by where the setting physically lives:**
 
-- **Device layer** — DPI steps, button remaps, report rate, LEDs, **onboard profiles** → **libratbag/ratbagd** (`services.ratbagd.enable`), driven interactively with `ratbagctl` (and optionally the **Piper** GTK GUI). Settings are written to the **G502's onboard memory**, so they travel *with the mouse* across reboots and machines.
+- **Device layer** — DPI steps, button remaps, report rate, LEDs, **onboard profiles** → **libratbag/ratbagd** (`services.ratbagd.enable`), driven interactively with the **Piper** GTK GUI (and `ratbagctl` for the side buttons). Settings are written to the **G502's onboard memory**, so they travel *with the mouse* across reboots and machines.
 - **Compositor layer** — key-repeat rate/delay, scroll method, natural-scroll, pointer acceleration → **niri's declarative per-category `input` block** (`programs.niri.settings.input.{keyboard,mouse}`). niri configures input *by device category*, not by device name, so these apply to whatever pointer/keyboard is plugged in.
 
 ## Rationale
@@ -35,8 +35,14 @@ Keyboard and pointer ergonomics on metis (niri): key-repeat, scrolling, pointer 
 
 ## Configuration
 
-- **Device layer** — `services.ratbagd.enable = true;` (NixOS). The module is deliberately minimal: it ships `libratbag` (giving the `ratbagctl` CLI), registers the package for D-Bus activation, and installs the systemd unit. `ratbagd` is **D-Bus-activated — do not `systemctl enable` it.** Piper, if installed, is *only* a frontend and requires `ratbagd` running. Settings are authored interactively and persisted to the G502's onboard memory; they are intentionally **not** declared in the flake.
+- **Device layer** — `modules/nixos/ratbagd.nix` (in the desktop-env bundle): `services.ratbagd.enable = true;` ships `libratbag` (the `ratbagctl` CLI), registers D-Bus activation, and installs the systemd unit; alongside it, `pkgs.piper` is the GTK GUI. `ratbagd` is **D-Bus-activated — do not `systemctl enable` it.** Piper is *only* a frontend and requires `ratbagd` running. Use Piper for DPI/profiles and `ratbagctl` for the side buttons (Piper bugs, see Sharp edges). Settings are authored interactively and persisted to the G502's onboard memory; they are intentionally **not** declared in the flake.
 - **Compositor layer** — `programs.niri.settings.input` in `home/nixos/niri.nix`: `keyboard.{repeat-delay,repeat-rate}` (niri's defaults are a sluggish 600 ms / 25 Hz), `mouse.{accel-profile = "flat", accel-speed, natural-scroll}` (scroll-method left at niri's default — the G502's wheel needs no override). The non-feel-dependent choice is `accel-profile "flat"` with `accel-speed 0` (rationale above); the feel-dependent values (exact repeat rate/delay, scroll direction) are tuned on metis.
+
+### Keyboard (Keychron K1)
+
+The keyboard has the same layering as the mouse, but its **remap layer already exists and predates this issue**: [keyd](./keyd.md) maps Caps Lock → Hyper system-wide at the evdev layer (`modules/nixos/keyd.nix`). That is the keyboard analog to the mouse's device-config tool — the "remap my keys" need — done declaratively in-repo rather than per-device firmware. The plain K1 is **not** QMK/VIA-programmable, so there is no Piper-equivalent firmware GUI to add; and this repo would do remapping in keyd regardless. The compositor layer is the niri `keyboard` block above; `xkb.layout` stays at the default (US) — pinning it would be over-pinning with no divergence to correct.
+
+The one device-layer setting is hardware, not config: the K1's physical **Mac ⇄ Windows mode switch — keep it in Mac mode.** Both modes emit Super and Alt and leave Caps Lock (→ keyd's Hyper) untouched, so niri works either way; the switch only swaps the *physical positions* of the bottom-row modifiers. Mac mode is chosen because it places the key next to the space bar as Cmd = Super, which (a) matches the operator's Mac so the thumb position is consistent across both machines, and (b) parks niri's Mod-heavy binds (`Mod+arrows`, `Mod+1..9`) under the thumb rather than on Alt. It aligns key *positions and labels* only — not the deeper Ctrl-vs-Cmd difference (Linux uses Ctrl for the app shortcuts macOS puts on Cmd), which is what the keyd/Karabiner Hyper layer exists to bridge.
 
 ## Sharp edges
 
