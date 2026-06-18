@@ -20,6 +20,9 @@ _:
         '';
         packages = with pkgs; [
           just
+          # JSON wrangling for `gh --json`, `nix eval --json`, and flake.lock —
+          # the repo's routine query surfaces. Not pulled in transitively.
+          jq
           nixfmt
           shfmt
           shellcheck
