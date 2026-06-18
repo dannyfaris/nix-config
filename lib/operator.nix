@@ -5,6 +5,8 @@
 #
 # Consumed by (today):
 #   - modules/nixos/users.nix         — user declaration + SSH keys
+#   - modules/nixos/networking-networkmanager.nix
+#                                     — networkmanager group membership
 #   - modules/nixos/home-manager.nix  — HM attr-name + homeDirectory
 #   - modules/nixos/host-context.nix  — flakePath default
 #   - modules/darwin/users.nix        — user declaration (subset

@@ -12,10 +12,11 @@ in
   users.users.${operator.name} = {
     isNormalUser = true;
     inherit (operator) description;
-    extraGroups = [
-      "wheel"
-      "networkmanager"
-    ];
+    # wheel only — admin/sudo is foundation-level. Capability-specific
+    # group membership (e.g. networkmanager) is appended next to the
+    # module that enables the capability, so hosts without it don't carry
+    # an inert membership (ADR-027; #341).
+    extraGroups = [ "wheel" ];
 
     hashedPasswordFile = config.sops.secrets.dbf-password.path;
 
