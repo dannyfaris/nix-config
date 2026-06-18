@@ -36,32 +36,17 @@ in
       pkgs.noto-fonts-color-emoji
     ];
 
-    fontconfig = {
-      # The baseline generic→face map — the conductor's defaults. A user
-      # ~/.config/fontconfig/conf.d/*.conf overrides these live (fonts.md
-      # §Runtime UX). Each name must match an installed face above (Inter via
-      # the alias below) or fc-match falls back to DejaVu silently — keep this
-      # in lockstep with packages. serif is intentionally absent (→ DejaVu).
-      defaultFonts = {
-        monospace = [ "MonaspiceAr Nerd Font" ];
-        sansSerif = [ "Inter" ];
-        emoji = [ "Noto Color Emoji" ];
-      };
-
-      # pkgs.inter is variable-only — its fontconfig family is "Inter Variable",
-      # not "Inter", and nothing aliases it. Map the friendly "Inter" name onto
-      # it so the map above, the Firefox face pin, GTK's Sans, and `set-font
-      # sans Inter` all resolve (a bare "Inter" otherwise silently → DejaVu).
-      localConf = ''
-        <?xml version="1.0"?>
-        <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-        <fontconfig>
-          <alias binding="same">
-            <family>Inter</family>
-            <prefer><family>Inter Variable</family></prefer>
-          </alias>
-        </fontconfig>
-      '';
+    # The baseline generic→face map — the conductor's defaults. A user
+    # ~/.config/fontconfig/conf.d/*.conf overrides these live (fonts.md
+    # §Runtime UX). Each name must match an installed face in packages above or
+    # fc-match falls back to DejaVu silently — keep in lockstep. pkgs.inter
+    # ships a real static "Inter" family (in Inter.ttc) alongside "Inter
+    # Variable" (InterVariable.ttf), so the bare name resolves directly — no
+    # alias needed. serif is intentionally absent (→ the base DejaVu).
+    fontconfig.defaultFonts = {
+      monospace = [ "MonaspiceAr Nerd Font" ];
+      sansSerif = [ "Inter" ];
+      emoji = [ "Noto Color Emoji" ];
     };
   };
 
