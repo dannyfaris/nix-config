@@ -44,9 +44,14 @@ in
     # writes permissions.kdl; passed in so home/shared/multiplexer.nix can
     # pre-grant the zjstatus plugin without a platform conditional in
     # shared/ (which the shared-purity lint forbids). Linux: XDG cache.
+    #
+    # `flakeConfigAttr` names this platform's flake configurations set so
+    # home/shared/editor.nix's nixd option-eval exprs resolve here without a
+    # platform conditional in shared/ (#335). NixOS: `nixosConfigurations`.
     extraSpecialArgs = {
       inherit hostContext inputs;
       zellijCacheDir = "${operator.linuxHome}/.cache/zellij";
+      flakeConfigAttr = "nixosConfigurations";
     };
 
     users.${operator.name} = _: {

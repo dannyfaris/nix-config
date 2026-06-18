@@ -47,9 +47,14 @@ in
     # writes permissions.kdl; passed in so home/shared/multiplexer.nix can
     # pre-grant the zjstatus plugin without a platform conditional in
     # shared/ (which the shared-purity lint forbids). macOS: Caches bundle.
+    #
+    # `flakeConfigAttr` names this platform's flake configurations set so
+    # home/shared/editor.nix's nixd option-eval exprs resolve here without a
+    # platform conditional in shared/ (#335). Darwin: `darwinConfigurations`.
     extraSpecialArgs = {
       inherit hostContext inputs;
       zellijCacheDir = "${operator.darwinHome}/Library/Caches/org.Zellij-Contributors.Zellij";
+      flakeConfigAttr = "darwinConfigurations";
     };
 
     users.${operator.name} = _: {
