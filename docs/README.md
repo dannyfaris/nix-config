@@ -65,6 +65,11 @@ truth, eliminating drift between AI memory and in-repo reference.
   the desktop grows. See [desktop/README.md](./desktop/README.md) for
   the index and conventions.
 
+- **[research/](./research/)** — point-in-time research notes: surveys,
+  prior-art scans, and option analyses that feed decisions and living
+  documents but are neither. Dated and cited; explicitly not decisions.
+  See [research/README.md](./research/README.md) for the index.
+
 - **[agents/](./agents/)** — living documents for the AI coding agents
   (Claude Code + Cursor CLI per ADR-008) and their per-surface decisions
   — model-tier colour mapping, statusline signal selection, behavioural
