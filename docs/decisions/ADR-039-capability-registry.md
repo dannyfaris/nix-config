@@ -18,7 +18,7 @@ Adopt a single semantic **capability registry** (`lib/capabilities.nix`) as the 
 **2. The capability schema — three dimensions.**
 - **Chord** — `tier + key` tokens (the base16 "name by slot, not tone" discipline), resolved per-platform from one `Hyper` constant. *Parity-not-identity*: same UX, the chord may differ per platform.
 - **Realization** — per-platform, typed: `niri-action` · `karabiner-remap` · `hammerspoon-handler` · `menu/command`. Designed against the *hardest* consumers (Karabiner consumed-modifier remaps, the Hammerspoon Lua-handler split, the palette dataset) — a flat `command.{linux,darwin}` string can't express a niri verb or a keystroke-remap.
-- **Descriptive** — `label · description · keywords` (shared/platform-agnostic): what the palette searches and the doc table renders.
+- **Descriptive** — `label · description · keywords`: what the palette searches and the doc table renders. A **shared default** at the capability's top level, with an **optional per-platform override** (`platforms.<p>` may carry its own `label`/`description`/`keywords`) for the cases where the prose genuinely diverges — niri's *column* vocabulary has no macOS analogue (macOS speaks only of *windows*), and a chord whose action differs per platform (e.g. niri switch-workspace vs macOS Mission Control) needs platform-specific text and keywords too. Effective descriptive for platform `p` = `platforms.<p>.<field>` falling back to the shared default; the common case stays single-authored.
 
 Concretely — one capability (illustrative shape; the full field spec is #384's):
 
@@ -26,7 +26,7 @@ Concretely — one capability (illustrative shape; the full field spec is #384's
 {
   id = "lock-screen";
 
-  # descriptive (shared) — searched & shown by the palette; rendered into the doc table
+  # descriptive (shared default; a platform may override below) — searched & shown by the palette; rendered into the doc table
   label       = "Lock screen";
   description = "Lock the session and show the login screen";
   keywords    = [ "logout" "secure" "away" ];
