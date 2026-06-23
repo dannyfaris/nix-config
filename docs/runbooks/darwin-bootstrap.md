@@ -310,7 +310,7 @@ prompt surfaced; treat this as "may appear, may not".)
 
 ## First activation
 
-> The `mac-mini` (and eventually `mba`) darwinConfiguration is its
+> The `neptune` (and eventually `mba`) darwinConfiguration is its
 > own PR — the host file at `hosts/<host>/default.nix` plus the
 > mkDarwinHost invocation in `parts/darwin.nix`. If `nix flake show
 > .#darwinConfigurations` returns an empty attrset for your host, the
@@ -379,7 +379,7 @@ launch; use the `metis-lan` LAN entry until then.
 
 ## Post-activation — enable FileVault (manual, not declarable)
 
-`modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters here because mac-mini is the SSH bastion and holds shared-state for the fleet.
+`modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters here because neptune is the SSH bastion and holds shared-state for the fleet.
 
 Enable it once, after first activation:
 
@@ -423,7 +423,7 @@ Run from the new Mac's user shell.
   returns "not found"; that's expected.)
 - `which claude` and `which cursor-agent` both resolve — the base
   agent set is on every host (ADR-008).
-- `which codex` and `which gemini` both resolve (mac-mini imports
+- `which codex` and `which gemini` both resolve (neptune imports
   `agent-clis-extras.nix` for the full agent set).
 
 ### Phase 2 — SSH-context stack into the Linux fleet
@@ -449,7 +449,7 @@ escapes round-trip cleanly into stdout.
 
 Per-host palettes are defined in `lib/host-palettes.nix`:
 `nixos-vm` → catppuccin-mocha, `mercury` → tokyo-night-dark,
-`metis` → rose-pine, `mac-mini` → gruvbox-dark-hard.
+`metis` → rose-pine, `neptune` → gruvbox-dark-hard.
 
 **Palette persistence after `exit` is expected, not a bug.** Signal 1's
 OSC palette escapes are stateful in the terminal: when the remote
@@ -665,7 +665,7 @@ sibling uses for Stylix-driven colours.
   and the uninstall command for every managed MAS app.
 - Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is
   Linux-only in nixpkgs, so the Darwin side doesn't ship
-  `xterm-ghostty` terminfo (mac-mini imports `modules/darwin/sshd.nix`
+  `xterm-ghostty` terminfo (neptune imports `modules/darwin/sshd.nix`
   directly; only NixOS hosts add it, via
   `modules/nixos/ghostty-terminfo.nix` in their remote-access bundle).
   Ghostty clients SSHing into a Darwin host either rely on Ghostty's

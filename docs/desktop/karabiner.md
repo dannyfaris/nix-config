@@ -274,7 +274,7 @@ honest hedges, not a silent posture. Tailscale's pkg-bearing path
 is the closest precedent in this repo.
 
 **macOS Ventura floor.** Cask `depends_on macos: ">= :ventura"`
-for v16.x. Not a constraint for mac-mini (current OS).
+for v16.x. Not a constraint for neptune (current OS).
 
 **Conflict with macOS native caps-lock remap.** macOS's System
 Settings → Keyboard → Modifier Keys lets you remap caps_lock

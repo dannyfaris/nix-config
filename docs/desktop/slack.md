@@ -1,7 +1,7 @@
 # Slack
 
 Operator's daily-driver chat client for work. Managed today on
-`mac-mini` only; no Linux desktop adoption planned in this
+`neptune` only; no Linux desktop adoption planned in this
 configuration (work is macOS-side).
 
 ## Selection

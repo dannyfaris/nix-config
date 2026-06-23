@@ -72,7 +72,7 @@ in
   # (rather than inside perSystem) because flake-parts deliberately scrubs
   # `self` out of perSystem args. The system in the attribute path scopes
   # each check to the right runner — aarch64-linux builds nixos-vm;
-  # x86_64-linux builds mercury + metis; aarch64-darwin builds mac-mini.
+  # x86_64-linux builds mercury + metis; aarch64-darwin builds neptune.
   # For NixOS hosts the derivation is `nixosConfigurations.<name>.config
   # .system.build.toplevel`; for Darwin it's the nix-darwin convenience
   # alias `darwinConfigurations.<name>.system` (same derivation as
@@ -81,12 +81,12 @@ in
   #
   # The Darwin entry closes the CI-coverage gap that issue #190 named —
   # before this entry, modules/darwin/*, home/darwin/*, and the
-  # hosts/mac-mini composition had zero structural verification. The
+  # hosts/neptune composition had zero structural verification. The
   # README's "CI builds every host on every PR" claim becomes true again
   # alongside (the same PR fixes the README's stale "Three hosts today"
-  # line that lagged the 2026-06-02 mac-mini onboarding). The matching
-  # macOS runner is declared in the ci.yaml matrix (see that file for
-  # the runner-pinning + cache-budget rationale).
+  # line that lagged the 2026-06-02 onboarding of neptune, then named
+  # mac-mini). The matching macOS runner is declared in the ci.yaml matrix
+  # (see that file for the runner-pinning + cache-budget rationale).
   # Each host carries a `host-*` toplevel build (does it compile?) and a
   # `stances-*` eval check (does it still hold the deliberate stances?).
   # The lib unit tests are pure eval and platform-independent, so they run
@@ -108,10 +108,10 @@ in
       lib-auto-gen-paths = mkUnitTestCheck "x86_64-linux" "auto-gen-paths" autoGenPathsFailures;
     };
     aarch64-darwin = {
-      host-mac-mini = self.darwinConfigurations.mac-mini.system;
-      stances-mac-mini =
-        mkStanceCheck "aarch64-darwin" "darwin" "mac-mini"
-          self.darwinConfigurations.mac-mini.config;
+      host-neptune = self.darwinConfigurations.neptune.system;
+      stances-neptune =
+        mkStanceCheck "aarch64-darwin" "darwin" "neptune"
+          self.darwinConfigurations.neptune.config;
     };
   };
 

@@ -1,5 +1,5 @@
 # linux-builder — nix-darwin's built-in Linux build VM, used to build
-# Linux derivations on a Mac. The mac-mini imports this so it can
+# Linux derivations on a Mac, which neptune imports so it can
 # verify nixosConfigurations cross-platform (PRD §10 + §11.6 bus-factor
 # test); the operator runs e.g.
 #

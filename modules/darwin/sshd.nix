@@ -37,7 +37,7 @@ in
       PermitRootLogin no
 
       # Account whitelist. NixOS uses `AllowGroups wheel`; Darwin pins the
-      # operator by name instead — mac-mini is a single-operator box, and
+      # operator by name instead — neptune is a single-operator box, and
       # AllowUsers makes no assumption about macOS-managed group state
       # (admin/staff aren't the NixOS `wheel`). A second SSH-reachable
       # account would be a deliberate one-line addition here. Name sourced
@@ -49,7 +49,7 @@ in
       MaxAuthTries 3
       LoginGraceTime 30s
 
-      # mac-mini is the operator's SSH *client* into the Linux fleet; no
+      # neptune is the operator's SSH *client* into the Linux fleet; no
       # workflow uses inbound `ssh -L`/`-R` to it. Pin off rather than
       # inherit upstream `yes`. X11Forwarding is already off upstream; pin
       # it explicitly (explicit > implicit), matching the NixOS side.

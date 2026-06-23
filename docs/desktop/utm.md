@@ -12,7 +12,7 @@ no way to drive the nixos-vm host on this Mac.
 
 Darwin: `pkgs.utm` via
 [`modules/darwin/utm.nix`](../../modules/darwin/utm.nix),
-imported by `hosts/mac-mini/default.nix`. ADR-031's §Boundary
+imported by `hosts/neptune/default.nix`. ADR-031's §Boundary
 rule **nixpkgs-by-default baseline** applies — neither clause-2
 nor clause-3 carve-outs are justified (see Rationale).
 
@@ -100,7 +100,7 @@ environment.systemPackages = [ pkgs.utm ];
 ```
 
 That's the whole module. The host imports
-`../../modules/darwin/utm.nix` from `hosts/mac-mini/default.nix`.
+`../../modules/darwin/utm.nix` from `hosts/neptune/default.nix`.
 
 The nixpkgs derivation handles the rest:
 - `UTM.app` lands at `/Applications/Nix Apps/UTM.app` via

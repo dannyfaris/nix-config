@@ -9,7 +9,7 @@
 # notarised third-party) pass; unsigned binaries prompt on first
 # inbound connection. Defaults retained for the rest:
 #   - `blockAllIncoming = false` — block-all would shut out our own
-#     sshd; not the operator's intent given mac-mini is also an
+#     sshd; not the operator's intent given neptune is also an
 #     inbound SSH server.
 #   - `allowSigned = true` (default) — signed binaries get implicit
 #     pass.

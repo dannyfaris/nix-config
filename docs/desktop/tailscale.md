@@ -16,7 +16,7 @@ variant, NOT the MAS sandboxed build), declared in
 `modules/darwin/homebrew.nix` per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s
 clause 1 (`pkgs.tailscale` on Darwin ships only the daemon/CLI;
 the `NetworkExtension`-grade GUI VPN is not in nixpkgs). Currently
-managed on `mac-mini`; future Mac hosts (`mba`, a MacBook Air)
+managed on `neptune`; future Mac hosts (`mba`, a MacBook Air)
 inherit.
 
 ## Rationale

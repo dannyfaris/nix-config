@@ -1,8 +1,8 @@
 # keyd
 
-Key-remapping daemon for Linux. Picked as the **metis-side realization of the Hyper modifier** from [keybinds.md](./keybinds.md)'s three-namespace philosophy: keyd remaps `caps_lock` to `Super + Ctrl + Alt + Shift` — the Linux analogue of the macOS `⌘ + ⌃ + ⌥ + ⇧` that [karabiner.md](./karabiner.md) produces on the mac-mini. This is the long-reserved "keyd-equivalent" keybinds.md kept naming; landing it makes metis's keyboard reach modifier-parity with the mac clients.
+Key-remapping daemon for Linux. Picked as the **metis-side realization of the Hyper modifier** from [keybinds.md](./keybinds.md)'s three-namespace philosophy: keyd remaps `caps_lock` to `Super + Ctrl + Alt + Shift` — the Linux analogue of the macOS `⌘ + ⌃ + ⌥ + ⇧` that [karabiner.md](./karabiner.md) produces on neptune. This is the long-reserved "keyd-equivalent" keybinds.md kept naming; landing it makes metis's keyboard reach modifier-parity with the mac clients.
 
-Scope: this realizes the modifier **and one first bind to validate it end-to-end** — `Hyper+Return` → foot, the metis mirror of the mac-mini's `Hyper+Return` → Ghostty (so the terminal opens on the same chord on both machines). Further Hyper binds (the #98 power menu is a natural next) follow one-per-ceremony per keybinds.md's cadence. The modifier production lives here; the bind itself is recorded in [keybinds.md](./keybinds.md).
+Scope: this realizes the modifier **and one first bind to validate it end-to-end** — `Hyper+Return` → foot, the metis mirror of neptune's `Hyper+Return` → Ghostty (so the terminal opens on the same chord on both machines). Further Hyper binds (the #98 power menu is a natural next) follow one-per-ceremony per keybinds.md's cadence. The modifier production lives here; the bind itself is recorded in [keybinds.md](./keybinds.md).
 
 ## Selection
 
@@ -14,7 +14,7 @@ keyd remaps at the **evdev layer**, below libinput and the compositor, so the mo
 
 **It's the tool keybinds.md already chose.** keybinds.md defines Hyper as "the combined Super+Ctrl+Alt+Shift modifier … conventionally bound to Caps Lock via keyd or equivalent," and repeatedly notes metis "awaits keyd-equivalent." keyd is in our nixpkgs pin, has a first-class NixOS module, and is the minimal single-purpose daemon for exactly this job.
 
-**The four-modifier chord is what makes it parity, not just "a Hyper key."** The mac-mini's Karabiner rule (`home/darwin/karabiner.nix` `capsLockToHyper`) emits `left_shift` held with `left_command + left_control + left_option` — the ⌘⌃⌥⇧ chord. Mirroring that exact shape on Linux (Super+Ctrl+Alt+Shift) means the Hyper namespace is the *same modifier state* on both platforms: the mental model, the reserved namespace, and any future cross-referenced bind tables line up. A single distinct modifier (see Alternatives → xkb `caps:hyper`) would be "a hyper key" but not the same one the mac emits.
+**The four-modifier chord is what makes it parity, not just "a Hyper key."** The Karabiner rule on neptune (`home/darwin/karabiner.nix` `capsLockToHyper`) emits `left_shift` held with `left_command + left_control + left_option` — the ⌘⌃⌥⇧ chord. Mirroring that exact shape on Linux (Super+Ctrl+Alt+Shift) means the Hyper namespace is the *same modifier state* on both platforms: the mental model, the reserved namespace, and any future cross-referenced bind tables line up. A single distinct modifier (see Alternatives → xkb `caps:hyper`) would be "a hyper key" but not the same one the mac emits.
 
 **It can't collide with niri's existing binds.** niri matches the *exact* set of modifiers on a bind. Every current bind is `Mod`, `Mod+Ctrl`, or `Mod+Shift` (see `home/nixos/niri.nix`); a Hyper chord is `Mod+Ctrl+Alt+Shift`, which matches none of them. Holding Hyper alone triggers nothing either — niri binds require a key press, and the four-modifier chord exact-matches only (future) Hyper binds. So realizing Hyper adds a clean, conflict-free namespace — exactly the property the reserved-namespace philosophy was protecting.
 
@@ -74,7 +74,7 @@ The load-bearing choice recorded here is the mapping (`caps_lock → Super+Ctrl+
 ## References
 
 - [keybinds.md](./keybinds.md) — the Hyper namespace this realizes; its Implementation-status table moves metis Hyper from *Reserved* to *Active* (modifier via keyd + the first bind, `Hyper+Return` → foot).
-- [karabiner.md](./karabiner.md) — the mac-mini parallel; the `caps_lock → ⌘⌃⌥⇧` chord this mirrors as `Super+Ctrl+Alt+Shift`.
+- [karabiner.md](./karabiner.md) — the neptune-side parallel; the `caps_lock → ⌘⌃⌥⇧` chord this mirrors as `Super+Ctrl+Alt+Shift`.
 - `home/darwin/karabiner.nix` — the `capsLockToHyper` rule whose chord shape this matches.
 - `modules/nixos/keyd.nix` — the implementation; `modules/nixos/bundles/desktop-env.nix` — where it is imported.
 - keyd upstream (modifier layers, `ids`, `monitor`, the `backspace+escape+enter` recovery) — https://github.com/rvaiya/keyd

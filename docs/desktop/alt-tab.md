@@ -173,7 +173,7 @@ Sparkle key avoids surprising future readers comparing this doc
 to the cask source.
 
 **macOS floor.** Upstream's `depends_on macos: ">= :ventura"` for
-the v11.x series; not a constraint on mac-mini (current OS) but
+the v11.x series; not a constraint on neptune (current OS) but
 relevant for any older Mac considering this cask.
 
 **Hotkey conflicts.** If another window-switcher is installed
