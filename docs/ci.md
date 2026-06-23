@@ -25,9 +25,9 @@ The matrix pins concrete runner labels via `include:` rather than `*-latest`:
 
 - `ubuntu-24.04` (x86_64-linux), `ubuntu-24.04-arm` (aarch64-linux), `macos-15` (aarch64-darwin).
 - `macos-15` is pinned rather than `macos-latest` — the floating label moves under us (it migrated to macos-15 in Aug 2025), which would silently change the build environment. The choice of the standard label over the metered `-large` / `-xlarge` / `-intel` variants, and the billing reasoning behind it, are in ADR-025 §History (PR #218) — not repeated here.
-- `aarch64-darwin` matches mac-mini's real arch — no Rosetta cross-arch surprises.
+- `aarch64-darwin` matches neptune's real arch — no Rosetta cross-arch surprises.
 
-`nix flake check` on the macOS runner realises `flake.checks.aarch64-darwin.host-mac-mini` but does **not** run nix-darwin activation — no `brew bundle`, `mas install`, `launchctl load`, or admin prompts fire at build time. CI is therefore side-effect-free on Darwin. The decision to add the Darwin matrix entry, and its cold-cache cost history, are in ADR-025 §History (2026-06-04).
+`nix flake check` on the macOS runner realises `flake.checks.aarch64-darwin.host-neptune` but does **not** run nix-darwin activation — no `brew bundle`, `mas install`, `launchctl load`, or admin prompts fire at build time. CI is therefore side-effect-free on Darwin. The decision to add the Darwin matrix entry, and its cold-cache cost history, are in ADR-025 §History (2026-06-04).
 
 Actions are SHA-pinned with a trailing `# vN` comment; the rationale and the trigger that prompted it are in ADR-025 §History (2026-06-05). Refresh a pin when you want a newer release; the trailing tag comment is the human-readable anchor.
 

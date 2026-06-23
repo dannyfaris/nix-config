@@ -14,7 +14,7 @@ The terminfo entry `xterm-ghostty` ships on every NixOS host via
 `modules/nixos/ghostty-terminfo.nix` so SSH'ing from a Ghostty-on-Mac
 terminal into any Linux host renders cleanly. Darwin hosts can't
 ship the entry from nixpkgs (`pkgs.ghostty` is Linux-only); inbound
-Ghostty SSH into mac-mini relies on Ghostty's shell-integration
+Ghostty SSH into neptune relies on Ghostty's shell-integration
 ssh-terminfo push or falls back to `xterm-256color`. Foot's own
 terminfo is in the standard ncurses database — no module required.
 

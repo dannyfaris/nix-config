@@ -58,7 +58,7 @@ upstream cask source):
 - **Apple Silicon only** (`arch arm: ...` with no Intel fallback).
 - **macOS Sequoia (15) or later** (`depends_on macos: ">= :sequoia"`).
 
-mac-mini meets both. A future Intel Mac or pre-Sequoia host
+neptune meets both. A future Intel Mac or pre-Sequoia host
 would need an alternative (Gemini in Chrome covers the gap).
 
 ## Configuration

@@ -1,7 +1,7 @@
 # thunderbird — Mozilla's native desktop email client; Gecko toolkit
 # (shared with Firefox); native Wayland. The mail client on metis for
 # the operator's personal Gmail + iCloud Mail (work M365 stays on
-# mac-mini). See docs/desktop/thunderbird.md.
+# neptune). See docs/desktop/thunderbird.md.
 #
 # Install only. No `profiles.*` block is declared, so the module's
 # one-default-profile assertion (gated on `cfg.profiles != {}`) does

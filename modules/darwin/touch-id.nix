@@ -19,7 +19,7 @@
 #
 # Fingerprint enrolment is a one-time physical step per Mac
 # (System Settings → Touch ID & Password → Add Fingerprint). On
-# mac-mini that's done; on the next Darwin host the bootstrap runbook
+# neptune that's done; on the next Darwin host the bootstrap runbook
 # will surface the step.
 _: {
   security.pam.services.sudo_local.touchIdAuth = true;

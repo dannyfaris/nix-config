@@ -242,14 +242,14 @@ Whether a planet carries moons is itself the owned-vs-rented marker: your own me
 
 ## The fleet
 
-The framework and every name below are ratified ([#368](https://github.com/dannyfaris/nix-config/issues/368)); the per-host directory renames roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands (the pilot is [#403](https://github.com/dannyfaris/nix-config/issues/403), `mac-mini` → `neptune`).
+The framework and every name below are ratified ([#368](https://github.com/dannyfaris/nix-config/issues/368)); the per-host directory renames roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands. The pilot — `mac-mini` → `neptune` ([#403](https://github.com/dannyfaris/nix-config/issues/403)) — has landed; `metis` → Mars and `nixos-vm` → Triton are still pending.
 
 | Target name | Class | Machine | `hosts/` dir today |
 |------|-------|---------|--------------------|
 | **Jupiter** | moon-capable planet | NixOS x86_64 flagship desktop tower | — (not yet onboarded) |
 | **Saturn** | moon-capable planet | darwin MacBook Air daily driver | — (not yet onboarded) |
 | **Mars** | moon-capable planet | NixOS x86_64 work + personal dev (ProDesk) | `metis` |
-| **Neptune** | moon-capable planet | darwin home Mac | `mac-mini` |
+| **Neptune** | moon-capable planet | darwin home Mac | `neptune` |
 | **Mercury** | moonless planet | AWS EC2 x86_64 work, headless | `mercury` (name survives) |
 | **Triton** | moon (of Neptune) | UTM/aarch64 refinement VM, pinned to the home Mac | `nixos-vm` |
 

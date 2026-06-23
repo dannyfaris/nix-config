@@ -1,6 +1,6 @@
 # Thunderbird
 
-Mozilla's native desktop email client. Gecko toolkit (shared with Firefox). Native Wayland. The chosen mail client on metis for the operator's **personal Gmail + iCloud Mail** — work Microsoft 365 stays on mac-mini (see [microsoft-365.md](./microsoft-365.md)).
+Mozilla's native desktop email client. Gecko toolkit (shared with Firefox). Native Wayland. The chosen mail client on metis for the operator's **personal Gmail + iCloud Mail** — work Microsoft 365 stays on neptune (see [microsoft-365.md](./microsoft-365.md)).
 
 ## Selection
 
@@ -14,7 +14,7 @@ No Stylix theming and no Noctalia template — theming defers entirely to Thunde
 
 **Native GUI requirement.** The operator wanted a real desktop mail client, not web/PWA mail. That ruled out the browser-tab path (Gmail + iCloud web in Firefox) and the TUI path (aerc / neomutt), both of which were viable on the merits but failed the GUI requirement. See [Alternatives considered](#alternatives-considered).
 
-**Both accounts are plain IMAP/SMTP.** Personal Gmail and iCloud Mail are ordinary IMAP/SMTP — no Exchange/EWS, because the work Microsoft 365 account is deliberately out of scope (it lives on mac-mini; on Linux there is no native Outlook desktop anyway). Plain IMAP removes the usual mail-client setup friction and means any competent client would have worked; the choice came down to the GUI requirement and toolkit cost.
+**Both accounts are plain IMAP/SMTP.** Personal Gmail and iCloud Mail are ordinary IMAP/SMTP — no Exchange/EWS, because the work Microsoft 365 account is deliberately out of scope (it lives on neptune; on Linux there is no native Outlook desktop anyway). Plain IMAP removes the usual mail-client setup friction and means any competent client would have worked; the choice came down to the GUI requirement and toolkit cost.
 
 **Small marginal closure.** Firefox is already on metis (`home/nixos/firefox.nix`), so the Gecko toolkit is already in the closure. Thunderbird's *marginal* closure is much smaller than its standalone size, so the "big Gecko app" cost objection largely does not apply. (Marginal closure not measured here; measure with `nix path-info -S` set-math if a number is ever wanted, and single-source it.)
 
@@ -24,7 +24,7 @@ No Stylix theming and no Noctalia template — theming defers entirely to Thunde
 
 **aerc / neomutt (TUI)** — passed over. Philosophically the closest fit: both run in foot, inherit base16 by terminal inheritance, and sit naturally alongside the yazi/macchina TUI aesthetic, and both accounts being plain IMAP removes the usual Exchange pain that pushes people to GUI clients. Passed over solely because the operator wanted a full GUI client. (For reference, had the TUI path been taken, the pin also carries `aerc` 0.21.0, `neomutt` 20260105, `isync` 1.5.1, `msmtp` 1.8.32.)
 
-**Browser web / PWA (Gmail + iCloud web in Firefox)** — passed over. Zero new packages and consistent with the Teams/M365 web precedent on mac-mini, but the operator is not keen on web mail and wanted a native client.
+**Browser web / PWA (Gmail + iCloud web in Firefox)** — passed over. Zero new packages and consistent with the Teams/M365 web precedent on neptune, but the operator is not keen on web mail and wanted a native client.
 
 ## Configuration
 
@@ -38,7 +38,7 @@ _: {
 
 Install only. No `profiles.*` block is declared, so the `programs.thunderbird` one-default-profile assertion does not fire (it is gated on `cfg.profiles != { }`), and Thunderbird creates and manages its own profile on first launch. Accounts are added in the GUI.
 
-Lives under `home/nixos/` for consistency with the rest of the desktop stack (the mail client is part of the metis Wayland session). Unlike foot/fuzzel/fnott — which don't build on Darwin at all — `pkgs.thunderbird` does build on Darwin, so this placement is a stack-cohesion call, not a portability constraint; the macOS mail client is a separate decision (work mail is Outlook on mac-mini per [microsoft-365.md](./microsoft-365.md)).
+Lives under `home/nixos/` for consistency with the rest of the desktop stack (the mail client is part of the metis Wayland session). Unlike foot/fuzzel/fnott — which don't build on Darwin at all — `pkgs.thunderbird` does build on Darwin, so this placement is a stack-cohesion call, not a portability constraint; the macOS mail client is a separate decision (work mail is Outlook on neptune per [microsoft-365.md](./microsoft-365.md)).
 
 **Accounts are runtime/GUI-managed, not Nix-pinned.** The HM `accounts.email` + `programs.thunderbird.profiles.<p>.accounts` surface exists and could declare the mailboxes, but is deliberately not used. Credentials and account config live in Thunderbird's own store at runtime, consistent with the Noctalia settings posture on this config. This keeps mail secrets out of the Nix store and avoids declaring OAuth/app-password plumbing that the GUI handles natively.
 
@@ -76,7 +76,7 @@ The outcome is **"polarity-follows, palette-vanilla"**: vanilla Thunderbird ligh
 - [`home/nixos/bundles/desktop-env.nix`](../../home/nixos/bundles/desktop-env.nix) — bundle import.
 - [firefox.md](./firefox.md) — the resident Gecko browser; shares the toolkit and the Wayland auto-detection path.
 - [noctalia.md](./noctalia.md) §Theming — the built-in-template list that confirms no Thunderbird template; the engine Thunderbird's polarity follows.
-- [microsoft-365.md](./microsoft-365.md) — why work mail is not in scope here (stays on mac-mini).
+- [microsoft-365.md](./microsoft-365.md) — why work mail is not in scope here (stays on neptune).
 - Thunderbird upstream — https://www.thunderbird.net
 - HM Thunderbird module — `programs.thunderbird` options reference at https://nix-community.github.io/home-manager/options.xhtml
 - #388 — the selection issue this doc consolidates.

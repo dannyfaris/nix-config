@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/dannyfaris/nix-config/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/dannyfaris/nix-config/actions/workflows/ci.yaml)
 
-Personal NixOS + nix-darwin configuration. Four hosts today: a UTM aarch64 VM for refinement (`nixos-vm`), an AWS EC2 x86_64 box for work-only headless dev (`mercury`), an HP ProDesk x86_64 desktop (`metis`), and an Apple Silicon Mac mini (`mac-mini`, the first nix-darwin host). The same flake-parts tree builds them all; the same set of decisions — module structure, naming, default stances, operational posture — governs every host.
+Personal NixOS + nix-darwin configuration. Four hosts today: a UTM aarch64 VM for refinement (`nixos-vm`), an AWS EC2 x86_64 box for work-only headless dev (`mercury`), an HP ProDesk x86_64 desktop (`metis`), and an Apple Silicon Mac mini (`neptune`, the first nix-darwin host). The same flake-parts tree builds them all; the same set of decisions — module structure, naming, default stances, operational posture — governs every host.
 
 Shared publicly for transparency and so others can lift pieces useful to their own configurations. Not maintained as a generalisable template — decisions reflect one operator's preferences and constraints (PRD §2.2).
 

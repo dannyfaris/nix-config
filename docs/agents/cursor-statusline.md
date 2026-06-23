@@ -217,7 +217,7 @@ values depend on observed render output and are settled when the
 script lands; documented here as known knobs.
 
 **Hosts.** `agent-clis.nix` is imported by every host (base
-agent-CLI set). The script lands on mac-mini, metis, mercury,
+agent-CLI set). The script lands on neptune, metis, mercury,
 nixos-vm uniformly — but `cursor-cli` is only on hosts whitelisted
 in `modules/shared/nix-daemon.nix`'s `allowUnfreePredicate`.
 Verification of the rendered statusline requires `cursor-agent` on

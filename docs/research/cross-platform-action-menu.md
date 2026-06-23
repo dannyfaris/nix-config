@@ -25,7 +25,7 @@ At build, each host resolves its own verbs and writes its own `actions.json`: sa
               id · label · icon · children · command.{linux,darwin} · keybind.{…}
                                    │
                 ┌──────────────────┴───────────────────┐
-          build: metis (NixOS)                   build: mac-mini (darwin)
+          build: metis (NixOS)                   build: neptune (darwin)
                 ▼                                        ▼
         actions.json  (Linux verbs)              actions.json  (macOS verbs)
                 │                                        │
@@ -49,7 +49,7 @@ At build, each host resolves its own verbs and writes its own `actions.json`: sa
 
 **Linux (metis):** bash+jq → `fuzzel --dmenu` (Option B), or a Noctalia plugin — the v4 `custom-commands` (Option A) or a custom v5 Luau plugin (Option C, see [`noctalia-plugin-system.md`](./noctalia-plugin-system.md)). Native popup, invoked by a niri bind. See [`launcher-strategy.md`](./launcher-strategy.md).
 
-**macOS (mac-mini):** the renderer must differ (no fuzzel/niri). Candidates weighed for equivalent UX while staying on-stack and declarative:
+**macOS (neptune):** the renderer must differ (no fuzzel/niri). Candidates weighed for equivalent UX while staying on-stack and declarative:
 
 - **Hammerspoon `hs.chooser`** — *preferred.* A native, centered, fuzzy-search floating popup driven by Lua. Already in-stack (Hammerspoon runs on the Mac; #384 already generates Hammerspoon config), config-as-code (Nix-managed), and visually/functionally the twin of a fuzzel popup. Reads the same `actions.json`; drill-down is the same pattern as the bash loop (on a branch, repopulate `:choices()` and reshow).
 - **fzf in a floating Ghostty window** — maximal *code* reuse (run the literal bash+jq dispatcher, swap `fuzzel --dmenu` → `fzf`), but terminal chrome instead of a native popup — slightly worse parity.

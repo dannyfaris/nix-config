@@ -1,5 +1,5 @@
 # Caps Lock → Hyper on the niri desktop, via keyd — keyboard-modifier
-# parity with the mac-mini's Karabiner (caps_lock → ⌘⌃⌥⇧). keyd is a
+# parity with neptune's Karabiner (caps_lock → ⌘⌃⌥⇧). keyd is a
 # system daemon that remaps at the evdev layer, below libinput and the
 # compositor, so Hyper is realized everywhere the keyboard is read:
 # niri, the greetd greeter, and TTYs. The Linux analogue of Karabiner's

@@ -39,7 +39,7 @@ jobs:
           # Darwin runner pinned to macos-15 (current Apple-Silicon line,
           # billed-free on public repos; -large/-xlarge/-intel are not,
           # and *-latest moves under us). nix flake check realises the
-          # mac-mini derivation but runs no nix-darwin activation, so CI
+          # neptune derivation but runs no nix-darwin activation, so CI
           # is side-effect-free. See docs/ci.md §Runners.
           - arch: aarch64-darwin
             runner: macos-15

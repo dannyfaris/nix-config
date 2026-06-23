@@ -21,17 +21,17 @@ notes to read."
   — App Store apps that need a restart-to-install auto-install
   without prompting.
 
-Standalone module imported per-host (`hosts/mac-mini/default.nix`).
+Standalone module imported per-host (`hosts/neptune/default.nix`).
 Not in foundation per ADR-027 — auto-updates are a capability, not a
 posture: a host with audit/compliance constraints could legitimately
 want manual control.
 
 ## Rationale
 
-Personal mac-mini is the operator's daily driver and the always-on
+neptune is the operator's personal daily driver and the always-on
 SSH-target for the rest of the fleet. Update friction translates
 directly into "I'll do it later," which on a security-load-bearing
-host (mac-mini hosts a Chrome with Keystone, a 1Password, an SSH
+host (neptune hosts a Chrome with Keystone, a 1Password, an SSH
 server) is the wrong default. The operator's existing stance for
 cask-managed apps via Sparkle (silent download + silent install,
 documented in the Sparkle silent-update header section of
@@ -101,7 +101,7 @@ auto-update-everything stance.
 If a future situation calls for manual update control (e.g. enrolling
 in a beta seed, debugging a regression, freezing during a critical
 project) the override path is to disable just the relevant key, not
-to un-wire the module. From `hosts/mac-mini/default.nix` or a
+to un-wire the module. From `hosts/neptune/default.nix` or a
 host-specific override:
 
 ```nix
@@ -158,5 +158,5 @@ unattended (e.g. CI / build mac mini in a rack somewhere), auto-
 install + auto-restart can interrupt long-running tasks. For that
 class of host, override `AutoUpdateRestartRequired = false;` in the
 host file, deferring restart-required installs to operator-driven
-maintenance windows. mac-mini today is operator-attended, so this
+maintenance windows. neptune today is operator-attended, so this
 caveat doesn't apply.

@@ -1,4 +1,4 @@
-# Host-specific configuration for mac-mini (Apple Silicon Mac mini,
+# Host-specific configuration for neptune (Apple Silicon Mac mini,
 # aarch64-darwin). First Darwin host in the fleet; the operator's
 # primary SSH client into the Linux hosts (nixos-vm, mercury, metis)
 # and a cross-platform NixOS-builder via linux-builder (PRD §10, §11.6).
@@ -82,7 +82,17 @@ _: {
     ../../modules/darwin/power.nix
   ];
 
-  networking.hostName = "mac-mini";
+  # All three macOS name facets are set together so they agree after the
+  # mac-mini → neptune rename (ADR-038 / #403): hostName is the primary name;
+  # computerName is the System Settings > Sharing name (the genuinely-unset
+  # facet before this); localHostName is the Bonjour/.local name. The sticky
+  # tailnet registration is re-pointed separately by the operator
+  # (`tailscale up --hostname=neptune`).
+  networking = {
+    hostName = "neptune";
+    computerName = "Neptune";
+    localHostName = "neptune";
+  };
 
   # Integer stateVersion (Darwin's form; distinct from NixOS's "25.11"
   # string and separately tracked from `system.darwinRelease`). Pins
@@ -117,7 +127,7 @@ _: {
   # flakePath omitted — host-context.nix's Darwin default
   # ("/Users/dbf/nix-config") matches this host.
   hostContext = {
-    hostName = "mac-mini";
+    hostName = "neptune";
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
       ../../home/shared/bundles/git-multi-identity.nix

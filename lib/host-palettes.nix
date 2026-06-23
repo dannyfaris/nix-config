@@ -37,7 +37,7 @@
 # the fourth signal layer in the SSH-context awareness stack
 # (issues #4, #6, #7, #17 land the other three).
 #
-# Future hosts (mothership, mba, mac-mini) get entries here at bring-up.
+# Future hosts (mothership, mba) get entries here at bring-up.
 {
   nixos-vm = {
     polarity = "dark";
@@ -88,8 +88,8 @@
   };
   # Visibly distinct from the existing three (catppuccin / tokyo-night /
   # rose-pine) — gruvbox's warm-orange accent is the obvious shift when
-  # an SSH session moves between this Mac and any Linux host.
-  mac-mini = {
+  # an SSH session moves between neptune (this Mac) and any Linux host.
+  neptune = {
     polarity = "dark";
     schemes = {
       dark = "gruvbox-dark-hard";

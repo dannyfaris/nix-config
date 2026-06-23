@@ -51,7 +51,7 @@ _: {
     '';
 
     # `za` — open the 3-pane agentic workspace (agent.kdl), session named
-    # `<host>:<repo>` (e.g. `mac-mini:nix-config`); the host prefix drives
+    # `<host>:<repo>` (e.g. `neptune:nix-config`); the host prefix drives
     # the outer terminal title — see ADR-004 §Session naming. A function
     # rather than an abbreviation because
     # attach-or-create needs a conditional: re-running `za` where a

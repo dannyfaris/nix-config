@@ -2,7 +2,7 @@
 
 Living documents for the operator's desktop tools — primarily the
 Wayland desktop environment on metis (and any future Linux desktop
-host), and also the per-tool selections on macOS clients (mac-mini
+host), and also the per-tool selections on macOS clients (neptune
 and any future Mac) where a tool is the operator's daily-driver
 GUI for that platform. Each per-tool document captures a selection,
 the rationale, alternatives considered, configuration choices,
@@ -46,7 +46,7 @@ rather than creating a new artifact.
 | [screen-lock.md](./screen-lock.md) | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #97 |
 | [power-session.md](./power-session.md) | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) — _mooted (unbuilt), subsumed by Noctalia (ADR-036, #385)_ | #98 |
 
-### macOS clients (mac-mini)
+### macOS clients (neptune)
 
 | Doc | Subject | Landed |
 |---|---|---|
@@ -69,7 +69,7 @@ rather than creating a new artifact.
 | [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | #11 |
 | [hammerspoon.md](./hammerspoon.md) | Hammerspoon macOS hotkey-binding layer on top of Karabiner's Hyper; Homebrew cask + Sparkle silent (`.zip`-enclosure, same shape as Ghostty) (clause-1, no nixpkgs Darwin) | #11 |
 
-_macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on mac-mini, not pending._
+_macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on neptune, not pending._
 
 ### Cross-platform (NixOS desktop + macOS)
 

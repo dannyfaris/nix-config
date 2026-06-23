@@ -202,7 +202,7 @@ the running Hammerspoon (`hs -c "return hs.host.localizedName()"`).
 Not used by the bindings today; documented for future scripting.
 
 **macOS Ventura floor.** Cask `depends_on macos: :ventura`. Not a
-constraint for mac-mini.
+constraint for neptune.
 
 **Multi-monitor + native fullscreen.** macOS native fullscreen on
 multi-monitor setups depends on System Settings → Desktop &
@@ -216,7 +216,7 @@ Stage Manager → "Displays have separate Spaces":
   all displays; other displays show the linen-pattern
   wallpaper while the fullscreen lasts.
 
-mac-mini today is single-display so this is theoretical; the
+neptune today is single-display so this is theoretical; the
 doc records it because the binds are evergreen and will travel
 to multi-monitor Macs.
 
@@ -225,7 +225,7 @@ to multi-monitor Macs.
 `hs.application:name()`, which returns the *localized* display
 name on non-English macOS locales. Today's binds
 (`GHOSTTY.name = "Ghostty"`, `CHROME.name = "Google Chrome"`)
-work because (a) mac-mini's locale is English and (b) neither
+work because (a) neptune's locale is English and (b) neither
 vendor localizes its app name. Adding a localizing app
 (Microsoft Word, Outlook, Pages) on a non-English Mac would
 silently break its filter — the filter registers but never
@@ -233,7 +233,7 @@ matches, and the bind appears dead. If/when this becomes
 relevant, switch the affected app's filter to bundle-ID
 matching via `hs.window.filter.new(function(win) return
 win:application():bundleID() == BUNDLE_ID end)` instead of
-`setAppFilter`. Theoretical on mac-mini today; flagged because
+`setAppFilter`. Theoretical on neptune today; flagged because
 the binds are evergreen.
 
 **Hammerspoon must be running for binds to fire.** Stating the

@@ -279,7 +279,7 @@ Examples drawn from the current and planned set of hosts:
 - `metis` — personal x86_64 dev box, transitioning from headless to the first desktop host (ADR-028)
 - `mothership` — second Linux desktop host (planned; pending hardware)
 - `mba` — MacBook Air (planned via nix-darwin)
-- `mac-mini` — Mac mini (aarch64-darwin, nix-darwin, live as of 2026-06-02)
+- `neptune` — Mac mini (aarch64-darwin, nix-darwin; live as of 2026-06-02, onboarded as `mac-mini` and renamed per ADR-038)
 
 These names are accepted under the rule: each refers unambiguously to a specific physical machine. A replacement (e.g., upgrading the MacBook Air to a MacBook Pro) gets its own host directory and a fresh name.
 
