@@ -43,9 +43,11 @@ At build, each host resolves its own verbs and writes its own `actions.json`: sa
                 └──────  same keystroke · same menu feel · base16-themed  ──────┘
 ```
 
+(The invoking chord shown — `Hyper+Space` — is the *leading candidate*, not a settled choice; see §5 and §9.)
+
 ## 4. Renderer per platform
 
-**Linux (metis):** bash+jq → `fuzzel --dmenu` (Option B), or the Noctalia v5 Luau plugin (Option A). Native popup, invoked by a niri bind. See `launcher-strategy.md`.
+**Linux (metis):** bash+jq → `fuzzel --dmenu` (Option B), or a Noctalia plugin — the v4 `custom-commands` (Option A) or a custom v5 Luau plugin (Option C, see [`noctalia-plugin-system.md`](./noctalia-plugin-system.md)). Native popup, invoked by a niri bind. See [`launcher-strategy.md`](./launcher-strategy.md).
 
 **macOS (mac-mini):** the renderer must differ (no fuzzel/niri). Candidates weighed for equivalent UX while staying on-stack and declarative:
 
@@ -57,7 +59,7 @@ Note the symmetry: Option A's Linux renderer is Luau (Noctalia) and the macOS re
 
 ## 5. Parity on the two axes that matter
 
-- **Invocation — identical.** The unified Hyper layer (keyd on Linux, Karabiner on macOS, both from #384) makes `Hyper+Space` open the action menu on both with the same physical keystroke. That single fact is most of "functionally equivalent."
+- **Invocation — one keystroke, same on both.** The unified Hyper layer (keyd on Linux, Karabiner on macOS, both from #384) lets the action menu open from a single physical chord on both platforms — most of what "functionally equivalent" means. *Which* chord is an open decision: `Hyper+Space` is the leading candidate (the natural "spotlight" chord) and will *probably* be it. Noctalia's launcher currently holds `Hyper+Space`, but that bind is freely remappable — so this is a **consideration to weigh, not a conflict**: if the action menu takes `Hyper+Space`, the launcher simply moves to another chord. The alternative is to surface the action menu as a launcher *provider* (a prefix within the existing launcher) and add no new chord at all.
 - **Theming — shared palette.** The base16 palette is a Nix value (`config.lib.stylix.colors`), so it feeds `fuzzel.ini` on Linux and `hs.chooser`'s colour attributes (`bgDark` / `fgColor` / `subTextColor`) on macOS. (To confirm: Stylix's darwin coverage actually exposing the palette to the Hammerspoon config — partial on darwin.)
 
 ## 6. Honest wrinkles
@@ -68,10 +70,20 @@ Note the symmetry: Option A's Linux renderer is Luau (Noctalia) and the macOS re
 
 ## 7. Through-line
 
-Not two action menus: **one semantic capability registry** (shared with #384) and **two thin renderers** — bash+jq→fuzzel on Linux, Lua→`hs.chooser` on macOS — each fed the same generated `actions.json`, invoked by the same Hyper keystroke, painted from the same base16 palette. The platforms diverge exactly where they must (the dispatch verbs) and nowhere else.
+Not two action menus: **one semantic capability registry** (shared with #384) and **two thin renderers** — bash+jq→fuzzel on Linux, Lua→`hs.chooser` on macOS — each fed the same generated `actions.json`, invoked by a shared Hyper chord (candidate `Hyper+Space`, §9), painted from the same base16 palette. The platforms diverge exactly where they must (the dispatch verbs) and nowhere else.
 
-## 8. Open questions
+## 8. The chooser family — the action menu is one provider
 
+The action menu generalizes. `hs.chooser` (macOS) and the launcher/`fuzzel --dmenu` surfaces (Linux) are **generic primitives**: a fuzzy popup over a `(data, on-select)` pair. So actions, **emoji**, **system settings**, and a **keybind cheatsheet** are the *same engine* with different providers — one `chooser(provider)` core, providers declared as data, fed (where it pays) from Nix. This mirrors Noctalia's launcher-provider model and Walker's provider model (see [`launcher-strategy.md`](./launcher-strategy.md)).
+
+- **Triggers — hybrid.** Dedicate chords to the high-frequency surfaces (emoji, actions); put the long tail behind one unified prefix-chooser (`>`/`:`/`@`). Mirrors Raycast/Spotlight and the Noctalia-launcher-with-prefixes pattern.
+- **A leader key for the family.** A never-used key (Right Cmd — present on the Mac-layout keyboards used on *both* machines) is the natural home: `leader → e` emoji, `s` settings, `a` actions, `k` keybinds — unbounded namespace off one key, costing zero Hyper chords. The modifier rationale is in [`hyper-layer-redesign.md`](./hyper-layer-redesign.md) §10.
+- **The deep parallel.** Hammerspoon becomes the macOS *programmable shell layer* the way Noctalia is on Linux — both host a provider family. The provider abstraction is the cross-platform lingua franca; only the host differs.
+- **Graduated parity.** Actions port with high fidelity; emoji medium (Noctalia has a `unicode-picker`, fuzzel can too); **settings low/divergent** — macOS has a unified Settings app to enumerate, Linux has no single analogue, so a Linux "settings" provider is *different content*, not a port. Don't force that one to match.
+
+## 9. Open questions
+
+- **The action menu's invoking chord** — `Hyper+Space` (launcher remaps away), a dedicated Hyper chord, or a launcher-provider prefix. `Hyper+Space` is the leading candidate; undecided. Same dedicated-vs-unified fork as the chooser-family triggers (§8).
 - Should the action registry and the #384 keybind registry be literally one `lib/capabilities.nix`, or two registries sharing a schema? (They model the same thing; unifying avoids drift, but couples two features.)
 - Does Stylix on darwin expose the base16 palette cleanly enough to theme `hs.chooser`, or does the Mac side need a separate palette source?
 - Hierarchy ergonomics in `hs.chooser` (repopulate-on-branch) vs the bash drill-down loop — equivalent in practice, or a parity gap?

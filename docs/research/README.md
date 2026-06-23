@@ -45,3 +45,9 @@ capture date and run provenance so a reader can judge staleness.
   architecture exploration (not a decision) for running the action menu on
   both NixOS (niri + fuzzel/Noctalia) and macOS (Hammerspoon `hs.chooser`)
   from one shared semantic capability registry. Ties to #384, #406, #411.
+
+- **[hyper-layer-redesign.md](./hyper-layer-redesign.md)** — modifier strategy
+  for the cross-platform keybind layer: redefining Hyper from the all-four
+  terminal-leaf chord to a `Ctrl+Alt` base (Shift + platform-meta as
+  escalators), parity-not-identity across platforms, ISO_Level3 padding, and
+  the spare-key/leader strategy. Feeds #384.
