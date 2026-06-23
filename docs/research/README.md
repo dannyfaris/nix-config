@@ -51,3 +51,9 @@ capture date and run provenance so a reader can judge staleness.
   terminal-leaf chord to a `Ctrl+Alt` base (Shift + platform-meta as
   escalators), parity-not-identity across platforms, ISO_Level3 padding, and
   the spare-key/leader strategy. Feeds #384.
+
+- **[keymap-single-sourcing-prior-art.md](./keymap-single-sourcing-prior-art.md)**
+  — does any tool single-source keybindings to multiple consumers across
+  Linux *and* macOS with collision/availability linting? Verdict: the
+  integrated concept is genuinely open (the two halves exist in disjoint
+  tools — HotkeyClash lints, home-manager/xremap codegen). Feeds #384, #428.
