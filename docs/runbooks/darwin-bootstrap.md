@@ -377,6 +377,27 @@ installed via `modules/darwin/homebrew.nix` per ADR-031, but the
 operator still has to sign the Mac into the tailnet on first
 launch; use the `metis-lan` LAN entry until then.
 
+## Post-activation — enable FileVault (manual, not declarable)
+
+`modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters here because mac-mini is the SSH bastion and holds shared-state for the fleet.
+
+Enable it once, after first activation:
+
+```bash
+# Prompts for the unlocking user's password, then prints the recovery key to
+# stdout — store the key in the operator password manager (1Password), NOT in
+# this repo.
+sudo fdesetup enable
+
+# Confirm status (expect "FileVault is On."):
+fdesetup status
+```
+
+Notes:
+
+- On Apple Silicon, FileVault keys to the Secure Enclave, so encryption is effectively instant (no multi-hour conversion pass) and the operator login already unlocks the disk at boot.
+- `restartAfterPowerFailure = true` (`modules/darwin/power.nix`) still auto-reboots after an outage, but with FileVault on the host stops at the boot-time unlock screen (shown before macOS finishes booting) and waits for an operator to authenticate — it will not reach a logged-in, SSH-serving state unattended. `sudo fdesetup authrestart` caches the unlock key for a single *planned* restart, but does nothing for an unexpected power-failure reboot; accept the manual unlock as the cost of at-rest security on an always-on host.
+
 ## Verification
 
 ### Phase 1 — local on the new Mac
