@@ -220,3 +220,37 @@ modes are different: a misnamed module is a documentation problem; a
 misnamed bundle becomes a category lie (the role lesson). The bundle
 rule is therefore stricter: not "the most communicative term" but
 "specifically a capability term, never a host-kind term."
+
+---
+
+# Host naming: celestial bodies
+
+A distinct concern from the module/bundle naming above: that rule names *files*; this one names *hosts* (the `hosts/<name>/` directories and the machines they configure). The decision and its full rationale — including the roads not taken — live in [ADR-038](./decisions/ADR-038-celestial-host-naming.md), amending [ADR-016](./decisions/ADR-016-host-identity.md) (which fixes *when* a name changes); this section is the applied rule.
+
+## The rule
+
+**A host's name is a celestial body, and its *substrate* picks the celestial class.** One principle underneath it: **gravitational binding mirrors operational dependency** — what a machine *is* (owned metal, rented metal, or a guest VM) decides its class.
+
+| Substrate | Celestial class | Why it fits |
+|-----------|-----------------|-------------|
+| Physical machine (metal you own) | major planet, **moon-capable** | a full world with its own gravity; the VMs you pin to it orbit it as moons |
+| VPS / cloud instance (someone else's metal) | major planet, **moonless** | a real standalone host, but on rented metal — barren, nothing of yours orbiting it |
+| VM pinned to an owned host | a **moon** of that host's planet | the strongest gravitational tie in the scheme — it mirrors the VM's total dependence on its host metal |
+| Roaming VM, or any host that fits no class above | a **minor body** — asteroid &c., the open reserve | bound to no single planet; a deliberately loose catch-all |
+
+Whether a planet carries moons is itself the owned-vs-rented marker: your own metal can anchor pinned VMs — each of which *is* one of its moons, named after one of that host-planet's actual moons — while rented metal stays barren by choice. The minor-body reserve (asteroids, comets, dwarf planets, KBOs) is one deliberately under-specified pool for roaming VMs and any host that fits no class above; it is **not** pre-partitioned — if a reserve category recurs often enough to deserve its own rule, [ADR-038](./decisions/ADR-038-celestial-host-naming.md) is iterated then, not now. Earth is excluded by operator preference. This composes with ADR-016: the name binds to the machine, not its software role — substrate is a machine property, so it sits inside that stability rule.
+
+## The fleet
+
+The framework and every name below are ratified ([#368](https://github.com/dannyfaris/nix-config/issues/368)); the per-host directory renames roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands (the pilot is [#403](https://github.com/dannyfaris/nix-config/issues/403), `mac-mini` → `neptune`).
+
+| Target name | Class | Machine | `hosts/` dir today |
+|------|-------|---------|--------------------|
+| **Jupiter** | moon-capable planet | NixOS x86_64 flagship desktop tower | — (not yet onboarded) |
+| **Saturn** | moon-capable planet | darwin MacBook Air daily driver | — (not yet onboarded) |
+| **Mars** | moon-capable planet | NixOS x86_64 work + personal dev (ProDesk) | `metis` |
+| **Neptune** | moon-capable planet | darwin home Mac | `mac-mini` |
+| **Mercury** | moonless planet | AWS EC2 x86_64 work, headless | `mercury` (name survives) |
+| **Triton** | moon (of Neptune) | UTM/aarch64 refinement VM, pinned to the home Mac | `nixos-vm` |
+
+VPS hosts cap at two — only Mercury and Venus are moonless among the major planets (a deliberate ceiling, per ADR-038). Moon-capable planets and the minor-body reserve both scale freely; per-planet moon budgets do not (Mars has only two named moons).
