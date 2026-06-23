@@ -132,6 +132,11 @@ Companion changes:
   immediate driver, jq is broadly useful).
 - `docs/decisions/README.md` index table gains a row for this ADR.
 
+> **Current state lives in [docs/agents/claude-statusline.md](../agents/claude-statusline.md).**
+> The dated entries below are the statusline's design-log history (kept as
+> historical record per ADR-037); the living doc is the canonical
+> current-state reference, parallel to `docs/agents/cursor-statusline.md`.
+
 **Palette-driven colours (added per ADR-028 slice 6, 2026-05-28).** The
 six colour bindings in `claude-statusline.sh` (BLUE / GREEN / YELLOW /
 RED / MAUVE / TEAL) are no longer hardcoded ANSI 256-colour escapes.

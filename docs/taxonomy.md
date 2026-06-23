@@ -12,8 +12,10 @@ applied principle with examples.
 > shapes (`modules/home/` and `modules/system/` from a pre-foundation
 > refactor; `modules/core/...` and `home/core/...` from the pre-ADR-026
 > tier-prefix era) because the rule was articulated against those trees.
-> The current trees are `home/{shared,nixos}/` and `modules/{nixos,shared}/`
-> per the PRD §5 directory grid (post-[ADR-026](./decisions/ADR-026-drop-core-tier-prefix.md)).
+> The current trees are `home/{shared,nixos,darwin}/` and
+> `modules/{nixos,darwin,shared}/`
+> per the PRD §5 directory grid (post-[ADR-026](./decisions/ADR-026-drop-core-tier-prefix.md),
+> with the `darwin/` axis added when nix-darwin onboarded — epic #11).
 > The naming rule itself applies unchanged; only the directories moved.
 
 ## The rule
@@ -130,7 +132,7 @@ bundle every host imports.
 
 **Name:** kebab-case, describes the capability the bundle groups
 (`remote-access.nix`, `cli-tooling.nix`, `desktop-env.nix`,
-`container-runtime.nix`, `agent-clis-base.nix`).
+`git-multi-identity.nix`).
 
 **Location:** under a `bundles/` subdirectory per platform layer:
 
@@ -158,7 +160,7 @@ And rules in names like:
 
 - `remote-access.nix` (the capability of being reachable over SSH)
 - `desktop-env.nix` (the capability of running a graphical desktop)
-- `container-runtime.nix` (the capability of running containers)
+- `git-multi-identity.nix` (the capability of carrying multiple git identities)
 
 Applies the existing "most-communicative term" rule (above) to the
 capability layer.
@@ -175,12 +177,12 @@ convention. It is structurally a bundle (same `bundle-purity` rule, same
   above `bundles/`:
 
   ```
-  modules/nixos/foundation.nix
-  modules/darwin/foundation.nix
+  modules/nixos/foundation.nix       # exists
+  modules/darwin/foundation.nix      # exists
   modules/shared/foundation.nix      # if a cross-platform foundation emerges
-  home/nixos/foundation.nix
-  home/darwin/foundation.nix
-  home/shared/foundation.nix
+  home/nixos/foundation.nix          # home-tree foundations: conventional slots,
+  home/darwin/foundation.nix         #   populated only when a platform's HM
+  home/shared/foundation.nix         #   imports converge on a base (none yet)
   ```
 
   Placement at the top of the tree rather than inside `bundles/` is a

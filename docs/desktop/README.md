@@ -45,6 +45,10 @@ rather than creating a new artifact.
 | [input.md](./input.md) | Input device config — device layer (G502 HERO DPI/buttons/onboard profiles via libratbag/ratbagd + Piper, settings travel on the mouse) + compositor layer (key-repeat/scroll/`accel-profile "flat"` via niri's category `input` block) | #107 |
 | [screen-lock.md](./screen-lock.md) | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #97 |
 | [power-session.md](./power-session.md) | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) — _mooted (unbuilt), subsumed by Noctalia (ADR-036, #385)_ | #98 |
+| [audio.md](./audio.md) | Audio stack for the niri desktop — PipeWire sound server + volume/mute, media transport, status-bar indicator, graphical mixer; Bluetooth + patchbay routing out of scope | #96 |
+| [clipboard.md](./clipboard.md) | Clipboard persistence + history — _the `clipse` selection was never built; subsumed by Noctalia (ADR-036, #385); session-PATH `wl-clipboard` gap fixed under #360_ | #99 |
+| [visual-identity.md](./visual-identity.md) | The desktop's aesthetic north-star (living doc) — typography / colour / line-weight / radii / spacing / motion / pointer intent the per-surface selection docs implement against | #108 |
+| [zen.md](./zen.md) | Zen browser — _audit-phase parallel install vs Firefox (#127); audit concluded in Firefox's favour, Zen retired_ | #127 |
 
 ### macOS clients (neptune)
 
