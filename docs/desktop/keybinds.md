@@ -2,11 +2,11 @@
 
 > **Status — audited target architecture, doc-before-code.** This document
 > specifies the keybind taxonomy agreed in the 2026-06-23 cross-platform
-> keybind audit. It is the *design*, not the current live state: implementation
-> lands atomically through the single-source capability registry (#384, Epic F
-> #428; the dedicated registry ADR is **not yet written**), which generates every
-> surface from one source. Until that cutover,
-> live binds remain the pre-cutover all-four-`Hyper` shape — see
+> keybind audit. It lands in phases through the single-source capability
+> registry (`lib/capabilities.nix`; [ADR-039](../decisions/ADR-039-capability-registry.md),
+> #384, Epic F #428), which generates every surface from one source. The Linux
+> Hyper layer (niri + keyd) has cut over to the `Ctrl+Alt` base; the macOS
+> surfaces are still the pre-cutover all-four-`Hyper` shape — see
 > [§Implementation status](#implementation-status).
 
 **Terminology.** We say **`Super`** for the Cmd-position modifier throughout.
@@ -44,9 +44,10 @@ Principles:
    parity is achieved per-bind; niri-only actions (geometry, vertical window nav)
    live on `Hyper` too. A **divergent leaf** — an action present on one platform
    only — is correct, not a gap.
-3. **Escalators.** `Hyper+Super` = the *elevated/heavy* tier (move,
-   workspace-level ops, force-close). `Hyper+Shift` is otherwise reserved (it
-   holds one deliberate exception, below).
+3. **Escalators.** `Hyper+Shift` = *move on screen* (move column, move
+   window-in-column); `Hyper+Super` = the *workspace-level* tier
+   (send-window-to-workspace, switch-workspace). "Shift moves on screen, Super
+   moves across workspaces."
 4. **Mild duplication is allowed** when it rewards muscle memory (e.g. overview
    reachable two ways). Distinct from *transitional* duplication (migration
    scaffolding), which is retired at cutover.
@@ -76,8 +77,9 @@ window models, so the taxonomy is built on it and macOS follows:
   macOS approximates by number (Spaces) and by the broader view (Mission Control
   / exposé).
 
-`Hyper` navigates the *immediate* level (columns, windows-in-column); `Hyper+Super`
-operates the *elevated* level (workspaces, moves).
+`Hyper` navigates the *immediate* level (columns, windows-in-column); `Hyper+Shift`
+moves within that view (column, window-in-column); `Hyper+Super` operates the
+*workspace* level (send-to-workspace, switch-workspace).
 
 ## The `Hyper` layer
 
@@ -96,24 +98,28 @@ operates the *elevated* level (workspaces, moves).
 > the horizontal edge (no window further that way); `Hyper+↑/↓` fills the vertical
 > axis that has no native macOS analogue.
 
-### Move & workspace ops — the `Hyper+Super` elevated tier
+### Move — on-screen (`Hyper+Shift`) & workspace-level (`Hyper+Super`)
 
 | Tier + key | niri | macOS |
 |---|---|---|
-| `Hyper+Super+←/→` | move column | move window E/W → next space at edge |
+| `Hyper+Shift+←/→` | move column | move window E/W → next space at edge |
+| `Hyper+Shift+↑/↓` | move window-in-column | move window N/S |
 | `Hyper+Super+1‑9` | move window → workspace N | move window → Space N |
 | `Hyper+Super+↑/↓` | switch workspace | Mission Control / exposé |
-| `Hyper+Super+W` | WM force-close window | — |
-| `Hyper+Shift+↑/↓` | move window-in-column | move window N/S |
 
-> **Deliberate deviation (audit note).** Move-window-in-column is the *one* move
-> that lives on `Hyper+Shift`, not `Hyper+Super` — because `Hyper+Super+↑/↓` is
-> claimed by switch-workspace (the spatial outer-vertical, which we chose to
-> preserve). Every other move is on `Hyper+Super`. `Hyper+Super` is therefore a
-> *tier* (elevated/heavy ops), not a single verb.
+> **The two move tiers.** `Hyper+Shift` moves things *within the current view* —
+> column left/right and window-in-column up/down; `Hyper+Super` is the
+> *workspace-level* tier — send-window-to-workspace (`1‑9`) and switch-workspace
+> (`↑/↓`). "Shift moves on screen, Super moves across workspaces."
+> `Hyper+Super+←/→` is deliberately free.
+>
+> **No WM force-close (audit correction).** An earlier draft put a `Hyper+Super+W`
+> "force-close window" on this tier; niri has no force-close — only graceful
+> `close-window` — so there is no such powerup. Window-close lives on `Super+W`
+> (see [§App commands](#app-commands--superletter)).
 >
 > On macOS the move binds are **Hammerspoon** (reposition/swap — Mac windows
-> float); `Hyper+Super+←/→` falls through to **move-window-to-adjacent-space** at
+> float); `Hyper+Shift+←/→` falls through to **move-window-to-adjacent-space** at
 > the edge, mirroring the focus binds. Cross-space window moves lean on
 > Hammerspoon's Spaces handling — a known-fragile macOS area (see Open questions).
 
@@ -159,14 +165,17 @@ carries two kinds of bind:
 | Chord | Action | Realization |
 |---|---|---|
 | `Super+C / X / V` | copy / cut / paste | → `Ctrl+…` remap (Linux); native (Mac) |
-| `Super+W` | close tab / window | → `Ctrl+W` remap (Linux); native (Mac) |
+| `Super+W` | close window | niri `close-window` (Linux); native `Cmd+W` (Mac) |
 | `Super+Q` | quit application | **registry action** (SIGTERM, Linux); native (Mac) |
 | `Super+A / S / F / T / N` | select-all / save / find / new-tab / new | reserved (same remap pattern) |
 
 > `Super+letter` is a **mixed namespace**: most entries are app-command *remaps*
-> (substrate/xremap); `Super+Q` is a *registry action* because Linux has no
-> reliable `Ctrl+Q` quit convention. `Super+Q` is an approximation of macOS's
-> app-lifecycle quit, not parity (Linux has no window-independent app concept).
+> (substrate/xremap), but two are not. `Super+Q` (quit) is a *registry action*
+> because Linux has no reliable `Ctrl+Q` quit convention. `Super+W` (close) is the
+> niri `close-window` WM action — niri has no force-close, and an app-level
+> `Ctrl+W` tab-close remap is deferred to #323. `Super+Q` is an approximation of
+> macOS's app-lifecycle quit, not parity (Linux has no window-independent app
+> concept).
 
 ### Text navigation — claimed, realization deferred
 
@@ -259,13 +268,16 @@ extensible) vs unified `hs.chooser` (full family, more work). See
 
 ## Implementation status
 
-This document is the **audited target**. Current live binds are the
-**pre-cutover all-four `Hyper`** (`Super+Ctrl+Alt+Shift`) shape in
-`home/nixos/niri.nix`, `modules/nixos/keyd.nix`, `home/darwin/karabiner.nix`,
-`home/darwin/hammerspoon.nix`, plus the macOS symbolic hotkeys in
-`modules/darwin/keyboard-shortcuts.nix`. The cutover to the `Ctrl+Alt` base
-happens in one step via the registry (#384; the registry ADR is planned, not yet
-written).
+This document is the **audited target**, landing in phases through the
+single-source capability registry (`lib/capabilities.nix`; ADR-039, #384). The
+**Linux Hyper layer has cut over** to the `Ctrl+Alt` base: `home/nixos/niri.nix`
+(binds generated by the registry) and `modules/nixos/keyd.nix` (the Caps→Hyper
+substrate reading the same constant). The **macOS surfaces are still the
+pre-cutover all-four `Hyper`** (`Super+Ctrl+Alt+Shift`) —
+`home/darwin/karabiner.nix`, `home/darwin/hammerspoon.nix`, and the symbolic
+hotkeys in `modules/darwin/keyboard-shortcuts.nix` — until the macOS emitter
+phase (#440), so the two hosts' Hyper bases differ in the interim. Bind
+*inventory* still grows incrementally on the registry; the base *shape* is atomic.
 
 ## Open questions
 
@@ -287,8 +299,11 @@ written).
 
 ## Audit notes — deliberate calls & deviations
 
-- Move-window-in-column on `Hyper+Shift+↑/↓` is the one move outside `Hyper+Super`
-  (preserves spatial workspace nav).
+- All on-screen moves live on `Hyper+Shift` (column `←/→`, window-in-column
+  `↑/↓`); `Hyper+Super` is reserved for workspace-level ops (send-to-workspace,
+  switch-workspace). "Shift moves on screen, Super moves across workspaces."
+- niri has no WM force-close (only graceful `close-window`), so there is no
+  `Hyper+Super+W` powerup; window-close is `Super+W`.
 - Mild duplication is deliberate (overview via `Hyper+Tab` and macOS Mission
   Control via `Hyper+Super+↑`).
 - macOS Space ≈ niri **column** (spatial cognition), not the structural
