@@ -54,13 +54,27 @@ A spare physical key gives more *triggers*, not more *modifiers* — any trigger
 
 Because the operator uses **Mac-layout keyboards on both machines**, the spare keys are symmetric in availability (Right Cmd, Right Opt exist on both). The natural application: **Right Cmd as a leader for the `hs.chooser` / launcher provider family** (emoji / settings / actions / keybinds) — see [`cross-platform-action-menu.md`](./cross-platform-action-menu.md). That family wants a leader, not more Hyper chords, so it costs zero Hyper budget.
 
-## 11. Open / to verify
+## 11. Why not kanata — a programmable input-layer engine
+
+[kanata](https://github.com/jtroo/kanata) is the QMK-like cross-platform remapper [`keyd.md`](../desktop/keyd.md) §Alternatives flagged as the one tool to revisit *"if the remap needs grow into real layering."* This redesign is that growth — so the trigger is checked here, and the answer is **not yet, not for this shape.**
+
+**It lives on a different layer.** kanata is an *input-layer* engine (physical keys → logical keys/mods/chords); the single-source registry (#384) is a *binding-layer* tool (chord → semantic action). kanata cannot bind an action — it cannot "focus Chrome" or "open the chooser" (its `cmd` action is limited and not the compositor-action model). So at most it owns the input layer *beneath* the registry; it never replaces it. "Complement" is therefore architecturally true but not the test — the test is whether *this* input layer needs an engine, and it does not:
+
+- **Sub-tiers are plain modifier stacking, not layering.** Once the base is `Ctrl+Alt` (§5), `Hyper+Shift` / `Hyper+Mod` are ordinary modifier chords niri and Karabiner already distinguish — no state machine, just the redefined base, a one-liner keyd *and* Karabiner already support.
+- **Tap-hold is already native** — keyd `overload`, Karabiner `to_if_alone` (the §10 leader rides exactly these).
+- **The leader is a chooser-opener, not an input sequence.** Right Cmd → open `hs.chooser` / `fuzzel`; the *GUI* dispatches emoji/settings/actions (§10, [`cross-platform-action-menu.md`](./cross-platform-action-menu.md)). That needs no input-layer state machine. kanata's real strength — input-layer leader *sequences* and chords — is the branch this design does **not** take.
+
+**And the cross-platform pitch is weaker than the headline.** On macOS kanata runs *on* Karabiner's DriverKit driver, so it does **not** remove the Karabiner dependency (keyd.md), and nixpkgs ships no nix-darwin module — a hand-rolled root daemon, a regression from the clean `services.keyd` / declarative-Karabiner setup. Its `.kbd` is its own DSL: hand-authored (losing single-sourcing) or yet another emit target, and still binding-layer-blind.
+
+**The gate.** Adopt kanata only if a concrete *input-layer* residue emerges beyond "plain modifier stacking + tap-hold + chord-opens-chooser" — genuine multi-key chords, tap-dance, or input-layer leader *sequences* wanted identically across both platforms. On the current design that residue is empty, so substrate stays keyd/Karabiner and dispatch stays registry + chooser; kanata, if ever adopted, slots *under* the registry as the input layer. (A 2026-06-23 prior-art scan — the keymap-single-sourcing research note, #432 — independently confirmed kanata is a *runtime* engine, not a single-source → multi-target emitter, consistent with this placement.)
+
+## 12. Open / to verify
 
 - **keyd → niri Level3 delivery on metis:** bind `ISO_Level3_Shift+<key>` to something and confirm the keyd-Hyper chord triggers it. If fussy, plain `Ctrl+Alt` is fine.
 - **Escalator ergonomics:** confirm `Caps+Super` (Linux) / `Caps+Cmd` (macOS) is comfortable; reserve the extended tier for infrequent ops. Fallback escalator if not: Shift only.
 - **The redesign is a #384 change.** It ripples across keyd, Karabiner, Hammerspoon, `niri.nix`, and `keybinds.md`; redefining the base chord by hand across five surfaces is the anti-pattern. Land it through the single-source registry so it is one edit — and resolve it *before* #384 generates, or the emitters reproduce the superseded all-four shape.
 
-## 12. The shape (summary)
+## 13. The shape (summary)
 
 | Tier | Linux chord | macOS chord | Use |
 |---|---|---|---|
