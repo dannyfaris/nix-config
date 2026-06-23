@@ -1,6 +1,6 @@
 # Research note — design-token frameworks vs. our visual identity
 
-Status: **research note, not a decision.** Captured from a deep-research run (5 angles, 23 vetted sources, 87 claims → 24 adversarially verified via 3-vote, 1 killed) plus a synthesis pass. Feeds the open dimensions of [`visual-identity.md`](./visual-identity.md) (#108) and the planned `theme-tokens.nix`. Final literals are still decided *against rendered reality* per our principles, not from this note.
+Status: **research note, not a decision.** Captured from a deep-research run (5 angles, 23 vetted sources, 87 claims → 24 adversarially verified via 3-vote, 1 killed) plus a synthesis pass. Feeds the open dimensions of [`visual-identity.md`](../desktop/visual-identity.md) (#108) and the planned `theme-tokens.nix`. Final literals are still decided *against rendered reality* per our principles, not from this note.
 
 ## 1. Strategic verdict
 
