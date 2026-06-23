@@ -37,7 +37,8 @@
 # the fourth signal layer in the SSH-context awareness stack
 # (issues #4, #6, #7, #17 land the other three).
 #
-# Future hosts (mothership, mba) get entries here at bring-up.
+# Future hosts (jupiter, saturn — celestial names per ADR-038) get
+# entries here at bring-up.
 {
   nixos-vm = {
     polarity = "dark";

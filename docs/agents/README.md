@@ -26,7 +26,8 @@ the sharp edges, cross-link references.
 
 | Doc | Subject | Landed |
 |---|---|---|
-| [cursor-statusline.md](./cursor-statusline.md) | Cursor CLI statusline — model-tier mapping, signal selection, asymmetry vs Claude Code | _pending — #58_ |
+| [claude-statusline.md](./claude-statusline.md) | Claude Code statusline — current-state living record (layout, palette-driven colours, model-tier mapping, account label, width mechanics); ADR-024 holds the dated history | ADR-024 |
+| [cursor-statusline.md](./cursor-statusline.md) | Cursor CLI statusline — model-tier mapping, signal selection, asymmetry vs Claude Code | #185 + #186 |
 
 ## Project skills
 

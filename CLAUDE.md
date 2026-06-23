@@ -35,17 +35,23 @@ host, write it down in git.
 
 ```
 flake.nix                          # flake-parts entry point
-parts/                             # flake-parts modules (nixosConfigurations, etc.)
-lib/mk-host.nix                    # host constructor — thin wrapper over lib.nixosSystem
+parts/                             # flake-parts modules — parts/nixos.nix builds the NixOS
+                                   # configs, parts/darwin.nix the nix-darwin ones
+lib/mk-host.nix                    # NixOS host constructor — thin wrapper over lib.nixosSystem
+lib/mk-darwin-host.nix             # Darwin host constructor — the nix-darwin parallel
 hosts/<hostname>/                  # host instance: hardware, hostname, stateVersion,
                                    # _module.args, imports of foundation + bundles
-modules/nixos/foundation.nix  # bundle every NixOS host imports by convention
-modules/nixos/bundles/        # NixOS-specific capability bundles (system-level)
-modules/nixos/                # NixOS-specific standalone modules
-modules/shared/               # cross-platform standalone system modules
-home/shared/bundles/          # capability bundles (home-level, cross-platform)
-home/shared/                  # cross-platform standalone home-manager modules
-home/nixos/                   # NixOS-specific home-manager modules (e.g. macchina-shell-init)
+modules/nixos/foundation.nix   # bundle every NixOS host imports by convention
+modules/nixos/bundles/         # NixOS-specific capability bundles (system-level)
+modules/nixos/                 # NixOS-specific standalone modules
+modules/darwin/foundation.nix  # bundle every Darwin host imports by convention
+modules/darwin/                # Darwin-specific standalone modules (no bundles/ yet)
+modules/shared/                # cross-platform standalone system modules
+home/shared/bundles/           # capability bundles (home-level, cross-platform)
+home/shared/                   # cross-platform standalone home-manager modules
+home/nixos/bundles/            # NixOS-specific home-manager bundles
+home/nixos/                    # NixOS-specific home-manager modules (e.g. macchina-shell-init)
+home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, hammerspoon)
 ```
 
 Composition follows the foundation + bundles model (ADR-027): every host

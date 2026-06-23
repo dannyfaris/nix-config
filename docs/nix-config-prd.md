@@ -1,8 +1,8 @@
 # Nix Configuration: Product Requirements & Design Document
 
-**Status:** Draft
+**Status:** Living
 **Author:** Dan
-**Last updated:** 2026-05-14
+**Last updated:** 2026-06-24
 
 ---
 
@@ -165,11 +165,19 @@ flake.lock
 README.md
 CLAUDE.md
 docs/
+  README.md
   nix-config-prd.md
   philosophy.md
+  workflow.md
   taxonomy.md
-  decisions/
-    ADR-NNN-<slug>.md
+  identities.md
+  ci.md
+  decisions/                 # ADRs (ADR-NNN-<slug>.md) + index
+  desktop/                   # Wayland desktop living docs
+  darwin/                    # macOS host living docs
+  research/                  # point-in-time research notes
+  agents/                    # AI coding-agent living docs
+  runbooks/                  # operational procedures
 hosts/
   <hostname>/
     default.nix              # imports list + identifying data
@@ -178,25 +186,26 @@ hosts/
 modules/
   shared/                    # cross-platform system modules
     foundation.nix           # (if cross-platform foundation emerges)
-    bundles/                 # cross-platform bundles
+    bundles/                 # (conventional slot; none yet)
   nixos/                     # NixOS-specific system modules
     foundation.nix           # unconditional baseline for every NixOS host
     bundles/                 # NixOS-specific bundles
   darwin/                    # nix-darwin-specific system modules
     foundation.nix           # unconditional baseline for every macOS host
-    bundles/                 # Darwin-specific bundles
+    bundles/                 # (conventional slot; none yet)
 home/
   shared/                    # cross-platform Home Manager modules
-    foundation.nix
+    foundation.nix           # (conventional slot; none yet)
     bundles/
   nixos/                     # Home Manager modules used only on NixOS hosts
-    foundation.nix
+    foundation.nix           # (conventional slot; none yet)
     bundles/
   darwin/                    # Home Manager modules used only on macOS hosts
-    foundation.nix
-    bundles/
+    foundation.nix           # (conventional slot; none yet)
+    bundles/                 # (conventional slot; none yet)
 lib/
-  mk-host.nix                # host construction helper
+  mk-host.nix                # NixOS host construction helper
+  mk-darwin-host.nix         # nix-darwin host construction helper
 scripts/
   lint-*.sh                  # structural enforcement
 ```
@@ -277,8 +286,8 @@ Examples drawn from the current and planned set of hosts:
 - `nixos-vm` — UTM refinement VM (aarch64-linux)
 - `mercury` — work-only headless dev host on AWS EC2 (x86_64-linux)
 - `metis` — personal x86_64 dev box, transitioning from headless to the first desktop host (ADR-028)
-- `mothership` — second Linux desktop host (planned; pending hardware)
-- `mba` — MacBook Air (planned via nix-darwin)
+- `jupiter` — NixOS x86_64 flagship desktop tower (planned; pending hardware; celestial name per ADR-038)
+- `saturn` — MacBook Air, darwin daily driver (planned via nix-darwin; celestial name per ADR-038)
 - `neptune` — Mac mini (aarch64-darwin, nix-darwin; live as of 2026-06-02, onboarded as `mac-mini` and renamed per ADR-038)
 
 These names are accepted under the rule: each refers unambiguously to a specific physical machine. A replacement (e.g., upgrading the MacBook Air to a MacBook Pro) gets its own host directory and a fresh name.
@@ -600,7 +609,7 @@ Design decisions that have been deliberately deferred. Decisions resolved during
 
 **Runtime secrets on headless hosts.** *Resolved (2026-05-18) by [ADR-018](./decisions/ADR-018-headless-secrets-sops.md):* continue with `sops-nix`, identical to the UTM VM. The host's ed25519 SSH key is the decryption identity. 1Password `op` on headless is deferred again until a real headless workload requires it (the trigger is described in ADR-018's Consequences).
 
-**Continuous integration.** Deferred per §9.5. May be added once cross-platform coverage becomes valuable.
+**Continuous integration.** *Resolved by [ADR-025](./decisions/ADR-025-ci-in-flake.md):* CI is now live (§9.5) — GitHub Actions runs `nix flake check` across the `x86_64-linux` / `aarch64-linux` / `aarch64-darwin` matrix on every push and PR, building every host on its native runner. Was deferred here pending demonstrated cross-platform-coverage value.
 
 ---
 

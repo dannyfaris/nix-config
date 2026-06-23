@@ -7,16 +7,18 @@ Mesh-VPN baseline on every host the operator uses interactively.
 **NixOS hosts** — `services.tailscale.enable = true` via
 `modules/nixos/tailscale.nix` (see that file for the daemon /
 firewall configuration; out of scope for #13's cask work).
-Imported per-host by `hosts/metis/default.nix` and
-`hosts/nixos-vm/default.nix`. `mercury` does not import it today
-(headless work host; no Tailscale membership at present).
+Imported per-host by `hosts/metis/default.nix`,
+`hosts/nixos-vm/default.nix`, and `hosts/mercury/default.nix`
+(mercury joined the personal tailnet since #205 so the operator can
+reach it without the public EC2 endpoint; first activation needs an
+interactive `sudo tailscale up`).
 
 **Darwin hosts** — Homebrew cask `tailscale-app` (the Standalone
 variant, NOT the MAS sandboxed build), declared in
 `modules/darwin/homebrew.nix` per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s
 clause 1 (`pkgs.tailscale` on Darwin ships only the daemon/CLI;
 the `NetworkExtension`-grade GUI VPN is not in nixpkgs). Currently
-managed on `neptune`; future Mac hosts (`mba`, a MacBook Air)
+managed on `neptune`; future Mac hosts (`saturn`, a MacBook Air)
 inherit.
 
 ## Rationale
