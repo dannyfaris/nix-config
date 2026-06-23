@@ -26,7 +26,7 @@ rather than creating a new artifact.
 
 | Doc | Subject | Landed |
 |---|---|---|
-| [keybinds.md](./keybinds.md) | Niri keybindings + three-namespace philosophy (philosophy now cross-platform: Hyper realized on macOS via Karabiner — see karabiner.md) | #80 |
+| [keybinds.md](./keybinds.md) | Cross-platform keybind taxonomy (audited target) — `Hyper` command layer + `Super` (Cmd-parity); per-platform realization via keyd / Karabiner / Hammerspoon + the registry | #80 |
 | [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |

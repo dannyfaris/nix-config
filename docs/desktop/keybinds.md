@@ -1,330 +1,300 @@
 # Keybindings
 
-Keybindings for the niri desktop on metis. The **modifier-namespace philosophy** is now realized on both platforms — macOS via Karabiner-Elements ([karabiner.md](./karabiner.md)) and metis via keyd ([keyd.md](./keyd.md)) — and both carry Hyper binds on top (the full set on macOS; on metis the nav family + launcher + browser + terminal, plus a niri-only window-geometry cluster — resize, preset-width cycle, center, fullscreen, maximize — with only `Hyper+Down` lacking a niri analogue). Living document — updated with every new binding.
+> **Status — audited target architecture, doc-before-code.** This document
+> specifies the keybind taxonomy agreed in the 2026-06-23 cross-platform
+> keybind audit. It is the *design*, not the current live state: implementation
+> lands atomically through the single-source capability registry (#384, Epic F
+> #428; the dedicated registry ADR is **not yet written**), which generates every
+> surface from one source. Until that cutover,
+> live binds remain the pre-cutover all-four-`Hyper` shape — see
+> [§Implementation status](#implementation-status).
 
-## Philosophy
+**Terminology.** We say **`Super`** for the Cmd-position modifier throughout.
+niri's KDL writes it `Mod`; that is the same key — an implementation detail, not
+a taxonomy distinction.
 
-Keybindings separate into three modifier namespaces, each with a distinct
-purpose:
+**Keyboards.** Both machines (metis/Linux, mac-mini/macOS) use **Mac-layout
+keyboards**. The physical `Cmd`-position key therefore emits `Super` on Linux and
+`Cmd` on macOS, and the `Option`-position key emits `Alt`/`Opt` — which is why
+`Super` (the Cmd-position key) is the natural home for macOS-convention commands
+on both platforms.
 
-- **`Super`** (written as `Mod` in niri's KDL syntax) — niri-specific
-  window **manipulation**: moving windows and columns,
-  consuming/expelling from a column, closing. The scrollable-tiling
-  operations with no macOS analogue — niri's domain. *Navigation*
-  (focus, workspace-switch, overview) is **not** here; it migrates to
-  `Hyper`. Window **geometry** (resize, preset-width cycle, center,
-  fullscreen, maximize) is also not here — it lives on the `Super+Hyper`
-  extended-WM tier, which on metis is realized as `Hyper` (see below).
+**Markdown.** Soft-wrapped (one line per paragraph).
 
-- **`Super+letter`** — reserved namespace for application commands
-  (copy/paste/save/find/close-tab and similar). Under the philosophy, a
-  system-wide remap (e.g. via `keyd`) would translate `Super+letter` →
-  `Ctrl+letter` so application commands behave like macOS `Cmd+letter`.
-  **Not currently implemented.** Standard app-command combos are left
-  unbound at the niri level so the philosophy could land cleanly if
-  ever pursued.
+## The organizing principle
 
-- **`Hyper`** — the **cross-platform layer**: navigation (focus,
-  workspace-switch, overview), application spawn (terminal, browser),
-  and personal-system commands (launcher, clipboard, notifications,
-  lock). `Hyper` is the combined `Super+Ctrl+Alt+Shift` modifier from
-  Caps Lock, realized on macOS via Karabiner-Elements
-  ([karabiner.md](./karabiner.md)) and on metis via keyd
-  ([keyd.md](./keyd.md)). Its defining rule is the cross-platform
-  analogy below; the paired mapping is the source of truth.
+Two modifier families carry the design, chosen by *what an action is*:
 
-- **`Super+Hyper`** — extended window management: the **window-geometry
-  cluster** (column resize, preset-width cycle, center, fullscreen,
-  maximize). On a single-keyboard host this tier **collapses to `Hyper`**:
-  keyd realizes Hyper as `Super+Ctrl+Alt+Shift` ([keyd.md](./keyd.md)) — it
-  already holds Super — so pressing the physical Super key on top adds no
-  modifier and yields the same four-modifier chord. There is therefore no
-  distinct `Super+Hyper` chord, and the tier is realized as `Hyper+<key>`.
-  This is a deliberate move of *resize* out of the `Super` manipulation set
-  (above), so that every geometry op lives together on one modifier.
+- **`Hyper`** — the **primary command layer**: window/space navigation, window
+  geometry, app-spawn, session, the action menu. Produced from **Caps Lock**.
+  `Hyper` = `Ctrl+Alt` (Linux) / `Ctrl+Opt` (macOS) — a minimal two-modifier
+  base that frees `Shift` and `Super`/`Cmd` as escalators.
+- **`Super`** (the Cmd-position key) — the **macOS-convention command
+  modifier**: app commands (copy/paste/close/quit), text navigation, app-switch,
+  the launcher. Kept deliberately *clear* so it can mirror `Cmd` on both
+  platforms.
 
-**Cross-platform analogy — the defining rule for `Hyper`.** Each `Hyper` chord performs the *analogous* action on both platforms, so the muscle memory built on the Mac transfers to niri intact. The Mac's `Hyper+Left/Right` moves between Spaces → on niri it focuses the column left/right; `Hyper+1`–`9` switches Space → focuses workspace N; `Hyper+Up` is Mission Control → niri's overview; `Hyper+Return` opens a terminal on both. The paired table under [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping) is the source of truth.
+Principles:
 
-**Decision — navigation migrates `Super` → `Hyper`.** Because the analogy puts navigation on `Hyper`, niri's navigation binds move off `Super`: focus-column, workspace-switch, and overview migrate to their `Hyper` homes, leaving `Super` for niri-specific *manipulation* (move, consume/expel, close — actions with no Mac counterpart). Window geometry similarly lives on the `Super+Hyper` extended-WM tier (realized as `Hyper`), not `Super`. Per the cadence below this is incremental — one bind per ceremony — so the Active-bindings tables keep each bind's current `Super` home shown with its `Hyper` target until it moves.
+1. **Parity, not identity.** The objective is the same *UX* on both platforms
+   (one physical chord, the same action-analogue), not an identical modifier set.
+   Each platform uses its best-fit chord (Linux `Hyper` = `Ctrl+Alt`; macOS
+   `Hyper` = `Ctrl+Opt`).
+2. **`Hyper` is the primary layer, not "cross-platform-only."** Cross-platform
+   parity is achieved per-bind; niri-only actions (geometry, vertical window nav)
+   live on `Hyper` too. A **divergent leaf** — an action present on one platform
+   only — is correct, not a gap.
+3. **Escalators.** `Hyper+Super` = the *elevated/heavy* tier (move,
+   workspace-level ops, force-close). `Hyper+Shift` is otherwise reserved (it
+   holds one deliberate exception, below).
+4. **Mild duplication is allowed** when it rewards muscle memory (e.g. overview
+   reachable two ways). Distinct from *transitional* duplication (migration
+   scaffolding), which is retired at cutover.
+5. **Escalator choice balances semantics and ergonomics** — number-moves use
+   `Hyper+Super` (the `Super`/`Cmd` thumb) rather than `Hyper+Shift` (a left-hand
+   pinky cramp).
+6. **Name by tier, not literal chord.** Binds are expressed as `tier + key` (the
+   base16 "name by slot, not tone" discipline), resolved per-platform from one
+   `Hyper` definition — so the base shape is a single edit.
+7. **Substrate boundary.** Caps→`Hyper` *production* stays hand-authored
+   substrate (keyd / Karabiner); the registry binds chord→action only. `Hyper`
+   is a single-sourced constant both consume.
 
-The framework is a way of thinking, not a roadmap. The `Super+letter`
-app-command layer may never be implemented; the `Super+Hyper` extended-WM
-tier is now realized (as `Hyper`, per the collapse above). The shape of the
-bind composition below is nonetheless informed by the philosophy — reserved
-namespaces are deliberately left unbound — so that if any remaining layer
-eventually lands, migration is mechanical rather than disruptive.
+## The spatial model
 
-Cross-platform portability is now realized: Karabiner on macOS and
-keyd on metis (see [keyd.md](./keyd.md)) produce the same
-`Super+Ctrl+Alt+Shift` Hyper modifier shape on both sides. The
-`Super+letter` app-command translation has no macOS parallel (macOS
-uses ⌘+letter natively, no remap needed); the `Hyper` namespace is
-the cross-platform layer the philosophy enables. Bindings on top of
-Hyper land per-platform as they materialize — `Hyper+Return`→foot on
-metis, the Mission Control family on macOS.
+niri's spatial structure is the organizing frame — it is the richer of the two
+window models, so the taxonomy is built on it and macOS follows:
 
-## Cross-platform Hyper mapping
+- **Columns** — the horizontal scroll-strip within a workspace. **Spatially
+  equivalent to macOS Spaces** (both a horizontal strip you slide along) — a
+  deliberate *spatial-cognition* choice over the structural "Space ≈ workspace"
+  reading. **Refined** by the macOS focus/move-mirror (below): Mac *windows* are
+  the fine horizontal unit (≈ columns), and Spaces the coarse step at the edge.
+- **Windows-in-column** — the vertical stack within a column (inner vertical). No
+  macOS analogue.
+- **Workspaces** — the vertical stack of workspaces (outer vertical), numbered.
+  macOS approximates by number (Spaces) and by the broader view (Mission Control
+  / exposé).
 
-The canonical mapping: each `Hyper` chord and its analogous action per platform. niri binds land per the one-bind-per-ceremony cadence — ✓ marks those implemented on niri; `Hyper+Down` is the only chord with no niri analogue.
+`Hyper` navigates the *immediate* level (columns, windows-in-column); `Hyper+Super`
+operates the *elevated* level (workspaces, moves).
 
-| `Hyper` chord | macOS | niri analogue | niri status |
-|---|---|---|---|
-| `Hyper+Left` / `Right` | move between Spaces | focus-column-left / right | ✓ |
-| `Hyper+1`–`9` | switch to Space N | focus-workspace N | ✓ |
-| `Hyper+Up` | Mission Control overview | toggle-overview | ✓ |
-| `Hyper+Down` | application-windows exposé | *(no analogue — niri has no per-app window group)* | n/a |
-| `Hyper+Space` | launcher (`⌘Space` natively — not a Hyper bind) | Noctalia launcher (IPC) | ✓ — migrates `Mod+Space` |
-| `Hyper+Return` | new terminal window | spawn foot | ✓ |
-| `Hyper+B` | Chrome window | spawn default browser | ✓ — spawn-only |
+## The `Hyper` layer
 
-**niri-specific `Hyper` binds** (no Mac mirror) live in the same namespace. The **window-geometry cluster** (resize, preset-width cycle, center, fullscreen, maximize — the `Super+Hyper` extended-WM tier realized as `Hyper`) is the first such set; see [§Active bindings — Window geometry](#window-geometry). Others land as their tools arrive — e.g. `Hyper+Escape` → power/session menu (#98), a lock-now bind, clipboard / notification / screenshot actions. niri's own extra navigation (e.g. vertical window-focus within a column) either stays on `Super` or gets a niri-only `Hyper` bind, decided per bind.
+### Navigation — focus
+
+| Tier + key | niri | macOS |
+|---|---|---|
+| `Hyper+←/→` | focus column | focus window E/W → next space at edge |
+| `Hyper+↑/↓` | focus window-in-column | focus window N/S |
+| `Hyper+1‑9` | focus workspace N | switch to Space N |
+| `Hyper+Tab` | overview | overview (Mission Control) |
+
+> On macOS the arrow-focus binds are **Hammerspoon directional focus**
+> (`focusWindowEast/West/North/South`), not a Karabiner remap — so Mac mirrors
+> niri's spatial focus in 2-D. `Hyper+←/→` falls through to **move-space** only at
+> the horizontal edge (no window further that way); `Hyper+↑/↓` fills the vertical
+> axis that has no native macOS analogue.
+
+### Move & workspace ops — the `Hyper+Super` elevated tier
+
+| Tier + key | niri | macOS |
+|---|---|---|
+| `Hyper+Super+←/→` | move column | move window E/W → next space at edge |
+| `Hyper+Super+1‑9` | move window → workspace N | move window → Space N |
+| `Hyper+Super+↑/↓` | switch workspace | Mission Control / exposé |
+| `Hyper+Super+W` | WM force-close window | — |
+| `Hyper+Shift+↑/↓` | move window-in-column | move window N/S |
+
+> **Deliberate deviation (audit note).** Move-window-in-column is the *one* move
+> that lives on `Hyper+Shift`, not `Hyper+Super` — because `Hyper+Super+↑/↓` is
+> claimed by switch-workspace (the spatial outer-vertical, which we chose to
+> preserve). Every other move is on `Hyper+Super`. `Hyper+Super` is therefore a
+> *tier* (elevated/heavy ops), not a single verb.
+>
+> On macOS the move binds are **Hammerspoon** (reposition/swap — Mac windows
+> float); `Hyper+Super+←/→` falls through to **move-window-to-adjacent-space** at
+> the edge, mirroring the focus binds. Cross-space window moves lean on
+> Hammerspoon's Spaces handling — a known-fragile macOS area (see Open questions).
+
+### Window geometry — `Hyper` + letter (niri-only)
+
+| Tier + key | Action |
+|---|---|
+| `Hyper+−` / `Hyper+=` | shrink / grow column |
+| `Hyper+R` | cycle preset width |
+| `Hyper+C` | center column |
+| `Hyper+F` | fullscreen window |
+| `Hyper+M` | maximize column |
+
+### Spawn & session
+
+| Tier + key | niri | macOS |
+|---|---|---|
+| `Hyper+Return` | floating terminal window (floating foot) | floating terminal (Hammerspoon-managed floating/quake Ghostty) |
+| `Hyper+B` | default browser | browser (focus-or-new) |
+| `Hyper+Escape` | power / session menu (logout, lock, reboot, …) | power / session menu |
+| `Hyper+Space` | action menu | action menu |
+
+`Hyper+Space` is the action-menu door — part of the chooser family
+([§Chooser family](#the-chooser-family)). Session quit/logout lives
+inside the `Hyper+Escape` power menu (it subsumes the old `Super+Shift+E` quit).
+
+## The `Super` layer — the Cmd-position modifier
+
+`Super` is the Cmd-position key — macOS's application-interaction modifier. It
+carries two kinds of bind:
+
+- **App commands** (copy/paste/close/quit, text navigation) — native `Cmd`
+  behaviours on macOS; on Linux realized by an **app-aware remapper** (xremap)
+  translating `Super+key` → the app's native command, with a **terminal
+  carve-out** (the `Super+letter` *remaps* are excluded in the terminal —
+  `Ctrl+key` there means SIGINT / delete-word / flow-control; the terminal
+  handles its own analogues, or doesn't).
+- **App access** (launcher, terminal, app-switch) — custom spawns/handlers (niri
+  + Noctalia on Linux, Hammerspoon on macOS), *not* remaps.
+
+### App commands — `Super+letter`
+
+| Chord | Action | Realization |
+|---|---|---|
+| `Super+C / X / V` | copy / cut / paste | → `Ctrl+…` remap (Linux); native (Mac) |
+| `Super+W` | close tab / window | → `Ctrl+W` remap (Linux); native (Mac) |
+| `Super+Q` | quit application | **registry action** (SIGTERM, Linux); native (Mac) |
+| `Super+A / S / F / T / N` | select-all / save / find / new-tab / new | reserved (same remap pattern) |
+
+> `Super+letter` is a **mixed namespace**: most entries are app-command *remaps*
+> (substrate/xremap); `Super+Q` is a *registry action* because Linux has no
+> reliable `Ctrl+Q` quit convention. `Super+Q` is an approximation of macOS's
+> app-lifecycle quit, not parity (Linux has no window-independent app concept).
+
+### Text navigation — claimed, realization deferred
+
+| Chord | Action |
+|---|---|
+| `Super+←/→` | line start / end |
+| `Super+↑/↓` | document start / end |
+| `Alt/Opt+←/→` | word left / right |
+| `Super`/`Opt` + Backspace | delete to line start / delete word |
+| `Shift +` any of the above | extend selection |
+
+> **Reserved** for macOS-convention text nav across GUI + terminal-shell +
+> agentic-CLI input (Claude Code, Cursor CLI inside zellij). **Modal editors
+> (helix) are out of scope.** The *how* (xremap + zellij pass-through; likely
+> remap to readline motions) is a separate investigation — here we only claim the
+> chords so nothing else takes them.
+
+### App access
+
+| Chord | Action |
+|---|---|
+| `Super+Return` | terminal (new window) |
+| `Super+Tab` | app switcher (`Cmd+Tab` parity) — **reserved on niri**, realization pending |
+| `Super+Space` | launcher (`Cmd+Space` parity) |
+
+> **All `<mod>+Space` chords are reserved** for spotlight-style chooser surfaces
+> ([§Chooser family](#the-chooser-family)). `Super+Tab` is likely
+> realized as a chooser provider (window/app switcher), since niri has no native
+> app-switcher.
+
+## Screenshots — native-parity, outside `Hyper`
+
+Mirrors macOS's native screenshot chords on the `Super` (Cmd-parity) modifier,
+**swapped** so bare = clipboard, `+Ctrl` = file:
+
+| Chord | Action |
+|---|---|
+| `Super+Shift+3 / 4 / 5` | screen / region / window → clipboard |
+| `Super+Ctrl+Shift+3 / 4 / 5` | screen / region / window → file |
+| `Print` / `Ctrl+Print` / `Alt+Print` | region / screen / window → disk+clipboard (hardware keys) |
+
+## Hardware & media keys
+
+`XF86Audio*` (volume), `XF86MonBrightness*` (brightness) — their own namespace,
+unbound pending tooling. The `Print` family is bound to screenshots (above).
+
+## Inherited reservations — not ours, always live
+
+| Chord | Action | Note |
+|---|---|---|
+| `Ctrl+Alt+F1‑F12` | VT switch (niri, **unbindable**) | **The `Ctrl+Alt` base must never bind the F-row** — the one hard collision the cutover introduces. |
+| `XF86PowerOff` | suspend | disableable via niri config |
+| macOS MC defaults (IDs 79/81/32/33) | move-space / overview / exposé | the targets of the Karabiner `Hyper+arrow` remaps — must stay enabled |
+
+## The chooser family
+
+*Forward — under design.*
+
+A single fuzzy-popup primitive with swappable **providers**: apps, actions,
+window/app-switch, emoji, clipboard, settings, keybind-cheatsheet, calculator.
+Triggers:
+
+- `Super+Space` — primary universal launcher (apps + search + prefixes).
+- `Hyper+Space` — action / command palette (#437).
+- Prefixes within the launcher (`>emoji`, `>clip`, …) — the long tail.
+- *(optional, deferred)* a leader key (Right Cmd) for fast modal access.
+
+Engine: Noctalia's launcher (Linux) + `hs.chooser` (macOS); the action provider
+reads the registry-generated `actions.json` (#437; renderer per #406, fuzzel
+excluded). The keybind-cheatsheet provider renders **from the registry** — the
+single-source tie-in. **Open:** macOS engine — native Spotlight (cheap, not
+extensible) vs unified `hs.chooser` (full family, more work). See
+[§Open questions](#open-questions).
+
+## Realization & substrate (forward)
+
+- **`Hyper` production** — keyd (Linux) / Karabiner (macOS), hand-authored
+  substrate; `Hyper` is a single-sourced constant both substrate and emitters
+  consume.
+- **`Super`-command remaps + text nav** — xremap (app-aware, terminal-excluded);
+  **pending verification** of niri app-detection.
+- **Handlers** — Hammerspoon (macOS Lua — incl. directional window-focus *and
+  move* for the `Hyper` arrow binds), niri actions, the action menu.
+- **macOS floating terminal** (`Hyper+Return`) — a Hammerspoon-managed floating /
+  always-on-top Ghostty window: the chosen analogue to niri's floating terminal
+  (toggle-vs-spawn is the only open sub-question).
+- **Generation** — every surface is emitted from the single-source registry
+  (#384; Epic F #428); the new base shape lands **atomically** (never
+  half-migrated).
 
 ## Implementation status
 
-| Namespace | metis (niri) | macOS clients | Notes |
-|---|---|---|---|
-| `Super` (niri manipulation) | Active | n/a (macOS owns WM) | Move/consume/close — niri-specific. Navigation migrating out to `Hyper`; geometry moved to `Super+Hyper`. |
-| `Super+letter` (app commands) | Reserved | n/a (native ⌘+letter) | Standard combos deliberately unbound on metis. |
-| `Hyper` (cross-platform: nav + spawn + system) | **Active** (modifier via keyd; nav + launcher + browser + terminal bound) | **Active** (modifier + binds) | Realized via keyd on metis ([keyd.md](./keyd.md)) + Karabiner/Hammerspoon on macOS. The paired mapping above is the source of truth. |
-| `Super+Hyper` (extended WM) | **Active** (realized as `Hyper+key`) | n/a | Window-geometry cluster (resize, preset-cycle, center, fullscreen, maximize). `Super+Hyper` collapses to `Hyper` on a single keyboard — see Philosophy. |
+This document is the **audited target**. Current live binds are the
+**pre-cutover all-four `Hyper`** (`Super+Ctrl+Alt+Shift`) shape in
+`home/nixos/niri.nix`, `modules/nixos/keyd.nix`, `home/darwin/karabiner.nix`,
+`home/darwin/hammerspoon.nix`, plus the macOS symbolic hotkeys in
+`modules/darwin/keyboard-shortcuts.nix`. The cutover to the `Ctrl+Alt` base
+happens in one step via the registry (#384; the registry ADR is planned, not yet
+written).
 
-**Transitional bindings** — the `Hyper` target is now bound; the `Super` home is retained alongside until the migration settles, then retired (the `Mod+Return`/`Hyper+Return` pattern, applied across the nav family):
+## Open questions
 
-- Navigation: `Hyper+Left`/`Right` (focus-column), `Hyper+1`–`9` (focus-workspace), `Hyper+Up` (overview) added; `Mod+Left`/`Right` + vim `Mod+H`/`L`, `Mod+1`–`9`, and `Mod+O` retained.
-- `Hyper+Space` → the Noctalia launcher (the Spotlight-equivalent); `Mod+Space` retained.
-- `Hyper+Return` → foot and `Mod+Return` coexist as before.
+- **macOS chooser engine** — native Spotlight vs unified `hs.chooser`.
+- **`Hyper+Space` = action menu**, and whether to adopt the leader-key layer.
+- **`Super+Tab` (app-switch) realization on niri** — likely a window/app chooser
+  provider.
+- **Text-nav realization** — xremap + zellij pass-through (target: GUI +
+  terminal-shell + agentic CLIs; modal editors out).
+- **xremap niri app-detection** — verification gating the `Super`-command + text-nav layers.
+- **macOS floating-terminal realization** — Hammerspoon-managed floating/quake
+  Ghostty (`Hyper+Return`); toggle (quake-style) vs spawn-new still open.
+- **`Super+Return` (`Cmd+Return`) collision** — used for "submit/send" in some
+  macOS apps; accept, or app-exclude via Karabiner.
+- **macOS cross-space window moves** — `Hyper+Super+→` (edge fallthrough) and
+  `Hyper+Super+1‑9` move windows *between* Spaces, which relies on Hammerspoon's
+  Spaces handling — a known-fragile macOS area (private APIs). Realization risk to
+  verify.
 
-**Letter-space deviation** (separate from the migration): `Mod+W` → `close-window` sits in the reserved `Super+letter` space (it would clash with a hypothetical `Super+W` → `Ctrl+W`). close is manipulation, so it stays on `Super`; the philosophical target is `Super+Hyper+W`.
+## Audit notes — deliberate calls & deviations
 
-## Active bindings
-
-*Navigation rows (focus-column, focus-workspace, overview) are **transitional** — migrating to their `Hyper` homes per [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping); the tables below show what is bound today. Manipulation rows (move-column/window, move-to-workspace, close) stay on `Super`.*
-
-### Navigation
-
-| Key | Action |
-|---|---|
-| `Mod+Left` | focus-column-left |
-| `Mod+Down` | focus-window-down |
-| `Mod+Up` | focus-window-up |
-| `Mod+Right` | focus-column-right |
-| `Mod+H` | focus-column-left (vim-style) |
-| `Mod+J` | focus-window-down (vim-style) |
-| `Mod+K` | focus-window-up (vim-style) |
-| `Mod+L` | focus-column-right (vim-style) |
-| `Mod+Ctrl+Left` | move-column-left |
-| `Mod+Ctrl+Down` | move-window-down |
-| `Mod+Ctrl+Up` | move-window-up |
-| `Mod+Ctrl+Right` | move-column-right |
-| `Mod+Ctrl+H` | move-column-left (vim-style) |
-| `Mod+Ctrl+J` | move-window-down (vim-style) |
-| `Mod+Ctrl+K` | move-window-up (vim-style) |
-| `Mod+Ctrl+L` | move-column-right (vim-style) |
-
-Niri's scrolling-tiling model distinguishes *columns* (laid out across
-the workspace strip) from *windows within a column*. `H`/`L` traverse
-columns horizontally; `J`/`K` traverse windows vertically within the
-focused column.
-
-### Window management
-
-| Key | Action | Notes |
-|---|---|---|
-| `Mod+W` | close-window | Letter-space deviation — see Implementation status |
-
-### Workspaces
-
-| Key | Action |
-|---|---|
-| `Mod+1` … `Mod+9` | focus-workspace 1..9 |
-| `Mod+Ctrl+1` … `Mod+Ctrl+9` | move-window-to-workspace 1..9 |
-
-### Spawn
-
-| Key | Action |
-|---|---|
-| `Mod+Return` | spawn `foot` (terminal) |
-| `Mod+Space` | Noctalia launcher — `noctalia-shell ipc call launcher toggle` (ADR-036, #385) |
-
-### Session
-
-| Key | Action | Notes |
-|---|---|---|
-| `Mod+Shift+E` | quit niri | Confirmation dialog shown; not an instant kill |
-
-### Discovery
-
-| Key | Action | Notes |
-|---|---|---|
-| `Mod+O` | toggle-overview | Birds-eye workspace view |
-| `Mod+Shift+/` (i.e. `Mod+?`) | show-hotkey-overlay | Live cheat sheet for currently-bound keys |
-
-### Screenshots
-
-Capture uses niri's **built-in** screenshot actions — screen, window, and region are all native, and niri already backs the `org.freedesktop.portal.Screenshot` portal interface for apps, so no external capture tool (grim/slurp) is installed and annotation is deliberately out of scope (#100). Screenshots save to `~/Pictures/Screenshots/` — set explicitly via `screenshot-path` and created by a `home.activation` hook in `home/nixos/niri.nix`, because niri creates only the *last* path component and **silently drops the capture when the parent is missing** ([niri #807](https://github.com/YaLTeR/niri/issues/807)). `~/Pictures/Screenshots` is the fleet-wide save location, matching the Mac's `screencapture.location`.
-
-The chord layout mirrors macOS's screenshot shortcuts **after the file/clipboard swap** (see [§Active bindings — macOS clients → Screenshots](#screenshots-1)): the bare `Mod+Shift+N` family copies **to clipboard** (the accessible default), and `Mod+Ctrl+Shift+N` saves **to disk** (+ clipboard). `+5` is repurposed to window capture (macOS uses it for the capture-options bar, which has no niri analogue). Region capture is niri's interactive overlay, which always does both disk + clipboard with no per-bind split, so `Mod+Shift+4` and `Mod+Ctrl+Shift+4` are equivalent. The bare `Mod+Shift+N` chords are free because `move-window-to-workspace` relocated to `Mod+Ctrl+N` (resolving the #323 clash). The hardware `Print` family stays bound to niri's defaults (disk + clipboard).
-
-| Key | Action | Notes |
-|---|---|---|
-| `Mod+Shift+3` | screenshot-screen (`write-to-disk=false`) | Whole focused output → clipboard only |
-| `Mod+Shift+4` | screenshot | Interactive overlay — pick region / window / output; → disk + clipboard |
-| `Mod+Shift+5` | screenshot-window (`write-to-disk=false`) | Focused window → clipboard only |
-| `Mod+Ctrl+Shift+3` | screenshot-screen | Whole focused output → disk + clipboard |
-| `Mod+Ctrl+Shift+4` | screenshot | Interactive overlay; equivalent to `Mod+Shift+4` (region can't be clipboard-only) |
-| `Mod+Ctrl+Shift+5` | screenshot-window | Focused window → disk + clipboard |
-| `Print` | screenshot | Hardware key — interactive overlay → disk + clipboard |
-| `Ctrl+Print` | screenshot-screen | Hardware key — whole output → disk + clipboard |
-| `Alt+Print` | screenshot-window | Hardware key — focused window → disk + clipboard |
-
-### Hyper
-
-The `Hyper` namespace is realized on metis via keyd (Caps Lock → `Super+Ctrl+Alt+Shift`; see [keyd.md](./keyd.md)). niri catches Hyper binds as `Mod+Ctrl+Alt+Shift+<key>` — niri's exact-modifier matching means a four-modifier chord never collides with the `Mod` / `Mod+Ctrl` / `Mod+Shift` binds above.
-
-| Key | Action | Notes |
-|---|---|---|
-| `Hyper+Left` / `Hyper+Right` | focus-column-left / -right | Mirrors the mac's `Hyper+Left`/`Right` (move between Spaces). `Mod+Left`/`Right` (Navigation, above) retained. |
-| `Hyper+1` … `Hyper+9` | focus-workspace 1–9 | Mirrors the mac's Switch-to-Desktop N. `Mod+1`–`9` (Workspaces, above) retained. |
-| `Hyper+Up` | toggle-overview | Mirrors the mac's Mission Control. `Mod+O` (Discovery, above) retained. |
-| `Hyper+Space` | Noctalia launcher (IPC) | The Spotlight-equivalent. `Mod+Space` (Spawn, above) retained. |
-| `Hyper+Return` | spawn `foot` (terminal) | Mirrors the mac's `Hyper+Return` → Ghostty. `Mod+Return` (Spawn, above) retained. |
-| `Hyper+B` | spawn default browser (`xdg-open https://`) | Opens the system default browser — currently Firefox per `xdg.mimeApps` (`home/nixos/firefox.nix`); follows the #127 audit outcome automatically. Spawn-only; focus-or-spawn out of scope. No `Super` original. |
-
-### Window geometry
-
-The `Super+Hyper` extended-WM tier (§Philosophy), realized as `Hyper+<key>` on metis — niri-only, no Mac mirror. These reshape the focused column/window. `Hyper+R`/`C`/`F` deliberately coexist with the reserved bare-`Super+R`/`C`/`F` app-command slots: a four-modifier Hyper chord is a different exact-modifier match, so it is not a reservation violation. There are no `Hyper+Shift`/`Hyper+Ctrl` variants — Hyper already carries `Ctrl+Alt+Shift+Super`, so `Hyper+<plain key>` is the only available shape (this is why there is no preset back-cycle bind; the `±` resize binds cover bidirectional adjustment). Landed #366.
-
-| Key | Action | Notes |
-|---|---|---|
-| `Hyper+Minus` | set-column-width `-10%` | Shrink the focused column |
-| `Hyper+Equal` | set-column-width `+10%` | Grow the focused column |
-| `Hyper+R` | switch-preset-column-width | Cycle niri's stock presets `1/3 → 1/2 → 2/3` (wraps); forward-only |
-| `Hyper+C` | center-column | Manually center the focused column (vs the automatic `center-focused-column "on-overflow"` — see [niri.md](./niri.md)) |
-| `Hyper+F` | fullscreen-window | True edge-to-edge fullscreen of the focused window |
-| `Hyper+M` | maximize-column | Fill the working area; bar/gaps/other columns remain (distinct from fullscreen) |
-
-## Active bindings — macOS clients
-
-Hyper (`⌘⌃⌥⇧`) is produced by Karabiner-Elements from `caps_lock`
-(see [karabiner.md](./karabiner.md)). Two implementation layers
-bind actions to Hyper chords on this side, picked per bind:
-
-- **Karabiner remap** — same DriverKit layer as the modifier
-  production. Best when the chord should translate to a native
-  macOS shortcut transparently (the OS sees its own shortcut
-  and runs its native handling). Used for the Spaces nav binds
-  below: `Hyper+Arrow` is remapped to `Ctrl+Arrow`, which macOS
-  routes to Mission Control's "Move to space left/right." The
-  `mandatory` modifiers in Karabiner's `from` are consumed by
-  the rule, so the emitted event is cleanly `Ctrl+Arrow` —
-  macOS never sees the Hyper modifiers in this case.
-- **Hammerspoon binding** — userspace event-tap layer via
-  `~/.hammerspoon/init.lua`, managed declaratively by
-  `home/darwin/hammerspoon.nix` (see [hammerspoon.md](./hammerspoon.md)).
-  Best when the action requires Lua logic that has no native
-  macOS equivalent (window-management decisions, conditional
-  spawn-or-focus, app-aware actions). Used for the Spawn / focus
-  binds below.
-
-Apps in the Hammerspoon source carry both a bundle ID and a macOS
-display name — the two layers are used asymmetrically by
-Hammerspoon's APIs:
-
-- **Bundle ID** for `hs.application.get` and
-  `hs.application.launchOrFocusByBundleID` (robust against
-  display-name drift / multi-variant installs).
-- **Display name** for `hs.window.filter:setAppFilter`, which
-  keys per-app filters off `hs.application:name()` (passing a
-  bundle ID there silently registers a filter that never matches).
-
-The bind-relevant pairings:
-
-| App | Bundle ID | Display name |
-|---|---|---|
-| Ghostty | `com.mitchellh.ghostty` | `Ghostty` |
-| Chrome | `com.google.Chrome` | `Google Chrome` |
-
-### Spawn / focus
-
-| Key | Action | Implementation | Notes |
-|---|---|---|---|
-| `Hyper+Return` | new fullscreen Ghostty window | Hammerspoon | always spawns a new window (`Cmd+N` to Ghostty), native-fullscreens it (new macOS Space), and focuses it |
-| `Hyper+B` | focus existing Chrome window, else new fullscreen Chrome window | Hammerspoon | prefers the most-recently-focused Chrome window; unminimizes if needed; switches Spaces if the window lives on another Space. If no Chrome window exists, spawns a new one and fullscreens it. |
-
-### Mission Control
-
-| Key | Action | Implementation | Notes |
-|---|---|---|---|
-| `Hyper+Left`  | Move to space to the left  | Karabiner remap to `Ctrl+Left`  | macOS Mission Control's native "Move left a space" — `enabled = 1` by macOS default (symbolichotkey ID `79`); requires the binding to remain enabled at System Settings → Keyboard → Keyboard Shortcuts → Mission Control. |
-| `Hyper+Right` | Move to space to the right | Karabiner remap to `Ctrl+Right` | as above, "Move right a space" (ID `81`). |
-| `Hyper+Up`    | Mission Control overview (all windows + Spaces strip) | Karabiner remap to `Ctrl+Up` | macOS native "Mission Control" (symbolichotkey ID `32`); enabled by macOS default. Same toggle binding as a four-finger swipe up / F3 on the function row. |
-| `Hyper+Down`  | Application windows (current-app exposé) | Karabiner remap to `Ctrl+Down` | macOS native "Application windows" (symbolichotkey ID `33`); enabled by macOS default. Shows all windows belonging to the currently-focused app — useful for "give me every Chrome / Ghostty / IDE window I have open." |
-| `Hyper+1` … `Hyper+9` | Switch to Mission Control Desktop 1..9 | Karabiner remap to `Ctrl+1` … `Ctrl+9` | macOS Mission Control's "Switch to Desktop N" (symbolichotkey IDs `118`–`121` for Desktops 1–4, `190`–`194` for 5–9 — the full `190`–`197` block extends up through Desktop 12 but this bind targets 1–9). **Declared enabled** via `modules/darwin/keyboard-shortcuts.nix`, folding in what macOS leaves disabled-by-default and would otherwise need a one-time manual System-Settings step (the repo's no-manual-state stance). Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds. |
-
-### Screenshots
-
-macOS's screenshot shortcuts are **swapped** from their factory defaults so *copy to clipboard* is the accessible bare-`⌘⇧` chord and *save to file* takes the `⌃⌘⇧` chord — the inverse of the macOS default (where `⌘⇧` saves a file and adding `Ctrl` copies to the clipboard). This matches the niri side, where the bare `Mod+Shift+N` chords are the clipboard captures. Realized declaratively via symbolic hotkeys in `modules/darwin/keyboard-shortcuts.nix` (IDs 28–31). Files save to `~/Pictures/Screenshots` (`screencapture.location` in `modules/darwin/system-prefs.nix`) — the fleet-wide location matching the niri side.
-
-| Key | Action | Notes |
-|---|---|---|
-| `⌘⇧3` | Copy screen to clipboard | ID 29; swapped from its default (save-to-file) |
-| `⌘⇧4` | Copy selected area to clipboard | ID 31; swapped from default |
-| `⌃⌘⇧3` | Save screen to file | ID 28; swapped from default (clipboard) |
-| `⌃⌘⇧4` | Save selected area to file | ID 30; swapped from default |
-| `⌘⇧5` | Screenshot & recording options bar | ID 184; unchanged (no file/clipboard variant to swap) |
-
-## Reserved keys
-
-### `Super+letter` (application-command namespace)
-
-Standard app-command shortcuts. Left unbound at the niri level so a
-future keyd remap can pass them through to applications as
-`Ctrl+letter`: `Mod+C`, `Mod+V`, `Mod+X`, `Mod+Z`, `Mod+A`, `Mod+S`,
-`Mod+F`, `Mod+Q`, `Mod+T`, `Mod+N`, `Mod+R`.
-
-`Mod+W` is currently bound to `close-window` as an interim deviation
-(see Implementation status).
-
-The bare-`Super+letter` slots stay reserved even though the window-geometry
-cluster binds `Hyper+R`/`C`/`F` (§Active bindings — Window geometry): those
-are four-modifier chords, a different exact-modifier match from `Mod+R`/`C`/`F`,
-so they don't consume the reservation.
-
-### `Hyper` namespace — now active (not reserved)
-
-`Hyper` is no longer a reserved namespace: it is realized on both platforms and is the cross-platform layer (navigation + spawn + system). Its canonical binds live in [§Cross-platform Hyper mapping](#cross-platform-hyper-mapping); per-platform realization is in the Implementation-status table. Kept here only as a pointer so the reserved-keys list stays complete.
-
-### `Super+Hyper` (extended WM) — now active
-
-Realized as `Hyper+<key>` (the tier collapses to `Hyper` on a single
-keyboard — see Philosophy). Hosts the window-geometry cluster — resize,
-preset-width cycle, center, fullscreen, maximize (§Active bindings —
-Window geometry, #366). `close-window` would join it as `Super+Hyper+W`
-if `Mod+W` ever migrates off the interim `Super+letter` slot.
-
-### Hardware media keys
-
-`Print`, `Ctrl+Print`, `Alt+Print` are now bound to niri's built-in screenshot actions — see §"Screenshots" under Active bindings (#100). `XF86Audio*` (volume) and `XF86MonBrightness*` (brightness) remain unbound until the corresponding tooling lands (via niri spawn binds to `wpctl`, `brightnessctl`, etc.).
-
-## Cadence
-
-This is a living document. Conventions for evolution:
-
-- **One bind per learning ceremony.** New bindings land one at a time
-  via deliberate addition (issue + PR + doc update) rather than bulk
-  refresh. Muscle memory gets space to absorb each. *Deliberate
-  exception:* the window-geometry cluster (six binds, #366) landed as one
-  operator-directed set — it's a single coherent capability (reshape the
-  focused column/window), so it was absorbed as a unit rather than drip-fed.
-- **Doc precedes implementation.** Each new bind lands first as a
-  table row here; the implementing commit follows in the same PR.
-- **No silent additions.** If a binding appears in
-  `home/nixos/niri.nix` that is not in this document, that is a
-  bug in cadence — fix the doc.
-
-## See also
-
-- `home/nixos/niri.nix` — the implementation surface.
-- `docs/desktop/niri.md` — niri compositor selection rationale.
-- #69 — the foundational close-out under which this document was
-  created.
+- Move-window-in-column on `Hyper+Shift+↑/↓` is the one move outside `Hyper+Super`
+  (preserves spatial workspace nav).
+- Mild duplication is deliberate (overview via `Hyper+Tab` and macOS Mission
+  Control via `Hyper+Super+↑`).
+- macOS Space ≈ niri **column** (spatial cognition), not the structural
+  workspace reading — refined by the focus/move-mirror: Mac *windows* are the fine
+  horizontal unit (≈ columns), Spaces the coarse fallthrough.
+- `Super` (not `Mod`) is our term; niri writes `Mod`.
+- App-access sits on `Super` only for *non-letter* keys (`Return` / `Space` /
+  `Tab`); app-access needing a letter (browser = `Hyper+B`) stays on `Hyper`,
+  since `Super+letter` is the app-command space (e.g. `Super+B` = bold).
