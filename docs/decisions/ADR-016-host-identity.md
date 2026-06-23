@@ -1,7 +1,9 @@
 # ADR-016: Host identity — stable per physical machine
 
+> **Amended by [ADR-038](./ADR-038-celestial-host-naming.md) on 2026-06-23** on two points only. (1) The naming *source* this ADR left ad-hoc is now a structured celestial theme — realising the migration trigger named in this ADR's own Consequences (⚠, below). (2) The Implementation clause "existing directories are never renamed in place" is overturned **for a one-time themed re-key**: `git mv` preserves the directory history that clause protected, so the protected interest survives the rename. Everything else below stands and remains authoritative — identity is stable per physical machine, a hardware swap is a new host, a software-role change is no rename.
+
 **Date**: 2026-05-14
-**Status**: Accepted
+**Status**: Accepted. Amended by ADR-038 (naming source + in-place-rename clause)
 
 ## Context
 
