@@ -50,7 +50,7 @@ and consistent, but not so much that small decisions feel over-formalised.
 | [005](./ADR-005-editor.md) | Editor | helix | Batteries-included; selection-first model |
 | [006](./ADR-006-cli-utilities.md) | CLI utilities | rg, fd, fzf, bat, eza, zoxide, lazygit, lazydocker, yazi, htop, dust, jq | Modern Unix replacements |
 | [007](./ADR-007-nix-tooling.md) | Nix tooling | nh, nom, nixd, nixfmt, statix, deadnix | Modern overlay on nix UX |
-| [008](./ADR-008-agent-clis.md) | AI coding agents | Claude Code + Cursor (base), Codex + Gemini (extras) | OAuth login flows; extras opt-in per host |
+| [008](./ADR-008-agent-clis.md) | AI coding agents | Claude Code + Cursor (base), Codex + Antigravity (extras) | OAuth login flows; extras opt-in per host |
 | [009](./ADR-009-git.md) | Git | dual identity, HTTPS+token | personal/work split via gitdir; HTTPS via gh/glab credential helpers |
 | [010](./ADR-010-ssh.md) | SSH | defaults only | Outbound key generation deferred (HTTPS git removes the need) |
 | [011](./ADR-011-remote-dev-qol.md) | Remote-dev QoL | ~~mosh~~ + OSC52 | OSC52 cross-machine clipboard (mosh removed, #47 — session resilience now via SSH + zellij) |

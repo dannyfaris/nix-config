@@ -119,7 +119,7 @@ home/nixos/
                               # satisfy the bundle ≥ 2 rule would be
                               # pure ceremony)
   agent-clis-extras.nix       # standalone — same rationale for
-                              # codex + gemini-cli
+                              # codex + antigravity-cli
 ```
 
 The decomposition above resolves the "single-module bundles will be reconsidered during slice 2" question raised in the original draft: those entries either acquired a sibling and stayed a bundle (none, in the event), or reverted to standalone modules (most). The `local-linux-platform` bundle was rejected on coherence grounds during the same review — "bootloader + NetworkManager" was a host-shape label rather than a capability.
