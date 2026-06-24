@@ -1,6 +1,6 @@
-# UTM — virtualisation platform for the nixos-vm host (and any
-# future Mac-hosted VM workload). Imported per-host; currently
-# only by neptune.
+# UTM — virtualisation platform for Mac-hosted VM workloads.
+# Imported per-host; currently by neptune and saturn (saturn hosts
+# its own VMs).
 #
 # See docs/desktop/utm.md for the full ADR-031 walk. Short version:
 #

@@ -123,6 +123,10 @@ in
       stances-neptune =
         mkStanceCheck "aarch64-darwin" "darwin" "neptune"
           self.darwinConfigurations.neptune.config;
+      host-saturn = self.darwinConfigurations.saturn.system;
+      stances-saturn =
+        mkStanceCheck "aarch64-darwin" "darwin" "saturn"
+          self.darwinConfigurations.saturn.config;
     };
   };
 

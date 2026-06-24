@@ -249,7 +249,7 @@ The framework and every name below are ratified ([#368](https://github.com/danny
 | Target name | Class | Machine | `hosts/` dir today |
 |------|-------|---------|--------------------|
 | **Jupiter** | moon-capable planet | NixOS x86_64 flagship desktop tower | — (not yet onboarded) |
-| **Saturn** | moon-capable planet | darwin MacBook Air daily driver | — (not yet onboarded) |
+| **Saturn** | moon-capable planet | darwin MacBook Air daily driver | `saturn` (config landed; deploy pending hardware) |
 | **Mars** | moon-capable planet | NixOS x86_64 work + personal dev (ProDesk) | `metis` |
 | **Neptune** | moon-capable planet | darwin home Mac | `neptune` |
 | **Mercury** | moonless planet | AWS EC2 x86_64 work, headless | `mercury` (name survives) |

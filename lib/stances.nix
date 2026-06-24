@@ -56,9 +56,16 @@ let
   # SSH posture, Darwin shape — nix-darwin's services.openssh is a thin
   # wrapper, so the hardening lives as text in `extraConfig` rather than
   # typed `settings.*`. Assert the required directives are present.
+  #
+  # Guard is `== true`, not the bare value: unlike NixOS (where
+  # `services.openssh.enable` defaults to `false`), nix-darwin leaves it
+  # `null` on a host that doesn't import sshd (e.g. saturn, a client-only
+  # laptop). `lib.optionals null` would throw — `== true` coerces the
+  # tri-state to a Boolean so an sshd-less Darwin host is simply not in
+  # scope (same intent as the NixOS helper above).
   sshDarwin =
     config:
-    lib.optionals config.services.openssh.enable (
+    lib.optionals (config.services.openssh.enable == true) (
       let
         # Match against *active* directive lines only. A commented-out
         # directive (`# PasswordAuthentication no`) leaves the posture
