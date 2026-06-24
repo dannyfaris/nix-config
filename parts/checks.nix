@@ -19,6 +19,12 @@ let
   # lists of failures, which mkReportCheck turns into check derivations.
   stances = import ../lib/stances.nix { inherit lib; };
   autoGenPathsFailures = import ../lib/tests/auto-gen-paths.nix { inherit lib; };
+  capabilitiesFailures = import ../lib/tests/capabilities.nix { inherit lib; };
+
+  # Keybind capability registry (lib/capabilities.nix): the collision lint is
+  # platform data, not per-host config, so it rides mkReportCheck once on the
+  # x86_64-linux runner (like the lib unit tests), not per host. See #384 / ADR-039.
+  capabilities = import ../lib/capabilities.nix { inherit lib; };
 
   pkgsFor = system: inputs.nixpkgs.legacyPackages.${system};
 
@@ -106,6 +112,11 @@ in
           self.nixosConfigurations.mercury.config;
       stances-metis = mkStanceCheck "x86_64-linux" "nixos" "metis" self.nixosConfigurations.metis.config;
       lib-auto-gen-paths = mkUnitTestCheck "x86_64-linux" "auto-gen-paths" autoGenPathsFailures;
+      lib-capabilities = mkUnitTestCheck "x86_64-linux" "capabilities" capabilitiesFailures;
+      keybind-collisions =
+        mkReportCheck "x86_64-linux" "keybind-collisions"
+          "Keybind chord collisions (lib/capabilities.nix; ADR-039 §8)"
+          capabilities.collisions;
     };
     aarch64-darwin = {
       host-neptune = self.darwinConfigurations.neptune.system;
