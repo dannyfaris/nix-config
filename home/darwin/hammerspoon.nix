@@ -16,14 +16,25 @@
 # hammerspoon.md §Sharp edges for the manual `hs -c 'hs.reload()'`
 # fallback.
 #
-# Hyper (⌘⌃⌥⇧) is produced by Karabiner-Elements per
+# Hyper (Ctrl+Opt) is produced by Karabiner-Elements per
 # home/darwin/karabiner.nix. Hammerspoon listens for the chord at
 # the userspace event-tap layer and binds Lua actions to it.
-_:
+#
+# The window-geometry binds (Hyper+F/M/C/R/±) are generated from the
+# single-source capability registry (lib/capabilities.nix —
+# `hammerspoonBinds`, #440 / ADR-039): the registry emits the
+# `hs.hotkey.bind` calls referencing handler *names*; the handler
+# bodies are the hand-authored Lua library below. The spawn binds
+# (Hyper+Return/B) stay hand-authored — their handlers lean on the
+# cross-Space window-filter machinery this slice keeps out of the
+# emitter. Taxonomy: docs/desktop/keybinds.md; selection +
+# behaviour: docs/desktop/macos-window-management.md.
+{ lib, ... }:
 let
+  caps = import ../../lib/capabilities.nix { inherit lib; };
   initLua = ''
     -- ~/.hammerspoon/init.lua — managed by home/darwin/hammerspoon.nix.
-    -- Hyper = ⌘⌃⌥⇧ produced by Karabiner-Elements from caps_lock.
+    -- Hyper = Ctrl+Opt produced by Karabiner-Elements from caps_lock.
 
     -- Hide the menu-bar status item. The config is driven entirely by
     -- Hyper hotkeys, not the menu icon, so it's pure clutter. hs.menuIcon
@@ -33,7 +44,11 @@ let
     -- docs/desktop/hammerspoon.md §Configuration.
     hs.menuIcon(false)
 
-    local hyper = { "cmd", "ctrl", "alt", "shift" }
+    -- Hyper = Ctrl+Opt (the macOS base-shape, ADR-039 §3/§4), produced from
+    -- caps_lock by Karabiner. The registry-generated geometry binds below use
+    -- the same { "ctrl", "alt" } literal; this table is for the hand-authored
+    -- spawn binds (Hyper+Return / Hyper+B).
+    local hyper = { "ctrl", "alt" }
 
     -- Apps are identified by both bundle ID and macOS display name.
     -- The two layers exist because Hammerspoon uses them asymmetrically:
@@ -184,8 +199,90 @@ let
     end
 
     -- ----------------------------------------------------------------
+    -- Geometry handlers — stateless, act on the focused window. Bound by
+    -- the registry-generated hs.hotkey.bind calls below (the handler
+    -- *names* are referenced from lib/capabilities.nix; these are the
+    -- bodies). See docs/desktop/macos-window-management.md for behaviour.
+    -- ----------------------------------------------------------------
+
+    -- Width step (fraction of screen width) for Hyper+−/=, and the preset
+    -- cycle for Hyper+R. Presets are width fractions: ½ → ⅔ → full → ½.
+    local WIDTH_STEP = 0.05
+    local WIDTH_PRESETS = { 0.5, 2 / 3, 1.0 }
+    local MIN_WIDTH_FRACTION = 0.2
+
+    -- Clamp a frame's x so it stays within the screen's visible frame.
+    local function clampX(f, sf)
+      if f.x < sf.x then f.x = sf.x end
+      if f.x + f.w > sf.x + sf.w then f.x = sf.x + sf.w - f.w end
+      return f
+    end
+
+    -- Hyper+F: native fullscreen — the window moves to its own Space.
+    local function fullscreenWindow()
+      local win = hs.window.focusedWindow()
+      if win then win:setFullScreen(not win:isFullScreen()) end
+    end
+
+    -- Hyper+M: maximize to the screen's visible frame (menu bar + Dock
+    -- respected — hs.window:maximize() targets screen:frame(), not fullFrame).
+    local function maximizeToFrame()
+      local win = hs.window.focusedWindow()
+      if win then win:maximize() end
+    end
+
+    -- Hyper+C: center the window on screen at its current size.
+    local function centerWindow()
+      local win = hs.window.focusedWindow()
+      if win then win:centerOnScreen() end
+    end
+
+    -- Resize the focused window's width by `delta` (fraction of screen width),
+    -- about its current center, keeping vertical extent; clamped to the screen.
+    local function resizeWidthBy(delta)
+      local win = hs.window.focusedWindow()
+      if not win then return end
+      local sf = win:screen():frame()
+      local f = win:frame()
+      local newW = math.max(sf.w * MIN_WIDTH_FRACTION, math.min(sf.w, f.w + delta * sf.w))
+      f.x = (f.x + f.w / 2) - newW / 2
+      f.w = newW
+      win:setFrame(clampX(f, sf))
+    end
+
+    -- Hyper+−/=: shrink / grow the window's width by a fixed step.
+    local function shrinkWindow() resizeWidthBy(-WIDTH_STEP) end
+    local function growWindow()   resizeWidthBy(WIDTH_STEP) end
+
+    -- Hyper+R: stateless preset-width snap — read the current width fraction
+    -- and snap to the next preset (wrapping). Vertical extent is preserved;
+    -- the next step is inferred from the frame, never stored.
+    local function snapPresetWidth()
+      local win = hs.window.focusedWindow()
+      if not win then return end
+      local sf = win:screen():frame()
+      local f = win:frame()
+      local frac = f.w / sf.w
+      local target = WIDTH_PRESETS[1]
+      for _, p in ipairs(WIDTH_PRESETS) do
+        if p > frac + 0.02 then target = p; break end
+      end
+      f.w = sf.w * target
+      win:setFrame(clampX(f, sf))
+    end
+
+    -- ----------------------------------------------------------------
     -- Bindings
     -- ----------------------------------------------------------------
+
+    -- Window geometry (Hyper+F/M/C/R/±) — generated from the single-source
+    -- capability registry (lib/capabilities.nix, #440 / ADR-039). Each line
+    -- is `hs.hotkey.bind({ "ctrl", "alt" }, "<key>", <handler>)`; the handler
+    -- bodies are the library above.
+    ${caps.hammerspoonBinds}
+
+    -- Spawn (Hyper+Return / Hyper+B) — hand-authored: their handlers use the
+    -- cross-Space window-filter machinery the emitter deliberately omits.
     hs.hotkey.bind(hyper, "return", ghosttyNewWindow)
     hs.hotkey.bind(hyper, "b",      chromeFocusOrNew)
 

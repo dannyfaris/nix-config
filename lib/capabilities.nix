@@ -1,23 +1,31 @@
 # Single-source capability registry — one declaration per cross-platform
 # interaction capability, from which every surface is generated (ADR-039).
 #
-# Phase 1 (#384, walking skeleton) delivers: the three-dimension schema, the
-# `Hyper` modifier constant, the niri emitter, and the eval-time collision
-# lint. macOS emitters, the unified palette (#442), the actions.json dataset
-# (#437), and the generated keybinds.md table are later phases — so the macOS
-# descriptive metadata is authored here but no emitter consumes it yet
-# (`platforms.darwin` carries descriptive only, no realization).
+# Phase 1 (#384) delivered: the three-dimension schema, the `Hyper` modifier
+# constant, the niri emitter, and the eval-time collision lint. The macOS
+# window-management slice (#440) adds the Hammerspoon emitter + the `Ctrl+Opt`
+# darwin base, so `platforms.darwin` now carries typed `hammerspoon-handler`
+# realizations alongside its descriptive overrides. The unified palette (#442),
+# the actions.json dataset (#437), and the generated keybinds.md table remain
+# later phases.
 #
 # Repo-decoupled by design (ADR-039 §9 — extraction-ready): this unit takes
 # only { lib } and imports no repo modules, so packaging it standalone later
-# stays cheap.
+# stays cheap. The Hammerspoon emitter emits only the `hs.hotkey.bind` calls
+# (referencing handler names); the Lua handler bodies are hand-authored in
+# home/darwin/hammerspoon.nix, mirroring how `niriBinds` emits binds the niri
+# module composes — the codegen stays pure (ADR-039 §2, the Lua-handler split).
 #
 # Consumers:
-#   - home/nixos/niri.nix        → `niriBinds` (the generated bind attrset)
-#   - modules/nixos/keyd.nix     → `tiers.hyper.linux` (substrate reads the
-#                                   same constant — base shape is one edit, §4)
-#   - parts/checks.nix           → `collisions` (mkReportCheck) + the unit
-#                                   tests in lib/tests/capabilities.nix
+#   - home/nixos/niri.nix         → `niriBinds` (the generated bind attrset)
+#   - home/darwin/hammerspoon.nix → `hammerspoonBinds` (generated hs.hotkey.bind
+#                                    lines) + the named handler bodies it owns
+#   - modules/nixos/keyd.nix      → `tiers.hyper.linux` (substrate reads the
+#                                    same constant — base shape is one edit, §4)
+#   - home/darwin/karabiner.nix   → `tiers.hyper.darwin` (the Ctrl+Opt substrate)
+#   - parts/checks.nix            → `collisions` + `darwinCollisions`
+#                                    (mkReportCheck) + the unit tests in
+#                                    lib/tests/capabilities.nix
 #
 # Taxonomy + the human-facing bind inventory: docs/desktop/keybinds.md.
 { lib }:
@@ -32,7 +40,8 @@ let
       "Ctrl"
       "Alt"
     ];
-    # Parity record for the macOS phase (#440); no darwin emitter yet.
+    # Consumed by the Hammerspoon emitter (chord rendering, below) and the
+    # Karabiner Ctrl+Opt substrate (home/darwin/karabiner.nix), #440.
     hyper.darwin = [
       "Ctrl"
       "Option"
@@ -69,6 +78,55 @@ let
     lib.concatStringsSep "+" (
       sortMods (tiers.${chord.tier}.linux ++ map niriMod (chord.mods or [ ])) ++ [ chord.key ]
     );
+
+  # ── Hammerspoon (darwin) chord rendering ───────────────────────────────────
+  # hs.hotkey.bind takes a Lua mods table + a key string. The tier's base
+  # modifiers (Ctrl+Opt) plus any escalator `mods` map to Hammerspoon's mod
+  # tokens; the key token maps to hs's key name (lowercase letters, the literal
+  # symbol for punctuation, explicit names for arrows/return/…). Two renderers:
+  # `darwinChord` → a canonical string (the lint dedups on it); the emitter
+  # below → the Lua `hs.hotkey.bind(...)` call.
+  hsMod = {
+    Ctrl = "ctrl";
+    Alt = "alt";
+    Option = "alt";
+    Super = "cmd";
+    Shift = "shift";
+  };
+  # Key token → Hammerspoon key string. Defaults to lib.toLower (covers letters
+  # F→f and digits, which pass through unchanged); the table holds the rest.
+  hsKey = {
+    Left = "left";
+    Right = "right";
+    Up = "up";
+    Down = "down";
+    Return = "return";
+    Tab = "tab";
+    Escape = "escape";
+    Space = "space";
+    Minus = "-";
+    Equal = "=";
+  };
+  hsKeyFor = k: hsKey.${k} or (lib.toLower k);
+  # Canonical mod order for a deterministic chord string (the dedup lint groups
+  # on it). hs treats the mods table as a set, so any fixed order binds the same.
+  darwinModRank = {
+    ctrl = 0;
+    alt = 1;
+    cmd = 2;
+    shift = 3;
+  };
+  sortDarwinMods = lib.sort (
+    a: b:
+    let
+      ra = darwinModRank.${a} or 99;
+      rb = darwinModRank.${b} or 99;
+    in
+    if ra == rb then a < b else ra < rb
+  );
+  darwinModTokens =
+    chord: sortDarwinMods (map (m: hsMod.${m}) (tiers.${chord.tier}.darwin ++ (chord.mods or [ ])));
+  darwinChord = chord: lib.concatStringsSep "+" (darwinModTokens chord ++ [ (hsKeyFor chord.key) ]);
 
   # ── Workspace families — generated, not hand-listed (one per workspace 1–9) ─
   focusWorkspaces = map (n: {
@@ -281,9 +339,11 @@ let
       };
     }
 
-    # Base Hyper — window geometry (niri-only; no macOS analogue per
-    # keybinds.md §Window geometry, so each is a divergent leaf — correct, not
-    # a gap — and carries no platforms.darwin).
+    # Base Hyper — window geometry. macOS realizes each as a stateless
+    # Hammerspoon handler on the focused window (#440); the handler bodies live
+    # in home/darwin/hammerspoon.nix and the emitter binds them. niri's column
+    # vocabulary becomes macOS window vocabulary via the descriptive overrides.
+    # See docs/desktop/macos-window-management.md + keybinds.md §Window geometry.
     {
       id = "shrink-column";
       label = "Shrink column";
@@ -301,6 +361,12 @@ let
       platforms.linux = {
         realization = "niri-action";
         action.set-column-width = "-10%";
+      };
+      platforms.darwin = {
+        label = "Shrink window";
+        description = "Decrease the focused window's width";
+        realization = "hammerspoon-handler";
+        handler = "shrinkWindow";
       };
     }
     {
@@ -321,6 +387,12 @@ let
         realization = "niri-action";
         action.set-column-width = "+10%";
       };
+      platforms.darwin = {
+        label = "Grow window";
+        description = "Increase the focused window's width";
+        realization = "hammerspoon-handler";
+        handler = "growWindow";
+      };
     }
     {
       id = "cycle-column-width";
@@ -340,6 +412,18 @@ let
         realization = "niri-action";
         action.switch-preset-column-width = { };
       };
+      platforms.darwin = {
+        label = "Snap preset width";
+        description = "Snap the focused window to the next preset width";
+        keywords = [
+          "resize"
+          "preset"
+          "width"
+          "snap"
+        ];
+        realization = "hammerspoon-handler";
+        handler = "snapPresetWidth";
+      };
     }
     {
       id = "center-column";
@@ -357,6 +441,17 @@ let
       platforms.linux = {
         realization = "niri-action";
         action.center-column = { };
+      };
+      platforms.darwin = {
+        label = "Center window";
+        description = "Center the focused window on screen";
+        keywords = [
+          "center"
+          "window"
+          "layout"
+        ];
+        realization = "hammerspoon-handler";
+        handler = "centerWindow";
       };
     }
     {
@@ -376,6 +471,11 @@ let
         realization = "niri-action";
         action.fullscreen-window = { };
       };
+      platforms.darwin = {
+        description = "Enter native fullscreen — the window moves to its own Space";
+        realization = "hammerspoon-handler";
+        handler = "fullscreenWindow";
+      };
     }
     {
       id = "maximize-column";
@@ -393,6 +493,17 @@ let
       platforms.linux = {
         realization = "niri-action";
         action.maximize-column = { };
+      };
+      platforms.darwin = {
+        label = "Maximize window";
+        description = "Maximize the focused window to the screen's visible frame";
+        keywords = [
+          "maximize"
+          "window"
+          "expand"
+        ];
+        realization = "hammerspoon-handler";
+        handler = "maximizeToFrame";
       };
     }
 
@@ -657,6 +768,21 @@ let
     );
   niriBinds = niriBindsFor registry;
 
+  # ── Hammerspoon (darwin) emitter ───────────────────────────────────────────
+  # Each darwin hammerspoon-handler capability becomes one `hs.hotkey.bind(mods,
+  # key, handler)` line — the handler is referenced by *name*; its Lua body is
+  # hand-authored in home/darwin/hammerspoon.nix, which concatenates this output
+  # after the handler library (ADR-039 §2, the Lua-handler split). Pure string
+  # codegen, parametrised over a registry so the unit tests can drive it.
+  isHsHandler = c: (c.platforms.darwin.realization or null) == "hammerspoon-handler";
+  luaModsTable =
+    chord: "{ " + lib.concatMapStringsSep ", " (m: ''"${m}"'') (darwinModTokens chord) + " }";
+  hsBindLine =
+    c:
+    ''hs.hotkey.bind(${luaModsTable c.chord}, "${hsKeyFor c.chord.key}", ${c.platforms.darwin.handler})'';
+  hammerspoonBindsFor = reg: lib.concatMapStringsSep "\n" hsBindLine (lib.filter isHsHandler reg);
+  hammerspoonBinds = hammerspoonBindsFor registry;
+
   # ── Collision lint (ADR-039 §8) ────────────────────────────────────────────
   # Pure: returns a list of human-legible failure strings (empty = ok), which
   # parts/checks.nix renders into a CI-gated derivation via mkReportCheck.
@@ -694,6 +820,54 @@ let
     dupFailures ++ fRowFailures;
   collisions = collisionsFor registry;
 
+  # ── Collision lint — darwin (ADR-039 §8) ───────────────────────────────────
+  # The macOS chord space is co-owned by two emitters: Hammerspoon handlers
+  # (this registry) and the hand-authored Karabiner substrate remaps
+  # (home/darwin/karabiner.nix — the Ctrl+Opt+arrow Mission-Control family and
+  # the Ctrl+Opt+1‑9 Space jumps). The registry does not *own* those remaps
+  # (§4 — Karabiner production stays substrate, not a chord→action realization
+  # yet), but the lint must treat them as occupied so a future handler (e.g.
+  # directional focus on the arrows) cannot silently double-bind a chord the
+  # substrate already consumes. No darwin F-row rule: macOS Ctrl+Opt+F1‑12 is
+  # not niri's unbindable VT switch, so that reservation is Linux-only.
+  darwinReservedChords =
+    map
+      (
+        key:
+        darwinChord {
+          tier = "hyper";
+          inherit key;
+        }
+      )
+      (
+        [
+          "Left"
+          "Right"
+          "Up"
+          "Down"
+        ]
+        ++ map toString (lib.range 1 9)
+      );
+  darwinCollisionsFor =
+    reg:
+    let
+      entries = map (c: {
+        inherit (c) id;
+        chord = darwinChord c.chord;
+      }) (lib.filter isHsHandler reg);
+      byChord = lib.groupBy (e: e.chord) entries;
+      dupFailures = lib.mapAttrsToList (
+        chord: es:
+        "duplicate darwin chord ${chord}: claimed by ${lib.concatMapStringsSep ", " (e: e.id) es}"
+      ) (lib.filterAttrs (_chord: es: lib.length es > 1) byChord);
+      reservedFailures = map (
+        e:
+        "darwin chord ${e.chord} (${e.id}) collides with a Karabiner substrate-reserved chord (Mission-Control arrow / Space-jump remap; home/darwin/karabiner.nix, ADR-039 §4/§8)"
+      ) (lib.filter (e: lib.elem e.chord darwinReservedChords) entries);
+    in
+    dupFailures ++ reservedFailures;
+  darwinCollisions = darwinCollisionsFor registry;
+
   # ── Descriptive resolution (per-platform override → shared default) ─────────
   # The contract for the future palette/doc consumers (#442/#437): a platform's
   # effective descriptive is its override field falling back to the shared default.
@@ -715,8 +889,13 @@ in
     niriChord
     niriBinds
     niriBindsFor
+    darwinChord
+    hammerspoonBinds
+    hammerspoonBindsFor
     collisions
     collisionsFor
+    darwinCollisions
+    darwinCollisionsFor
     descriptiveFor
     ;
 }
