@@ -242,7 +242,9 @@ let
     local function resizeWidthBy(delta)
       local win = hs.window.focusedWindow()
       if not win then return end
-      local sf = win:screen():frame()
+      local screen = win:screen()
+      if not screen then return end
+      local sf = screen:frame()
       local f = win:frame()
       local newW = math.max(sf.w * MIN_WIDTH_FRACTION, math.min(sf.w, f.w + delta * sf.w))
       f.x = (f.x + f.w / 2) - newW / 2
@@ -260,14 +262,20 @@ let
     local function snapPresetWidth()
       local win = hs.window.focusedWindow()
       if not win then return end
-      local sf = win:screen():frame()
+      local screen = win:screen()
+      if not screen then return end
+      local sf = screen:frame()
       local f = win:frame()
       local frac = f.w / sf.w
       local target = WIDTH_PRESETS[1]
       for _, p in ipairs(WIDTH_PRESETS) do
         if p > frac + 0.02 then target = p; break end
       end
+      -- Re-center about the current center (consistent with resizeWidthBy), so
+      -- alternating Hyper+R and Hyper+± resizes in place rather than shuffling x.
+      local cx = f.x + f.w / 2
       f.w = sf.w * target
+      f.x = cx - f.w / 2
       win:setFrame(clampX(f, sf))
     end
 
