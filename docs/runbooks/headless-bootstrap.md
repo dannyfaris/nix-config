@@ -293,7 +293,7 @@ Run from the new host's `dbf` shell unless noted otherwise.
   identity per `git-identity-work.nix`).
 - `~/grey-st/` exists; `~/personal/` does not (ADR-020).
 - `which gh` → nothing (Mercury doesn't import `gh.nix`).
-- `which codex` and `which gemini` → nothing (no `agent-clis-extras`).
+- `which codex` and `which agy` → nothing (no `agent-clis-extras`).
 - `glab auth login` interactively works; token persists to
   `~/.config/glab-cli/`.
 - `boot.growPartition` filled the EBS volume:
@@ -321,7 +321,7 @@ Run from the new host's `dbf` shell unless noted otherwise.
   - Inside `~/grey-st/<repo>`, `git config user.email` returns the work
     address (via `git-identity-dual.nix`'s `gitdir` rules).
 - All four agent CLIs resolve:
-  `which claude cursor-agent codex gemini`.
+  `which claude cursor-agent codex agy`.
 - `which gh` resolves (Metis imports `gh.nix`).
 - Tailscale up: `tailscale status` lists `metis` and its peers.
 - btrfs layout: `findmnt -t btrfs` shows exactly three mounts (`/`,

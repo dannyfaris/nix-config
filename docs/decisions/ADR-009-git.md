@@ -99,7 +99,7 @@ the calculus reverses:
   a `git push` that prompts for a passphrase is a workflow break. Even with
   ssh-agent, fresh shells (cron, systemd units, agents invoked from a new
   zellij pane before keys are loaded) fail. The four agent CLIs (Claude
-  Code, Codex, Gemini, Cursor) are precisely the workflow that this would
+  Code, Codex, Antigravity, Cursor) are precisely the workflow that this would
   hurt — they invoke git on the user's behalf without ceremony.
 - **Unencrypted SSH keys** would solve that, but at-rest plaintext keys on
   any box are a stance the user wants to avoid where possible.

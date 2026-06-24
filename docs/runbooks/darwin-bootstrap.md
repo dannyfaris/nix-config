@@ -423,7 +423,7 @@ Run from the new Mac's user shell.
   returns "not found"; that's expected.)
 - `which claude` and `which cursor-agent` both resolve — the base
   agent set is on every host (ADR-008).
-- `which codex` and `which gemini` both resolve (neptune imports
+- `which codex` and `which agy` both resolve (neptune imports
   `agent-clis-extras.nix` for the full agent set).
 
 ### Phase 2 — SSH-context stack into the Linux fleet
