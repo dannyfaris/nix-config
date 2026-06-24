@@ -11,7 +11,9 @@
 # are enumerated in docs/desktop/keybinds.md §"Active bindings —
 # macOS clients"; this file's job is to realize them as
 # complex_modifications. The foundational rule is caps_lock → Hyper
-# (⌘⌃⌥⇧), the macOS analogue of the Linux Super + Ctrl + Alt + Shift.
+# (Ctrl+Opt), the macOS analogue of the Linux Ctrl+Alt — both read the
+# single-sourced `tiers.hyper` constant from lib/capabilities.nix so the
+# base shape is one edit (ADR-039 §4).
 #
 # Written via `xdg.configFile."karabiner/karabiner.json"` with
 # `force = true`: home-manager unconditionally overwrites the file
@@ -36,16 +38,31 @@
 # on both Linux and Darwin). The two were interchangeable here
 # pre-conversion; the change is for shape-consistency with
 # home/darwin/macchina-shell-init.nix and home/shared/* modules.
-_:
+{ lib, ... }:
 let
-  # Caps Lock → Hyper. Sends left_shift held with left_command +
-  # left_control + left_option, producing the four-modifier chord
-  # Karabiner UI users know as "Hyper". modifiers.optional = ["any"]
-  # lets the remap fire regardless of which other modifiers happen
-  # to be held when caps_lock is pressed — defensive against future
-  # chord-based extensions.
+  caps = import ../../lib/capabilities.nix { inherit lib; };
+
+  # The Hyper base modifiers, single-sourced from the registry
+  # (tiers.hyper.darwin = [ "Ctrl" "Option" ]; ADR-039 §4). Mapped to
+  # Karabiner's left-side modifier codes. The base-shape change (e.g. adding
+  # an AltGr pad) is one edit in lib/capabilities.nix, mirrored on the niri
+  # side by modules/nixos/keyd.nix reading tiers.hyper.linux.
+  karabinerMod = {
+    Ctrl = "left_control";
+    Option = "left_option";
+    Super = "left_command";
+    Shift = "left_shift";
+  };
+  hyperModifiers = map (m: karabinerMod.${m}) caps.tiers.hyper.darwin; # [ left_control left_option ]
+
+  # Caps Lock → Hyper (Ctrl+Opt). Holds the first Hyper modifier as the `to`
+  # key_code and the rest as its modifiers, so caps_lock-held presents the
+  # full Ctrl+Opt modifier state (same shape as the previous four-mod rule,
+  # which held left_shift as key_code + cmd/ctrl/option as modifiers).
+  # modifiers.optional = ["any"] lets the remap fire regardless of which other
+  # modifiers happen to be held — defensive against future chord extensions.
   capsLockToHyper = {
-    description = "Caps Lock → Hyper (⌘⌃⌥⇧)";
+    description = "Caps Lock → Hyper (Ctrl+Opt)";
     manipulators = [
       {
         type = "basic";
@@ -55,33 +72,24 @@ let
         };
         to = [
           {
-            key_code = "left_shift";
-            modifiers = [
-              "left_command"
-              "left_control"
-              "left_option"
-            ];
+            key_code = lib.head hyperModifiers;
+            modifiers = lib.tail hyperModifiers;
           }
         ];
       }
     ];
   };
 
-  # Helper: build the `from` half of a "Hyper + key" mandatory match.
-  # All four modifiers must be held (Karabiner consumes them on
-  # match, so the emitted `to` event carries only the modifiers we
-  # explicitly list there). The four-modifier state is produced by
-  # the capsLockToHyper rule above: emitting key_code = "left_shift"
-  # with cmd + ctrl + option as modifiers puts shift down on the
-  # active modifier state, satisfying the four-mandatory match.
+  # Helper: build the `from` half of a "Hyper + key" mandatory match. Both
+  # Hyper modifiers (Ctrl+Opt) must be held; Karabiner consumes them on match,
+  # so the emitted `to` event carries only the modifiers we list there. This
+  # relies on Karabiner counting the key_code-as-modifier (left_control,
+  # emitted by capsLockToHyper) toward a `mandatory` match the same way it
+  # counted the previous rule's left_shift — verify at the neptune keyboard
+  # (it cannot be exercised from Linux).
   fromHyper = keyCode: {
     key_code = keyCode;
-    modifiers.mandatory = [
-      "left_command"
-      "left_control"
-      "left_option"
-      "left_shift"
-    ];
+    modifiers.mandatory = hyperModifiers;
   };
 
   # Hyper + Arrow → Ctrl + Arrow, for macOS's Mission Control family:

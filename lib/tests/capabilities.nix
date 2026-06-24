@@ -1,16 +1,19 @@
-# Unit tests for lib/capabilities.nix's real codegen logic — chord rendering,
-# the niri emitter, and the collision lint. A silent bug in any of these would
-# mis-generate every niri bind or let a chord clash slip through CI. Evaluated
-# via pkgs.lib.runTests, which returns a list of failure records
-# ({ name; expected; result; }); parts/checks.nix renders that list into a
-# CI-gated derivation. See ADR-033 and lib/tests/auto-gen-paths.nix.
+# Unit tests for lib/capabilities.nix's real codegen logic — chord rendering
+# (niri + darwin), the niri + Hammerspoon emitters, and the collision lints. A
+# silent bug in any of these would mis-generate every bind or let a chord clash
+# slip through CI. Evaluated via pkgs.lib.runTests, which returns a list of
+# failure records ({ name; expected; result; }); parts/checks.nix renders that
+# list into a CI-gated derivation. See ADR-033 and lib/tests/auto-gen-paths.nix.
 { lib }:
 let
   caps = import ../capabilities.nix { inherit lib; };
   inherit (caps)
     niriChord
     niriBindsFor
+    darwinChord
+    hammerspoonBindsFor
     collisionsFor
+    darwinCollisionsFor
     descriptiveFor
     ;
 
@@ -23,6 +26,18 @@ let
     platforms.linux = {
       realization = "niri-action";
       inherit action;
+    };
+  };
+
+  # A minimal hammerspoon-handler capability for darwin fixtures.
+  mkHsCap = id: chord: handler: {
+    inherit id chord;
+    label = id;
+    description = id;
+    keywords = [ ];
+    platforms.darwin = {
+      realization = "hammerspoon-handler";
+      inherit handler;
     };
   };
 in
@@ -187,6 +202,131 @@ lib.runTests {
   # in CI, not just the fixture above).
   testLiveRegistryClean = {
     expr = caps.collisions;
+    expected = [ ];
+  };
+
+  # ── darwin chord rendering (Hammerspoon) ──────────────────────────────────
+  # Base tier renders to the hs mod tokens (Ctrl+Opt → ctrl+alt) plus the key,
+  # letters lowercased.
+  testDarwinChordBase = {
+    expr = darwinChord {
+      tier = "hyper";
+      key = "F";
+    };
+    expected = "ctrl+alt+f";
+  };
+
+  # Arrows map to hs's explicit key names.
+  testDarwinChordArrow = {
+    expr = darwinChord {
+      tier = "hyper";
+      key = "Left";
+    };
+    expected = "ctrl+alt+left";
+  };
+
+  # Punctuation tokens map to the literal hs symbol.
+  testDarwinChordPunct = {
+    expr = darwinChord {
+      tier = "hyper";
+      key = "Minus";
+    };
+    expected = "ctrl+alt+-";
+  };
+
+  # The Super escalator maps to hs "cmd"; mods render in canonical order
+  # (ctrl, alt, cmd, shift), so the set — not declaration order — fixes the string.
+  testDarwinChordSuperEscalator = {
+    expr = darwinChord {
+      tier = "hyper";
+      mods = [ "Super" ];
+      key = "Up";
+    };
+    expected = "ctrl+alt+cmd+up";
+  };
+
+  # The emitter renders each hammerspoon-handler cap to one hs.hotkey.bind line:
+  # a Lua mods table, the key string, and the bare handler name.
+  testHammerspoonBindsShape = {
+    expr = hammerspoonBindsFor [
+      (mkHsCap "fullscreen-window" {
+        tier = "hyper";
+        key = "F";
+      } "fullscreenWindow")
+    ];
+    expected = ''hs.hotkey.bind({ "ctrl", "alt" }, "f", fullscreenWindow)'';
+  };
+
+  # A clean darwin registry produces no collision failures.
+  testDarwinCollisionsCleanIsEmpty = {
+    expr = darwinCollisionsFor [
+      (mkHsCap "a" {
+        tier = "hyper";
+        key = "F";
+      } "fullscreenWindow")
+      (mkHsCap "b" {
+        tier = "hyper";
+        key = "M";
+      } "maximizeToFrame")
+    ];
+    expected = [ ];
+  };
+
+  # Two hammerspoon-handlers resolving to one chord is reported.
+  testDarwinCollisionsDuplicateFires = {
+    expr = builtins.length (darwinCollisionsFor [
+      (mkHsCap "a" {
+        tier = "hyper";
+        key = "F";
+      } "fullscreenWindow")
+      (mkHsCap "b" {
+        tier = "hyper";
+        key = "F";
+      } "other")
+    ]);
+    expected = 1;
+  };
+
+  # A handler landing on a Karabiner substrate-reserved chord (Ctrl+Opt+arrow /
+  # Ctrl+Opt+number) is reported — the cross-emitter guard (ADR-039 §4/§8) that
+  # protects the deferred directional-focus slice from silently double-binding.
+  testDarwinReservedArrowFires = {
+    expr = builtins.length (darwinCollisionsFor [
+      (mkHsCap "focus-left" {
+        tier = "hyper";
+        key = "Left";
+      } "focusWindowWest")
+    ]);
+    expected = 1;
+  };
+
+  testDarwinReservedNumberFires = {
+    expr = builtins.length (darwinCollisionsFor [
+      (mkHsCap "geo-1" {
+        tier = "hyper";
+        key = "1";
+      } "someHandler")
+    ]);
+    expected = 1;
+  };
+
+  # An *escalated* chord on a reserved key (Ctrl+Opt+Shift+Left) is NOT the
+  # bare reserved chord, so it must not trip the reservation.
+  testDarwinReservedEscalatedOk = {
+    expr = darwinCollisionsFor [
+      (mkHsCap "esc" {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "Left";
+      } "someHandler")
+    ];
+    expected = [ ];
+  };
+
+  # Guard: the live darwin registry stays collision-free (and clear of the
+  # Karabiner-reserved chords) — a real clash should fail this in CI.
+  testLiveRegistryCleanDarwin = {
+    expr = caps.darwinCollisions;
     expected = [ ];
   };
 }

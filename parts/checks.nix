@@ -117,6 +117,10 @@ in
         mkReportCheck "x86_64-linux" "keybind-collisions"
           "Keybind chord collisions (lib/capabilities.nix; ADR-039 §8)"
           capabilities.collisions;
+      keybind-collisions-darwin =
+        mkReportCheck "x86_64-linux" "keybind-collisions-darwin"
+          "Keybind chord collisions — darwin/Hammerspoon (lib/capabilities.nix; ADR-039 §8)"
+          capabilities.darwinCollisions;
     };
     aarch64-darwin = {
       host-neptune = self.darwinConfigurations.neptune.system;

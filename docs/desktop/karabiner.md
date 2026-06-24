@@ -6,8 +6,9 @@ modifier-remap systems, allowing arbitrary key-to-key and
 key-to-modifier-combo remaps. Picked as the macOS-side realization
 of the **Hyper modifier** from
 [`docs/desktop/keybinds.md`](./keybinds.md)'s three-namespace
-philosophy: Karabiner remaps `caps_lock` to `⌘ + ⌃ + ⌥ + ⇧` (the
-macOS analogue of the Linux `Super + Ctrl + Alt + Shift` Hyper).
+philosophy: Karabiner remaps `caps_lock` to `⌃ + ⌥` (`Ctrl+Opt`,
+the macOS analogue of the Linux `Ctrl+Alt` Hyper) — single-sourced
+from `tiers.hyper.darwin` in `lib/capabilities.nix` (ADR-039 §4, #440).
 
 ## Selection
 
@@ -186,8 +187,8 @@ Two rule classes live in the config:
   foundational rule that makes Hyper exist as a chord this Mac
   can emit. Owned by this doc because the choice of Karabiner
   is in service of producing the modifier; the chord shape
-  (`caps_lock` source; `left_shift` + `cmd` + `ctrl` + `option`
-  target) is the load-bearing detail captured in the
+  (`caps_lock` source; `left_control` + `left_option` target,
+  i.e. `Ctrl+Opt`) is the load-bearing detail captured in the
   carve-out's §Rationale.
 - **Bind rules** — `Hyper + X → <native macOS chord>` remaps
   that translate Hyper-anchored bindings into existing macOS
@@ -313,7 +314,7 @@ installed.
   clause 2; this doc owns the carve-out justification.
 - [`docs/desktop/keybinds.md`](./keybinds.md) — bind manifest
   covering both the Karabiner-implemented Hyper modifier
-  (caps_lock → ⌘⌃⌥⇧) and the Hyper-anchored Mission Control
+  (caps_lock → `Ctrl+Opt`) and the Hyper-anchored Mission Control
   binds (`Hyper+Arrow`, `Hyper+1`..`9`) layered on top via
   additional `complex_modifications.rules`.
 - Homebrew `karabiner-elements` cask source (pkg installer,

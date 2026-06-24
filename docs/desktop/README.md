@@ -72,6 +72,7 @@ rather than creating a new artifact.
 | [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | #11 |
 | [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | #11 |
 | [hammerspoon.md](./hammerspoon.md) | Hammerspoon macOS hotkey-binding layer on top of Karabiner's Hyper; Homebrew cask + Sparkle silent (`.zip`-enclosure, same shape as Ghostty) (clause-1, no nixpkgs Darwin) | #11 |
+| [macos-window-management.md](./macos-window-management.md) | macOS window management — pure Hammerspoon (no tiling WM); stateless geometry hotkeys (`F`/`M`/`C`/`R`/`±`) + native-fullscreen-as-column, registry-generated. See ADR-039 §7 | #440 |
 
 _macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on neptune, not pending._
 
