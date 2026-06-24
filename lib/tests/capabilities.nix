@@ -36,14 +36,15 @@ lib.runTests {
     expected = "Ctrl+Alt+Left";
   };
 
-  # The Super escalator maps to niri's "Mod" and stacks after the base.
+  # The Super escalator maps to niri's "Mod"; modifiers render in canonical order
+  # (Mod, Ctrl, Alt, Shift), so the set — not declaration order — fixes the string.
   testNiriChordSuperEscalator = {
     expr = niriChord {
       tier = "hyper";
       mods = [ "Super" ];
       key = "Left";
     };
-    expected = "Ctrl+Alt+Mod+Left";
+    expected = "Mod+Ctrl+Alt+Left";
   };
 
   # The Shift escalator stays literal.
@@ -101,13 +102,50 @@ lib.runTests {
     expected = 1;
   };
 
-  # The Ctrl+Alt base binding the F-row is reported (ADR-039 §8 reservation).
+  # The bare Ctrl+Alt base binding the F-row is reported (ADR-039 §8 reservation).
   testCollisionsFRowFires = {
     expr = builtins.length (collisionsFor [
       (mkCap "vt" {
         tier = "hyper";
         key = "F1";
       } { foo = { }; })
+    ]);
+    expected = 1;
+  };
+
+  # An *escalated* F-row chord (Ctrl+Alt+Shift+F1) is bindable — not the bare VT
+  # switch — so it must NOT trip the reservation.
+  testCollisionsFRowEscalatedOk = {
+    expr = collisionsFor [
+      (mkCap "esc" {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "F1";
+      } { foo = { }; })
+    ];
+    expected = [ ];
+  };
+
+  # Two caps with the same modifier SET in different declaration order resolve to
+  # one chord and are reported (the canonical-sort dedup guarantee).
+  testCollisionsModOrderDedup = {
+    expr = builtins.length (collisionsFor [
+      (mkCap "a" {
+        tier = "hyper";
+        mods = [
+          "Shift"
+          "Super"
+        ];
+        key = "Z";
+      } { foo = { }; })
+      (mkCap "b" {
+        tier = "hyper";
+        mods = [
+          "Super"
+          "Shift"
+        ];
+        key = "Z";
+      } { bar = { }; })
     ]);
     expected = 1;
   };
