@@ -45,10 +45,29 @@ let
   # with "+". This keeps the emitted attribute name identical to a hand-authored
   # niri bind, so niri-flake's typing (and build-time `niri validate`) still apply.
   niriMod = m: if m == "Super" then "Mod" else m;
+  # Canonical modifier order so the emitted chord string is deterministic: two
+  # caps with the same modifier SET render identically regardless of declaration
+  # order (the dedup lint groups on this string), and the output matches niri's
+  # conventional Mod+Ctrl+Alt+Shift order. niri matches modifier sets
+  # order-independently, so any fixed order binds the same.
+  modRank = {
+    Mod = 0;
+    Ctrl = 1;
+    Alt = 2;
+    Shift = 3;
+  };
+  sortMods = lib.sort (
+    a: b:
+    let
+      ra = modRank.${a} or 99;
+      rb = modRank.${b} or 99;
+    in
+    if ra == rb then a < b else ra < rb
+  );
   niriChord =
     chord:
     lib.concatStringsSep "+" (
-      tiers.${chord.tier}.linux ++ map niriMod (chord.mods or [ ]) ++ [ chord.key ]
+      sortMods (tiers.${chord.tier}.linux ++ map niriMod (chord.mods or [ ])) ++ [ chord.key ]
     );
 
   # ── Workspace families — generated, not hand-listed (one per workspace 1–9) ─
@@ -642,7 +661,8 @@ let
   # Pure: returns a list of human-legible failure strings (empty = ok), which
   # parts/checks.nix renders into a CI-gated derivation via mkReportCheck.
   # Two checks from day one: no two linux capabilities claim one chord, and the
-  # Ctrl+Alt base never binds the F-row (niri's unbindable VT switch). The
+  # bare Ctrl+Alt base never binds the F-row (niri's unbindable VT switch — an
+  # escalated chord like Ctrl+Alt+Shift+F2 is bindable and not reserved). The
   # broader availability lint is deferred (§8). Parametrised so the unit tests
   # can prove it fires on a deliberate clash without tripping the live check.
   fRowKeys = map (n: "F${toString n}") (lib.range 1 12);
@@ -660,6 +680,7 @@ let
         chord = niriChord c.chord;
         key = c.chord.key;
         tier = c.chord.tier;
+        mods = c.chord.mods or [ ];
       }) (lib.filter isNiriAction reg);
       byChord = lib.groupBy (e: e.chord) entries;
       dupFailures = lib.mapAttrsToList (
@@ -667,8 +688,8 @@ let
       ) (lib.filterAttrs (_chord: es: lib.length es > 1) byChord);
       fRowFailures = map (
         e:
-        "F-row reservation: ${e.id} binds ${e.chord} — the Ctrl+Alt base must never bind the F-row (niri's unbindable VT switch; ADR-039 §8)"
-      ) (lib.filter (e: hasCtrlAltBase e.tier && lib.elem e.key fRowKeys) entries);
+        "F-row reservation: ${e.id} binds ${e.chord} — the bare Ctrl+Alt base must never bind the F-row (niri's unbindable VT switch; ADR-039 §8)"
+      ) (lib.filter (e: hasCtrlAltBase e.tier && e.mods == [ ] && lib.elem e.key fRowKeys) entries);
     in
     dupFailures ++ fRowFailures;
   collisions = collisionsFor registry;
