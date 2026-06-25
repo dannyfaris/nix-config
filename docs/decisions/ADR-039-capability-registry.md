@@ -26,19 +26,24 @@ Concretely — one capability (illustrative shape; the full field spec is #384's
 {
   id = "lock-screen";
 
-  # descriptive (shared default; a platform may override below) — searched & shown by the palette; rendered into the doc table
+  # descriptive (shared default; a platform may add a `label`/`description`/
+  # `keywords` override under `platforms.<p>` where the prose diverges) —
+  # searched & shown by the palette; rendered into the doc table
   label       = "Lock screen";
   description = "Lock the session and show the login screen";
   keywords    = [ "logout" "secure" "away" ];
 
-  # chord — tier + key tokens; the `Hyper` tier resolves per-platform (Ctrl+Alt / Ctrl+Opt)
-  chord = "Hyper+Escape";
+  # chord — an attrset of tier + key tokens (plus optional `mods = [ "Shift" ]` /
+  # `[ "Super" ]` escalators); the `hyper` tier resolves per-platform (Ctrl+Alt / Ctrl+Opt)
+  chord = { tier = "hyper"; key = "Escape"; };
 
-  # realization — per-platform, typed; the payload follows the type
-  platforms.linux  = { realization = "niri-action";        spawn = [ "loginctl" "lock-session" ]; };
+  # realization — per-platform, typed; the payload follows the type. A
+  # niri-action carries its verb under `action.<verb>`; a hammerspoon-handler
+  # names a Lua handler whose body is hand-authored in hammerspoon.nix.
+  platforms.linux  = { realization = "niri-action";        action.spawn = [ "loginctl" "lock-session" ]; };
   platforms.darwin = { realization = "hammerspoon-handler"; handler = "lockScreen"; };
 }
-# other realizations: niri-action (verb) · karabiner-remap (→ keystroke) · menu/command
+# other declared realization types, not yet emitted: karabiner-remap (→ keystroke) · menu/command
 ```
 
 **3. The Hyper taxonomy (keystone).** `Hyper` = the primary command layer, base `Ctrl+Alt` (Linux) / `Ctrl+Opt` (macOS); `Super` = the Cmd-parity command modifier (app-commands, text-nav, launcher, app-switch). The minimal two-modifier base deliberately frees `Shift` and `Super`/`Cmd` to stack as escalators — individually or together (e.g. `Hyper+Shift`, `Hyper+Super`) — which is the whole point of dropping the old all-four base. niri's spatial model is the organizing frame (macOS Space ≈ niri column, by spatial cognition). The full, living taxonomy — the per-tier bind table — is `keybinds.md` (#439); this ADR freezes only the load-bearing shape, not the bind inventory.
@@ -83,8 +88,8 @@ Build sequence, walking-skeleton first:
 
 1. **#384** — registry + the three-dimension schema + collision lint + the **niri emitter (walking skeleton)** + the atomic `Ctrl+Alt` cutover. The keyd→niri `ISO_Level3_Shift` delivery verify rides this phase — it decides only the optional AltGr padding; bare `Ctrl+Alt` is the known-good fallback.
 2. macOS emitters (the `Hyper`-constant consumer in keyd, Karabiner, Hammerspoon) + **#440** (the macOS window-management realization).
-3. **#437** — the external capability dataset (the data-home / declarative-boundary contract).
-4. **#442** — the unified capability palette (renderer per the research; niri overlay retires on landing).
-5. The generated `keybinds.md` table; then, deferred, the availability lint.
+3. The generated `keybinds.md` table — **prioritised ahead of the palette**: the table is still hand-maintained, so the doc-drift this registry exists to kill is live today (a handler change still has to be mirrored into prose by hand), and the table generates from the registry's already-built descriptive dimension, so it is also the cheapest remaining surface.
+4. **#437** — the external capability dataset (the data-home / declarative-boundary contract).
+5. **#442** — the unified capability palette (renderer per the research; niri overlay retires on landing); then, deferred, the availability lint.
 
 Living detail is single-sourced elsewhere (ADR-032), not restated here: the taxonomy → `docs/desktop/keybinds.md`; the analysis → `docs/research/{hyper-layer-redesign, cross-platform-action-menu, keymap-single-sourcing-prior-art, launcher-strategy}.md`; the macOS realization → #440; the epics → #428 (F), #425 (C), #427 (E).
