@@ -106,26 +106,29 @@ let
   # corresponding arrow a no-op. All four are enabled by macOS
   # default. See docs/desktop/keybinds.md §Mission Control for the
   # bind-manifest entries.
+  # The arrow key set is single-sourced from the registry
+  # (caps.karabinerHyperRemapKeys.arrows) so this production and the darwin
+  # collision lint that reserves these chords cannot drift (#455). Tokens are
+  # the registry's chord-key form ("Left"); the key_code is the lowercased
+  # "<arrow>_arrow".
   hyperArrowMissionControl = {
     description = "Hyper + Arrow → Ctrl + Arrow (Mission Control family)";
-    manipulators =
-      builtins.map
-        (arrow: {
-          type = "basic";
-          from = fromHyper "${arrow}_arrow";
-          to = [
-            {
-              key_code = "${arrow}_arrow";
-              modifiers = [ "left_control" ];
-            }
-          ];
-        })
-        [
-          "left"
-          "right"
-          "up"
-          "down"
+    manipulators = builtins.map (
+      arrow:
+      let
+        k = "${lib.toLower arrow}_arrow";
+      in
+      {
+        type = "basic";
+        from = fromHyper k;
+        to = [
+          {
+            key_code = k;
+            modifiers = [ "left_control" ];
+          }
         ];
+      }
+    ) caps.karabinerHyperRemapKeys.arrows;
   };
 
   # Hyper + N → Ctrl + N, for macOS Mission Control's native "Switch
@@ -138,37 +141,21 @@ let
   # only expose slots for as many Spaces as currently exist).
   # Mirrors the niri-side `Mod+1` … `Mod+9` focus-workspace binds.
   # See docs/desktop/keybinds.md §Mission Control.
+  # The number key set is single-sourced from the registry
+  # (caps.karabinerHyperRemapKeys.numbers, the strings "1"–"9") so this
+  # production and the darwin collision lint cannot drift (#455).
   hyperNumberSpaceJump = {
     description = "Hyper + N → Ctrl + N (Mission Control Spaces 1-9)";
-    manipulators =
-      builtins.map
-        (
-          n:
-          let
-            k = toString n;
-          in
-          {
-            type = "basic";
-            from = fromHyper k;
-            to = [
-              {
-                key_code = k;
-                modifiers = [ "left_control" ];
-              }
-            ];
-          }
-        )
-        [
-          1
-          2
-          3
-          4
-          5
-          6
-          7
-          8
-          9
-        ];
+    manipulators = builtins.map (k: {
+      type = "basic";
+      from = fromHyper k;
+      to = [
+        {
+          key_code = k;
+          modifiers = [ "left_control" ];
+        }
+      ];
+    }) caps.karabinerHyperRemapKeys.numbers;
   };
 
   karabinerConfig = {

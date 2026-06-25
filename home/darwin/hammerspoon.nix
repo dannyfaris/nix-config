@@ -20,15 +20,15 @@
 # home/darwin/karabiner.nix. Hammerspoon listens for the chord at
 # the userspace event-tap layer and binds Lua actions to it.
 #
-# The window-geometry binds (Hyper+F/M/C/R/±) are generated from the
-# single-source capability registry (lib/capabilities.nix —
-# `hammerspoonBinds`, #440 / ADR-039): the registry emits the
-# `hs.hotkey.bind` calls referencing handler *names*; the handler
-# bodies are the hand-authored Lua library below. The spawn binds
-# (Hyper+Return/B) stay hand-authored — their handlers lean on the
-# cross-Space window-filter machinery this slice keeps out of the
-# emitter. Taxonomy: docs/desktop/keybinds.md; selection +
-# behaviour: docs/desktop/macos-window-management.md.
+# Every Hyper bind is generated from the single-source capability
+# registry (lib/capabilities.nix — `hammerspoonBinds`, #440 / #455 /
+# ADR-039): the registry emits the `hs.hotkey.bind` calls referencing
+# handler *names*; the handler bodies — geometry and the cross-Space
+# spawn helpers alike — are the hand-authored Lua library below.
+# Routing the spawn binds (Hyper+Return/B) through the emitter too
+# (rather than binding them by hand) means their chords are covered by
+# the darwin collision lint (#455). Taxonomy: docs/desktop/keybinds.md;
+# selection + behaviour: docs/desktop/macos-window-management.md.
 { lib, ... }:
 let
   caps = import ../../lib/capabilities.nix { inherit lib; };
@@ -45,10 +45,8 @@ let
     hs.menuIcon(false)
 
     -- Hyper = Ctrl+Opt (the macOS base-shape, ADR-039 §3/§4), produced from
-    -- caps_lock by Karabiner. The registry-generated geometry binds below use
-    -- the same { "ctrl", "alt" } literal; this table is for the hand-authored
-    -- spawn binds (Hyper+Return / Hyper+B).
-    local hyper = { "ctrl", "alt" }
+    -- caps_lock by Karabiner. Every Hyper bind below is generated from the
+    -- capability registry as hs.hotkey.bind({ "ctrl", "alt" }, …).
 
     -- Apps are identified by both bundle ID and macOS display name.
     -- The two layers exist because Hammerspoon uses them asymmetrically:
@@ -283,16 +281,12 @@ let
     -- Bindings
     -- ----------------------------------------------------------------
 
-    -- Window geometry (Hyper+F/M/C/R/±) — generated from the single-source
-    -- capability registry (lib/capabilities.nix, #440 / ADR-039). Each line
-    -- is `hs.hotkey.bind({ "ctrl", "alt" }, "<key>", <handler>)`; the handler
-    -- bodies are the library above.
+    -- Every Hyper bind — geometry (Hyper+F/M/C/R/±) and spawn (Hyper+Return/B)
+    -- alike — is generated from the single-source capability registry
+    -- (lib/capabilities.nix, #440 / #455 / ADR-039). Each line is
+    -- `hs.hotkey.bind({ "ctrl", "alt" }, "<key>", <handler>)`; the handler
+    -- bodies (including the cross-Space spawn helpers) are the library above.
     ${caps.hammerspoonBinds}
-
-    -- Spawn (Hyper+Return / Hyper+B) — hand-authored: their handlers use the
-    -- cross-Space window-filter machinery the emitter deliberately omits.
-    hs.hotkey.bind(hyper, "return", ghosttyNewWindow)
-    hs.hotkey.bind(hyper, "b",      chromeFocusOrNew)
 
     -- ----------------------------------------------------------------
     -- Auto-reload: re-evaluate this file on any .lua change in
