@@ -329,4 +329,43 @@ lib.runTests {
     expr = caps.darwinCollisions;
     expected = [ ];
   };
+
+  # The spawn binds (Hyper+Return/B) are now routed through the Hammerspoon
+  # emitter (#455), so the live darwin output binds them by handler name — proof
+  # the chords are emitted (and therefore seen by darwinCollisions), not bound
+  # by hand outside the lint's view.
+  testLiveRegistryEmitsSpawnDarwinBinds = {
+    expr = lib.all (s: lib.hasInfix s caps.hammerspoonBinds) [
+      ''"return", ghosttyNewWindow''
+      ''"b", chromeFocusOrNew''
+    ];
+    expected = true;
+  };
+
+  # The Karabiner substrate-reserved key set is exported for karabiner.nix to
+  # generate its remaps from — the single-source bridge (#455). Guards the
+  # contract shape karabiner.nix depends on; the darwin lint reserves the same
+  # chords from this list, so the two cannot drift.
+  testKarabinerHyperRemapKeys = {
+    expr = caps.karabinerHyperRemapKeys;
+    expected = {
+      arrows = [
+        "Left"
+        "Right"
+        "Up"
+        "Down"
+      ];
+      numbers = [
+        "1"
+        "2"
+        "3"
+        "4"
+        "5"
+        "6"
+        "7"
+        "8"
+        "9"
+      ];
+    };
+  };
 }

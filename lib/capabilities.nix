@@ -23,6 +23,8 @@
 #   - modules/nixos/keyd.nix      → `tiers.hyper.linux` (substrate reads the
 #                                    same constant — base shape is one edit, §4)
 #   - home/darwin/karabiner.nix   → `tiers.hyper.darwin` (the Ctrl+Opt substrate)
+#                                    + `karabinerHyperRemapKeys` (the remap key
+#                                    set the darwin lint also reserves, #455)
 #   - parts/checks.nix            → `collisions` + `darwinCollisions`
 #                                    (mkReportCheck) + the unit tests in
 #                                    lib/tests/capabilities.nix
@@ -526,7 +528,12 @@ let
         realization = "niri-action";
         action.spawn = "foot";
       };
+      # Routed through the Hammerspoon emitter (handler body hand-authored in
+      # home/darwin/hammerspoon.nix) so the chord is covered by the darwin
+      # collision lint, #455 — not just bound by hand outside the registry.
       platforms.darwin = {
+        realization = "hammerspoon-handler";
+        handler = "ghosttyNewWindow";
         keywords = [
           "terminal"
           "shell"
@@ -557,6 +564,21 @@ let
           "xdg-open"
           "https://"
         ];
+      };
+      # macOS realizes this as Chrome focus-or-spawn (the handler body is
+      # hand-authored in home/darwin/hammerspoon.nix); routed through the
+      # emitter so the chord is covered by the darwin collision lint, #455.
+      # The prose genuinely diverges from linux's default-browser behaviour.
+      platforms.darwin = {
+        description = "Focus the most-recent Chrome window, or open a new one";
+        keywords = [
+          "browser"
+          "web"
+          "internet"
+          "chrome"
+        ];
+        realization = "hammerspoon-handler";
+        handler = "chromeFocusOrNew";
       };
     }
 
@@ -830,24 +852,30 @@ let
   # directional focus on the arrows) cannot silently double-bind a chord the
   # substrate already consumes. No darwin F-row rule: macOS Ctrl+Opt+F1‑12 is
   # not niri's unbindable VT switch, so that reservation is Linux-only.
-  darwinReservedChords =
-    map
-      (
-        key:
-        darwinChord {
-          tier = "hyper";
-          inherit key;
-        }
-      )
-      (
-        [
-          "Left"
-          "Right"
-          "Up"
-          "Down"
-        ]
-        ++ map toString (lib.range 1 9)
-      );
+  # The Hyper+key chords the hand-authored Karabiner substrate consumes as
+  # remaps (Hyper+key → Ctrl+key): arrows drive the Mission-Control family, 1‑9
+  # the Space jumps. Declared here ONCE so the Karabiner production
+  # (home/darwin/karabiner.nix generates its manipulators from these keys) and
+  # the darwin collision lint (darwinReservedChords, below) read one list and
+  # cannot drift (#455). The registry does not yet own these as karabiner-remap
+  # realizations (ADR-039 §4) — this is the single-source bridge until it does
+  # (tracked on #428).
+  karabinerHyperRemapKeys = {
+    arrows = [
+      "Left"
+      "Right"
+      "Up"
+      "Down"
+    ];
+    numbers = map toString (lib.range 1 9);
+  };
+  darwinReservedChords = map (
+    key:
+    darwinChord {
+      tier = "hyper";
+      inherit key;
+    }
+  ) (karabinerHyperRemapKeys.arrows ++ karabinerHyperRemapKeys.numbers);
   darwinCollisionsFor =
     reg:
     let
@@ -896,6 +924,7 @@ in
     collisionsFor
     darwinCollisions
     darwinCollisionsFor
+    karabinerHyperRemapKeys
     descriptiveFor
     ;
 }

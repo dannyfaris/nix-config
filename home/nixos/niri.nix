@@ -30,6 +30,19 @@ let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
   profile = import ../../lib/display-profiles.nix; # active display profile — output scale
   caps = import ../../lib/capabilities.nix { inherit lib; }; # single-source keybind registry (#384)
+
+  # Merge the registry-generated binds with the hand-authored remainder,
+  # asserting no hand-authored chord silently shadows a generated one via `//`
+  # (right-hand wins). The registry's collision lint cannot see this file, so
+  # the disjointness guarantee for the merge seam lives here (ADR-039 §8, #455).
+  mergeBinds =
+    generated: handAuthored:
+    let
+      shadowed = lib.intersectLists (lib.attrNames generated) (lib.attrNames handAuthored);
+    in
+    lib.throwIf (shadowed != [ ])
+      "niri.nix: hand-authored bind(s) ${lib.concatStringsSep ", " shadowed} shadow registry-generated Hyper chords — declare them in lib/capabilities.nix instead (ADR-039 §8, #455)"
+      (generated // handAuthored);
 in
 {
   # Hand niri's window-border colour to Noctalia at runtime (ADR-036, #385).
@@ -160,12 +173,14 @@ in
 
     # The cross-platform Hyper layer (Ctrl+Alt base) is generated from the
     # single-source capability registry (lib/capabilities.nix, #384 / ADR-039)
-    # and merged over the hand-authored remainder below. keyd realizes Caps Lock
-    # → Hyper (Ctrl+Alt) at the evdev layer (modules/nixos/keyd.nix). The
-    # remainder is the Super-namespace + screenshot binds not yet in the registry
-    # — the Super layer retires under #323; screenshots stay on Super+Shift.
-    # Taxonomy + inventory: docs/desktop/keybinds.md.
-    binds = caps.niriBinds // {
+    # and merged (via mergeBinds, which guards against a hand-authored chord
+    # silently shadowing a generated one — #455) over the hand-authored
+    # remainder below. keyd realizes Caps Lock → Hyper (Ctrl+Alt) at the evdev
+    # layer (modules/nixos/keyd.nix). The remainder is the Super-namespace +
+    # screenshot binds not yet in the registry — the Super layer retires under
+    # #323; screenshots stay on Super+Shift. Taxonomy + inventory:
+    # docs/desktop/keybinds.md.
+    binds = mergeBinds caps.niriBinds {
       # Navigation — focus (arrow + vim-style mirrors). Super-namespace; retired
       # under #323 when the Super layer lands. (The Hyper focus binds — Ctrl+Alt —
       # come from the registry above.)
