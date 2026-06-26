@@ -5,9 +5,10 @@
 # constant, the niri emitter, and the eval-time collision lint. The macOS
 # window-management slice (#440) adds the Hammerspoon emitter + the `Ctrl+Opt`
 # darwin base, so `platforms.darwin` now carries typed `hammerspoon-handler`
-# realizations alongside its descriptive overrides. The unified palette (#442),
-# the actions.json dataset (#437), and the generated keybinds.md table remain
-# later phases.
+# realizations alongside its descriptive overrides. #457 adds the keybinds.md
+# table emitter (the human-facing surface, generated from the descriptive
+# dimension). The unified palette (#442) and the actions.json dataset (#437)
+# remain later phases.
 #
 # Repo-decoupled by design (ADR-039 §9 — extraction-ready): this unit takes
 # only { lib } and imports no repo modules, so packaging it standalone later
@@ -26,10 +27,14 @@
 #                                    + `karabinerHyperRemapKeys` (the remap key
 #                                    set the darwin lint also reserves, #455)
 #   - parts/checks.nix            → `collisions` + `darwinCollisions`
-#                                    (mkReportCheck) + the unit tests in
+#                                    (mkReportCheck) + `keybindsTable` (the
+#                                    fragment package + the generate-and-diff
+#                                    check) + the unit tests in
 #                                    lib/tests/capabilities.nix
+#   - scripts/gen-keybinds-table.sh → `keybindsTable` (splices it into the doc)
 #
-# Taxonomy + the human-facing bind inventory: docs/desktop/keybinds.md.
+# Taxonomy + the human-facing bind inventory: docs/desktop/keybinds.md (its
+# Hyper table is generated from `keybindsTable`, #457).
 { lib }:
 let
   # ── Tiers — the single-sourced Hyper constant (ADR-039 §3/§4) ──────────────
@@ -160,6 +165,10 @@ let
     };
   }) (lib.range 1 9);
 
+  # On the Hyper+Shift "move" tier (not Hyper+Super): "Shift = move" is the
+  # universal mnemonic — on-screen moves and send-to-workspace both live here,
+  # aligning with the dominant i3/sway `$mod+Shift+N` convention. See
+  # docs/desktop/keybinds.md §"The two move tiers".
   moveToWorkspaces = map (n: {
     id = "move-window-to-workspace-${toString n}";
     label = "Move window to workspace ${toString n}";
@@ -172,7 +181,7 @@ let
     ];
     chord = {
       tier = "hyper";
-      mods = [ "Super" ];
+      mods = [ "Shift" ];
       key = toString n;
     };
     platforms.linux = {
@@ -348,7 +357,7 @@ let
     # See docs/desktop/macos-window-management.md + keybinds.md §Window geometry.
     {
       id = "shrink-column";
-      label = "Shrink column";
+      label = "Shrink column width";
       description = "Decrease the focused column's width by 10%";
       keywords = [
         "resize"
@@ -365,7 +374,7 @@ let
         action.set-column-width = "-10%";
       };
       platforms.darwin = {
-        label = "Shrink window";
+        label = "Shrink window width";
         description = "Decrease the focused window's width";
         realization = "hammerspoon-handler";
         handler = "shrinkWindow";
@@ -373,7 +382,7 @@ let
     }
     {
       id = "grow-column";
-      label = "Grow column";
+      label = "Grow column width";
       description = "Increase the focused column's width by 10%";
       keywords = [
         "resize"
@@ -390,7 +399,7 @@ let
         action.set-column-width = "+10%";
       };
       platforms.darwin = {
-        label = "Grow window";
+        label = "Grow window width";
         description = "Increase the focused window's width";
         realization = "hammerspoon-handler";
         handler = "growWindow";
@@ -415,13 +424,13 @@ let
         action.switch-preset-column-width = { };
       };
       platforms.darwin = {
-        label = "Snap preset width";
-        description = "Snap the focused window to the next preset width";
+        label = "Cycle window width";
+        description = "Cycle the focused window through preset widths";
         keywords = [
           "resize"
           "preset"
           "width"
-          "snap"
+          "cycle"
         ];
         realization = "hammerspoon-handler";
         handler = "snapPresetWidth";
@@ -706,11 +715,11 @@ let
       };
     }
 
-    # Hyper+Super — workspace-level switch (move-to-workspace family is
-    # generated above). The ↑/↓ pair is the showcase action divergence: niri
-    # switches workspace, macOS opens Mission Control / exposé — so label,
-    # description, and keywords all override. macOS values are provisional
-    # pending the #440 macOS realization.
+    # Hyper+Super — switch-workspace (the move-to-workspace family moved to the
+    # Hyper+Shift "move" tier; Hyper+Super now carries only the ↑/↓ switch). The
+    # ↑/↓ pair is the showcase action divergence: niri switches workspace, macOS
+    # opens Mission Control / exposé — so label, description, and keywords all
+    # override. macOS values are provisional pending the #440 macOS realization.
     {
       id = "switch-workspace-up";
       label = "Switch workspace up";
@@ -909,6 +918,97 @@ let
       description = o.description or cap.description;
       keywords = o.keywords or cap.keywords;
     };
+
+  # ── keybinds.md table emitter (ADR-039 §Impl step 3; #457) ──────────────────
+  # Renders the cross-platform Hyper mapping table that docs/desktop/keybinds.md
+  # carries as a generated region, so the human-facing reference can no longer
+  # drift from what the registry binds. The chord is the friendly *tier* form
+  # (Hyper+←), not the niriChord/darwinChord literal that feeds the real configs —
+  # the doc names by tier (keybinds.md principle 6). Cells are the short per-
+  # platform `label` (descriptiveFor); the longer descriptions + the deferred-
+  # slice caveats stay in the doc's Living prose. The numeric 1‑9 families
+  # collapse to one row each. Parametrised over a registry for unit testing; the
+  # writer (scripts/gen-keybinds-table.sh) splices `keybindsTable` between the
+  # doc's markers and parts/checks.nix diffs the committed region against it.
+  tierDisplay = {
+    hyper = "Hyper";
+  };
+  # Key token → friendly doc glyph: arrows become arrows, punctuation the literal
+  # sign; letters / digits / Tab / Return pass through. "1‑9" (the collapsed
+  # range token) also passes through unchanged.
+  displayKey = {
+    Left = "←";
+    Right = "→";
+    Up = "↑";
+    Down = "↓";
+    Minus = "−";
+    Equal = "=";
+  };
+  displayKeyFor = k: displayKey.${k} or k;
+  # Hyper + escalators (Shift / Super, in declaration order) + key, joined "+".
+  tierChordDisplay =
+    chord:
+    lib.concatStringsSep "+" (
+      [ tierDisplay.${chord.tier} ] ++ (chord.mods or [ ]) ++ [ (displayKeyFor chord.key) ]
+    );
+  digitKeys = map toString (lib.range 1 9);
+  isDigitKey = k: lib.elem k digitKeys;
+  # One markdown row. Digit-keyed caps render as a single 1‑9 range row: the chord
+  # key becomes "1‑9" and the per-platform label's numeral becomes "N".
+  keybindsRow =
+    cap:
+    let
+      digit = isDigitKey cap.chord.key;
+      chordDisp = tierChordDisplay (if digit then cap.chord // { key = "1‑9"; } else cap.chord);
+      labelFor =
+        platform:
+        let
+          l = (descriptiveFor platform cap).label;
+        in
+        if digit then lib.replaceStrings [ cap.chord.key ] [ "N" ] l else l;
+    in
+    "| `${chordDisp}` | ${labelFor "linux"} | ${labelFor "darwin"} |";
+  keybindsTableFor =
+    reg:
+    let
+      hyperCaps = lib.filter (c: c.chord.tier == "hyper") reg;
+      # A digit family shares one signature (its escalator set), so it emits once;
+      # every other cap is unique by id. The fold preserves registry order.
+      sig =
+        c:
+        if isDigitKey c.chord.key then
+          "range:" + lib.concatStringsSep "," (c.chord.mods or [ ])
+        else
+          "cap:" + c.id;
+      folded =
+        lib.foldl'
+          (
+            acc: c:
+            let
+              s = sig c;
+            in
+            if lib.elem s acc.seen then
+              acc
+            else
+              {
+                seen = acc.seen ++ [ s ];
+                rows = acc.rows ++ [ (keybindsRow c) ];
+              }
+          )
+          {
+            seen = [ ];
+            rows = [ ];
+          }
+          hyperCaps;
+    in
+    lib.concatStringsSep "\n" (
+      [
+        "| Chord | niri | macOS |"
+        "|---|---|---|"
+      ]
+      ++ folded.rows
+    );
+  keybindsTable = keybindsTableFor registry;
 in
 {
   inherit
@@ -926,5 +1026,8 @@ in
     darwinCollisionsFor
     karabinerHyperRemapKeys
     descriptiveFor
+    tierChordDisplay
+    keybindsTable
+    keybindsTableFor
     ;
 }

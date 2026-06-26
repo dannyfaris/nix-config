@@ -17,7 +17,7 @@ Stateless handlers, each acting on `hs.window.focusedWindow()`. The bind table i
 | `Hyper+F` | `fullscreenWindow` | **Native fullscreen** — the window animates onto its own Space (*positional* — reached by `Ctrl+←/→`). The niri `fullscreen-window` analogue. |
 | `Hyper+M` | `maximizeToFrame` | **Maximize to the screen's visible frame** — fills the current numbered Desktop (*number-addressable* — reached by `Ctrl+1‑9`), menu-bar and Dock respected. The niri `maximize-column` analogue. |
 | `Hyper+C` | `centerWindow` | Center the window on screen at its current size. |
-| `Hyper+R` | `snapPresetWidth` | **Stateless preset-width snap** (Rectangle-style): read the window's current width as a fraction of the screen and snap to the next preset in the cycle (e.g. ½ → ⅔ → maximize → ½), re-centering about the window's current center (consistent with `±`) and keeping its vertical extent. *Stateless* — the next step is inferred from the current frame, never stored, so this stays clear of the rejected stateful-tiler path. |
+| `Hyper+R` | `snapPresetWidth` | **Cycle window width** (Rectangle-style): read the window's current width as a fraction of the screen and cycle to the next preset (e.g. ½ → ⅔ → maximize → ½), re-centering about the window's current center (consistent with `±`) and keeping its vertical extent. *Stateless* — the next step is inferred from the current frame, never stored, so this stays clear of the rejected stateful-tiler path (the handler keeps its `snapPresetWidth` name). |
 | `Hyper+−` / `Hyper+=` | `shrinkWindow` / `growWindow` | Shrink / grow the window's width by a fixed step around its current center. |
 
 **`F` vs `M` is deliberate and not interchangeable.** `F` is true native fullscreen — a *positional* Space with no menu bar, navigated by the `Ctrl+←/→` Space-slide. `M` is a maximize-to-frame on a *numbered* Desktop, navigated by `Ctrl+1‑9`. The two map onto macOS's two distinct "big window" models (own-Space fullscreen vs. a maximized window on a numbered Desktop); collapsing them would lose the positional-vs-numbered distinction the Mission Control navigation relies on.
@@ -46,7 +46,7 @@ Decided through a `selecting-tooling` exploration; the full rationale lives in [
 
 ## Scope — what this slice does *not* do
 
-Deferred to later slices on the same `keybinds.md` taxonomy: the focus/move-mirror (`focusWindow{East,West,North,South}` + the `Hyper`/`Hyper+Shift`/`Hyper+Super` arrow tiers + cross-Space edge fallthrough); role-based float for dialogs/utilities; fullscreen-on-spawn for new windows; visual cues (`hs.window.highlight` focus-ring + `hs.canvas`/`hs.alert` on-action feedback); optional `Mod`+drag-move/resize. Drag-to-reflow is permanently out (it needs a stateful tiler).
+Deferred to later slices on the same `keybinds.md` taxonomy: the focus/move-mirror (`focusWindow{East,West,North,South}` + the `Hyper` (focus) and `Hyper+Shift` (move) arrow tiers + cross-Space edge fallthrough); role-based float for dialogs/utilities; fullscreen-on-spawn for new windows; visual cues (`hs.window.highlight` focus-ring + `hs.canvas`/`hs.alert` on-action feedback); optional `Mod`+drag-move/resize. Drag-to-reflow is permanently out (it needs a stateful tiler).
 
 ## References
 

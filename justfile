@@ -248,3 +248,9 @@ setup-sops-identity key-path='/etc/ssh/ssh_host_ed25519_key':
     echo "  sops -d / sops updatekeys will now work without env vars,"
     echo "  PROVIDED the derived age recipient is already in .sops.yaml"
     echo "  and secrets/secrets.yaml is encrypted for it."
+
+# Regenerate the keybinds.md Hyper table from the capability registry
+# (lib/capabilities.nix). Splices the generated region in place; the
+# keybinds-table CI check fails if the committed table drifts. See #457.
+gen-keybinds:
+    bash scripts/gen-keybinds-table.sh
