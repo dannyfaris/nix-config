@@ -58,6 +58,39 @@ let
       "Deliberate-stance violations on ${hostName} (CLAUDE.md §Deliberate stances; ADR-033)"
       (stances.${platform} config);
 
+  # The keybinds.md generated table (#457; ADR-039 §Impl step 3). The fragment
+  # is the registry-emitted markdown (trailing newline so the byte-diff against
+  # the doc's marked region is exact); exposed as a package so the writer
+  # (scripts/gen-keybinds-table.sh, via `just gen-keybinds`) and this check share
+  # one source. First concrete instance of ADR-037's "Generated — the facts"
+  # rung 3 (the generate-and-diff harness).
+  keybindsTableFragment =
+    pkgs: pkgs.writeText "keybinds-table.md" (capabilities.keybindsTable + "\n");
+
+  # Extract the region between the doc's BEGIN/END markers and diff it against the
+  # fragment; fail with the diff if the committed table is stale.
+  mkKeybindsTableCheck =
+    system:
+    let
+      pkgs = pkgsFor system;
+      fragment = keybindsTableFragment pkgs;
+      doc = ../docs/desktop/keybinds.md;
+    in
+    pkgs.runCommand "keybinds-table" { } ''
+      ${pkgs.gawk}/bin/awk '
+        /^<!-- END GENERATED: hyper-bindings/ { capture = 0 }
+        capture { print }
+        /^<!-- BEGIN GENERATED: hyper-bindings/ { capture = 1 }
+      ' ${doc} > region.md
+      if ${pkgs.diffutils}/bin/diff -u ${fragment} region.md > diff.txt; then
+        echo "keybinds.md hyper table is up to date" > "$out"
+      else
+        echo "docs/desktop/keybinds.md generated region is STALE — run 'just gen-keybinds':" >&2
+        cat diff.txt >&2
+        exit 1
+      fi
+    '';
+
   # lib.runTests returns records { name; expected; result; }; flatten each
   # to a legible one-liner for the report.
   mkUnitTestCheck =
@@ -121,6 +154,10 @@ in
         mkReportCheck "x86_64-linux" "keybind-collisions-darwin"
           "Keybind chord collisions — darwin/Hammerspoon (lib/capabilities.nix; ADR-039 §8)"
           capabilities.darwinCollisions;
+      # Doc-freshness gate: the keybinds.md generated region must equal the
+      # registry's emitted table. Platform-independent like the unit tests, so it
+      # rides the x86_64-linux runner once (#457; ADR-037 rung 3).
+      keybinds-table = mkKeybindsTableCheck "x86_64-linux";
     };
     aarch64-darwin = {
       host-neptune = self.darwinConfigurations.neptune.system;
@@ -140,6 +177,13 @@ in
   perSystem =
     { config, pkgs, ... }:
     {
+      # The registry-emitted keybinds.md fragment, exposed per-system so the
+      # writer (`just gen-keybinds` → scripts/gen-keybinds-table.sh) can
+      # `nix build .#keybinds-table` on whichever host the operator is on
+      # (metis/x86_64-linux, neptune/aarch64-darwin). Same source the
+      # keybinds-table check diffs against (#457).
+      packages.keybinds-table = keybindsTableFragment pkgs;
+
       pre-commit.settings.hooks =
         let
           # Auto-generated hardware-configuration.nix files (per ADR-023) have

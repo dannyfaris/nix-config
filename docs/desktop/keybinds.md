@@ -45,16 +45,18 @@ Principles:
    parity is achieved per-bind; niri-only actions (geometry, vertical window nav)
    live on `Hyper` too. A **divergent leaf** — an action present on one platform
    only — is correct, not a gap.
-3. **Escalators.** `Hyper+Shift` = *move on screen* (move column, move
-   window-in-column); `Hyper+Super` = the *workspace-level* tier
-   (send-window-to-workspace, switch-workspace). "Shift moves on screen, Super
-   moves across workspaces."
+3. **Escalators.** `Hyper+Shift` = *move* — on-screen moves (move column, move
+   window-in-column) *and* send-window-to-workspace; `Hyper+Super` = *switch
+   workspace*. "Shift moves, Super switches." This aligns with the dominant
+   i3/sway convention (`$mod+Shift+N` sends a window to workspace N).
 4. **Mild duplication is allowed** when it rewards muscle memory (e.g. overview
    reachable two ways). Distinct from *transitional* duplication (migration
    scaffolding), which is retired at cutover.
-5. **Escalator choice balances semantics and ergonomics** — number-moves use
-   `Hyper+Super` (the `Super`/`Cmd` thumb) rather than `Hyper+Shift` (a left-hand
-   pinky cramp).
+5. **Escalator choice favours the mnemonic.** Number-moves (send-to-workspace)
+   sit on `Hyper+Shift+1‑9`, so "Shift = move" holds across both arrows and
+   numbers, matching i3/sway. The mild `Shift+number` reach is accepted for a
+   low-frequency action — a deliberate reversal of an earlier draft that put
+   number-moves on `Hyper+Super` to spare the pinky.
 6. **Name by tier, not literal chord.** Binds are expressed as `tier + key` (the
    base16 "name by slot, not tone" discipline), resolved per-platform from one
    `Hyper` definition — so the base shape is a single edit.
@@ -79,19 +81,53 @@ window models, so the taxonomy is built on it and macOS follows:
   / exposé).
 
 `Hyper` navigates the *immediate* level (columns, windows-in-column); `Hyper+Shift`
-moves within that view (column, window-in-column); `Hyper+Super` operates the
-*workspace* level (send-to-workspace, switch-workspace).
+*moves* (column, window-in-column, and send-to-workspace `1‑9`); `Hyper+Super`
+*switches* workspace (`↑/↓`).
 
 ## The `Hyper` layer
 
-### Navigation — focus
+The bind inventory below is **generated from the capability registry**
+(`lib/capabilities.nix`) — do not hand-edit; run `just gen-keybinds` (the
+[ADR-037](../decisions/ADR-037-doc-mutability-contracts.md) generated-facts
+contract; #457). Chords are the friendly tier form; the per-platform cells are
+the short action label. The behavioural nuance the one-line cells can't carry —
+the deferred macOS focus/move-mirror, the `F`-vs-`M` distinction — lives in the
+notes that follow.
 
-| Tier + key | niri | macOS |
+<!-- BEGIN GENERATED: hyper-bindings — source lib/capabilities.nix; run `just gen-keybinds` -->
+| Chord | niri | macOS |
 |---|---|---|
-| `Hyper+←/→` | focus column | focus window E/W → next space at edge |
-| `Hyper+↑/↓` | focus window-in-column | focus window N/S |
-| `Hyper+1‑9` | focus workspace N | switch to Space N |
-| `Hyper+Tab` | overview | overview (Mission Control) |
+| `Hyper+←` | Focus column left | Focus window left |
+| `Hyper+→` | Focus column right | Focus window right |
+| `Hyper+↑` | Focus window up | Focus window up |
+| `Hyper+↓` | Focus window down | Focus window down |
+| `Hyper+Tab` | Overview | Overview |
+| `Hyper+−` | Shrink column width | Shrink window width |
+| `Hyper+=` | Grow column width | Grow window width |
+| `Hyper+R` | Cycle column width | Cycle window width |
+| `Hyper+C` | Center column | Center window |
+| `Hyper+F` | Fullscreen window | Fullscreen window |
+| `Hyper+M` | Maximize column | Maximize window |
+| `Hyper+Return` | Open terminal | Open terminal |
+| `Hyper+B` | Open browser | Open browser |
+| `Hyper+Shift+←` | Move column left | Move window left |
+| `Hyper+Shift+→` | Move column right | Move window right |
+| `Hyper+Shift+↑` | Move window up | Move window up |
+| `Hyper+Shift+↓` | Move window down | Move window down |
+| `Hyper+Super+↑` | Switch workspace up | Mission Control |
+| `Hyper+Super+↓` | Switch workspace down | App Exposé |
+| `Hyper+1‑9` | Focus workspace N | Switch to Space N |
+| `Hyper+Shift+1‑9` | Move window to workspace N | Move window to Space N |
+<!-- END GENERATED: hyper-bindings -->
+
+**Not in the registry (reserved, no realization yet).** `Hyper+Escape` → power /
+session menu (logout, lock, reboot, …); `Hyper+Space` → action menu. These have
+no chord→action realization to generate from, so they stay hand-listed here.
+`Hyper+Space` is the action-menu door — part of the chooser family
+([§Chooser family](#the-chooser-family)); session quit/logout lives inside the
+`Hyper+Escape` power menu (it subsumes the old `Super+Shift+E` quit).
+
+### Focus & navigation
 
 > On macOS the arrow-focus binds are **Hammerspoon directional focus**
 > (`focusWindowEast/West/North/South`), not a Karabiner remap — so Mac mirrors
@@ -103,21 +139,18 @@ moves within that view (column, window-in-column); `Hyper+Super` operates the
 > `hs.spaces`-fragile slice. Until it lands, `Hyper+←/→/↑/↓` on macOS stay the
 > **Karabiner Mission-Control remaps** (`Ctrl+Opt+arrow` → `Ctrl+arrow`:
 > move-space / overview / exposé) — see [§Implementation status](#implementation-status).
+> So the macOS focus/move cells above are the *intended* mirror, not what those
+> chords do today.
 
-### Move — on-screen (`Hyper+Shift`) & workspace-level (`Hyper+Super`)
+### Move (`Hyper+Shift`) & switch-workspace (`Hyper+Super`)
 
-| Tier + key | niri | macOS |
-|---|---|---|
-| `Hyper+Shift+←/→` | move column | move window E/W → next space at edge |
-| `Hyper+Shift+↑/↓` | move window-in-column | move window N/S |
-| `Hyper+Super+1‑9` | move window → workspace N | move window → Space N |
-| `Hyper+Super+↑/↓` | switch workspace | Mission Control / exposé |
-
-> **The two move tiers.** `Hyper+Shift` moves things *within the current view* —
-> column left/right and window-in-column up/down; `Hyper+Super` is the
-> *workspace-level* tier — send-window-to-workspace (`1‑9`) and switch-workspace
-> (`↑/↓`). "Shift moves on screen, Super moves across workspaces."
-> `Hyper+Super+←/→` is deliberately free.
+> **Shift moves, Super switches.** `Hyper+Shift` is the universal **move** tier —
+> on-screen moves (column `←/→`, window-in-column `↑/↓`) *and* send-window-to-
+> workspace (`1‑9`); `Hyper+Super` is the **switch-workspace** tier (`↑/↓`). This
+> puts send-to-workspace on `Hyper+Shift+1‑9`, matching the dominant i3/sway
+> convention (`$mod+Shift+N` sends a window to workspace N) and keeping "Shift =
+> move" true across both arrows and numbers. `Hyper+Super+←/→` and
+> `Hyper+Super+1‑9` are deliberately free.
 >
 > **No WM force-close (audit correction).** An earlier draft put a `Hyper+Super+W`
 > "force-close window" on this tier; niri has no force-close — only graceful
@@ -129,34 +162,19 @@ moves within that view (column, window-in-column); `Hyper+Super` operates the
 > the edge, mirroring the focus binds. Cross-space window moves lean on
 > Hammerspoon's Spaces handling — a known-fragile macOS area (see Open questions).
 
-### Window geometry — `Hyper` + letter
-
-| Tier + key | niri | macOS |
-|---|---|---|
-| `Hyper+−` / `Hyper+=` | shrink / grow column | shrink / grow window width |
-| `Hyper+R` | cycle preset width | snap to next preset width |
-| `Hyper+C` | center column | center window |
-| `Hyper+F` | fullscreen window | native fullscreen (own Space) |
-| `Hyper+M` | maximize column | maximize to visible frame (numbered Desktop) |
+### Window geometry
 
 > macOS geometry is **stateless Hammerspoon** handlers on the focused window — `F`
 > = native fullscreen (positional, own Space), `M` = maximize to the visible frame
-> (number-addressable Desktop); `R` snaps to the next preset width inferred from the
-> current frame (no stored cycle state). Selection + behaviour:
+> (number-addressable Desktop); `R` cycles to the next preset width inferred from
+> the current frame (no stored cycle state). Selection + behaviour:
 > [macos-window-management.md](./macos-window-management.md).
 
 ### Spawn & session
 
-| Tier + key | niri | macOS |
-|---|---|---|
-| `Hyper+Return` | floating terminal window (floating foot) | floating terminal (Hammerspoon-managed floating/quake Ghostty) |
-| `Hyper+B` | default browser | browser (focus-or-new) |
-| `Hyper+Escape` | power / session menu (logout, lock, reboot, …) | power / session menu |
-| `Hyper+Space` | action menu | action menu |
-
-`Hyper+Space` is the action-menu door — part of the chooser family
-([§Chooser family](#the-chooser-family)). Session quit/logout lives
-inside the `Hyper+Escape` power menu (it subsumes the old `Super+Shift+E` quit).
+> `Hyper+Return` is a floating terminal (floating foot on niri; a
+> Hammerspoon-managed floating/quake Ghostty on macOS); `Hyper+B` opens the
+> browser (default browser on niri; focus-or-new Chrome on macOS).
 
 ## The `Super` layer — the Cmd-position modifier
 
@@ -295,7 +313,7 @@ defines the *downstream* `Ctrl+1‑9` Desktop-switch + screenshot targets the
 Karabiner remaps emit onto, so the base-shape change does not touch it.
 
 **Still on the macOS to-do list:** the focus/move-mirror — `Hyper+←/→/↑/↓` (focus)
-and `Hyper+Shift`/`Hyper+Super`+arrows (move). Until that `hs.spaces`-fragile slice
+and `Hyper+Shift+←/→/↑/↓` (move). Until that `hs.spaces`-fragile slice
 lands, the arrow/number chords stay the hand-authored **Karabiner Mission-Control
 remaps** (`Ctrl+Opt+arrow` → `Ctrl+arrow`, `Ctrl+Opt+N` → `Ctrl+N`), rebased onto
 the new base. Bind *inventory* grows incrementally on the registry; the base
@@ -314,16 +332,17 @@ the new base. Bind *inventory* grows incrementally on the registry; the base
   Ghostty (`Hyper+Return`); toggle (quake-style) vs spawn-new still open.
 - **`Super+Return` (`Cmd+Return`) collision** — used for "submit/send" in some
   macOS apps; accept, or app-exclude via Karabiner.
-- **macOS cross-space window moves** — `Hyper+Super+→` (edge fallthrough) and
-  `Hyper+Super+1‑9` move windows *between* Spaces, which relies on Hammerspoon's
+- **macOS cross-space window moves** — `Hyper+Shift+→` (edge fallthrough) and
+  `Hyper+Shift+1‑9` move windows *between* Spaces, which relies on Hammerspoon's
   Spaces handling — a known-fragile macOS area (private APIs). Realization risk to
   verify.
 
 ## Audit notes — deliberate calls & deviations
 
-- All on-screen moves live on `Hyper+Shift` (column `←/→`, window-in-column
-  `↑/↓`); `Hyper+Super` is reserved for workspace-level ops (send-to-workspace,
-  switch-workspace). "Shift moves on screen, Super moves across workspaces."
+- All moves live on `Hyper+Shift` — column `←/→`, window-in-column `↑/↓`, and
+  send-to-workspace `1‑9`; `Hyper+Super` is the switch-workspace tier (`↑/↓`).
+  "Shift moves, Super switches" — matching i3/sway's `$mod+Shift+N`. This
+  reverses an earlier draft that kept number-moves on `Hyper+Super`.
 - niri has no WM force-close (only graceful `close-window`), so there is no
   `Hyper+Super+W` powerup; window-close is `Super+W`.
 - Mild duplication is deliberate (overview via `Hyper+Tab` and macOS Mission

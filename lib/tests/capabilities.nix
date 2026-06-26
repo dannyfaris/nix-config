@@ -368,4 +368,99 @@ lib.runTests {
       ];
     };
   };
+
+  # ── keybinds.md table emitter (#457) ──────────────────────────────────────
+  # The friendly tier-form chord (Hyper+key), the doc's vocabulary — distinct
+  # from the niri/darwin literals that feed the configs. Arrows become glyphs.
+  testTierChordDisplayBase = {
+    expr = caps.tierChordDisplay {
+      tier = "hyper";
+      key = "Left";
+    };
+    expected = "Hyper+←";
+  };
+
+  # The Shift escalator is the "move" tier; renders before the key.
+  testTierChordDisplayShift = {
+    expr = caps.tierChordDisplay {
+      tier = "hyper";
+      mods = [ "Shift" ];
+      key = "Right";
+    };
+    expected = "Hyper+Shift+→";
+  };
+
+  # The Super escalator stays literal (the doc's term), not niri's "Mod".
+  testTierChordDisplaySuper = {
+    expr = caps.tierChordDisplay {
+      tier = "hyper";
+      mods = [ "Super" ];
+      key = "Up";
+    };
+    expected = "Hyper+Super+↑";
+  };
+
+  # One base cap renders header + separator + a single labelled row, using the
+  # per-platform label (mkCap sets both to the id).
+  testKeybindsTableBaseRow = {
+    expr = caps.keybindsTableFor [
+      (mkCap "x" {
+        tier = "hyper";
+        key = "Left";
+      } { a = { }; })
+    ];
+    expected = lib.concatStringsSep "\n" [
+      "| Chord | niri | macOS |"
+      "|---|---|---|"
+      "| `Hyper+←` | x | x |"
+    ];
+  };
+
+  # A 1‑9 digit family collapses to ONE row (header + separator + one row = 3
+  # lines), not nine — the generated-range rule.
+  testKeybindsTableDigitCollapsesToOneRow = {
+    expr = builtins.length (
+      lib.splitString "\n" (
+        caps.keybindsTableFor (
+          map (
+            n:
+            mkCap "focus-workspace-${toString n}" {
+              tier = "hyper";
+              key = toString n;
+            } { focus = n; }
+          ) (lib.range 1 9)
+        )
+      )
+    );
+    expected = 3;
+  };
+
+  # The collapsed row's label substitutes the numeral with "N".
+  testKeybindsTableDigitLabelGetsN = {
+    expr = lib.hasInfix "focus-workspace-N" (
+      caps.keybindsTableFor (
+        map (
+          n:
+          mkCap "focus-workspace-${toString n}" {
+            tier = "hyper";
+            key = toString n;
+          } { focus = n; }
+        ) (lib.range 1 9)
+      )
+    );
+    expected = true;
+  };
+
+  # Guard the live re-bind (#457): move-to-workspace sits on the Hyper+Shift
+  # "move" tier, never on Hyper+Super.
+  testLiveKeybindsTableMoveToWorkspaceOnShift = {
+    expr = {
+      onShift = lib.hasInfix "Hyper+Shift+1" caps.keybindsTable;
+      onSuper = lib.hasInfix "Hyper+Super+1" caps.keybindsTable;
+    };
+    expected = {
+      onShift = true;
+      onSuper = false;
+    };
+  };
 }
