@@ -44,6 +44,19 @@ let
     -- docs/desktop/hammerspoon.md §Configuration.
     hs.menuIcon(false)
 
+    -- Load the IPC message port so the cask's `hs` CLI shim
+    -- (/opt/homebrew/bin/hs → the app bundle) can drive the running
+    -- instance: `hs -c '…'` for scripted reload (the pathwatcher fallback
+    -- documented in docs/desktop/hammerspoon.md) and on-box Lua spikes
+    -- (e.g. the hs.spaces reliability check for the #453 focus/move-mirror).
+    -- require() alone opens the Mach port — the CLI binary is already on PATH
+    -- via the cask, so no hs.ipc.cliInstall() (which would write to
+    -- /usr/local/bin). Posture: the port lets any *same-user, local* process
+    -- eval arbitrary Lua in Hammerspoon (which holds Accessibility) — accepted
+    -- for this single-operator box (local-only, no network surface). See
+    -- docs/desktop/hammerspoon.md §"hs CLI".
+    require("hs.ipc")
+
     -- Hyper = Ctrl+Opt (the macOS base-shape, ADR-039 §3/§4), produced from
     -- caps_lock by Karabiner. Every Hyper bind below is generated from the
     -- capability registry as hs.hotkey.bind({ "ctrl", "alt" }, …).
