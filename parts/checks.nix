@@ -313,6 +313,39 @@ in
             pass_filenames = false;
             # No extraPackages: the shared linter is pure grep, no Nix.
           };
+
+          # The *audit* rung of the design loop's enforcement ladder
+          # (docs/design/design-loop.md §The reconcile hypothesis). Gates the
+          # structural PRESENCE of a design note — template sections present,
+          # in order, none left unfilled — not its QUALITY, which is a
+          # judgment call left to peer review (ADR-032: presence-only keeps
+          # this out of the brittleness trap). README/_template are skipped
+          # by the linter (basename). The `/design` skill runs the same
+          # script as an in-loop self-check, so CI and the skill share one
+          # source of truth.
+          design-note-structure = {
+            enable = true;
+            name = "design-note-structure";
+            entry = "bash ${../scripts/lint-design-note.sh}";
+            files = "^docs/design/.*\\.md$";
+            language = "system";
+            pass_filenames = true;
+            # No extraPackages: pure bash builtins + grep, no Nix.
+          };
+
+          # Regression coverage for the design-note linter, mirroring
+          # test-shared-purity (#193): a change that made the structure lint
+          # silently pass everything would evaporate the guarantee. Gated to
+          # the linter at commit-time; always runs in CI. pass_filenames =
+          # false — the test builds its own fixtures.
+          test-design-note-structure = {
+            enable = true;
+            name = "test-design-note-structure";
+            entry = "env LINT_SCRIPT=${../scripts/lint-design-note.sh} bash ${../scripts/test-lint-design-note.sh}";
+            files = "^scripts/lint-design-note\\.sh$";
+            language = "system";
+            pass_filenames = false;
+          };
         };
     };
 }
