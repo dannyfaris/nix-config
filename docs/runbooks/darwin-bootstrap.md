@@ -398,6 +398,19 @@ Notes:
 - On Apple Silicon, FileVault keys to the Secure Enclave, so encryption is effectively instant (no multi-hour conversion pass) and the operator login already unlocks the disk at boot.
 - `restartAfterPowerFailure = true` (`modules/darwin/power.nix`) still auto-reboots after an outage, but with FileVault on the host stops at the boot-time unlock screen (shown before macOS finishes booting) and waits for an operator to authenticate — it will not reach a logged-in, SSH-serving state unattended. `sudo fdesetup authrestart` caches the unlock key for a single *planned* restart, but does nothing for an unexpected power-failure reboot; accept the manual unlock as the cost of at-rest security on an always-on host.
 
+## Post-activation — enable Screen Sharing (manual, not declarable)
+
+Inbound Screen Sharing (reach this host's desktop from another Mac over the tailnet, e.g. `vnc://neptune`) **cannot be declared.** nix-darwin has no option for it, and while the underlying `com.apple.screensharing` LaunchDaemon *is* loadable from the command line (`launchctl enable system/com.apple.screensharing`), that only brings the daemon up to listen on 5900 — it does **not** authorize the service. Apple changed Screen Sharing / Remote Management handling in macOS Monterey 12.1 and the "permitted" state is now TCC-gated: it can only be written through the System Settings UI, not by `sudo`, `launchctl`, `defaults`, or `kickstart`. A daemon-only enable connects, then fails with *"Screen Sharing is not permitted on this Mac. Disable and re-enable Screen Sharing or Remote Management in System Settings."* This was verified on neptune (macOS 26 Tahoe); a `launchctl`-driven activation module was prototyped and dropped for exactly this reason.
+
+Enable it once, after first activation:
+
+- **System Settings → General → Sharing → Screen Sharing → on.**
+
+Notes:
+
+- No access-control step is needed for the operator. The `com.apple.access_screensharing` group nests the `admin` group, and `dbf` is an admin, so the login password authenticates the VNC session. A non-admin account *would* need adding (`dseditgroup -o edit -a <user> -t user com.apple.access_screensharing`).
+- No firewall change is needed. The host ALF (`modules/darwin/firewall.nix`) runs with `allowSigned = true`, and the screen-sharing daemon is Apple-signed, so inbound VNC (5900) passes without a rule.
+
 ## Verification
 
 ### Phase 1 — local on the new Mac
