@@ -134,6 +134,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
   [docs/workflow.md](./docs/workflow.md). Fresh AI sessions and human
   contributors should read this before opening issues or cutting
   code.
+- **Non-trivial design moves through the design loop.** A cross-cutting or hard-to-reverse change is designed before it is coded — a design note in [docs/design/](./docs/design/) (intent → forces → options → de-risk), peer-reviewed, with the living-reference update landing in the same change. Invoke the `/design` skill for the procedure; [docs/design/design-loop.md](./docs/design/design-loop.md) is the *why*. The `design-note-structure` lint gates note shape (presence, not quality) in CI; tool/package choices use the `selecting-tooling` skill instead.
 - **PRs land via squash auto-merge.** After `gh pr create`, run
   `gh pr merge <num> --auto --squash` to enable auto-merge; the PR
   squash-merges itself once required checks pass. See

@@ -1,6 +1,6 @@
 # The design loop — a disciplined, self-correcting loop for design work
 
-**Status:** Proposed — design note (`docs/design/`). Not yet encoded as enforcement. Describes how design work *should* move through this repo, especially in human + AI-agent collaboration; mutable by design. Its first-contact test is the colour-conductor design note (§De-risk evidence).
+**Status:** Proposed — design note (`docs/design/`). Enforcement partly encoded (the design-note template, the `/design` skill + peer-review checklist, and the `design-note-structure` presence lint; the size gate and a claims-audit are still open). Describes how design work *should* move through this repo, especially in human + AI-agent collaboration; mutable by design. Its first-contact test is the colour-conductor design note (§De-risk evidence).
 
 ## Summary
 
@@ -50,7 +50,7 @@ The load-bearing assumption is the human+AI thesis: **every unenforced step is s
 - **Broke:** intent-first and weigh-alternatives — the agent wrote the design solution-first, with no problem statement and no options weighed; caught only by the operator.
 - **The validated lesson:** the steps that broke were the *stated-but-unenforced* ones — direct evidence for *co-locate-rule-with-enforcement*, and for the thesis above. The organic fix (the `docs/design/README` conventions + a peer-review that checks for intent and options) is that principle applied.
 
-**Still unverified:** that the *encoded* enforcement (template + skills, not just prose conventions) actually stops the skip — that is the next phase, and the real test of the spine.
+**Still unverified:** the encoded enforcement now *exists* (template + `/design` skill + structure lint), but whether it actually stops the skip is untested — the skill is user-invoked, so its first real run is the next test of the spine. Encoding is not efficacy.
 
 ## Drawbacks
 
@@ -80,7 +80,7 @@ Within this repo, the loop is not greenfield: [`../workflow.md`](../workflow.md)
 
 ## Unresolved questions
 
-- **Build the enforcement, per step** — the design-note template (landed), the size gate, the de-risk-pass requirement, the reconcile-in-same-change rule, a claims audit. By the loop's own *co-locate-rule-with-enforcement* principle, *stating* these is not enough; the next phase encodes them into `CLAUDE.md` + skills so the agent follows them.
+- **Build the enforcement, per step.** *Landed:* the design-note template, the `/design` skill + peer-review checklist, the `design-note-structure` presence lint (with its own fixture self-test), and the CLAUDE.md pointer. *Still open:* the size gate, an explicit de-risk-pass requirement, and a claims audit. By the loop's own *co-locate-rule-with-enforcement* principle, *stating* the remainder is not enough — each encodes into the `/design` skill + checks as evidence warrants, not on spec.
 - **Refute the loop if:** reconcile gets routinely skipped under time pressure, *or* review-only reconcile turns out *not* to drift (making the enforcement ladder above review unnecessary); the frozen/living artifact split costs more bookkeeping than the drift it prevents; or the size gate collapses to "everything is high-stakes."
 - **The design-note → ADR graduation, and a durable reference.** A note graduates into an ADR on acceptance (e.g. colour-conductor → an ADR-036 amendment), but the durable reference tying a note to the ADR it becomes is unsettled — the descriptive slug, a `DN-NNN`-style handle, or a convention of our own. Deferred deliberately; the prefix question rides on it, so neither is decided in passing.
 - **What the living, accurate, in-repo reference should actually be.** Reconcile presumes a *living reference* to reconcile *to* — but the canonical shape and scope of that corpus is itself unsettled (the frozen ADR quarry vs a slim evergreen reference vs the per-area living docs). Since this determines *what* reconcile targets, the reconcile rung points straight at it. Larger than this note; deferred deliberately, recorded so it is not forgotten.
@@ -90,6 +90,7 @@ Within this repo, the loop is not greenfield: [`../workflow.md`](../workflow.md)
 
 The loop enables but does not yet commit to:
 
-- **Encoding the enforcement in skills**, not just prose — a design-note skill that scaffolds the template and runs the intent/options checks the agent currently skips.
+- **An explore phase *before* the loop.** There is an "I'm turning an idea over" stage that precedes stage 1 — where the problem itself is still forming and formality would be premature. It sits *outside* the design loop; the open question is its shape and how it hands off into intent-first without forcing structure too early.
+- **More targeted enforcement hooks.** A blanket commit-gate is ruled out as brittle (ADR-032), but narrower hooks — scoped to a specific, mechanical, correctness-severity trigger — are worth exploring *if* the advisory + presence-lint + review stack proves to still let skips through. Evidence-gated, not pre-built.
 - **A claims-audit mechanism** — a periodic check that living references describe only what exists, catching drift before the next "reconcile to reality."
 - **Applying the loop beyond design** — the same artifact-lifecycle + enforcement-first spine to other classes of change (e.g. host onboarding, dependency-stack moves).
