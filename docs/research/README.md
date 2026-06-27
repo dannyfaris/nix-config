@@ -57,3 +57,5 @@ capture date and run provenance so a reader can judge staleness.
   Linux *and* macOS with collision/availability linting? Verdict: the
   integrated concept is genuinely open (the two halves exist in disjoint
   tools — HotkeyClash lints, home-manager/xremap codegen). Feeds #384, #428.
+
+- **[design-loop-prior-art.md](./design-loop-prior-art.md)** — does an integrated, hypothesis-driven software *design loop* — especially an AI-collaboration one — exist as prior art? Verdict: most of the eight rungs map to named antecedents (risk-driven design, ADRs, Diátaxis, Lean Startup/MVP), but the *separation* of frozen-record vs living-reference and the *integration* into one human+agent loop are genuinely open. Feeds RFC-001 (the design-loop hypothesis).
