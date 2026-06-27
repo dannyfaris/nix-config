@@ -463,4 +463,200 @@ lib.runTests {
       onSuper = false;
     };
   };
+
+  # ── actions.json dataset emitter (#437) ───────────────────────────────────
+  # A niri-action cap projects to one Linux entry: descriptive + tier chord +
+  # the realization payload carried verbatim under `dispatch.action`. The file
+  # carries its version + platform tag.
+  testActionsLinuxEntryShape = {
+    expr = caps.actionsFor "linux" [
+      (mkCap "x" {
+        tier = "hyper";
+        key = "Left";
+      } { focus = { }; })
+    ];
+    expected = {
+      version = 1;
+      platform = "linux";
+      actions = [
+        {
+          id = "x";
+          label = "x";
+          description = "x";
+          keywords = [ ];
+          chord = "Hyper+←";
+          dispatch.action.focus = { };
+        }
+      ];
+    };
+  };
+
+  # Inclusion filter: a darwin-only (hammerspoon-handler) cap has no Linux
+  # realization, so it never appears in the Linux file.
+  testActionsLinuxExcludesHsOnly = {
+    expr =
+      (caps.actionsFor "linux" [
+        (mkHsCap "f" {
+          tier = "hyper";
+          key = "F";
+        } "fullscreenWindow")
+      ]).actions;
+    expected = [ ];
+  };
+
+  # A hammerspoon-handler cap projects to one darwin entry whose dispatch carries
+  # the handler name verbatim (no `type` discriminator).
+  testActionsDarwinHandlerDispatch = {
+    expr =
+      (builtins.head
+        (caps.actionsFor "darwin" [
+          (mkHsCap "f" {
+            tier = "hyper";
+            key = "F";
+          } "fullscreenWindow")
+        ]).actions
+      ).dispatch;
+    expected = {
+      handler = "fullscreenWindow";
+    };
+  };
+
+  # Inclusion filter, the other direction: a Linux-only niri-action cap has no
+  # darwin realization, so it never appears in the darwin file.
+  testActionsDarwinExcludesNiriOnly = {
+    expr =
+      (caps.actionsFor "darwin" [
+        (mkCap "x" {
+          tier = "hyper";
+          key = "Left";
+        } { focus = { }; })
+      ]).actions;
+    expected = [ ];
+  };
+
+  # The descriptive override resolves per-platform — a darwin label override wins
+  # over the shared default in the emitted entry.
+  testActionsDescriptiveOverride = {
+    expr =
+      (builtins.head
+        (caps.actionsFor "darwin" [
+          {
+            id = "y";
+            chord = {
+              tier = "hyper";
+              key = "F";
+            };
+            label = "shared";
+            description = "shared";
+            keywords = [ "k" ];
+            platforms.darwin = {
+              realization = "hammerspoon-handler";
+              handler = "h";
+              label = "darwin label";
+            };
+          }
+        ]).actions
+      ).label;
+    expected = "darwin label";
+  };
+
+  # A clean fixture produces no contract failures.
+  testActionsContractCleanIsEmpty = {
+    expr = caps.actionsContractFailuresFor [
+      (mkCap "a" {
+        tier = "hyper";
+        key = "Left";
+      } { focus = { }; })
+      (mkHsCap "b" {
+        tier = "hyper";
+        key = "F";
+      } "fullscreenWindow")
+    ];
+    expected = [ ];
+  };
+
+  # Two entries with one id in a file is reported (the round-trip proof).
+  testActionsContractDuplicateIdFires = {
+    expr = builtins.length (
+      caps.actionsContractFailuresFor [
+        (mkCap "dup" {
+          tier = "hyper";
+          key = "Left";
+        } { focus = { }; })
+        (mkCap "dup" {
+          tier = "hyper";
+          key = "Right";
+        } { focus = { }; })
+      ]
+    );
+    expected = 1;
+  };
+
+  # A Linux entry whose dispatch lacks the platform's expected field (here a
+  # mis-typed hammerspoon-handler realization on the linux platform → a `handler`
+  # dispatch where `action` is required) is reported.
+  testActionsContractWrongDispatchFires = {
+    expr = builtins.length (
+      caps.actionsContractFailuresFor [
+        {
+          id = "bad";
+          chord = {
+            tier = "hyper";
+            key = "Left";
+          };
+          label = "b";
+          description = "b";
+          keywords = [ ];
+          platforms.linux = {
+            realization = "hammerspoon-handler";
+            handler = "h";
+          };
+        }
+      ]
+    );
+    expected = 1;
+  };
+
+  # Guard: the live registry emits a contract-clean dataset (a real violation
+  # should fail this in CI, not just the fixture above).
+  testLiveActionsContractClean = {
+    expr = caps.actionsContractFailures;
+    expected = [ ];
+  };
+
+  # Guard the live Linux projection: a known niri-action cap is present with its
+  # tier chord and its realization payload carried verbatim.
+  testLiveActionsLinuxFocusColumnLeft = {
+    expr =
+      let
+        e = lib.findFirst (a: a.id == "focus-column-left") null caps.actionsLinux.actions;
+      in
+      {
+        found = e != null;
+        inherit (e) chord dispatch;
+      };
+    expected = {
+      found = true;
+      chord = "Hyper+←";
+      dispatch.action.focus-column-left = { };
+    };
+  };
+
+  # Guard the live darwin projection: a known hammerspoon-handler cap is present
+  # with its handler dispatch and per-platform (window-vocabulary) label.
+  testLiveActionsDarwinShrink = {
+    expr =
+      let
+        e = lib.findFirst (a: a.id == "shrink-column") null caps.actionsDarwin.actions;
+      in
+      {
+        found = e != null;
+        inherit (e) label dispatch;
+      };
+    expected = {
+      found = true;
+      label = "Shrink window width";
+      dispatch.handler = "shrinkWindow";
+    };
+  };
 }

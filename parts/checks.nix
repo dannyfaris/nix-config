@@ -158,6 +158,15 @@ in
       # registry's emitted table. Platform-independent like the unit tests, so it
       # rides the x86_64-linux runner once (#457; ADR-037 rung 3).
       keybinds-table = mkKeybindsTableCheck "x86_64-linux";
+      # The actions.json contract conformance lint (#437; ADR-039 §Impl step 4).
+      # Pure eval over the registry projection (checks both platforms' files), so
+      # it rides the x86_64-linux runner once like the other lib checks — the
+      # enforcement the contract ships with (ADR-037 / co-locate-rule-with-
+      # enforcement). Full contract: docs/design/action-menu-data-contract.md.
+      actions-contract =
+        mkReportCheck "x86_64-linux" "actions-contract"
+          "actions.json contract violations (lib/capabilities.nix; #437)"
+          capabilities.actionsContractFailures;
     };
     aarch64-darwin = {
       host-neptune = self.darwinConfigurations.neptune.system;
@@ -183,6 +192,15 @@ in
       # (metis/x86_64-linux, neptune/aarch64-darwin). Same source the
       # keybinds-table check diffs against (#457).
       packages.keybinds-table = keybindsTableFragment pkgs;
+
+      # The registry-emitted actions.json dataset (#437), rendered to JSON via
+      # pkgs.formats.json. Per-host: the macOS file on darwin, the Linux file
+      # elsewhere — each build resolves only its own platform's entries, which a
+      # runtime renderer (#442) reads read-only. Inspect with `nix build
+      # .#actions-json`. Contract: docs/design/action-menu-data-contract.md.
+      packages.actions-json = (pkgs.formats.json { }).generate "actions.json" (
+        if pkgs.stdenv.hostPlatform.isDarwin then capabilities.actionsDarwin else capabilities.actionsLinux
+      );
 
       pre-commit.settings.hooks =
         let

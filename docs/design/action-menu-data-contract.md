@@ -1,6 +1,6 @@
 # Action-menu data contract (`actions.json`) — a Nix-authoritative dataset the runtime renderer consumes
 
-**Status:** Proposed — design note (`docs/design/`). Build-state: not built. #437 · extends [ADR-039](../decisions/ADR-039-capability-registry.md) §Implementation step 4 (consumes §2's descriptive dimension + §6's flat palette); the renderer is #442.
+**Status:** Proposed — design note (`docs/design/`). Build-state: sliced — the emitter (`actionsFor` / `actionsLinux` / `actionsDarwin`), the `packages.actions-json` artifact, the conformance lint, and the unit tests are built; the renderer is #442. #437 · extends [ADR-039](../decisions/ADR-039-capability-registry.md) §Implementation step 4 (consumes §2's descriptive dimension + §6's flat palette).
 
 ## Summary
 

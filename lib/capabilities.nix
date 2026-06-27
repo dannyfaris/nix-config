@@ -1009,6 +1009,88 @@ let
       ++ folded.rows
     );
   keybindsTable = keybindsTableFor registry;
+
+  # ── actions.json dataset emitter (ADR-039 §Impl step 4; #437) ───────────────
+  # The action menu's data home: a flat, Nix-authoritative projection of the
+  # registry that a runtime renderer (#442) reads read-only — never Noctalia's
+  # GUI-managed settings.json (the ADR-036 trap). One shared schema, one file
+  # per host (each build resolves only its own platform's entries). Each entry is
+  # the descriptive dimension (resolved per-platform) + the friendly tier chord
+  # (the cheatsheet half) + the registry's realization payload carried VERBATIM
+  # as dispatch *source*: `action` (the niri-action attrset) or `handler` (the
+  # Hammerspoon handler name), with no `type` discriminator. Turning that source
+  # into an actual invocation is the renderer's job, deferred to #442 (the niri
+  # msg grammar is renderer-coupled and on-box-gated). Full contract:
+  # docs/design/action-menu-data-contract.md. Pure data here (lib-only, ADR-039
+  # §9); parts/checks.nix renders it to JSON via pkgs.formats.json.
+  #
+  # Inclusion: an entry appears in platform P's file iff the cap has a
+  # realization on P (it is dispatchable) — the same isNiriAction/isHsHandler
+  # filter the niri/Hammerspoon emitters apply. Today: Linux = every niri-action;
+  # macOS = the hammerspoon-handler subset (directional/workspace caps are
+  # Karabiner substrate, not yet a registry realization — ADR-039 §4).
+  actionDispatchFor =
+    platform: cap:
+    let
+      p = cap.platforms.${platform} or { };
+      r = p.realization or null;
+    in
+    if r == "niri-action" then
+      { inherit (p) action; }
+    else if r == "hammerspoon-handler" then
+      { inherit (p) handler; }
+    else
+      null;
+  actionEntryFor =
+    platform: cap:
+    let
+      d = descriptiveFor platform cap;
+    in
+    {
+      inherit (cap) id;
+      inherit (d) label description keywords;
+      chord = tierChordDisplay cap.chord;
+      dispatch = actionDispatchFor platform cap;
+    };
+  # Parametrised over a registry so the unit tests can drive it with fixtures;
+  # returns the full per-host file object (version + platform tag + entries).
+  actionsFor = platform: reg: {
+    version = 1;
+    inherit platform;
+    actions = map (actionEntryFor platform) (lib.filter (c: actionDispatchFor platform c != null) reg);
+  };
+  actionsLinux = actionsFor "linux" registry;
+  actionsDarwin = actionsFor "darwin" registry;
+
+  # ── actions.json conformance lint (#437) ────────────────────────────────────
+  # Pure: a list of human-legible failures (empty = ok), which parts/checks.nix
+  # renders into a CI-gated derivation via mkReportCheck (parallel to
+  # `collisions`). This is the enforcement the contract ships with (ADR-037 /
+  # co-locate-rule-with-enforcement): a future registry edit that breaks a
+  # per-platform invariant fails CI rather than emitting a malformed dataset.
+  # Each entry must carry the dispatch field its platform expects (linux→action,
+  # darwin→handler), and ids must be unique within a file. (Chord well-formedness
+  # is covered by tierChordDisplay's own unit tests — it cannot emit an empty
+  # chord — so it is not re-asserted here.) Parametrised so the unit tests can
+  # prove it fires without tripping the live check.
+  actionsContractFailuresFor =
+    reg:
+    let
+      checkFile =
+        platform: dispatchField:
+        let
+          inherit (actionsFor platform reg) actions;
+          ids = map (e: e.id) actions;
+          dupIds = lib.unique (lib.filter (id: lib.count (x: x == id) ids > 1) ids);
+          dupFailures = map (id: "actions.json (${platform}): duplicate id ${id}") dupIds;
+          dispatchFailures = map (
+            e: "actions.json (${platform}): ${e.id} dispatch lacks the expected `${dispatchField}` field"
+          ) (lib.filter (e: !(e.dispatch ? ${dispatchField})) actions);
+        in
+        dupFailures ++ dispatchFailures;
+    in
+    checkFile "linux" "action" ++ checkFile "darwin" "handler";
+  actionsContractFailures = actionsContractFailuresFor registry;
 in
 {
   inherit
@@ -1029,5 +1111,10 @@ in
     tierChordDisplay
     keybindsTable
     keybindsTableFor
+    actionsFor
+    actionsLinux
+    actionsDarwin
+    actionsContractFailures
+    actionsContractFailuresFor
     ;
 }
