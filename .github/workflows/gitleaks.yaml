@@ -1,6 +1,10 @@
-# Secrets scanning on every push and PR. Default scope is incremental
-# (gitleaks-action diffs against the merge base for PRs and against
-# the push range for pushes), which needs the full history.
+# Secrets scanning — the required check that gates merge on a secret leak
+# (added to the main ruleset; see docs/ci.md §"Display name and branch
+# protection"). Runs on every PR and on push to main. Default scope is
+# incremental (gitleaks-action diffs against the merge base for PRs and
+# the push range for pushes), which needs the full history. Push is scoped
+# to main so a PR branch isn't double-scanned (push + pull_request both
+# firing).
 #
 # No GITLEAKS_LICENSE env var is required for personal-account repos;
 # the license is only required for organization repos per the
@@ -9,11 +13,18 @@ name: gitleaks
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
   scan:
+    # Explicit name → the required-status-check context is `gitleaks`, not
+    # the bare job id. Keep it stable; the ruleset matches on this name.
+    name: gitleaks
     runs-on: ubuntu-24.04
+    # Incremental scans run in seconds; this is a hang backstop, not a
+    # budget. See docs/ci.md §Timeouts.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:

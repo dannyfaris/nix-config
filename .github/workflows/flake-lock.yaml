@@ -31,6 +31,9 @@ concurrency:
 jobs:
   bump:
     runs-on: ubuntu-24.04
+    # `nix flake update` + PR open is a quick job; this only caps a hang.
+    # See docs/ci.md §Timeouts.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 

@@ -217,3 +217,13 @@ Every `uses: <action>@<ref>` line in `.github/workflows/` is repinned to a full 
 **Compromise-recovery posture is unchanged from any other supply-chain disclosure:** if a pinned SHA is later disclosed as the moment a compromised action was published, the response is to repin to a clean SHA and audit any artefacts produced under the bad SHA. Naming this because SHA pinning makes the surface harder to reason about by ref — `@v5` is one thing to investigate; a SHA is opaque without `git log`.
 
 The §129 line ("Action version pinning: all actions pinned to `@vN` major-version tags. SHA pinning rejected as ceremony beyond the current threat model.") and the §79 non-goal bullet on SHA-pinned action versions are now historical.
+
+### gitleaks promoted to a required check; per-job wall-time bounds added (2026-06-27)
+
+Two merge-gate gaps from the 2026-06-10 full-repo review (#340) closed together.
+
+**gitleaks now gates merge.** The required-checks set was the three `flake-check (<arch>)` contexts only; `gitleaks.yaml` ran on every push and PR but a red run did not block squash auto-merge — a secret-leaking PR could land green. The gitleaks job gained an explicit `name: gitleaks` (the bare job id `scan` made a poor required-check context); `gitleaks` was then added to ruleset `16950997` as the out-of-band operator step at merge (the same seam as the original branch-protection setup — the workflow is pushed so a run reports the `gitleaks` context first, then the ruleset gains it, never the reverse). The resulting four-context set is verifiable via `gh api repos/dannyfaris/nix-config/rulesets/16950997 --jq '.rules[] | select(.type=="required_status_checks").parameters.required_status_checks | map(.context)'`. The §136 / §201 enumerations predate this and read as historical.
+
+**Every job now sets `timeout-minutes`.** No workflow set one, so the worst case was GitHub's 360 min default per leg — amplified by `ci.yaml`'s 3× blind retry (§Retry). The caps (`flake-check` 60, `gitleaks` 10, `flake-lock` bump 15) are sized generously over the cold-cache worst case; the standing rationale lives in docs/ci.md §Timeouts, not restated here.
+
+**Adjacent dedupe.** `gitleaks.yaml`'s `push:` trigger was scoped to `branches: [main]` so a PR branch is no longer scanned twice (both `push` and `pull_request` fired). PRs remain covered via `pull_request`; `main` via `push`.
