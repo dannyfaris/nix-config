@@ -23,6 +23,8 @@ capture date and run provenance so a reader can judge staleness.
   [`../desktop/visual-identity.md`](../desktop/visual-identity.md) and
   the runtime-theming issues.
 
+- **[omarchy-theme-switching.md](./omarchy-theme-switching.md)** — a dissection of how Omarchy defines and switches themes (`colors.toml` + `sed` templates, the `current/theme` `mv`-swap, the per-app reload-signal map, the foot live-OSC repaint, GTK/Firefox/Chromium live-vs-restart), compared to the colour-conductor design and mined for what transfers. Verdict: mine it as a *palette upstream* and a *live-repaint cookbook*, not a mechanism. Feeds [`../design/colour-conductor.md`](../design/colour-conductor.md) and the runtime-theming issues (#411 / Epic E #427).
+
 - **[visual-identity-research.md](./visual-identity-research.md)** — the
   design-token framework comparison (M3 / Carbon / Fluent / Open Props /
   DTCG / libadwaita) behind `theme-tokens.nix` (#369). Feeds
