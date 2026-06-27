@@ -1,12 +1,14 @@
-# Action-menu data contract (`actions.json`) — a Nix-authoritative dataset the runtime renderer consumes
+# The cross-platform action menu — registry-emitted action data and a per-platform renderer over it
 
-**Status:** Proposed — design note (`docs/design/`). Build-state: sliced — the emitter (`actionsFor` / `actionsLinux` / `actionsDarwin`), the `packages.actions-json` artifact, the conformance lint, and the unit tests are built; the renderer is #442. #437 · extends [ADR-039](../decisions/ADR-039-capability-registry.md) §Implementation step 4 (consumes §2's descriptive dimension + §6's flat palette).
+**Status:** Proposed — design note (`docs/design/`). Build-state: sliced — slice 1 (the `actions.json` data contract: emitter, `packages.actions-json`, conformance lint, unit tests) is built; slice 2 (the renderer) is not yet designed. #437 (data) + #442 (renderer) · extends [ADR-039](../decisions/ADR-039-capability-registry.md) §Implementation steps 4–5 (consumes §2's descriptive dimension + §6's flat palette).
 
 ## Summary
 
-The capability registry should emit `actions.json` — a flat, Nix-authoritative dataset projected from the registry — as the data home for the action menu, installed as a read-only file the runtime renderer reads but never writes. Each host's build emits its own file (Linux verbs on metis, macOS verbs on neptune) from one shared schema. Each entry carries the capability's resolved descriptive metadata, its display chord, and the registry's raw per-platform realization payload as *dispatch source* (`action` for a niri-action, `handler` for a Hammerspoon handler) — **not** a pre-rendered or typed execution contract; turning that source into an actual invocation is the renderer's job (#442). It introduces no new authoring surface, and a walking-skeleton emitter + validation check land with this note.
+The cross-platform action menu is one exercise with two halves — **where the action data lives** and **what paints it** — and this note covers both, delivered in slices. **Slice 1 (built):** the capability registry emits `actions.json`, a flat Nix-authoritative dataset projected from the registry and installed read-only, as the data home — keeping the action entries out of Noctalia's GUI-managed `settings.json`. Each host emits its own file from one shared schema; each entry carries resolved descriptive metadata, its display chord, and the registry's raw per-platform realization payload as *dispatch source* (`action` / `handler`, no typed execution contract). **Slice 2 (to design, #442):** a per-platform renderer (Noctalia launcher provider on Linux, `hs.chooser` on macOS) reads that file and paints a flat type-to-filter menu, turning the dispatch source into an actual invocation. Data and renderer share one loop because designing the contract without the consumer that shapes it is what produced this loop's hardest frictions.
 
 ## Motivation
+
+The action menu is the missing "pillar 2" from the Omarchy benchmark (launcher-strategy.md §1) — a single keystroke to a searchable palette of system / session / window actions, which scrollable-tiling niri has no native analogue for. It is one exercise with two halves: the **data** (where the entries live, single-sourced from the registry) and the **renderer** (what paints them, per platform). This note covers both, built in deliberate sequence (ADR-039 §Impl steps 4→5): the data contract first — as the acid test of the runtime/declarative boundary — then the renderer over it.
 
 The registry (ADR-039) already emits **config a tool owns and treats as read-only** — niri binds, Hammerspoon `hs.hotkey.bind` lines, the `keybinds.md` table region. The action menu (Epic C, #425) has no settled data home yet, and it is a *different* kind of emission: the first time the registry emits **data a runtime tool consumes** rather than a tool's own config. That makes it the acid test of the runtime/declarative boundary (Epic E, #427) the registry must honour before the keyboard-first interaction surface (#442) depends on it.
 
@@ -23,7 +25,11 @@ Concrete uses the dataset must serve: a Linux renderer (Noctalia launcher provid
 - **Proportional enforcement (ADR-032).** Validate with the lightest mechanism that holds the guarantee.
 - **Prove before depend.** The emit-a-runtime-file pattern and its boundary must be validated end-to-end before #442 builds a renderer on it.
 
+These forces govern **slice 1**, the data contract. Slice 2's forces — cross-platform UX parity, the renderer staying runtime-installed (not Nix-pinned), the dispatch-execution path — are developed when that slice is designed.
+
 ## Design
+
+### Slice 1 — the data contract (`actions.json`) *(built)*
 
 `actions.json` is a projection of the registry: the **descriptive** dimension (resolved per-platform), the **chord** dimension (display form), and the **realization payload carried through verbatim** as the source a renderer dispatches from. A flat array (ADR-039 §6 — no hierarchy), one file per host, same schema. The Linux file:
 
@@ -90,6 +96,10 @@ There is **no generate-and-diff check** as #457 has — `actions.json` is a buil
 
 **Meeting the forces.** Single-source/no-drift and faithful-to-schema-no-forecast: the file is a pure `descriptiveFor`/`tierChordDisplay` projection plus the realization payload carried verbatim — no new authoring surface, no execution abstraction invented before its consumer. Boundary honesty: flake-written, read-only, never inside Noctalia's mutable state. Share-contract-specialize-verbs: one schema, per-host payloads. Proportional: an eval lint, not an external validator. Prove-before-depend: the emitter + tests + lint land now — and per ADR-037 / the design-loop's *co-locate-rule-with-enforcement*, the contract is not honest until that check exists (see §Drawbacks).
 
+### Slice 2 — the renderer *(to design, #442)*
+
+The renderer is this loop's next design phase, not specified here — it earns its own intent → options → de-risk pass. The scaffold of what it must do: read this host's `actions.json` read-only; present a flat, type-to-filter menu (ADR-039 §6 — the unified palette: action menu and keybind cheatsheet in one surface); and on selection turn the entry's `dispatch` source into a real invocation. Leading per-platform candidates from the research (cross-platform-action-menu.md, launcher-strategy.md §4): a **Noctalia launcher provider** (v4 `custom-commands`, or a v5 `readFile` plugin) on Linux and **`hs.chooser`** on macOS — fuzzel excluded (#385). The load-bearing question it must settle is the **dispatch-execution shape** — how a `dispatch` payload becomes a real `niri msg` call / in-process Lua call / IPC message — which is renderer-coupled and on-box-gated (§De-risk evidence), and is exactly why slice 1 carried the payload as source rather than pre-rendering it. The renderer choice, read path, and dispatch execution are this loop's open items (§Unresolved questions).
+
 ## De-risk evidence
 
 Two load-bearing assumptions were tested **before** committing to this design.
@@ -106,11 +116,11 @@ Two load-bearing assumptions were tested **before** committing to this design.
 
 The revision (carry the realization payload as *source*, no `type`, execution deferred to #442) is the direct response.
 
-**Still unverified — reclassified to #442 / on-box, deliberately off #437's critical path:** (1) the `niri msg action` dispatch grammar — needs verification on **metis** (niri does not run on neptune, this host), and the dispatch *shape* is renderer-coupled (an in-process `hs.chooser` calls a Lua handler directly; an external renderer shells out); both are #442's to de-risk against a real renderer. (2) End-to-end renderer consumption — #442. (3) `(pkgs.formats.json {}).generate` vs `builtins.toJSON` — an implementation detail.
+**Still unverified — slice 2's de-risk inputs, deliberately off slice 1's critical path:** (1) the `niri msg action` dispatch grammar — needs verification on **metis** (niri does not run on neptune, this host), and the dispatch *shape* is renderer-coupled (an in-process `hs.chooser` calls a Lua handler directly; an external renderer shells out); both are #442's to de-risk against a real renderer. (2) End-to-end renderer consumption — #442. (3) `(pkgs.formats.json {}).generate` vs `builtins.toJSON` — an implementation detail.
 
 ## Drawbacks
 
-- **Emitting data before a renderer consumer exists.** The skeleton ships a file no renderer reads until #442 — superficially the design-loop's named failure mode (abstraction ahead of implementation). The justification is *not* "proving the pattern": the throwaway de-risk prototype already did that, so it cannot be the reason to commit production code. It is **co-locate-rule-with-enforcement** (design-loop) / **ADR-037** — a contract asserted as prose with no check is exactly the stated-but-unenforced rot the loop exists to kill. The emitter + check therefore *are* the enforcement the rule must ship with, and the check is itself a real consumer of the shape. That clears the YAGNI bar — but landing the emitter now is the honest thing to scrutinise here.
+- **Slice 1 ships before its slice-2 consumer.** The data file no renderer reads until slice 2 — superficially the design-loop's named failure mode (abstraction ahead of implementation). Two things answer it: the build sequencing is deliberate (ADR-039 §Impl 4→5 — prove the boundary before the renderer depends on it), and per **co-locate-rule-with-enforcement / ADR-037** the contract is only honest once its check exists, so the emitter + conformance check *are* the enforcement the rule ships with (and the check is itself a consumer of the shape). With the renderer now in the same loop, the old cross-doc-boundary version of this risk is gone; what remains is ordinary staged delivery.
 - **Carried payload no consumer reads yet.** Choosing (Q) over a descriptive-only file means `dispatch` carries the realization payload that nothing consumes until #442 — a small YAGNI residue, accepted so the file is a genuine *action* dataset rather than a cheatsheet-in-JSON.
 - **The macOS acid test is shallow.** At 8 entries — all window-geometry/spawn, no navigation — the macOS file validates the *mechanism* but not a rich dataset. The pattern is proven thin on the platform where the registry is least complete.
 - **A second emitter family to maintain.** Another projection in `lib/capabilities.nix` plus its tests and lint.
@@ -137,14 +147,13 @@ Cross-platform option analysis lives in the research notes, not restated: [cross
 
 ## Unresolved questions
 
-- **Resolve in #442 (not now):** the dispatch *execution* shape — whether a renderer turns `dispatch` into a `niri msg` string, an in-process Lua call, or an IPC envelope — de-risked on metis against a real renderer; and the `niri msg action` grammar that pins the Linux path.
-- **Resolve in implementation:** `(pkgs.formats.json {}).generate` vs `builtins.toJSON`; whether the conformance lint also belongs as a `lib.runTests` case vs only a `mkReportCheck`.
-- **Out of scope:** the renderer and concrete read path (#442); `karabiner-remap` / `menu/command` realizations and the menu-only system/session/theme actions that use them (#428); the availability lint (ADR-039 §8); Noctalia theming posture (#406).
+- **Slice 2 design (this loop's next iteration):** the per-platform renderer choice (Noctalia provider vs `hs.chooser`); the **dispatch-execution shape** (`niri msg` string / in-process Lua call / IPC), de-risked on **metis** against a real renderer; and the concrete read path the renderer reads `actions.json` from.
+- **Slice 1 implementation details (resolved):** `(pkgs.formats.json {}).generate` chosen for rendering; the conformance lint landed as a `mkReportCheck` *and* live `lib.runTests` guards.
+- **Out of scope (other issues):** `karabiner-remap` / `menu/command` realizations and the menu-only system / session / theme actions that use them (#428); the availability lint (ADR-039 §8); Noctalia theming posture (#406).
 
 ## Future possibilities
 
 - **Descriptive-only cheatsheet entries on macOS** — projecting the navigation/workspace caps that have no realization (no `dispatch`) so the cheatsheet half is complete even where dispatch isn't wired, once #442 settles the action/cheatsheet split. (Deliberately out of scope now — committed to the realization-only inclusion rule for #437.)
 - **Menu-only actions** (lock, power, theme-switch) entering the registry as `menu/command` realizations — the actions a user most wants in a menu, which the window-management-only skeleton does not yet carry.
 - **`karabiner-remap` realizations** enriching the macOS file from 8 toward parity with Linux (#428).
-- **The unified capability palette** (#442) consuming this file as both action menu and searchable cheatsheet; niri's `show-hotkey-overlay` retiring.
 - **A machine-readable JSON Schema** emitted as its own artifact, if an external consumer ever needs to validate the file independently.

@@ -23,7 +23,7 @@ Where [`decisions/`](../decisions/) records the *terse, frozen* ADR (the decisio
 
 ## Index
 
-- **[action-menu-data-contract.md](./action-menu-data-contract.md)** — the registry-emitted `actions.json` dataset for the action menu: a flat, Nix-authoritative projection the runtime renderer reads read-only, drawing the declarative-data / GUI-managed-renderer boundary (the ADR-036 trap). The capability registry's first runtime-consumed data artifact. *Proposed; not built* (#437 / extends ADR-039 §Implementation step 4; renderer #442).
+- **[action-menu.md](./action-menu.md)** — the cross-platform action menu, one design over two slices: a registry-emitted `actions.json` dataset (Nix-authoritative, read-only — drawing the declarative-data / GUI-managed-renderer boundary, the ADR-036 trap) and a per-platform renderer over it. *Proposed; slice 1 (data contract) built, renderer to design* (#437 + #442 / extends ADR-039 §Implementation steps 4–5).
 
 - **[colour-conductor.md](./colour-conductor.md)** — live, reproducible, durable desktop theming: Stylix as the single theming authority, live switching across a Nix-declared menu of named themes via home-manager specialisations, Noctalia demoted to a themed-by-Nix shell. Reverses ADR-036's "Noctalia as sole theming authority" (#411 / Epic E #427).
 

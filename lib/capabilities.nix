@@ -1021,7 +1021,7 @@ let
   # Hammerspoon handler name), with no `type` discriminator. Turning that source
   # into an actual invocation is the renderer's job, deferred to #442 (the niri
   # msg grammar is renderer-coupled and on-box-gated). Full contract:
-  # docs/design/action-menu-data-contract.md. Pure data here (lib-only, ADR-039
+  # docs/design/action-menu.md. Pure data here (lib-only, ADR-039
   # §9); parts/checks.nix renders it to JSON via pkgs.formats.json.
   #
   # Inclusion: an entry appears in platform P's file iff the cap has a
