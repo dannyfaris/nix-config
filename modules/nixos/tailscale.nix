@@ -4,9 +4,9 @@
   # Without this, all traffic routes through Tailscale's DERP relays
   # (higher latency, breaks if DERP is unreachable).
   services.tailscale.openFirewall = true;
-  # No blanket `trustedInterfaces = [ "tailscale0" ]` — that opened every
-  # port to every tailnet peer, against whitelist > blanket (worst on
-  # mercury, the work box). Each tailnet-reachable service opens its own
-  # port on tailscale0, co-located with the service (e.g. ntfy-server.nix).
-  # SSH is unaffected: services.openssh.openFirewall opens :22 directly. (#336)
+  # Trust the tunnel interface. Belt-and-suspenders only: tailscale's own
+  # ts-input chain accepts all tailscale0 input ahead of the NixOS firewall,
+  # so the real tailnet gate is tailnet ACLs, not firewall rules here — see
+  # #336 (investigated; per-host port whitelisting judged not worthwhile).
+  networking.firewall.trustedInterfaces = [ "tailscale0" ];
 }
