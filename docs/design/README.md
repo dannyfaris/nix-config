@@ -14,3 +14,5 @@ Where [`decisions/`](../decisions/) records the *terse, frozen* ADR (the decisio
 ## Index
 
 - **[colour-conductor.md](./colour-conductor.md)** — live, reproducible, durable desktop theming: Stylix as the single theming authority, live switching across a Nix-declared menu of named themes via home-manager specialisations, Noctalia demoted to a themed-by-Nix shell. Reverses ADR-036's "Noctalia as sole theming authority" (#411 / Epic E #427).
+
+- **[design-loop.md](./design-loop.md)** — the repo's own design loop: how design work moves (intent → forces → options → decision → de-risk → reconcile), the artifact lifecycle (frozen record vs living reference vs proposal), and the enforcement-first spine for human + AI-agent collaboration. *Proposed; mutable by design.*
