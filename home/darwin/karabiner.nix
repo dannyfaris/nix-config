@@ -191,7 +191,15 @@ let
           # `simultaneous` semantics has an obvious place to add
           # parameter overrides without changing the top-level shape.
           parameters = { };
-          rules = [
+          # Drop any rule whose `manipulators` list is empty. Karabiner
+          # rejects an empty `manipulators` as a parse error and then refuses
+          # the *entire* karabiner.json — silently killing the whole keymap,
+          # caps_lock → Hyper included. The Mission-Control rules generate
+          # their manipulators from caps.karabinerHyperRemapKeys, so a rule
+          # comes out empty if that list is ever reduced to nothing; this guard
+          # ensures the generator can never emit an invalid empty rule. A no-op
+          # for the current non-empty config.
+          rules = lib.filter (r: r.manipulators != [ ]) [
             capsLockToHyper
             hyperArrowMissionControl
             hyperNumberSpaceJump
