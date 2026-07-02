@@ -30,12 +30,14 @@
 # under exec-and-forget); and exec-and-forget swallows errors, so each bind is
 # verified on-box (CLAUDE.md runtime-verification rule).
 {
+  config,
   lib,
   pkgs,
   ...
 }:
 let
   caps = import ../../lib/capabilities.nix { inherit lib; };
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
 
   # Absolute path to the AeroSpace CLI for the exec-and-forget bodies.
   aerospace = lib.getExe pkgs.aerospace;
@@ -97,15 +99,18 @@ in
       default-root-container-layout = "tiles";
       default-root-container-orientation = "auto";
 
-      # Gaps. inner aligns with the niri inter-window gap (Carbon spacing-05,
-      # 16) and is > 2× the planned 6px border so adjacent borders don't touch;
-      # outer clears the screen edge. STAGE 2 (#494) sources inner from
-      # tokens.layout.gap alongside the JankyBorders colours; hardcoded here to
-      # keep Stage 1 free of the display-profile/token wiring.
+      # Gaps. inner is the Carbon spacing-05 vocabulary value (16), sourced from
+      # the design token so it can't drift from the scale, and stays > 2× the
+      # 6pt JankyBorders width so adjacent tiles' borders never touch; outer
+      # clears the screen edge. NB the token is `spacing.s05`, NOT the niri
+      # `layout.gap` — layout.gap is display-profile-scaled for niri's physical
+      # rendering (12 under metis's 2× profile), whereas AeroSpace works in
+      # macOS points where Retina scaling is transparent, so the unscaled
+      # on-vocab value is the correct one here.
       gaps = {
         inner = {
-          horizontal = 16;
-          vertical = 16;
+          horizontal = tokens.spacing.s05;
+          vertical = tokens.spacing.s05;
         };
         outer = {
           left = 10;

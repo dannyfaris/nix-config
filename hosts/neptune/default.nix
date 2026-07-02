@@ -74,6 +74,12 @@ _: {
     # the module header and docs/desktop/keybinds.md §Screenshots.
     ../../modules/darwin/keyboard-shortcuts.nix
 
+    # JankyBorders — the focused-window border for AeroSpace tiles (the macOS
+    # analogue of the window border niri draws). Colours source from the design
+    # tokens; runs as a launchd user agent. See the module header and
+    # docs/design/macos-deterministic-tiling.md (ADR-040 Stage 2, #494).
+    ../../modules/darwin/jankyborders.nix
+
     # Power / sleep / recovery for the always-on builder + SSH-bastion
     # role. Auto-restart after outage, never sleep the computer,
     # display sleep at factory default. Values here are wrong for a
