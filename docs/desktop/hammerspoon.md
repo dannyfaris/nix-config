@@ -1,5 +1,7 @@
 # Hammerspoon
 
+> **Decommissioned 2026-07-02** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md), #494). Retired from the macOS interaction stack — **AeroSpace** now owns window management and every Hyper bind (via the `aerospace-action` registry emitter), and the terminal/browser spawns moved to `exec-and-forget open`. The Homebrew cask, `~/.hammerspoon/init.lua` (`home/darwin/hammerspoon.nix`), and the `hammerspoon-handler` realization were all removed; the stack is now Karabiner (Hyper substrate) + AeroSpace only. This document is retained as the selection record for the Hammerspoon era. See [macos-window-management.md](./macos-window-management.md) and the design note [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md).
+
 Desktop automation app for macOS — Lua runtime with bindings into
 macOS's Accessibility, window-management, and event-tap APIs. Picked
 as the **macOS hotkey-binding layer** that lives on top of the Hyper
