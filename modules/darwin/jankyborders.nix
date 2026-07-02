@@ -13,8 +13,12 @@
 #
 # This is a nix-darwin *system* service (launchd user agent, KeepAlive), not a
 # home-manager module — hence it lives here and is imported in the host's
-# system `imports`, not extraHomeModules. The Accessibility grant it needs to
-# read window frames is a one-time bootstrap step (docs/runbooks/darwin-bootstrap.md).
+# system `imports`, not extraHomeModules. Needs no Accessibility (or any TCC)
+# grant: by design borders tracks windows through the window-server API, not the
+# AX API (that's its speed advantage), and `ax_focus` — the one option that would
+# opt into the slower Accessibility path — is left off. See
+# docs/runbooks/darwin-bootstrap.md for the window-management bootstrap (only
+# AeroSpace itself needs an Accessibility grant).
 { config, ... }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
