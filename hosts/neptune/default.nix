@@ -159,6 +159,13 @@ _: {
       # Ensures ~/Pictures/Screenshots exists; pairs with
       # screencapture.location in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix
+      # Runtime theme switching (#499): the appearance watcher + hook
+      # option, the JankyBorders repaint hook, and theme-following
+      # wallpaper pools. Ghostty's half is native dual-theme in its own
+      # module. See docs/design/macos-live-theme-switching.md.
+      ../../home/darwin/dark-mode-notify.nix
+      ../../home/darwin/jankyborders-hook.nix
+      ../../home/darwin/wallpapers.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream-published
       # prebuilt aarch64-darwin binary, sidestepping the heavy
