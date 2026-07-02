@@ -325,10 +325,10 @@ The **macOS Hyper layer runs on AeroSpace** (ADR-040, #494, superseding ADR-039
 Hyper keymap — focus/move/workspace/app-launch via the `aerospace-action`
 emitter, plus the hand-authored edge-scroll + maximise-by-isolation
 `aerospace-exec` binds). `modules/darwin/keyboard-shortcuts.nix` carries **no
-`Hyper` base** — it owns the screenshot chord swap and the native `Ctrl+1‑9`
-"Switch to Desktop N" targets. The latter are now **vestigial**: the Karabiner
-`Hyper+N → Ctrl+N` remap that drove them is retired and AeroSpace owns
-workspaces on a single native Space — their removal is a separate cleanup.
+`Hyper` base** — it owns only the screenshot chord swap. The native `Ctrl+1‑9`
+"Switch to Desktop N" targets it used to declare were removed once AeroSpace
+landed: the Karabiner `Hyper+N → Ctrl+N` remap that drove them is retired, and
+AeroSpace owns workspaces on a single native Space, so they were inert.
 
 The focus/move binds are **shipped** (no longer a deferred mirror): `Hyper+↑/↓`
 = AeroSpace `focus up/down`, `Hyper+←/→` = focus with edge-scroll fallthrough,
