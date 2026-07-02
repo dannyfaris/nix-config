@@ -412,6 +412,28 @@ Notes:
 - No firewall change is needed. The host ALF (`modules/darwin/firewall.nix`) runs with `allowSigned = true`, and the screen-sharing daemon is Apple-signed, so inbound VNC (5900) passes without a rule.
 - **Hyper hotkeys don't fire over Screen Sharing — use the literal `Ctrl+Opt` chord.** Karabiner remaps the *physical* keyboard (DriverKit virtual-HID); Screen Sharing *injects* CGEvents that bypass Karabiner's grab, so `Caps Lock → Hyper` never happens remotely (Caps is also a locking key, delivered as a state-toggle). Workaround, confirmed working on neptune: press the literal `Ctrl+Opt+<key>` on the remote keyboard — the window manager's global hotkeys catch the injected chord directly. This is WM-independent (a property of the Karabiner Hyper substrate, true of any Hyper hotkey — AeroSpace or otherwise).
 
+## Post-activation — grant AeroSpace Accessibility + Mission Control settings (manual, not declarable)
+
+neptune's window manager is **AeroSpace** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md); `home/darwin/aerospace.nix`), with **JankyBorders** drawing the focus-border (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts both, but AeroSpace needs one manual grant before it can tile, and one Mission Control setting cleared. Neither is declarable — the grant is TCC-gated (same wall as Screen Sharing above), the setting is a per-user Dock preference AeroSpace reads at runtime.
+
+### AeroSpace needs the Accessibility permission
+
+AeroSpace moves windows through the macOS Accessibility (AX) API, so it **cannot tile anything** until it is granted Accessibility. Until then it launches and its menu-bar item appears, but windows stay where they are — the failure mode is "AeroSpace is running but does nothing," not a crash. AeroSpace prompts on first launch; approve via:
+
+- **System Settings → Privacy & Security → Accessibility → enable AeroSpace.**
+
+**The grant is lost on every AeroSpace upgrade — expect to re-grant.** The `pkgs.aerospace` bundle is **ad-hoc signed with no Team Identifier** (verified: `codesign -dv` reports `flags=…(adhoc,linker-signed)`, `TeamIdentifier=not set`), so macOS keys the Accessibility grant to the binary's *store path + cdhash* rather than a stable signing identity. Both change whenever `pkgs.aerospace` bumps version, so after a `nix flake update` that moves AeroSpace, the old grant no longer matches and tiling silently stops. Fix: in the Accessibility list, remove the stale AeroSpace entry (`−`) and re-add / re-toggle the new one, then relaunch AeroSpace (`aerospace reload-config` is not enough — the *process* needs the grant). This is intrinsic to running a store-path-installed unsigned app under TCC; it is not a misconfiguration.
+
+### JankyBorders needs no grant
+
+Deliberately called out so a future operator doesn't hunt for a missing permission: **JankyBorders requires no Accessibility (or any TCC) grant** in this config. By design it tracks windows through the window-server API rather than the AX API (that is its speed advantage), and `ax_focus` — the one option that would opt into the slower Accessibility path — is left off. Borders render immediately after activation with no prompt.
+
+### Disable "Automatically rearrange Spaces based on most recent use"
+
+- **System Settings → Desktop & Dock → Mission Control → turn *off* "Automatically rearrange Spaces based on most recent use"** (verified on macOS 26 Tahoe). Equivalent from the shell: `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (`mru-spaces` = `0` when disabled).
+
+AeroSpace recommends this so macOS doesn't reorder Spaces out from under the tiler's Space-index tracking. neptune runs a **single** native Space (AeroSpace owns the workspace layer — ADR-040), so there is little for macOS to rearrange, but the setting is cleared as a precaution and to match AeroSpace's documented baseline. AeroSpace's guide lists further optional macOS tweaks (e.g. "Displays have separate Spaces", "Group windows by application") aimed at multi-monitor setups; none are needed on this single-display host.
+
 ## Verification
 
 ### Phase 1 — local on the new Mac
