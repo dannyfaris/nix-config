@@ -1,11 +1,12 @@
 # Community config survey — patterns worth mining
 
-Status: **research note, not a decision.** Captured 2026-07-02 from a two-batch systematic survey of 24 public NixOS / nix-darwin / blended configs, conducted via parallel deep-reads (22 agents, ~1M tokens). Repos were scouted first (flake.nix + tree); only those with novel patterns not already present in this fleet were deep-read. Nothing here is adopted; each item is a pattern to evaluate against our own principles. Feeds the active macOS theme-switching (#499), TUI colour conductor (#411), and any future hardening / CI work.
+Status: **research note, not a decision.** Captured 2026-07-02 from a three-batch systematic survey of 36 public NixOS / nix-darwin / blended configs, conducted via parallel deep-reads (38 agents, ~2M tokens). Repos were scouted first (flake.nix + tree); only those with novel patterns not already present in this fleet were deep-read. Nothing here is adopted; each item is a pattern to evaluate against our own principles. Feeds the active macOS theme-switching (#499), TUI colour conductor (#411), and any future hardening / CI work.
 
 Batch 1 deep-reads: Misterio77/nix-config, nmasur/dotfiles, NotAShelf/nyx, fufexan/dotfiles, srid/nixos-config, kclejeune/system, ryan4yin/nix-config, malob/nixpkgs, cmacrae/config.
 Batch 2 deep-reads: Aylur/dotfiles, isabelroses/dotfiles, pinpox/nixos, linyinfeng/dotfiles, EmergentMind/nix-config, sei40kr/dotfiles.
+Batch 3 deep-reads: Mic92/dotfiles, viperML/dotfiles, TLATER/dotfiles.
 
-Skipped as not novel (scouts): mitchellh/nixos-config, hlissner/dotfiles, LGUG2Z/nixos-config, dustinlyons/nixos-config, gvolpe/nix-config, truxnell/nix-config, sioodmy/dotfiles, berbiche/dotfiles, yuanw/nix-home.
+Skipped as not novel (scouts): mitchellh/nixos-config, hlissner/dotfiles, LGUG2Z/nixos-config, dustinlyons/nixos-config, gvolpe/nix-config, truxnell/nix-config, sioodmy/dotfiles, berbiche/dotfiles, yuanw/nix-home, spikespaz/dotfiles, donovanglover/nix-config, Ruixi-rebirth/flakes, vimjoyer/nixconf, Frost-Phoenix/nixos-config, IogaMaster/dotfiles, rxyhn/yuki, librephoenix/nixos-config, moni-dz/nix-config.
 
 ---
 
@@ -181,6 +182,52 @@ programs.ssh = {
 
 `forwardAgent = false` and `addKeysToAgent = "no"` prevent credential forwarding unless explicitly opted in per-host.
 
+### 2.11 Touch ID sudo `reattach` — the missing half for tmux/Ghostty
+
+**Source:** Mic92/dotfiles `darwinModules/sudo.nix`
+
+Without `reattach`, Touch ID sudo breaks inside tmux/screen/iTerm because the PAM session is detached from the GUI agent. Most configs set `touchIdAuth = true` and wonder why it only works in the native macOS Terminal. Neptune already has `touchIdAuth = true`; the `reattach` line is the piece that makes it work in Ghostty/tmux:
+
+```nix
+security.pam.services.sudo_local.touchIdAuth = true;
+security.pam.services.sudo_local.reattach    = true;
+```
+
+### 2.12 Darwin launchd gcroot cleanup daemon
+
+**Source:** Mic92/dotfiles `darwinModules/nix-daemon.nix`
+
+Neptune has no equivalent to the NixOS gcroot cleanup service. Dead symlinks in `/nix/var/nix/gcroots/auto` block collection indefinitely. A weekly launchd daemon covers three vectors: stale symlinks, stale temproots, and broken (dangling) symlinks:
+
+```nix
+launchd.daemons.nix-cleanup-gcroots = {
+  script = ''
+    set -eu
+    ${pkgs.findutils}/bin/find /nix/var/nix/gcroots/auto /nix/var/nix/gcroots/per-user \
+      -type l -mtime +30 -delete || true
+    ${pkgs.findutils}/bin/find /nix/var/nix/temproots -type f -mtime +10 -delete || true
+    ${pkgs.findutils}/bin/find /nix/var/nix/gcroots -xtype l -delete || true
+  '';
+  serviceConfig.StartCalendarInterval = [{ Weekday = 0; Hour = 3; Minute = 30; }];
+};
+```
+
+### 2.13 SSH CA `certAuthority` wildcard knownHosts — scalable fleet trust store
+
+**Source:** Mic92/dotfiles `darwinModules/openssh.nix`
+
+Rather than committing per-host pubkeys (§3.1), register two CA trust entries with wildcard hostname patterns. New fleet hosts are trusted automatically once the CA signs their host certificate:
+
+```nix
+programs.ssh.knownHosts.ssh-ca = {
+  certAuthority = true;
+  hostNames     = [ "*.r" "*.i" "*.thalheim.io" ];
+  publicKeyFile = ./ssh-ca.pub;
+};
+```
+
+Lower priority for a four-host fleet but the right end-state as the fleet grows. The per-host pubkey approach in §3.1 is simpler for the current scale.
+
 ---
 
 ## 3. NixOS / Nix settings
@@ -308,6 +355,177 @@ window-rule {
 
 Zero coupling, drop-in addition to the niri config on metis.
 
+### 3.11 `lock-secrets-before-suspend` systemd user service
+
+**Source:** Mic92/dotfiles `nixosModules/niri/default.nix`
+
+A `Before = sleep.target; WantedBy = sleep.target` oneshot service locks KWallet and rbw before the host suspends. Independent of desktop environment; applicable to metis:
+
+```nix
+systemd.user.services.lock-secrets-on-suspend = {
+  description = "Lock secrets before suspend";
+  before    = [ "sleep.target" ];
+  wantedBy  = [ "sleep.target" ];
+  serviceConfig = {
+    Type      = "oneshot";
+    ExecStart = pkgs.writeShellScript "lock-secrets" ''
+      ${pkgs.libsecret}/bin/secret-tool lock --collection=kdewallet 2>/dev/null || true
+      ${pkgs.rbw}/bin/rbw lock 2>/dev/null || true
+    '';
+  };
+};
+```
+
+### 3.12 `SSH_ASKPASS` on pure-Wayland hosts (niri without xserver)
+
+**Source:** Mic92/dotfiles `nixosModules/niri/default.nix`, TLATER/dotfiles
+
+NixOS gates `programs.ssh.enableAskPassword` on `services.xserver.enable`. Niri hosts set `xserver.enable = false`, so NixOS exports `SSH_ASKPASS=""` — silently disabling SSH GUI password dialogs. Two opposed stances, both principled:
+
+- **Mic92 (enable):** `programs.ssh.enableAskPassword = true; programs.ssh.askPassword = <wrapper>;` — restores GUI dialogs for SSH agent operations.
+- **TLATER (disable):** `environment.extraInit = "unset SSH_ASKPASS";` — prevents any GUI from hijacking terminal SSH prompts; correct for hosts where SSH is driven from a terminal rather than a GUI agent.
+
+For metis (primary SSH client via terminal): the TLATER approach (unset) is the right call. Note this in `modules/nixos/foundation.nix` if SSH_ASKPASS is ever a problem.
+
+### 3.13 udev rule validation with `udevadm verify` in `checkPhase`
+
+**Source:** TLATER/dotfiles `nixos-config/udev.nix`
+
+A custom `services.udev.rules` option wraps each rule text in a `writeTextFile` derivation whose `checkPhase` runs `udevadm verify`. Syntactically invalid rules fail `nix build` rather than silently landing broken — consistent with the fleet's `lib/stances.nix` eval-check philosophy:
+
+```nix
+config.services.udev.packages = lib.mapAttrsToList (name: text:
+  pkgs.writeTextFile {
+    inherit name text;
+    destination = "/lib/udev/rules.d/${name}";
+    checkPhase = ''
+      ${lib.getExe' pkgs.systemd "udevadm"} verify $out/lib/udev/rules.d/${name}
+    '';
+  }
+) config.services.udev.rules;
+```
+
+Adopt if any fleet host gains udev rules.
+
+### 3.14 Credential-to-env-var `preStart` for services that accept only inline credentials
+
+**Source:** Mic92/dotfiles `nixosModules/fluent-bit.nix`
+
+When a service accepts credentials only as inline values (not file paths), a `preStart` script reads the systemd credential and writes a `RuntimeDirectory`-backed `EnvironmentFile` with `umask 0077`. The secret never touches the Nix store or process argv:
+
+```nix
+systemd.services.<name>.serviceConfig = {
+  LoadCredential  = "my-secret:${secretFile}";
+  EnvironmentFile = "-/run/<name>/env";
+};
+systemd.services.<name>.preStart = ''
+  umask 0077
+  printf 'MY_SECRET=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/my-secret")" \
+    > /run/<name>/env
+'';
+```
+
+Generalises to any service with a sops secret that must surface as an env var.
+
+### 3.15 `nix-ld` + `envfs` with graphics-conditional library set
+
+**Source:** Mic92/dotfiles `nixosModules/fhs-compat.nix`
+
+Two-tier FHS compat: base ABI shim on all hosts, Wayland/Vulkan/GTK libraries only when `hardware.graphics.enable` is true. Uses an existing NixOS hardware signal rather than a hostname list:
+
+```nix
+programs.nix-ld.libraries =
+  with pkgs; [ acl attr bzip2 dbus ... ]
+  ++ lib.optionals (config.hardware.graphics.enable) [
+    pipewire libxkbcommon mesa libdrm libglvnd gtk3 vulkan-loader ...
+  ];
+```
+
+Relevant for metis if unpackaged Linux binaries (proprietary developer tools) are ever needed.
+
+### 3.16 `angrr` — content-aware GC with path-regex policies
+
+**Source:** TLATER/dotfiles `nixos-config/default.nix`
+
+Standard `nix.gc` removes generations by age/count only. `angrr` adds per-path-regex policies — clean `.direnv/` entries after 14 days, `result` symlinks after 3 days, keep only the last 5 system profiles plus booted+current:
+
+```nix
+services.angrr.settings = {
+  temporary-root-policies = {
+    direnv = { path-regex = "/\\.direnv/"; period = "14d"; };
+    result = { path-regex = "/result[^\\/]*$"; period = "3d"; };
+  };
+  profile-policies.system = {
+    profile-paths  = [ "/nix/var/nix/profiles/system" ];
+    keep-latest-n  = 5;
+    keep-booted-system  = true;
+    keep-current-system = true;
+  };
+};
+```
+
+Caveat: `angrr` is unstable-only. Use the `disabledModules` + explicit unstable import pattern (§3.17) if adopting before it lands in stable.
+
+### 3.17 `disabledModules` + explicit unstable import for selective service upgrades
+
+**Source:** TLATER/dotfiles
+
+Rather than upgrading all of nixpkgs to unstable, disable a specific module from stable and re-import it from the unstable input:
+
+```nix
+disabledModules = [ "services/misc/angrr.nix" ];
+imports = [ "${flake-inputs.nixpkgs-unstable}/nixos/modules/services/misc/angrr.nix" ];
+```
+
+Useful if any service needs unstable before the stable channel catches up.
+
+### 3.18 Atuin cross-platform sync: systemd timer (Linux) + launchd agent (Darwin)
+
+**Source:** Mic92/dotfiles
+
+Canonical template for a `home/shared/` module that needs scheduled background work on both metis (Linux) and neptune (Darwin):
+
+```nix
+lib.mkMerge [
+  (lib.mkIf pkgs.stdenv.isLinux {
+    systemd.user.timers.atuin-sync.Timer.OnUnitActiveSec = "1h";
+    systemd.user.services.atuin-sync.Service = {
+      Type     = "oneshot";
+      ExecStart = "${pkgs.atuin}/bin/atuin sync";
+      IOSchedulingClass = "idle";
+    };
+  })
+  (lib.mkIf pkgs.stdenv.isDarwin {
+    launchd.agents.atuin-sync.config = {
+      ProgramArguments = [ "${pkgs.atuin}/bin/atuin" "sync" ];
+      StartInterval = 3600;
+      ProcessType   = "Background";
+    };
+  })
+]
+```
+
+### 3.19 Per-host nix binary-cache signing key sealed with `systemd-creds`
+
+**Source:** TLATER/dotfiles `nixos-config/nix.nix`
+
+Each host generates its own binary-cache signing keypair on first boot. The private key is immediately encrypted with `systemd-creds encrypt` (TPM2-bound if available) and stored in `/etc/credstore.encrypted/`; it never exists unencrypted at rest. The nix-daemon loads it via `LoadCredentialEncrypted`. Zero out-of-band secret distribution required.
+
+Worth knowing for a future NixOS host that exports a binary cache; not immediately applicable to the current fleet.
+
+### 3.20 `NoDisplay=true` desktop entry suppression
+
+**Source:** TLATER/dotfiles
+
+Suppresses or replaces a `.desktop` entry without rebuilding the package. Useful for hiding auto-generated launcher entries on metis's fuzzel surface:
+
+```nix
+xdg.dataFile."applications/emacs.desktop".text = ''
+  [Desktop Entry]
+  NoDisplay=true
+'';
+```
+
 ---
 
 ## 4. Claude Code configuration
@@ -347,6 +565,24 @@ permissions = {
 ```
 
 The fleet's Claude Code permissions should be audited against this model.
+
+### 4.3 Claude Code skills as derivation outputs
+
+**Source:** Mic92/dotfiles `home-manager/modules/ai.nix`
+
+Skills from a flake input land in `~/.claude/skills/` as nix-managed store paths via `home.file`:
+
+```nix
+home.file.".claude/skills/${name}".source = skillDerivation;
+```
+
+The repo already version-controls `.claude/` as shared infra; this extends that to skill installation, making skills reproducible and auditable as part of the home closure.
+
+### 4.4 `CLAUDE.md` as a committed home dotfile with per-tool runtime instructions
+
+**Source:** Mic92/dotfiles
+
+They version-control a `home/.claude/CLAUDE.md` alongside the repo-root one, adding per-tool runtime guidance (e.g. "use `pueue` for commands >10s", "use `nix log` for build failures", "target `x86_64-linux` for NixOS tests on macOS"). The repo-root CLAUDE.md is the AI/contributor entry point; the home-dotfile layer adds host-operator specifics not shared with public contributors.
 
 ---
 
@@ -583,6 +819,23 @@ let res = lib.debug.runTests {
 in assert res == []; pkgs.runCommandLocal "lib-tests" {} "touch $out"
 ```
 
+### 6.5 `flint --fail-if-multiple-versions` lockfile diamond-dep check
+
+**Source:** TLATER/dotfiles `checks/default.nix`
+
+Fails if any transitive flake input appears at more than one version despite `follows` declarations — catches the silent version mismatch between `nixpkgs` versions across inputs:
+
+```nix
+lockfile = checkLib.mkLint {
+  name        = "nix-lockfile";
+  fileset     = ../flake.lock;
+  checkInputs = [ flint ];
+  script      = "flint --fail-if-multiple-versions";
+};
+```
+
+Compatible with the fleet's existing `parts/checks.nix` structure. Lightweight addition.
+
 ---
 
 ## 7. Library and composition patterns
@@ -669,6 +922,36 @@ rgba = c: "rgba(${r}, ${g}, ${b}, .5)";
 xcolors = attrs: lib.mapAttrs (_: hexToDec) attrs;
 ```
 
+### 7.7 `versionGate` — auto-yield a patched package when nixpkgs catches up
+
+**Source:** viperML/dotfiles `misc/lib/default.nix`
+
+An overlay package automatically becomes a no-op once nixpkgs ships the required version, instead of silently staying pinned:
+
+```nix
+versionGate = newPkg: stablePkg:
+  if builtins.compareVersions (lib.getVersion newPkg) (lib.getVersion stablePkg) >= 0
+  then newPkg
+  else lib.warn "Package ${lib.getName newPkg} reached version..." stablePkg;
+```
+
+Directly applicable to the JankyBorders and AeroSpace overlay packages, which are currently maintained as custom derivations. Wire once; the overlay auto-retires when nixpkgs ships a sufficiently recent version.
+
+### 7.8 Module-level assertions enforcing inter-module dependencies
+
+**Source:** viperML/dotfiles `modules/nixos/ssh-server.nix`
+
+The fleet's `lib/stances.nix` covers fleet-wide invariants. Module-level `assertions` are the per-module analogue — eval fails if a declared prerequisite is missing:
+
+```nix
+assertions = [{
+  assertion   = config.services.tailscale.enable;
+  description = "ssh-server.nix requires tailscale";
+}];
+```
+
+Lightweight to add to any module that has a hard runtime dependency on another module being enabled.
+
 ---
 
 ## 8. Patterns to avoid
@@ -689,15 +972,30 @@ xcolors = attrs: lib.mapAttrs (_: hexToDec) attrs;
 
 **Flat import lists without capability-bundle grouping** — all surveyed repos using flat lists lack the bundle model's explicit, auditable capability scope. Do not trade the bundle structure for flat-list convenience.
 
+**nix-maid as a home-manager replacement (viperML)** — viperML's own tool with limited external adoption. The fleet is committed to home-manager as a NixOS module across all four hosts; migrating would be a large surface-area reversal with no community support and no payoff.
+
+**npins + classic Nix instead of flakes (viperML)** — the fleet is fully flake-based with flake-parts. The viperML `importFilesToAttrs`/`dirToAttrs` helpers and `overlayVersion` with npins revision are workarounds for the non-flake world and do not translate.
+
+**`security.sudo.enable = false` + polkit-only privilege escalation (viperML)** — removes sudo and replaces it with a polkit rule granting `wheel` full `manage-units`. Breaks `nh os switch`, `nixos-rebuild`, and the CLAUDE.md break-glass paths. The fleet's deliberate stance is key-only SSH + `wheel` sudoers, not polkit-only.
+
+**`system.etc.overlay.enable` + `userborn` (Mic92)** — experimental NixOS features (overlayfs `/etc`, systemd-based user management). The fleet's `users.mutableUsers = false` stance is enforced by `lib/stances.nix`; its semantics against `userborn` are unverified. Worth watching, not adopting.
+
+**`nohz_full` kernel tickless tuning (Mic92)** — only meaningful for specific latency-sensitive workloads on specific hardware (configured for a particular laptop's core layout). Adding fleet-wide without per-host profiling is cargo-culting.
+
+**Hercules CI scheduled effects for automated package updates (Mic92)** — requires a self-hosted Hercules CI instance. The fleet uses GitHub Actions + `nix flake check`. Introducing a separate CI system contradicts the single-tool CI posture.
+
 ---
 
 ## 9. Open questions
 
 - Does neptune's current `default.nix` set `com.apple.spaces.spans-displays = 0`? If not, is AeroSpace behaving correctly with multiple displays? (§2.1)
 - Is `~/.gitconfig` silently shadowing home-manager's git config on neptune? (§2.2)
+- Does `modules/darwin/touch-id.nix` set `reattach = true`? If not, does Touch ID sudo work inside Ghostty/tmux on neptune? (§2.11)
 - Does the current CI surface closure growth to reviewers? If not, `lix-diff-action` addresses this. (§6.2)
 - Does neptune have a `system.primaryUser` declaration? Required for nix-darwin 25.05+. (isabelroses — not catalogued above as it was a one-liner noted in the scout summary)
 - Should `lib/host-palettes.nix`'s tool-alias layer use no-default options to enforce completeness? (§5.11)
+- Are the JankyBorders and AeroSpace overlay packages candidates for `versionGate` wiring? (§7.7)
+- Should Claude Code skills be installed as nix-managed store paths via `home.file` rather than manually? (§4.3)
 
 ---
 
