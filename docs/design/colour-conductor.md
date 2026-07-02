@@ -1,6 +1,6 @@
 # Colour conductor — live, reproducible, durable desktop theming
 
-**Status:** Proposed — design note (`docs/design/`). Not yet built. Selects Route 1 (below); reverses ADR-036's *"Noctalia as sole theming authority"* while keeping Noctalia as the shell (#411 / Epic E #427) → ADR-worthy (see §ADR relationship under Rationale).
+**Status:** Proposed — design note (`docs/design/`). Not yet built. Selects Route 1 (below); reverses ADR-036's *"Noctalia as sole theming authority"* while keeping Noctalia as the shell (#411 / Epic E #427) → ADR-worthy (see §ADR relationship under Rationale). **Reshaped by [ADR-041](../decisions/ADR-041-terminal-authority-tui-theming.md) (2026-07-02):** TUIs now follow the terminal's ANSI palette fleet-wide, so Route 1's "re-add the shared TUI Stylix targets" steps (§Design items 1, and the per-tool halves of 5) are obsolete — the TUI surface follows any terminal repaint for free, and the route reduces to theming the *terminal* (foot) per menu entry. The specialisation/persistence/menu machinery and the GUI-surface plan stand; rework those items against ADR-041 before implementation.
 
 ## Summary
 

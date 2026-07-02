@@ -3,12 +3,12 @@
 # importing `inputs.stylix.darwinModules.stylix` (the Darwin half of
 # upstream Stylix's flake outputs) instead of the NixOS module.
 #
-# This is the *system half* of the repo's theming wiring on Darwin;
-# the home half is the cross-platform `home/shared/stylix-targets.nix`
-# (TUI targets — helix/bat/fzf/starship/zellij/yazi/lazygit/fish).
-# Darwin hosts don't pick up `home/nixos/stylix-targets-desktop.nix`
-# (which is gated by the `home/nixos/bundles/desktop-env.nix` bundle
-# they don't import).
+# This is the *system half* of the repo's theming wiring on Darwin.
+# Since ADR-041 the TUI surface follows the terminal palette (the
+# target whitelist in `home/shared/stylix-targets.nix` is empty);
+# this engine remains as the colour table the statuslines read and
+# the palette source for lib/scheme-pair.nix + the Ghostty target
+# (home/darwin/ghostty.nix).
 #
 # Per-host palette comes from lib/host-palettes.nix keyed on
 # hostContext.hostName. Missing-host lookups fail loudly at eval.
@@ -19,7 +19,7 @@
 #
 # Known upstream Darwin gaps (Stylix issues #2078, #440 as of 2026-05)
 # affect `stylix.cursor` and `stylix.opacity` — neither of which we
-# use; our active targets are platform-pure TUI tools. If those land
+# use; the one active target (Ghostty) needs neither. If those land
 # fixes upstream, they cost nothing here.
 #
 # Imported by foundation.nix, so every Darwin host gets a palette.

@@ -67,11 +67,10 @@ in
   # installs system-wide) so TUI glyphs render — desirable.
   #
   # Placement: the enable lives here, colocated with the Ghostty
-  # module, rather than in a Darwin stylix-targets file. The TUI
-  # whitelist (home/shared/stylix-targets.nix) is cross-platform and
-  # deliberately terminal-free; the NixOS terminal target (foot) lives
-  # in the desktop-env home bundle, which Darwin has no analogue of.
-  # One terminal, one Darwin-only module — the toggle belongs with it.
+  # module, rather than in the shared whitelist — and it is the one
+  # Stylix target that *survives* the TUI terminal-authority conversion
+  # (ADR-041): the terminal is the palette bus the TUIs now follow, so
+  # its own theming (palette generation + fonts) stays Stylix-fed.
   #
   # The target stays enabled for its font contribution even though its
   # theme selector is mkForce-overridden below (dual-theme, #499); its
