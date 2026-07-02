@@ -1,5 +1,7 @@
 # macOS window management
 
+> **Superseded 2026-07-02** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md), #494). The "pure Hammerspoon, no tiling WM" decision recorded below is reversed: neptune now runs **AeroSpace** as a real tiling window manager (single native Space, tiler-owned workspaces, auto-tiling on open), and the geometry cluster + native-fullscreen-Spaces model described here is retired. A live Phase-A trial (GO) reframed scrollability as a *negotiable*, dissolving §7's paradigm objection to AeroSpace. The *why* is the design note [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md); the settled keymap is [keybinds.md](./keybinds.md). This document is retained as the selection record for the pure-Hammerspoon era.
+
 How the macOS host (neptune) gets niri's geometry/column *feel* — directional focus/move plus the geometry cluster (resize / preset-width / center / fullscreen / maximize) — without a tiling window manager. The decision is **pure Hammerspoon leaning on native macOS primitives**, frozen in [ADR-039 §7](../decisions/ADR-039-capability-registry.md) and scoped by [#440](https://github.com/dannyfaris/nix-config/issues/440); this doc is the canonical selection record that issue calls for.
 
 ## Selection
