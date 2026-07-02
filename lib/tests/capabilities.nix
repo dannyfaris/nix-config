@@ -1,5 +1,5 @@
 # Unit tests for lib/capabilities.nix's real codegen logic — chord rendering
-# (niri + darwin), the niri + Hammerspoon emitters, and the collision lints. A
+# (niri + AeroSpace), the niri + AeroSpace emitters, and the collision lints. A
 # silent bug in any of these would mis-generate every bind or let a chord clash
 # slip through CI. Evaluated via pkgs.lib.runTests, which returns a list of
 # failure records ({ name; expected; result; }); parts/checks.nix renders that
@@ -10,8 +10,8 @@ let
   inherit (caps)
     niriChord
     niriBindsFor
-    darwinChord
-    hammerspoonBindsFor
+    aerospaceChord
+    aerospaceBindsFor
     collisionsFor
     darwinCollisionsFor
     descriptiveFor
@@ -29,16 +29,27 @@ let
     };
   };
 
-  # A minimal hammerspoon-handler capability for darwin fixtures.
-  mkHsCap = id: chord: handler: {
+  # A minimal aerospace-action capability (emitted verbatim) for darwin fixtures.
+  mkAsCap = id: chord: action: {
     inherit id chord;
     label = id;
     description = id;
     keywords = [ ];
     platforms.darwin = {
-      realization = "hammerspoon-handler";
-      inherit handler;
+      realization = "aerospace-action";
+      inherit action;
     };
+  };
+
+  # An aerospace-exec capability (hand-authored body in aerospace.nix; the
+  # emitter skips it but the collision lint counts its chord — the merged
+  # namespace, ADR-040 / #494).
+  mkAsExecCap = id: chord: {
+    inherit id chord;
+    label = id;
+    description = id;
+    keywords = [ ];
+    platforms.darwin.realization = "aerospace-exec";
   };
 in
 lib.runTests {
@@ -205,167 +216,163 @@ lib.runTests {
     expected = [ ];
   };
 
-  # ── darwin chord rendering (Hammerspoon) ──────────────────────────────────
-  # Base tier renders to the hs mod tokens (Ctrl+Opt → ctrl+alt) plus the key,
-  # letters lowercased.
-  testDarwinChordBase = {
-    expr = darwinChord {
+  # ── AeroSpace chord rendering (ADR-040) ───────────────────────────────────
+  # Base tier renders to the darwin mod tokens (Ctrl+Opt → ctrl-alt), hyphen-
+  # joined, key lowercased.
+  testAerospaceChordBase = {
+    expr = aerospaceChord {
       tier = "hyper";
       key = "F";
     };
-    expected = "ctrl+alt+f";
+    expected = "ctrl-alt-f";
   };
 
-  # Arrows map to hs's explicit key names.
-  testDarwinChordArrow = {
-    expr = darwinChord {
+  # Arrows map to AeroSpace's explicit key names.
+  testAerospaceChordArrow = {
+    expr = aerospaceChord {
       tier = "hyper";
       key = "Left";
     };
-    expected = "ctrl+alt+left";
+    expected = "ctrl-alt-left";
   };
 
-  # Punctuation tokens map to the literal hs symbol.
-  testDarwinChordPunct = {
-    expr = darwinChord {
+  # Return maps to AeroSpace's `enter` (verified against the pinned
+  # keysMap.swift) — a wrong key name is a whole-config parse error.
+  testAerospaceChordReturn = {
+    expr = aerospaceChord {
       tier = "hyper";
-      key = "Minus";
+      key = "Return";
     };
-    expected = "ctrl+alt+-";
+    expected = "ctrl-alt-enter";
   };
 
-  # The Super escalator maps to hs "cmd"; mods render in canonical order
+  # Punctuation tokens map to AeroSpace's key names (not literal symbols).
+  testAerospaceChordPunct = {
+    expr = aerospaceChord {
+      tier = "hyper";
+      key = "Comma";
+    };
+    expected = "ctrl-alt-comma";
+  };
+
+  # The Super escalator maps to "cmd"; mods render in canonical order
   # (ctrl, alt, cmd, shift), so the set — not declaration order — fixes the string.
-  testDarwinChordSuperEscalator = {
-    expr = darwinChord {
+  testAerospaceChordSuperEscalator = {
+    expr = aerospaceChord {
       tier = "hyper";
       mods = [ "Super" ];
       key = "Up";
     };
-    expected = "ctrl+alt+cmd+up";
+    expected = "ctrl-alt-cmd-up";
   };
 
-  # The emitter renders each hammerspoon-handler cap to one hs.hotkey.bind line:
-  # a Lua mods table, the key string, and the bare handler name.
-  testHammerspoonBindsShape = {
-    expr = hammerspoonBindsFor [
-      (mkHsCap "fullscreen-window" {
+  # The emitter keys each aerospace-action bind by its rendered chord and maps
+  # it to the verbatim command string — exactly a mode.main.binding entry.
+  testAerospaceBindsShape = {
+    expr = aerospaceBindsFor [
+      (mkAsCap "focus-window-up" {
         tier = "hyper";
-        key = "F";
-      } "fullscreenWindow")
+        key = "Up";
+      } "focus up")
     ];
-    expected = ''hs.hotkey.bind({ "ctrl", "alt" }, "f", fullscreenWindow)'';
+    expected = {
+      "ctrl-alt-up" = "focus up";
+    };
+  };
+
+  # aerospace-exec caps are NOT emitted (their body is hand-authored in
+  # aerospace.nix) — the emitter's output omits them.
+  testAerospaceBindsSkipsExec = {
+    expr = aerospaceBindsFor [
+      (mkAsExecCap "maximise-by-isolation" {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "M";
+      })
+    ];
+    expected = { };
   };
 
   # A clean darwin registry produces no collision failures.
   testDarwinCollisionsCleanIsEmpty = {
     expr = darwinCollisionsFor [
-      (mkHsCap "a" {
+      (mkAsCap "a" {
         tier = "hyper";
         key = "F";
-      } "fullscreenWindow")
-      (mkHsCap "b" {
+      } "exec-and-forget open -a Finder")
+      (mkAsCap "b" {
         tier = "hyper";
         key = "M";
-      } "maximizeToFrame")
+      } "exec-and-forget open -a Messages")
     ];
     expected = [ ];
   };
 
-  # Two hammerspoon-handlers resolving to one chord is reported.
+  # Two aerospace-action binds resolving to one chord is reported.
   testDarwinCollisionsDuplicateFires = {
     expr = builtins.length (darwinCollisionsFor [
-      (mkHsCap "a" {
+      (mkAsCap "a" {
         tier = "hyper";
         key = "F";
-      } "fullscreenWindow")
-      (mkHsCap "b" {
+      } "exec-and-forget open -a Finder")
+      (mkAsCap "b" {
         tier = "hyper";
         key = "F";
-      } "other")
+      } "focus up")
     ]);
     expected = 1;
   };
 
-  # A handler landing on a Karabiner substrate-reserved chord (Ctrl+Opt+arrow /
-  # Ctrl+Opt+number) is reported — the cross-emitter guard (ADR-039 §4/§8) that
-  # protects the deferred directional-focus slice from silently double-binding.
-  testDarwinReservedArrowFires = {
+  # The MERGED namespace is linted: an emitted (aerospace-action) bind and a
+  # hand-authored (aerospace-exec) bind resolving to the same chord is reported.
+  # This is the Stage-1 requirement (#494) — a hand-authored complex bind can't
+  # silently double-bind a chord the emitter already claims.
+  testDarwinCollisionsMergedNamespaceFires = {
     expr = builtins.length (darwinCollisionsFor [
-      (mkHsCap "focus-left" {
-        tier = "hyper";
-        key = "Left";
-      } "focusWindowWest")
-    ]);
-    expected = 1;
-  };
-
-  testDarwinReservedNumberFires = {
-    expr = builtins.length (darwinCollisionsFor [
-      (mkHsCap "geo-1" {
-        tier = "hyper";
-        key = "1";
-      } "someHandler")
-    ]);
-    expected = 1;
-  };
-
-  # An *escalated* chord on a reserved key (Ctrl+Opt+Shift+Left) is NOT the
-  # bare reserved chord, so it must not trip the reservation.
-  testDarwinReservedEscalatedOk = {
-    expr = darwinCollisionsFor [
-      (mkHsCap "esc" {
+      (mkAsCap "emitted" {
         tier = "hyper";
         mods = [ "Shift" ];
-        key = "Left";
-      } "someHandler")
-    ];
-    expected = [ ];
+        key = "M";
+      } "move up")
+      (mkAsExecCap "hand-authored" {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "M";
+      })
+    ]);
+    expected = 1;
   };
 
-  # Guard: the live darwin registry stays collision-free (and clear of the
-  # Karabiner-reserved chords) — a real clash should fail this in CI.
+  # Guard: the live darwin registry stays collision-free across the merged
+  # namespace — a real clash should fail this in CI.
   testLiveRegistryCleanDarwin = {
     expr = caps.darwinCollisions;
     expected = [ ];
   };
 
-  # The spawn binds (Hyper+Return/B) are now routed through the Hammerspoon
-  # emitter (#455), so the live darwin output binds them by handler name — proof
-  # the chords are emitted (and therefore seen by darwinCollisions), not bound
-  # by hand outside the lint's view.
+  # The spawn binds (Hyper+Return/B) are emitted as aerospace-action values, so
+  # the live darwin output binds them (and darwinCollisions sees the chords).
+  # Ghostty spawns a new window via `open -na`; Chrome focus-or-launches via
+  # `open -a` (ADR-040).
   testLiveRegistryEmitsSpawnDarwinBinds = {
-    expr = lib.all (s: lib.hasInfix s caps.hammerspoonBinds) [
-      ''"return", ghosttyNewWindow''
-      ''"b", chromeFocusOrNew''
-    ];
-    expected = true;
+    expr = {
+      ghostty = caps.aerospaceBinds."ctrl-alt-enter" or null;
+      chrome = caps.aerospaceBinds."ctrl-alt-b" or null;
+    };
+    expected = {
+      ghostty = "exec-and-forget open -na Ghostty.app";
+      chrome = ''exec-and-forget open -a "Google Chrome"'';
+    };
   };
 
-  # The Karabiner substrate-reserved key set is exported for karabiner.nix to
-  # generate its remaps from — the single-source bridge (#455). Guards the
-  # contract shape karabiner.nix depends on; the darwin lint reserves the same
-  # chords from this list, so the two cannot drift.
+  # The Karabiner Mission-Control / Space-jump remaps are retired (ADR-040):
+  # karabinerHyperRemapKeys is emptied permanently so Hyper+arrows / Hyper+1‑9
+  # fall through to AeroSpace. karabiner.nix still reads this (now-empty) attr.
   testKarabinerHyperRemapKeys = {
     expr = caps.karabinerHyperRemapKeys;
     expected = {
-      arrows = [
-        "Left"
-        "Right"
-        "Up"
-        "Down"
-      ];
-      numbers = [
-        "1"
-        "2"
-        "3"
-        "4"
-        "5"
-        "6"
-        "7"
-        "8"
-        "9"
-      ];
+      arrows = [ ];
+      numbers = [ ];
     };
   };
 
@@ -400,8 +407,9 @@ lib.runTests {
     expected = "Hyper+Super+↑";
   };
 
-  # One base cap renders header + separator + a single labelled row, using the
-  # per-platform label (mkCap sets both to the id).
+  # One base cap renders header + separator + a single labelled row. mkCap is
+  # niri-only (no darwin realization), so the macOS column renders "—" (ADR-040
+  # made the table show "—" for an unrealized platform).
   testKeybindsTableBaseRow = {
     expr = caps.keybindsTableFor [
       (mkCap "x" {
@@ -412,7 +420,7 @@ lib.runTests {
     expected = lib.concatStringsSep "\n" [
       "| Chord | niri | macOS |"
       "|---|---|---|"
-      "| `Hyper+←` | x | x |"
+      "| `Hyper+←` | x | — |"
     ];
   };
 

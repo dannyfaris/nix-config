@@ -101,23 +101,31 @@ notes that follow.
 | `Hyper+→` | Focus column right | Focus window right |
 | `Hyper+↑` | Focus window up | Focus window up |
 | `Hyper+↓` | Focus window down | Focus window down |
-| `Hyper+Tab` | Overview | Overview |
-| `Hyper+−` | Shrink column width | Shrink window width |
-| `Hyper+=` | Grow column width | Grow window width |
-| `Hyper+R` | Cycle column width | Cycle window width |
-| `Hyper+C` | Center column | Center window |
-| `Hyper+F` | Fullscreen window | Fullscreen window |
-| `Hyper+M` | Maximize column | Maximize window |
+| `Hyper+Tab` | Overview | Last workspace |
+| `Hyper+−` | Shrink column width | — |
+| `Hyper+=` | Grow column width | — |
+| `Hyper+R` | Cycle column width | — |
+| `Hyper+C` | Center column | — |
+| `Hyper+F` | Fullscreen window | — |
+| `Hyper+M` | Maximize column | — |
 | `Hyper+Return` | Open terminal | Open terminal |
 | `Hyper+B` | Open browser | Open browser |
 | `Hyper+Shift+←` | Move column left | Move window left |
 | `Hyper+Shift+→` | Move column right | Move window right |
 | `Hyper+Shift+↑` | Move window up | Move window up |
 | `Hyper+Shift+↓` | Move window down | Move window down |
-| `Hyper+Super+↑` | Switch workspace up | Mission Control |
-| `Hyper+Super+↓` | Switch workspace down | App Exposé |
-| `Hyper+1‑9` | Focus workspace N | Switch to Space N |
-| `Hyper+Shift+1‑9` | Move window to workspace N | Move window to Space N |
+| `Hyper+Super+↑` | Switch workspace up | — |
+| `Hyper+Super+↓` | Switch workspace down | — |
+| `Hyper+1‑9` | Focus workspace N | Switch to workspace N |
+| `Hyper+Shift+1‑9` | Move window to workspace N | Move window to workspace N |
+| `Hyper+F` | — | Open Finder |
+| `Hyper+M` | — | Open Messages |
+| `Hyper+E` | — | Open Outlook |
+| `Hyper+S` | — | Open Slack |
+| `Hyper+/` | — | Open 1Password |
+| `Hyper+,` | — | Toggle tiles/accordion |
+| `Hyper+Shift+;` | — | Service mode |
+| `Hyper+Shift+M` | — | Maximise (isolate) |
 <!-- END GENERATED: hyper-bindings -->
 
 **Not in the registry (reserved, no realization yet).** `Hyper+Escape` → power /

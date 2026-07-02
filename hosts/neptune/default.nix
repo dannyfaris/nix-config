@@ -141,15 +141,15 @@ _: {
       # Karabiner-Elements karabiner.json (~/.config/karabiner/karabiner.json).
       # Cask owns the .app + DriverKit system extension + launchd jobs;
       # this module owns the declarative remap config. Realizes the
-      # Hyper modifier from docs/desktop/keybinds.md (caps_lock → ⌘⌃⌥⇧).
-      # See docs/desktop/karabiner.md.
+      # Hyper modifier (caps_lock → Ctrl+Opt); the Mission-Control /
+      # Space-jump remaps are retired (ADR-040 — those chords fall through
+      # to AeroSpace). See docs/desktop/karabiner.md.
       ../../home/darwin/karabiner.nix
-      # Hammerspoon init.lua (~/.hammerspoon/init.lua). Cask owns
-      # the .app; this module owns the declarative Lua source.
-      # Binds Hyper+letter / Hyper+key actions on top of Karabiner's
-      # modifier. Enumerated bindings live in docs/desktop/keybinds.md
-      # §"Active bindings — macOS clients". See docs/desktop/hammerspoon.md.
-      ../../home/darwin/hammerspoon.nix
+      # AeroSpace window manager (~/.config/aerospace/aerospace.toml + launchd).
+      # Owns macOS window management (tiling, workspaces, the Hyper keymap) via
+      # the aerospace-action registry emitter. Supersedes the retired
+      # Hammerspoon layer (ADR-040). See docs/design/macos-deterministic-tiling.md.
+      ../../home/darwin/aerospace.nix
       # Ensures ~/Pictures/Screenshots exists; pairs with
       # screencapture.location in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix

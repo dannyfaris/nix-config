@@ -93,6 +93,15 @@
       # (Ghostty's macOS default is 13, per its Config.zig: "On macOS
       # we default a little bigger since this tends to look better.")
       font-size = lib.mkForce 13;
+
+      # Under AeroSpace (ADR-040), `Hyper+Return` spawns a new Ghostty window
+      # via `open -na Ghostty.app`, which starts a new app *instance* per
+      # window. Quitting each instance when its last window closes keeps the
+      # process count == the open-window count (clean process-per-window)
+      # instead of leaving windowless instances lingering until logout. The
+      # delay knob is Linux-only, so on macOS this quits immediately — the
+      # intended behaviour here.
+      quit-after-last-window-closed = true;
     };
   };
 }
