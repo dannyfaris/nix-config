@@ -25,4 +25,6 @@ Where [`decisions/`](../decisions/) records the *terse, frozen* ADR (the decisio
 
 - **[colour-conductor.md](./colour-conductor.md)** — live, reproducible, durable desktop theming: Stylix as the single theming authority, live switching across a Nix-declared menu of named themes via home-manager specialisations, Noctalia demoted to a themed-by-Nix shell. Reverses ADR-036's "Noctalia as sole theming authority" (#411 / Epic E #427).
 
+- **[wiki.md](./wiki.md)** — the personal OS's memory layer: `~/wiki`, an LLM-maintained Obsidian vault in the karpathy LLM-wiki shape, background-synced fleet-wide (mercury excluded) via home-manager's `services.git-sync`, with git carrying vault config for mobile parity and nix stopping at the vault wall (#506).
+
 - **[design-loop.md](./design-loop.md)** — the repo's own design loop: how design work moves (intent → forces → options → decision → de-risk → reconcile), the artifact lifecycle (frozen record vs living reference vs proposal), and the enforcement-first spine for human + AI-agent collaboration. *Proposed; mutable by design.*
