@@ -19,4 +19,39 @@
 #   <scheme-name> = [
 #     { url = "https://…"; sha256 = "…"; }
 #   ];
-{ }
+#
+# URLs pin their source repos at a commit — immutable raw links,
+# operator-selected 2026-07-02 (#499).
+let
+  gruvboxWallpapers =
+    path:
+    "https://raw.githubusercontent.com/AngelJumbo/gruvbox-wallpapers/5c145c83ae1f3e30332333bb964d3aeb8e05320a/wallpapers/${path}";
+  omarchyGruvbox =
+    path:
+    "https://raw.githubusercontent.com/basecamp/omarchy/8e03151647ef210ce9e313180e642d3e58dbe9a6/themes/gruvbox/backgrounds/${path}";
+  # Mid-tone impressionist painting, 4096x2428 — deliberately in BOTH
+  # pools (the one image that carries either polarity); fetchurl dedupes
+  # by hash so the store holds one copy.
+  backwater = {
+    url = omarchyGruvbox "1-the-backwater.jpg";
+    sha256 = "1imaxha4vf98n5njlwg9pw7vpzm0aqdzh3w2ib089y8a6ypcdkqk";
+  };
+in
+{
+  gruvbox-dark-hard = [
+    {
+      # Vintage labelled solar chart, 3840x2160.
+      url = gruvboxWallpapers "mix/solar-system.jpg";
+      sha256 = "0n3pyickrwnfaf0bg4a4k266hhybfm1b9ijbmjxfnlh8i1d6r9gi";
+    }
+    backwater
+  ];
+  gruvbox-light-hard = [
+    {
+      # Cream clouds on sage, 4000x2200.
+      url = gruvboxWallpapers "minimalistic/light/clouds.png";
+      sha256 = "0p95ky2q0a7p1jcr9la2fzfnn7j8zamm5ld0ia1khdv9wnfclp57";
+    }
+    backwater
+  ];
+}

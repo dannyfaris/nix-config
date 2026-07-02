@@ -54,7 +54,8 @@ Surfaces divide into two classes:
 - **`SLSSetAppearanceThemeLegacy` write path — green (verified end-to-end on neptune, 2026-07-02).** A ~10-line C helper compiled with the nixpkgs clang wrapper against `/System/Library/PrivateFrameworks/SkyLight.framework`: the flip applied live system-wide; the global preference tracked with correct semantics (`AppleInterfaceStyle` deleted for light, `Dark` for dark); a distributed-notification listener observed `AppleInterfaceThemeChangedNotification` fire; no TCC prompt at any step. Switcher-initiated flips are therefore indistinguishable from toggle-initiated ones to the watcher — the one-code-path argument holds for both entry points.
 - **JankyBorders is the border surface, not AeroSpace** — confirmed in `modules/darwin/jankyborders.nix` (AeroSpace draws no window chrome; #499's original fan-out list is corrected by this note).
 - **Ghostty live repaint — green (runtime-verified on neptune, 2026-07-02, stage-1 slice active).** Open windows repaint live on the appearance flip and new windows resolve the correct half — but only after removing the fish Stylix target, whose base16-fish OSC emission at shell init was silently repainting every window with the built polarity (the set-≠-enforced class in the wild: config correct, behaviour clobbered by an adjacent writer; found by OSC-resetting a window with `printf '\033]111\007\033]110\007'` and watching the light theme appear from underneath). Full chain also verified live: both the System Settings toggle and the SLS switcher drive notification → hooks → borders repaint identically.
-- **Still unverified** (carried to Unresolved questions): stage-2 Ghostty config-include repointing; `desktoppr` runtime behaviour (machinery is live but pools are empty until the operator curates entries).
+- **Wallpaper pools — green (runtime-verified on neptune, 2026-07-02).** Pools curated (solar chart + backwater dark; clouds + backwater light — backwater deliberately in both, store-deduped); activation set the deterministic first entry, and polarity flips apply random picks from the newly-active pool via `desktoppr`.
+- **Still unverified** (carried to Unresolved questions): stage-2 Ghostty config-include repointing.
 
 ## Drawbacks
 
@@ -89,7 +90,6 @@ The standing price once chosen: **store size scales with the declared variants**
 Remaining after the stage-1 build (2026-07-02 — the runtime verification and the working-theory items landed as designed; the fish assumption inverted, see §Design and §De-risk evidence):
 
 - The CLI switcher (SLS helper) is not yet provisioned — the native toggle exercises the whole chain, so it lands with the action-menu / capability-registry integration when that work arrives.
-- Wallpaper pool curation: the machinery is live with empty pools; `desktoppr` runtime behaviour verifies when the operator adds the first entries.
 - fish/bat polish: dual `[light]/[dark]` fish theme sections and bat `theme = auto` if their default/static colours grate (see §Design Class 1).
 
 Deferred to stage 2:
