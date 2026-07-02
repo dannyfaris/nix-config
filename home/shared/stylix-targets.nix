@@ -52,10 +52,13 @@ _: {
     zellij.enable = true;
     yazi.enable = true;
     lazygit.enable = true;
-    # fish — enables Stylix's HM-side fish target (sets fish_color_*
-    # via base16-fish). Fish is the only Stylix target with options on
-    # both NixOS and HM layers; foundation deliberately enables
-    # neither, so this is the sole switch-on for fish theming.
-    fish.enable = true;
+    # fish deliberately omitted (removed 2026-07-02, #499). The target
+    # sources base16-fish, which OSC-paints the terminal (bg/fg + 16
+    # slots) with the *built* polarity at every shell init — clobbering
+    # Ghostty's native dual-theme on neptune, and doing the same to any
+    # window SSH'd into a fleet host (the original per-host-identity
+    # intent, judged not worth the interference). Fish falls back to its
+    # own defaults; dual [light]/[dark] fish theme sections are the
+    # follow-up if fish colours are missed.
   };
 }

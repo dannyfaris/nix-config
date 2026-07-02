@@ -1,6 +1,6 @@
 # macOS live theme switching — polarity sync, themed wallpaper pools, native-first fan-out
 
-**Status:** Proposed — design note (`docs/design/`). Not built. #499 · sibling to [colour-conductor.md](./colour-conductor.md) (the Linux half of the same ambition); no ADR relationship yet — expected to graduate alongside implementation if accepted.
+**Status:** Proposed — design note (`docs/design/`). Stage 1 built and runtime-verified on neptune (2026-07-02); stage 2 not built. #499 · sibling to [colour-conductor.md](./colour-conductor.md) (the Linux half of the same ambition); no ADR relationship yet — expected to graduate alongside implementation if accepted.
 
 ## Summary
 
@@ -29,7 +29,7 @@ Surfaces divide into two classes:
 **Class 1 — native followers (build-time config, zero runtime plumbing):**
 
 - **Ghostty** — native dual-theme: `settings.theme = "light:stylix-light,dark:stylix-dark"` (via `lib.mkForce`, overriding the Stylix target's single-polarity selector) with `window-theme = "system"`. Both palette variants are generated at build time into `programs.ghostty.themes` from the host's declared scheme pair, using Stylix's own scheme-parsing machinery; the Stylix target stays enabled for its font contribution *(shape and interplay de-risked against the pinned sources — see §De-risk evidence)*. Ghostty repaints open windows itself when the appearance flips (community-config-survey.md §5.1).
-- **fish** (3.7+) and **bat** (0.24+) — self-manage via OSC background-change notifications / queries given dual-variant config (survey §§5.5–5.6): they follow the terminal, which follows the system. The version floors are met on neptune (verified); the end-to-end chain — Ghostty emitting the signal a running fish hears, bat's OSC 11 query under Ghostty — is not yet (see §De-risk evidence).
+- **fish** and **bat** — the assumption here inverted on-host. The Stylix fish target was not a follower but a *saboteur*: it sourced base16-fish, which OSC-painted the terminal (bg/fg + all 16 slots) with the built polarity at every shell init, clobbering Ghostty's own theme selection and pinning windows dark regardless of appearance. Removed universally (operator call, 2026-07-02 — the SSH per-host-identity painting it also provided was judged not worth the interference); fish now runs its defaults, which respect the terminal palette. Dual `[light]/[dark]` fish theme sections (survey §5.5) remain the follow-up if fish-specific colours are missed; bat `theme = auto` (survey §5.6) is the same class of follow-up (#411-adjacent — its static Stylix theme doesn't clobber, it just reads dark-tuned against a light background).
 - **TUI statuslines** — today baked to the built polarity as absolute hex; their conversion to ANSI-slot references is #411's cross-platform work, after which they follow Ghostty's palette flip for free. Not re-solved here.
 
 **Class 2 — watched surfaces (the fan-out):**
@@ -53,8 +53,9 @@ Surfaces divide into two classes:
 - **Watcher shape — green (verified against the pinned sources, 2026-07-02).** Home-manager's `launchd.agents.<name>` option exists at the pinned rev (Darwin-gated by default), and `dark-mode-notify`'s source confirms the contract: command run via `/usr/bin/env` with `DARKMODE=1|0`, plus a run at startup and on `NSWorkspace.didWakeNotification` — the self-heal and wake-catch properties in §Design are source-read, not assumed.
 - **`SLSSetAppearanceThemeLegacy` write path — green (verified end-to-end on neptune, 2026-07-02).** A ~10-line C helper compiled with the nixpkgs clang wrapper against `/System/Library/PrivateFrameworks/SkyLight.framework`: the flip applied live system-wide; the global preference tracked with correct semantics (`AppleInterfaceStyle` deleted for light, `Dark` for dark); a distributed-notification listener observed `AppleInterfaceThemeChangedNotification` fire; no TCC prompt at any step. Switcher-initiated flips are therefore indistinguishable from toggle-initiated ones to the watcher — the one-code-path argument holds for both entry points.
 - **JankyBorders is the border surface, not AeroSpace** — confirmed in `modules/darwin/jankyborders.nix` (AeroSpace draws no window chrome; #499's original fan-out list is corrected by this note).
-- **Ghostty dual-theme syntax and `window-theme = "system"`** — pattern confirmed in two community configs (survey §5.1); *not yet verified on neptune* that open windows repaint live on the appearance flip — testable only once the dual themes are configured, so it is the first thing the stage-1 slice verifies.
-- **Still unverified** (carried to Unresolved questions): Ghostty's live repaint of open windows on the appearance flip; the fish/bat end-to-end chain under Ghostty (version floors are necessary, not sufficient — the signal emission and OSC 11 query are untested); `desktoppr` behaviour on multi-display; stage-2 Ghostty config-include repointing.
+- **Ghostty live repaint — green (runtime-verified on neptune, 2026-07-02, stage-1 slice active).** Open windows repaint live on the appearance flip and new windows resolve the correct half — but only after removing the fish Stylix target, whose base16-fish OSC emission at shell init was silently repainting every window with the built polarity (the set-≠-enforced class in the wild: config correct, behaviour clobbered by an adjacent writer; found by OSC-resetting a window with `printf '\033]111\007\033]110\007'` and watching the light theme appear from underneath). Full chain also verified live: both the System Settings toggle and the SLS switcher drive notification → hooks → borders repaint identically.
+- **Wallpaper pools — green (runtime-verified on neptune, 2026-07-02).** Pools curated (solar chart + backwater dark; clouds + backwater light — backwater deliberately in both, store-deduped); activation set the deterministic first entry, and polarity flips apply random picks from the newly-active pool via `desktoppr`.
+- **Still unverified** (carried to Unresolved questions): stage-2 Ghostty config-include repointing.
 
 ## Drawbacks
 
@@ -86,12 +87,10 @@ The standing price once chosen: **store size scales with the declared variants**
 
 ## Unresolved questions
 
-To close during implementation (stage 1):
+Remaining after the stage-1 build (2026-07-02 — the runtime verification and the working-theory items landed as designed; the fish assumption inverted, see §Design and §De-risk evidence):
 
-- Whether the CLI switcher is part of the stage-1 slice — the native toggle alone exercises the whole chain, and the SLS helper is small enough to land either way — is an open sequencing choice. (The write mechanism itself is resolved and de-risked — see §De-risk evidence.)
-- The `appearance.onChange` option name is settled as working theory; final bikeshed (vs `appearance.changeHooks` or a `theme.*` namespace) at implementation.
-- The flip-time wallpaper pick (random) vs activation pick (deterministic first entry) is a taste call, settled as working theory; revisit only if the randomness grates.
-- On-neptune runtime verification of the whole path: toggle → notification → hooks → repaint, plus Ghostty's native flip with open windows.
+- The CLI switcher (SLS helper) is not yet provisioned — the native toggle exercises the whole chain, so it lands with the action-menu / capability-registry integration when that work arrives.
+- fish/bat polish: dual `[light]/[dark]` fish theme sections and bat `theme = auto` if their default/static colours grate (see §Design Class 1).
 
 Deferred to stage 2:
 
