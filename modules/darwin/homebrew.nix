@@ -88,7 +88,6 @@ in
       "wispr-flow" # docs/desktop/wispr-flow.md
       "alt-tab" # docs/desktop/alt-tab.md
       "karabiner-elements" # docs/desktop/karabiner.md
-      "hammerspoon" # docs/desktop/hammerspoon.md
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
@@ -152,11 +151,6 @@ in
     };
     # docs/desktop/karabiner.md
     "org.pqrs.Karabiner-Elements" = {
-      SUEnableAutomaticChecks = true;
-      SUAutomaticallyUpdate = true;
-    };
-    # docs/desktop/hammerspoon.md
-    "org.hammerspoon.Hammerspoon" = {
       SUEnableAutomaticChecks = true;
       SUAutomaticallyUpdate = true;
     };

@@ -3,29 +3,32 @@
 #
 # Phase 1 (#384) delivered: the three-dimension schema, the `Hyper` modifier
 # constant, the niri emitter, and the eval-time collision lint. The macOS
-# window-management slice (#440) adds the Hammerspoon emitter + the `Ctrl+Opt`
-# darwin base, so `platforms.darwin` now carries typed `hammerspoon-handler`
-# realizations alongside its descriptive overrides. #457 adds the keybinds.md
-# table emitter (the human-facing surface, generated from the descriptive
-# dimension). The unified palette (#442) and the actions.json dataset (#437)
-# remain later phases.
+# window-management slice (#440) added the `Ctrl+Opt` darwin base; ADR-040
+# (#494) then replaced the original pure-Hammerspoon realization with AeroSpace,
+# so `platforms.darwin` now carries `aerospace-action` (emitted verbatim) and
+# `aerospace-exec` (hand-authored body) realizations alongside its descriptive
+# overrides. #457 adds the keybinds.md table emitter (the human-facing surface,
+# generated from the descriptive dimension). The unified palette (#442) and the
+# actions.json dataset (#437) remain later phases.
 #
 # Repo-decoupled by design (ADR-039 §9 — extraction-ready): this unit takes
 # only { lib } and imports no repo modules, so packaging it standalone later
-# stays cheap. The Hammerspoon emitter emits only the `hs.hotkey.bind` calls
-# (referencing handler names); the Lua handler bodies are hand-authored in
-# home/darwin/hammerspoon.nix, mirroring how `niriBinds` emits binds the niri
-# module composes — the codegen stays pure (ADR-039 §2, the Lua-handler split).
+# stays cheap. The AeroSpace emitter emits only pure binding *values*
+# (`aerospace-action`); the `aerospace-exec` complex bodies (which need the
+# package-derived `aerospace` path) are hand-authored in home/darwin/
+# aerospace.nix, mirroring how `niriBinds` emits binds the niri module composes
+# — the codegen stays pure (ADR-039 §2).
 #
 # Consumers:
 #   - home/nixos/niri.nix         → `niriBinds` (the generated bind attrset)
-#   - home/darwin/hammerspoon.nix → `hammerspoonBinds` (generated hs.hotkey.bind
-#                                    lines) + the named handler bodies it owns
+#   - home/darwin/aerospace.nix   → `aerospaceBinds` (the emitted
+#                                    mode.main.binding attrset) + `aerospaceChord`
+#                                    (to key the hand-authored aerospace-exec binds)
 #   - modules/nixos/keyd.nix      → `tiers.hyper.linux` (substrate reads the
 #                                    same constant — base shape is one edit, §4)
 #   - home/darwin/karabiner.nix   → `tiers.hyper.darwin` (the Ctrl+Opt substrate)
-#                                    + `karabinerHyperRemapKeys` (the remap key
-#                                    set the darwin lint also reserves, #455)
+#                                    + `karabinerHyperRemapKeys` (now emptied —
+#                                    the Mission-Control remaps retired, ADR-040)
 #   - parts/checks.nix            → `collisions` + `darwinCollisions`
 #                                    (mkReportCheck) + `keybindsTable` (the
 #                                    fragment package + the generate-and-diff
@@ -47,8 +50,8 @@ let
       "Ctrl"
       "Alt"
     ];
-    # Consumed by the Hammerspoon emitter (chord rendering, below) and the
-    # Karabiner Ctrl+Opt substrate (home/darwin/karabiner.nix), #440.
+    # Consumed by the AeroSpace chord renderer (below) and the Karabiner
+    # Ctrl+Opt substrate (home/darwin/karabiner.nix), #440 / ADR-040.
     hyper.darwin = [
       "Ctrl"
       "Option"
@@ -86,37 +89,20 @@ let
       sortMods (tiers.${chord.tier}.linux ++ map niriMod (chord.mods or [ ])) ++ [ chord.key ]
     );
 
-  # ── Hammerspoon (darwin) chord rendering ───────────────────────────────────
-  # hs.hotkey.bind takes a Lua mods table + a key string. The tier's base
-  # modifiers (Ctrl+Opt) plus any escalator `mods` map to Hammerspoon's mod
-  # tokens; the key token maps to hs's key name (lowercase letters, the literal
-  # symbol for punctuation, explicit names for arrows/return/…). Two renderers:
-  # `darwinChord` → a canonical string (the lint dedups on it); the emitter
-  # below → the Lua `hs.hotkey.bind(...)` call.
-  hsMod = {
+  # ── darwin chord rendering ─────────────────────────────────────────────────
+  # The tier's base modifiers (Ctrl+Opt) plus any escalator `mods` map to the
+  # darwin mod-token set (ctrl/alt/shift/cmd — Option→alt, Super→cmd), shared by
+  # the AeroSpace chord renderer below. (Hammerspoon's `hs.hotkey.bind` renderer
+  # was retired with Hammerspoon itself, ADR-040.)
+  darwinMod = {
     Ctrl = "ctrl";
     Alt = "alt";
     Option = "alt";
     Super = "cmd";
     Shift = "shift";
   };
-  # Key token → Hammerspoon key string. Defaults to lib.toLower (covers letters
-  # F→f and digits, which pass through unchanged); the table holds the rest.
-  hsKey = {
-    Left = "left";
-    Right = "right";
-    Up = "up";
-    Down = "down";
-    Return = "return";
-    Tab = "tab";
-    Escape = "escape";
-    Space = "space";
-    Minus = "-";
-    Equal = "=";
-  };
-  hsKeyFor = k: hsKey.${k} or (lib.toLower k);
   # Canonical mod order for a deterministic chord string (the dedup lint groups
-  # on it). hs treats the mods table as a set, so any fixed order binds the same.
+  # on it). AeroSpace treats the mods as a set, so any fixed order binds the same.
   darwinModRank = {
     ctrl = 0;
     alt = 1;
@@ -132,8 +118,37 @@ let
     if ra == rb then a < b else ra < rb
   );
   darwinModTokens =
-    chord: sortDarwinMods (map (m: hsMod.${m}) (tiers.${chord.tier}.darwin ++ (chord.mods or [ ])));
-  darwinChord = chord: lib.concatStringsSep "+" (darwinModTokens chord ++ [ (hsKeyFor chord.key) ]);
+    chord: sortDarwinMods (map (m: darwinMod.${m}) (tiers.${chord.tier}.darwin ++ (chord.mods or [ ])));
+
+  # ── AeroSpace (darwin) chord rendering ─────────────────────────────────────
+  # AeroSpace's `[mode.main.binding]` keys are hyphen-joined lowercase tokens
+  # (e.g. `ctrl-alt-shift-left`). The tier's base modifiers (Ctrl+Opt) plus any
+  # escalator `mods` map to AeroSpace's mod tokens (same set as hs: ctrl/alt/
+  # shift/cmd — Option→alt, Super→cmd); the key token maps to AeroSpace's key
+  # name. The key names are verified against the pinned AeroSpace source
+  # (v0.20.3-Beta, Sources/AppBundle/config/keysMap.swift): Return→`enter`,
+  # arrows/comma/slash/semicolon/minus/equal/tab as below, letters/digits
+  # lowercased. A wrong key name is a whole-config parse error (not a silent
+  # no-op), so these are pinned to that source. AeroSpace treats the modifier
+  # set order-independently; the fixed ctrl/alt/shift/cmd order (sortDarwinMods)
+  # keeps the emitted string deterministic so the dedup lint groups on it.
+  asKey = {
+    Left = "left";
+    Right = "right";
+    Up = "up";
+    Down = "down";
+    Return = "enter";
+    Tab = "tab";
+    Minus = "minus";
+    Equal = "equal";
+    Comma = "comma";
+    Slash = "slash";
+    Semicolon = "semicolon";
+    Space = "space";
+  };
+  asKeyFor = k: asKey.${k} or (lib.toLower k);
+  aerospaceChord =
+    chord: lib.concatStringsSep "-" (darwinModTokens chord ++ [ (asKeyFor chord.key) ]);
 
   # ── Workspace families — generated, not hand-listed (one per workspace 1–9) ─
   focusWorkspaces = map (n: {
@@ -155,9 +170,15 @@ let
       action.focus-workspace = n;
     };
     platforms.darwin = {
-      label = "Switch to Space ${toString n}";
-      description = "Switch to the numbered Space";
+      # AeroSpace workspaces (ADR-040) — "Space" prose kept: AeroSpace's
+      # workspaces are the user-facing "spaces" on macOS. All nine bound
+      # (operator decision, #494) — the trial exercised 1‑4.
+      realization = "aerospace-action";
+      action = "workspace ${toString n}";
+      label = "Switch to workspace ${toString n}";
+      description = "Switch to the numbered AeroSpace workspace";
       keywords = [
+        "workspace"
         "space"
         "desktop"
         "switch"
@@ -189,16 +210,174 @@ let
       action.move-window-to-workspace = n;
     };
     platforms.darwin = {
-      label = "Move window to Space ${toString n}";
-      description = "Move the focused window to the numbered Space";
+      realization = "aerospace-action";
+      action = "move-node-to-workspace ${toString n}";
+      label = "Move window to workspace ${toString n}";
+      description = "Move the focused window to the numbered AeroSpace workspace";
       keywords = [
         "move"
         "window"
+        "workspace"
         "space"
         "send"
       ];
     };
   }) (lib.range 1 9);
+
+  # ── darwin-only capabilities (ADR-040) ─────────────────────────────────────
+  # macOS-only binds with no niri twin: app-launch, the tiles↔accordion toggle,
+  # the service-mode leader, and maximise-by-isolation. They live in the
+  # registry (not hand-authored) so the future palette/cheatsheet (ADR-039 §6,
+  # registry-only dataset) can show them and the collision lint covers them.
+  # `platforms.linux` is omitted (structural "linux: N/A"); the keybinds.md
+  # table renders "—" for the unrealized platform.
+  #
+  # App-launch: `open -a` is focus-or-launch; `/usr/bin/open` is on the
+  # exec-and-forget default PATH, so no nix-store path is needed (only the
+  # `aerospace` CLI itself needs the package-derived path — that's the
+  # aerospace-exec binds, hand-authored in aerospace.nix).
+  mkAppLaunch =
+    {
+      id,
+      key,
+      app,
+      label,
+      keywords,
+    }:
+    {
+      inherit id label keywords;
+      description = "Focus ${app}, or launch it if not running";
+      chord = {
+        tier = "hyper";
+        inherit key;
+      };
+      platforms.darwin = {
+        realization = "aerospace-action";
+        action = "exec-and-forget open -a ${lib.escapeShellArg app}";
+      };
+    };
+  darwinWmExtras = [
+    (mkAppLaunch {
+      id = "open-finder";
+      key = "F";
+      app = "Finder";
+      label = "Open Finder";
+      keywords = [
+        "finder"
+        "files"
+        "launch"
+      ];
+    })
+    (mkAppLaunch {
+      id = "open-messages";
+      key = "M";
+      app = "Messages";
+      label = "Open Messages";
+      keywords = [
+        "messages"
+        "imessage"
+        "chat"
+        "launch"
+      ];
+    })
+    (mkAppLaunch {
+      id = "open-outlook";
+      key = "E";
+      app = "Microsoft Outlook";
+      label = "Open Outlook";
+      keywords = [
+        "outlook"
+        "email"
+        "mail"
+        "calendar"
+        "launch"
+      ];
+    })
+    (mkAppLaunch {
+      id = "open-slack";
+      key = "S";
+      app = "Slack";
+      label = "Open Slack";
+      keywords = [
+        "slack"
+        "chat"
+        "launch"
+      ];
+    })
+    (mkAppLaunch {
+      id = "open-1password";
+      key = "Slash";
+      app = "1Password";
+      label = "Open 1Password";
+      keywords = [
+        "1password"
+        "passwords"
+        "vault"
+        "launch"
+      ];
+    })
+    {
+      id = "layout-toggle";
+      label = "Toggle tiles/accordion";
+      description = "Toggle the focused workspace between tiles and accordion layout";
+      keywords = [
+        "layout"
+        "tiles"
+        "accordion"
+        "toggle"
+      ];
+      chord = {
+        tier = "hyper";
+        key = "Comma";
+      };
+      platforms.darwin = {
+        realization = "aerospace-action";
+        action = "layout tiles accordion";
+      };
+    }
+    {
+      id = "service-mode";
+      label = "Service mode";
+      description = "Enter the AeroSpace service mode (reload / flatten-tree / float-toggle / close-others)";
+      keywords = [
+        "service"
+        "mode"
+        "reload"
+        "leader"
+      ];
+      chord = {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "Semicolon";
+      };
+      platforms.darwin = {
+        realization = "aerospace-action";
+        action = "mode service";
+      };
+    }
+    {
+      # aerospace-exec: body hand-authored in home/darwin/aerospace.nix (it
+      # shells out to the `aerospace` CLI by absolute path). AeroSpace has no
+      # stable maximize (`fullscreen` drops on focus-change), so this isolates
+      # the focused window onto its own empty workspace instead.
+      id = "maximise-by-isolation";
+      label = "Maximise (isolate)";
+      description = "Move the focused window to its own empty workspace (the focus-stable maximize)";
+      keywords = [
+        "maximize"
+        "maximise"
+        "isolate"
+        "fullscreen"
+        "expand"
+      ];
+      chord = {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "M";
+      };
+      platforms.darwin.realization = "aerospace-exec";
+    }
+  ];
 
   # ── The registry — three dimensions per capability (ADR-039 §2) ────────────
   # chord (tier + escalator mods + key tokens) · realization (per-platform,
@@ -227,15 +406,22 @@ let
         realization = "niri-action";
         action.focus-column-left = { };
       };
+      # aerospace-exec: the edge-scroll fallthrough is a *complex* bind (it
+      # shells out to the `aerospace` CLI by absolute path), so its body is
+      # hand-authored in home/darwin/aerospace.nix; here it contributes the
+      # chord + descriptive for the palette/table/collision-lint. Darwin-
+      # specific behaviour (not a faithful focus-column mirror): at the edge it
+      # switches workspace (wrap-around) and lands on the far column.
       platforms.darwin = {
+        realization = "aerospace-exec";
         label = "Focus window left";
-        description = "Move focus to the window on the left; at the left edge, focus the previous Space";
+        description = "Move focus left; at the left edge, wrap to the previous workspace's far column";
         keywords = [
           "focus"
           "navigate"
           "left"
           "window"
-          "space"
+          "workspace"
         ];
       };
     }
@@ -257,15 +443,18 @@ let
         realization = "niri-action";
         action.focus-column-right = { };
       };
+      # aerospace-exec (edge-scroll) — see focus-column-left. Body hand-authored
+      # in home/darwin/aerospace.nix.
       platforms.darwin = {
+        realization = "aerospace-exec";
         label = "Focus window right";
-        description = "Move focus to the window on the right; at the right edge, focus the next Space";
+        description = "Move focus right; at the right edge, wrap to the next workspace's far column";
         keywords = [
           "focus"
           "navigate"
           "right"
           "window"
-          "space"
+          "workspace"
         ];
       };
     }
@@ -289,6 +478,8 @@ let
         action.focus-window-up = { };
       };
       platforms.darwin = {
+        realization = "aerospace-action";
+        action = "focus up";
         description = "Move focus to the window above";
         keywords = [
           "focus"
@@ -318,6 +509,8 @@ let
         action.focus-window-down = { };
       };
       platforms.darwin = {
+        realization = "aerospace-action";
+        action = "focus down";
         description = "Move focus to the window below";
         keywords = [
           "focus"
@@ -346,15 +539,26 @@ let
         action.toggle-overview = { };
       };
       platforms.darwin = {
-        description = "Open Mission Control";
+        realization = "aerospace-action";
+        action = "workspace-back-and-forth";
+        label = "Last workspace";
+        description = "Toggle to the previously-focused workspace";
+        keywords = [
+          "workspace"
+          "back"
+          "toggle"
+          "previous"
+        ];
       };
     }
 
-    # Base Hyper — window geometry. macOS realizes each as a stateless
-    # Hammerspoon handler on the focused window (#440); the handler bodies live
-    # in home/darwin/hammerspoon.nix and the emitter binds them. niri's column
-    # vocabulary becomes macOS window vocabulary via the descriptive overrides.
-    # See docs/desktop/macos-window-management.md + keybinds.md §Window geometry.
+    # Base Hyper — window geometry. On macOS these are structurally "darwin:
+    # N/A" (no platforms.darwin): AeroSpace auto-tiles, so per-window geometry
+    # is superseded (ADR-040, superseding ADR-039 §7's Hammerspoon geometry
+    # handlers). The capability IDs + their niri realization stay — the Linux
+    # side still uses them, and a future Hyprland move could re-realize
+    # center/maximize (design note §Future). Hyper+F and Hyper+M are reused on
+    # darwin for app-launch (open-finder / open-messages, below).
     {
       id = "shrink-column";
       label = "Shrink column width";
@@ -373,12 +577,7 @@ let
         realization = "niri-action";
         action.set-column-width = "-10%";
       };
-      platforms.darwin = {
-        label = "Shrink window width";
-        description = "Decrease the focused window's width";
-        realization = "hammerspoon-handler";
-        handler = "shrinkWindow";
-      };
+      # darwin: N/A (AeroSpace auto-tiles; ADR-040).
     }
     {
       id = "grow-column";
@@ -398,12 +597,7 @@ let
         realization = "niri-action";
         action.set-column-width = "+10%";
       };
-      platforms.darwin = {
-        label = "Grow window width";
-        description = "Increase the focused window's width";
-        realization = "hammerspoon-handler";
-        handler = "growWindow";
-      };
+      # darwin: N/A (AeroSpace auto-tiles; ADR-040).
     }
     {
       id = "cycle-column-width";
@@ -423,18 +617,7 @@ let
         realization = "niri-action";
         action.switch-preset-column-width = { };
       };
-      platforms.darwin = {
-        label = "Cycle window width";
-        description = "Cycle the focused window through preset widths";
-        keywords = [
-          "resize"
-          "preset"
-          "width"
-          "cycle"
-        ];
-        realization = "hammerspoon-handler";
-        handler = "snapPresetWidth";
-      };
+      # darwin: N/A — niri-ism, no AeroSpace equivalent (ADR-040).
     }
     {
       id = "center-column";
@@ -453,17 +636,7 @@ let
         realization = "niri-action";
         action.center-column = { };
       };
-      platforms.darwin = {
-        label = "Center window";
-        description = "Center the focused window on screen";
-        keywords = [
-          "center"
-          "window"
-          "layout"
-        ];
-        realization = "hammerspoon-handler";
-        handler = "centerWindow";
-      };
+      # darwin: N/A — niri-ism, no AeroSpace equivalent (ADR-040).
     }
     {
       id = "fullscreen-window";
@@ -482,11 +655,9 @@ let
         realization = "niri-action";
         action.fullscreen-window = { };
       };
-      platforms.darwin = {
-        description = "Enter native fullscreen — the window moves to its own Space";
-        realization = "hammerspoon-handler";
-        handler = "fullscreenWindow";
-      };
+      # darwin: N/A — AeroSpace `fullscreen` drops on focus-change; the focus-
+      # stable equivalent is maximise-by-isolation (Hyper+Shift+M, below).
+      # Hyper+F is reused on darwin for open-finder. (ADR-040.)
     }
     {
       id = "maximize-column";
@@ -505,17 +676,9 @@ let
         realization = "niri-action";
         action.maximize-column = { };
       };
-      platforms.darwin = {
-        label = "Maximize window";
-        description = "Maximize the focused window to the screen's visible frame";
-        keywords = [
-          "maximize"
-          "window"
-          "expand"
-        ];
-        realization = "hammerspoon-handler";
-        handler = "maximizeToFrame";
-      };
+      # darwin: N/A — AeroSpace has no stable maximize; the equivalent is
+      # maximise-by-isolation (Hyper+Shift+M, below). Hyper+M is reused on
+      # darwin for open-messages. (ADR-040.)
     }
 
     # Base Hyper — spawn
@@ -537,12 +700,15 @@ let
         realization = "niri-action";
         action.spawn = "foot";
       };
-      # Routed through the Hammerspoon emitter (handler body hand-authored in
-      # home/darwin/hammerspoon.nix) so the chord is covered by the darwin
-      # collision lint, #455 — not just bound by hand outside the registry.
+      # macOS: always spawn a *new* Ghostty window via `open -na` (a new app
+      # instance per window — Ghostty exposes no scriptable single-instance
+      # new-window on macOS; ADR-040 + design note §Design). Paired with
+      # `quit-after-last-window-closed = true` in home/darwin/ghostty.nix so
+      # instances don't linger windowless. `open` is on the exec-and-forget
+      # PATH (/usr/bin), so no nix-store path needed.
       platforms.darwin = {
-        realization = "hammerspoon-handler";
-        handler = "ghosttyNewWindow";
+        realization = "aerospace-action";
+        action = "exec-and-forget open -na Ghostty.app";
         keywords = [
           "terminal"
           "shell"
@@ -574,20 +740,20 @@ let
           "https://"
         ];
       };
-      # macOS realizes this as Chrome focus-or-spawn (the handler body is
-      # hand-authored in home/darwin/hammerspoon.nix); routed through the
-      # emitter so the chord is covered by the darwin collision lint, #455.
-      # The prose genuinely diverges from linux's default-browser behaviour.
+      # macOS: focus-or-launch Chrome via `open -a` (no `-n` — unlike the
+      # terminal, this is focus-if-present, and a second Chrome instance would
+      # fight over the shared profile). Prose diverges from linux's default-
+      # browser behaviour. (ADR-040.)
       platforms.darwin = {
-        description = "Focus the most-recent Chrome window, or open a new one";
+        description = "Focus Chrome, or launch it if not running";
         keywords = [
           "browser"
           "web"
           "internet"
           "chrome"
         ];
-        realization = "hammerspoon-handler";
-        handler = "chromeFocusOrNew";
+        realization = "aerospace-action";
+        action = ''exec-and-forget open -a "Google Chrome"'';
       };
     }
 
@@ -612,13 +778,14 @@ let
         action.move-column-left = { };
       };
       platforms.darwin = {
+        realization = "aerospace-action";
+        action = "move left";
         label = "Move window left";
-        description = "Move the focused window left; at the left edge, move it to the previous Space";
+        description = "Move the focused window left within the workspace";
         keywords = [
           "move"
           "window"
           "left"
-          "space"
           "rearrange"
         ];
       };
@@ -643,13 +810,14 @@ let
         action.move-column-right = { };
       };
       platforms.darwin = {
+        realization = "aerospace-action";
+        action = "move right";
         label = "Move window right";
-        description = "Move the focused window right; at the right edge, move it to the next Space";
+        description = "Move the focused window right within the workspace";
         keywords = [
           "move"
           "window"
           "right"
-          "space"
           "rearrange"
         ];
       };
@@ -675,6 +843,8 @@ let
         action.move-window-up = { };
       };
       platforms.darwin = {
+        realization = "aerospace-action";
+        action = "move up";
         description = "Move the focused window up";
         keywords = [
           "move"
@@ -705,6 +875,8 @@ let
         action.move-window-down = { };
       };
       platforms.darwin = {
+        realization = "aerospace-action";
+        action = "move down";
         description = "Move the focused window down";
         keywords = [
           "move"
@@ -715,11 +887,11 @@ let
       };
     }
 
-    # Hyper+Super — switch-workspace (the move-to-workspace family moved to the
-    # Hyper+Shift "move" tier; Hyper+Super now carries only the ↑/↓ switch). The
-    # ↑/↓ pair is the showcase action divergence: niri switches workspace, macOS
-    # opens Mission Control / exposé — so label, description, and keywords all
-    # override. macOS values are provisional pending the #440 macOS realization.
+    # Hyper+Super — switch-workspace (the move-to-workspace family lives on the
+    # Hyper+Shift "move" tier). darwin: N/A — under AeroSpace, workspace
+    # switching is Hyper+1‑9 / the Hyper+←/→ edge-scroll / Hyper+Tab, and there
+    # is no Mission Control to open (ADR-040). The capability IDs + niri
+    # realization stay for the Linux side.
     {
       id = "switch-workspace-up";
       label = "Switch workspace up";
@@ -739,16 +911,7 @@ let
         realization = "niri-action";
         action.focus-workspace-up = { };
       };
-      platforms.darwin = {
-        label = "Mission Control";
-        description = "Open Mission Control";
-        keywords = [
-          "exposé"
-          "mission control"
-          "overview"
-          "spaces"
-        ];
-      };
+      # darwin: N/A (ADR-040).
     }
     {
       id = "switch-workspace-down";
@@ -769,20 +932,12 @@ let
         realization = "niri-action";
         action.focus-workspace-down = { };
       };
-      platforms.darwin = {
-        label = "App Exposé";
-        description = "Show all windows of the active app (exposé)";
-        keywords = [
-          "exposé"
-          "windows"
-          "mission control"
-          "app"
-        ];
-      };
+      # darwin: N/A (ADR-040).
     }
   ]
   ++ focusWorkspaces
-  ++ moveToWorkspaces;
+  ++ moveToWorkspaces
+  ++ darwinWmExtras;
 
   # ── niri emitter ───────────────────────────────────────────────────────────
   # Parametrised over a registry so the unit tests can drive it with fixtures;
@@ -799,20 +954,36 @@ let
     );
   niriBinds = niriBindsFor registry;
 
-  # ── Hammerspoon (darwin) emitter ───────────────────────────────────────────
-  # Each darwin hammerspoon-handler capability becomes one `hs.hotkey.bind(mods,
-  # key, handler)` line — the handler is referenced by *name*; its Lua body is
-  # hand-authored in home/darwin/hammerspoon.nix, which concatenates this output
-  # after the handler library (ADR-039 §2, the Lua-handler split). Pure string
-  # codegen, parametrised over a registry so the unit tests can drive it.
-  isHsHandler = c: (c.platforms.darwin.realization or null) == "hammerspoon-handler";
-  luaModsTable =
-    chord: "{ " + lib.concatMapStringsSep ", " (m: ''"${m}"'') (darwinModTokens chord) + " }";
-  hsBindLine =
-    c:
-    ''hs.hotkey.bind(${luaModsTable c.chord}, "${hsKeyFor c.chord.key}", ${c.platforms.darwin.handler})'';
-  hammerspoonBindsFor = reg: lib.concatMapStringsSep "\n" hsBindLine (lib.filter isHsHandler reg);
-  hammerspoonBinds = hammerspoonBindsFor registry;
+  # ── AeroSpace (darwin) emitter ─────────────────────────────────────────────
+  # Darwin window management is realized by AeroSpace (ADR-040, superseding
+  # ADR-039 §7's pure-Hammerspoon realization). Two darwin realization types:
+  #   • `aerospace-action` — a pure AeroSpace binding value the emitter writes
+  #     verbatim into `[mode.main.binding]` (`focus up`, `workspace 1`, or an
+  #     `exec-and-forget open …` app-launch). The payload is `platforms.darwin.
+  #     action` (a string). App-launch uses bare `open` (/usr/bin/open is on the
+  #     `exec-and-forget` bash default PATH — no nix profile needed).
+  #   • `aerospace-exec` — a *complex* bind whose body must call the `aerospace`
+  #     CLI by an absolute (package-derived) path, which this repo-decoupled unit
+  #     (only `{ lib }`, ADR-039 §9) cannot form. Its body is hand-authored in
+  #     home/darwin/aerospace.nix (`lib.getExe cfg.package`); here it contributes
+  #     only its *chord + descriptive* so the palette/table/collision-lint see
+  #     it. The emitter does NOT emit it. Today: the `Hyper+←/→` edge-scroll and
+  #     `Hyper+Shift+M` maximise-by-isolation.
+  # `aerospaceBinds` is the attrset home/darwin/aerospace.nix merges into
+  # `programs.aerospace.settings.mode.main.binding` (the hand-authored
+  # aerospace-exec bodies are merged alongside it). Parametrised over a registry
+  # so the unit tests can drive it with fixtures.
+  isAerospaceAction = c: (c.platforms.darwin.realization or null) == "aerospace-action";
+  isAerospaceExec = c: (c.platforms.darwin.realization or null) == "aerospace-exec";
+  isAerospaceBind = c: isAerospaceAction c || isAerospaceExec c;
+  aerospaceBindsFor =
+    reg:
+    lib.listToAttrs (
+      map (c: lib.nameValuePair (aerospaceChord c.chord) c.platforms.darwin.action) (
+        lib.filter isAerospaceAction reg
+      )
+    );
+  aerospaceBinds = aerospaceBindsFor registry;
 
   # ── Collision lint (ADR-039 §8) ────────────────────────────────────────────
   # Pure: returns a list of human-legible failure strings (empty = ok), which
@@ -851,58 +1022,42 @@ let
     dupFailures ++ fRowFailures;
   collisions = collisionsFor registry;
 
-  # ── Collision lint — darwin (ADR-039 §8) ───────────────────────────────────
-  # The macOS chord space is co-owned by two emitters: Hammerspoon handlers
-  # (this registry) and the hand-authored Karabiner substrate remaps
-  # (home/darwin/karabiner.nix — the Ctrl+Opt+arrow Mission-Control family and
-  # the Ctrl+Opt+1‑9 Space jumps). The registry does not *own* those remaps
-  # (§4 — Karabiner production stays substrate, not a chord→action realization
-  # yet), but the lint must treat them as occupied so a future handler (e.g.
-  # directional focus on the arrows) cannot silently double-bind a chord the
-  # substrate already consumes. No darwin F-row rule: macOS Ctrl+Opt+F1‑12 is
-  # not niri's unbindable VT switch, so that reservation is Linux-only.
-  # The Hyper+key chords the hand-authored Karabiner substrate consumes as
-  # remaps (Hyper+key → Ctrl+key): arrows drive the Mission-Control family, 1‑9
-  # the Space jumps. Declared here ONCE so the Karabiner production
-  # (home/darwin/karabiner.nix generates its manipulators from these keys) and
-  # the darwin collision lint (darwinReservedChords, below) read one list and
-  # cannot drift (#455). The registry does not yet own these as karabiner-remap
-  # realizations (ADR-039 §4) — this is the single-source bridge until it does
-  # (tracked on #428).
+  # ── Collision lint — darwin (ADR-039 §8; ADR-040) ──────────────────────────
+  # The macOS chord space is now owned by AeroSpace alone (Hammerspoon retired,
+  # ADR-040). The lint operates on the **merged** AeroSpace namespace — every
+  # darwin bind, whether the emitter writes it (`aerospace-action`) or
+  # home/darwin/aerospace.nix hand-authors it (`aerospace-exec`) — so a
+  # hand-authored complex bind cannot silently double-bind a chord the emitter
+  # already claims (the Stage-1 requirement in #494). Because both realization
+  # types are declared in *this* registry, the lint reads one source and needs
+  # no cross-module knowledge of aerospace.nix. No darwin F-row rule: macOS
+  # Ctrl+Opt+F1‑12 is not niri's unbindable VT switch, so that reservation is
+  # Linux-only.
+  #
+  # The Karabiner Mission-Control / Space-jump remaps are gone (ADR-040): Hyper+
+  # arrows / Hyper+1‑9 fall through to AeroSpace instead of native Spaces, so
+  # `karabinerHyperRemapKeys` is emptied permanently and the old reserved-chord
+  # logic is dropped. home/darwin/karabiner.nix still reads this attr to build
+  # its (now empty) remap manipulators — #488's empty-manipulator filter drops
+  # the resulting empty rules — so the attr is kept, not deleted.
   karabinerHyperRemapKeys = {
-    arrows = [
-      "Left"
-      "Right"
-      "Up"
-      "Down"
-    ];
-    numbers = map toString (lib.range 1 9);
+    arrows = [ ];
+    numbers = [ ];
   };
-  darwinReservedChords = map (
-    key:
-    darwinChord {
-      tier = "hyper";
-      inherit key;
-    }
-  ) (karabinerHyperRemapKeys.arrows ++ karabinerHyperRemapKeys.numbers);
   darwinCollisionsFor =
     reg:
     let
       entries = map (c: {
         inherit (c) id;
-        chord = darwinChord c.chord;
-      }) (lib.filter isHsHandler reg);
+        chord = aerospaceChord c.chord;
+      }) (lib.filter isAerospaceBind reg);
       byChord = lib.groupBy (e: e.chord) entries;
       dupFailures = lib.mapAttrsToList (
         chord: es:
         "duplicate darwin chord ${chord}: claimed by ${lib.concatMapStringsSep ", " (e: e.id) es}"
       ) (lib.filterAttrs (_chord: es: lib.length es > 1) byChord);
-      reservedFailures = map (
-        e:
-        "darwin chord ${e.chord} (${e.id}) collides with a Karabiner substrate-reserved chord (Mission-Control arrow / Space-jump remap; home/darwin/karabiner.nix, ADR-039 §4/§8)"
-      ) (lib.filter (e: lib.elem e.chord darwinReservedChords) entries);
     in
-    dupFailures ++ reservedFailures;
+    dupFailures;
   darwinCollisions = darwinCollisionsFor registry;
 
   # ── Descriptive resolution (per-platform override → shared default) ─────────
@@ -943,8 +1098,15 @@ let
     Down = "↓";
     Minus = "−";
     Equal = "=";
+    Comma = ",";
+    Slash = "/";
+    Semicolon = ";";
   };
   displayKeyFor = k: displayKey.${k} or k;
+  # A capability is "realized" on a platform when it declares a realization
+  # there; the table shows "—" otherwise (linux-only geometry, darwin-only
+  # app-launch). ADR-040 introduced both directions.
+  realizedOn = platform: cap: (cap.platforms.${platform}.realization or null) != null;
   # Hyper + escalators (Shift / Super, in declaration order) + key, joined "+".
   tierChordDisplay =
     chord:
@@ -965,7 +1127,12 @@ let
         let
           l = (descriptiveFor platform cap).label;
         in
-        if digit then lib.replaceStrings [ cap.chord.key ] [ "N" ] l else l;
+        if !(realizedOn platform cap) then
+          "—"
+        else if digit then
+          lib.replaceStrings [ cap.chord.key ] [ "N" ] l
+        else
+          l;
     in
     "| `${chordDisp}` | ${labelFor "linux"} | ${labelFor "darwin"} |";
   keybindsTableFor =
@@ -1017,9 +1184,9 @@ in
     niriChord
     niriBinds
     niriBindsFor
-    darwinChord
-    hammerspoonBinds
-    hammerspoonBindsFor
+    aerospaceChord
+    aerospaceBinds
+    aerospaceBindsFor
     collisions
     collisionsFor
     darwinCollisions

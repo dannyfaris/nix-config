@@ -152,7 +152,7 @@ in
           capabilities.collisions;
       keybind-collisions-darwin =
         mkReportCheck "x86_64-linux" "keybind-collisions-darwin"
-          "Keybind chord collisions — darwin/Hammerspoon (lib/capabilities.nix; ADR-039 §8)"
+          "Keybind chord collisions — darwin/AeroSpace (lib/capabilities.nix; ADR-039 §8, ADR-040)"
           capabilities.darwinCollisions;
       # Doc-freshness gate: the keybinds.md generated region must equal the
       # registry's emitted table. Platform-independent like the unit tests, so it
