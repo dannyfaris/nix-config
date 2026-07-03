@@ -177,7 +177,7 @@ This section re-litigated the #112 intent per its own `[!IMPORTANT]` mandate: ad
 
 ### Triggering need
 
-metis (and any future NixOS host with a desktop environment) must be able to SSH *out* to the other fleet hosts (mercury, neptune). Today it cannot: metis has no outbound SSH identity (`~/.ssh/` holds no private key, the agent has no identities), and only `dbf@mac` is authorized fleet-wide (`lib/operator.nix`). This is the ADR-010 "SSH between the desktop and other hosts" migration trigger, finally fired. Resolving it is in scope here.
+metis (and any future NixOS host with a desktop environment) must be able to SSH *out* to the other fleet hosts (mercury, neptune). At the time of this decision it could not: metis had no outbound SSH identity, and only the neptune key (then labelled `dbf@mac`) was authorized fleet-wide (`lib/operator.nix`). This is the ADR-010 "SSH between the desktop and other hosts" migration trigger, finally fired. *(Landed 2026-07-03, #524: per-host passphrase-less ed25519 keys — the on-disk model this section decides for.)*
 
 ### Decision summary
 

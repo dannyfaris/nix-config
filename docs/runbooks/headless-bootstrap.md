@@ -266,6 +266,36 @@ nh os switch
 `nh` resolves the flake via `NH_FLAKE`, set from `hostContext.flakePath`
 in each host's `default.nix` (ADR-019).
 
+## Fleet SSH enrolment (#517 / #524)
+
+Two imperative steps make the new host a full fleet-SSH citizen; both
+end in one commit and a fleet re-switch.
+
+1. **Host identity → declared trust (#517).** Commit the host's public
+   host key and pin it fleet-wide:
+
+   ```bash
+   scp dbf@<host>:/etc/ssh/ssh_host_ed25519_key.pub hosts/<host>/ssh_host_ed25519_key.pub
+   # then add one entry to modules/shared/ssh-known-hosts.nix and a
+   # fleet block to home/shared/ssh.nix
+   ```
+
+2. **Outbound user key (#524).** Generate the host's own user key —
+   passphrase-less by deliberate carve-out (ADR-010 §History); the
+   private key never leaves the host:
+
+   ```bash
+   # && (not ;): if a key already exists, keygen's overwrite prompt
+   # aborts over a non-tty — ; would then silently print the STALE key.
+   ssh dbf@<host> 'ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q && cat ~/.ssh/id_ed25519.pub'
+   # append the printed pubkey to lib/operator.nix authorizedKeys,
+   # labelled dbf@<host>
+   ```
+
+Existing hosts accept the newcomer (and trust its host key) only after
+their *own* next switch — the authorized_keys and ssh_known_hosts files
+are rendered per-host at activation.
+
 ## Verification
 
 Run from the new host's `dbf` shell unless noted otherwise.
