@@ -67,6 +67,12 @@ _: {
     # docs/desktop/keybinds.md §Screenshots.
     ../../modules/darwin/keyboard-shortcuts.nix
 
+    # JankyBorders — the focused-window border for AeroSpace tiles (the macOS
+    # analogue of the window border niri draws). Colours source from the design
+    # tokens; runs as a launchd user agent. See the module header and
+    # docs/design/macos-deterministic-tiling.md (ADR-040 Stage 2, #494).
+    ../../modules/darwin/jankyborders.nix
+
     # Deliberately NOT imported (both laptop-driven; their absence is the
     # design, not an oversight):
     #   - sshd.nix — saturn is an SSH client, not a server; no inbound SSH
@@ -125,12 +131,21 @@ _: {
       # extension + launchd jobs; this module owns the declarative remap
       # config (caps_lock → Hyper). See docs/desktop/karabiner.md.
       ../../home/darwin/karabiner.nix
-      # Hammerspoon init.lua. Binds Hyper+key actions on top of Karabiner's
-      # modifier. See docs/desktop/hammerspoon.md.
-      ../../home/darwin/hammerspoon.nix
+      # AeroSpace window manager (~/.config/aerospace/aerospace.toml + launchd).
+      # Owns macOS window management (tiling, workspaces, the Hyper keymap) via
+      # the aerospace-action registry emitter. Supersedes the retired
+      # Hammerspoon layer (ADR-040). See docs/design/macos-deterministic-tiling.md.
+      ../../home/darwin/aerospace.nix
       # Ensures ~/Pictures/Screenshots exists; pairs with
       # screencapture.location in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix
+      # Runtime theme switching (#499): the appearance watcher + hook
+      # option, the JankyBorders repaint hook, and theme-following
+      # wallpaper pools. Ghostty's half is native dual-theme in its own
+      # module. See docs/design/macos-live-theme-switching.md.
+      ../../home/darwin/dark-mode-notify.nix
+      ../../home/darwin/jankyborders-hook.nix
+      ../../home/darwin/wallpapers.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream prebuilt
       # aarch64-darwin binary, sidestepping the source build cache.nixos.org
