@@ -60,7 +60,7 @@ It gates *presence* only (sections present, in order, none left as a template pr
 ## Subagents
 
 - **Peer review (stage 6):** an independent subagent, prompted adversarially, reviews the note and the staged diff against `peer-review-checklist.md`. First confirm the working tree matches the intended merge target, and scope the review to the relevant files.
-- **De-risk / research (stages 3–4):** spawn a subagent to verify a load-bearing claim against the pinned source or running system; demand it be skeptical, not confirmatory.
+- **De-risk / research (stages 3–4):** spawn a subagent to verify a load-bearing claim against the pinned source or running system; demand it be skeptical, not confirmatory. A research run that produces a standalone report — e.g. a `deep-research` run — has its report persisted to `docs/research/<slug>.md` (dated status/provenance header, indexed, Refs-not-Closes) per [`docs/research/README.md`](../../../docs/research/README.md), never left only in the workflow transcript; fold its verdicts back into the note's De-risk evidence.
 
 ## See also
 
