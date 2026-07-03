@@ -23,7 +23,7 @@
 #     sshd consumes via its NixOS-default AuthorizedKeysFile. The single
 #     source of truth is lib/operator.nix.
 #
-#   - Darwin (mac-mini): nix-darwin's services.openssh.enable installs
+#   - Darwin (neptune): nix-darwin's services.openssh.enable installs
 #     /etc/ssh/sshd_config.d/101-authorized-keys.conf with an
 #     AuthorizedKeysCommand that cats /etc/ssh/nix_authorized_keys.d/dbf,
 #     populated from `users.users.dbf.openssh.authorizedKeys.keys` in

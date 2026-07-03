@@ -91,8 +91,8 @@ ones where two records disagree and you don't know which is correct.
 - Operator identity (username, home paths, authorised SSH keys) lives in
   `lib/operator.nix` and is imported by every module that needs it. Was
   scattered as duplicated literals across four files until #49.
-- After Tier 3, `docs/` is canonical for design rationale. AI memory files
-  point here rather than duplicating content.
+- `docs/` is canonical for design rationale. AI memory files point here
+  rather than duplicating content.
 - Rationale is single-sourced like state: a *why* longer than a few lines lives in one canonical home (an ADR or `docs/<area>/`) with one-line pointers from code, never restated inline. See [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) and [workflow.md](./workflow.md) §"Rationale lives in one place".
 
 ## No premature abstraction; YAGNI

@@ -18,7 +18,7 @@ the canonical reference until upstream catches up.
 
 A second per-cli statusline script — **duplicate first, abstract on
 the third occurrence** (rule-of-two; first Cursor, then Codex /
-Gemini if they ever grow comparable hooks would be the trigger to
+Antigravity CLI if they ever grow comparable hooks would be the trigger to
 extract a shared helper).
 
 Line layout mirrors Claude's:
@@ -166,7 +166,7 @@ argv[0] or an env var.** Passed over — the divergence is too
 structural (different stdin field names, different effort sources,
 different available signals) for branching inside one script to be
 cleaner than two scripts. Revisit at the third occurrence (Codex or
-Gemini-CLI gain comparable hooks).
+Antigravity CLI gain comparable hooks).
 
 **Mirror Claude's mapping unchanged (`*Sonnet*` / `*Opus*` /
 `*GPT-5*` only).** Passed over — collapses cursor's three OpenAI
@@ -217,7 +217,7 @@ values depend on observed render output and are settled when the
 script lands; documented here as known knobs.
 
 **Hosts.** `agent-clis.nix` is imported by every host (base
-agent-CLI set). The script lands on mac-mini, metis, mercury,
+agent-CLI set). The script lands on neptune, metis, mercury,
 nixos-vm uniformly — but `cursor-cli` is only on hosts whitelisted
 in `modules/shared/nix-daemon.nix`'s `allowUnfreePredicate`.
 Verification of the rendered statusline requires `cursor-agent` on

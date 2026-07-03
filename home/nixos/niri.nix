@@ -29,6 +29,20 @@
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
   profile = import ../../lib/display-profiles.nix; # active display profile — output scale
+  caps = import ../../lib/capabilities.nix { inherit lib; }; # single-source keybind registry (#384)
+
+  # Merge the registry-generated binds with the hand-authored remainder,
+  # asserting no hand-authored chord silently shadows a generated one via `//`
+  # (right-hand wins). The registry's collision lint cannot see this file, so
+  # the disjointness guarantee for the merge seam lives here (ADR-039 §8, #455).
+  mergeBinds =
+    generated: handAuthored:
+    let
+      shadowed = lib.intersectLists (lib.attrNames generated) (lib.attrNames handAuthored);
+    in
+    lib.throwIf (shadowed != [ ])
+      "niri.nix: hand-authored bind(s) ${lib.concatStringsSep ", " shadowed} shadow registry-generated Hyper chords — declare them in lib/capabilities.nix instead (ADR-039 §8, #455)"
+      (generated // handAuthored);
 in
 {
   # Hand niri's window-border colour to Noctalia at runtime (ADR-036, #385).
@@ -157,8 +171,19 @@ in
       }
     ];
 
-    binds = {
-      # Navigation — focus (arrow + vim-style mirrors)
+    # The cross-platform Hyper layer (Ctrl+Alt base) is generated from the
+    # single-source capability registry (lib/capabilities.nix, #384 / ADR-039)
+    # and merged (via mergeBinds, which guards against a hand-authored chord
+    # silently shadowing a generated one — #455) over the hand-authored
+    # remainder below. keyd realizes Caps Lock → Hyper (Ctrl+Alt) at the evdev
+    # layer (modules/nixos/keyd.nix). The remainder is the Super-namespace +
+    # screenshot binds not yet in the registry — the Super layer retires under
+    # #323; screenshots stay on Super+Shift. Taxonomy + inventory:
+    # docs/desktop/keybinds.md.
+    binds = mergeBinds caps.niriBinds {
+      # Navigation — focus (arrow + vim-style mirrors). Super-namespace; retired
+      # under #323 when the Super layer lands. (The Hyper focus binds — Ctrl+Alt —
+      # come from the registry above.)
       "Mod+Left".action.focus-column-left = { };
       "Mod+Down".action.focus-window-down = { };
       "Mod+Up".action.focus-window-up = { };
@@ -168,18 +193,9 @@ in
       "Mod+K".action.focus-window-up = { };
       "Mod+L".action.focus-column-right = { };
 
-      # Navigation — move (arrow + vim-style mirrors)
-      "Mod+Ctrl+Left".action.move-column-left = { };
-      "Mod+Ctrl+Down".action.move-window-down = { };
-      "Mod+Ctrl+Up".action.move-window-up = { };
-      "Mod+Ctrl+Right".action.move-column-right = { };
-      "Mod+Ctrl+H".action.move-column-left = { };
-      "Mod+Ctrl+J".action.move-window-down = { };
-      "Mod+Ctrl+K".action.move-window-up = { };
-      "Mod+Ctrl+L".action.move-column-right = { };
-
-      # Window management — interim binding; philosophical target is
-      # Super+Hyper+W. See docs/desktop/keybinds.md §Implementation status.
+      # Window close. Super+W (the Cmd-position W) is the cross-platform close:
+      # niri has no separate WM force-close — only graceful close-window — so this
+      # is the close bind, not an interim. See docs/desktop/keybinds.md.
       "Mod+W".action.close-window = { };
 
       # Workspaces — focus
@@ -193,20 +209,6 @@ in
       "Mod+8".action.focus-workspace = 8;
       "Mod+9".action.focus-workspace = 9;
 
-      # Workspaces — move window to. On Mod+Ctrl (the move modifier, paired
-      # with the Mod+Ctrl move-column binds above) rather than Mod+Shift,
-      # which is freed for the macOS-style clipboard screenshot chords
-      # below. See docs/desktop/keybinds.md §Workspaces / §Screenshots (#323).
-      "Mod+Ctrl+1".action.move-window-to-workspace = 1;
-      "Mod+Ctrl+2".action.move-window-to-workspace = 2;
-      "Mod+Ctrl+3".action.move-window-to-workspace = 3;
-      "Mod+Ctrl+4".action.move-window-to-workspace = 4;
-      "Mod+Ctrl+5".action.move-window-to-workspace = 5;
-      "Mod+Ctrl+6".action.move-window-to-workspace = 6;
-      "Mod+Ctrl+7".action.move-window-to-workspace = 7;
-      "Mod+Ctrl+8".action.move-window-to-workspace = 8;
-      "Mod+Ctrl+9".action.move-window-to-workspace = 9;
-
       # Spawn — terminal + application launcher. The launcher is
       # Noctalia's IPC-driven app launcher (ADR-036, #385): `noctalia-shell
       # ipc call launcher toggle`. Passed as an argv list — niri spawns it
@@ -219,58 +221,6 @@ in
         "launcher"
         "toggle"
       ];
-
-      # Hyper — the cross-platform layer (nav/spawn/system; see keybinds.md).
-      # keyd realizes Caps Lock → Hyper
-      # (Super+Ctrl+Alt+Shift) at the evdev layer; see modules/nixos/keyd.nix
-      # and docs/desktop/keyd.md. Binds are written with all four modifiers;
-      # niri's exact-modifier matching keeps them clear of the Mod / Mod+Ctrl
-      # / Mod+Shift binds above. Each mirrors the analogous macOS action so
-      # muscle memory transfers (docs/desktop/keybinds.md §Cross-platform
-      # Hyper mapping). The Super-namespace originals above are retained
-      # alongside during the migration, then retired once it settles.
-      "Mod+Ctrl+Alt+Shift+Left".action.focus-column-left = { };
-      "Mod+Ctrl+Alt+Shift+Right".action.focus-column-right = { };
-      "Mod+Ctrl+Alt+Shift+Up".action.toggle-overview = { };
-      "Mod+Ctrl+Alt+Shift+1".action.focus-workspace = 1;
-      "Mod+Ctrl+Alt+Shift+2".action.focus-workspace = 2;
-      "Mod+Ctrl+Alt+Shift+3".action.focus-workspace = 3;
-      "Mod+Ctrl+Alt+Shift+4".action.focus-workspace = 4;
-      "Mod+Ctrl+Alt+Shift+5".action.focus-workspace = 5;
-      "Mod+Ctrl+Alt+Shift+6".action.focus-workspace = 6;
-      "Mod+Ctrl+Alt+Shift+7".action.focus-workspace = 7;
-      "Mod+Ctrl+Alt+Shift+8".action.focus-workspace = 8;
-      "Mod+Ctrl+Alt+Shift+9".action.focus-workspace = 9;
-      "Mod+Ctrl+Alt+Shift+Space".action.spawn = [
-        "noctalia-shell"
-        "ipc"
-        "call"
-        "launcher"
-        "toggle"
-      ];
-      # Hyper+Return → foot, mirroring the mac's Hyper+Return → Ghostty.
-      "Mod+Ctrl+Alt+Shift+Return".action.spawn = "foot";
-      # Hyper+B → the system default browser. A neutral https URL resolves
-      # through xdg-open to whatever is the registered default handler, so the
-      # bind follows the default rather than pinning a browser. See
-      # docs/desktop/keybinds.md §Hyper for the Firefox/#127 provenance.
-      "Mod+Ctrl+Alt+Shift+B".action.spawn = [
-        "xdg-open"
-        "https://"
-      ];
-
-      # Window geometry — the Super+Hyper extended-WM tier, realized as
-      # Hyper since that chord collapses to Hyper on a single keyboard.
-      # Reshape the focused column/window: fine resize, preset-width cycle
-      # (niri's stock 1/3→1/2→2/3, wraps), center, fullscreen, maximize.
-      # niri-only (no Mac mirror). See docs/desktop/keybinds.md §Window
-      # geometry for the namespace rationale (#366).
-      "Mod+Ctrl+Alt+Shift+Minus".action.set-column-width = "-10%";
-      "Mod+Ctrl+Alt+Shift+Equal".action.set-column-width = "+10%";
-      "Mod+Ctrl+Alt+Shift+R".action.switch-preset-column-width = { };
-      "Mod+Ctrl+Alt+Shift+C".action.center-column = { };
-      "Mod+Ctrl+Alt+Shift+F".action.fullscreen-window = { };
-      "Mod+Ctrl+Alt+Shift+M".action.maximize-column = { };
 
       # Session — quit (niri shows a confirmation dialog by default)
       "Mod+Shift+E".action.quit = { };

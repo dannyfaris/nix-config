@@ -8,7 +8,7 @@ the operator-facing surface is the terminal, not a `.app`.
 
 Darwin: `pkgs.colima` + `pkgs.docker` + `pkgs.docker-compose`
 via `modules/darwin/colima.nix`, imported by
-`hosts/mac-mini/default.nix`. ADR-031's §Boundary rule
+`hosts/neptune/default.nix`. ADR-031's §Boundary rule
 nixpkgs-by-default baseline applies directly — none of the
 three clauses fires: `pkgs.colima` ships on `aarch64-darwin`
 (clause 1 N/A); colima is a CLI/daemon with no
@@ -67,7 +67,7 @@ hasn't had a GUI login yet finds colima not running; see
 §Sharp edges for the auto-login mitigation.
 
 **TUI client:** [lazydocker](https://github.com/jesseduffield/lazydocker)
-is on `mac-mini` per [`home/shared/cli-utils.nix`](../../home/shared/cli-utils.nix);
+is on `neptune` per [`home/shared/cli-utils.nix`](../../home/shared/cli-utils.nix);
 just run `lazydocker` once colima is up.
 
 **Stopping / pausing:**

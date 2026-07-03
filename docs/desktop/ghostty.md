@@ -6,7 +6,7 @@ foot is the chosen terminal on Linux desktop hosts (see
 
 ## Selection
 
-**Ghostty** on `mac-mini` via Homebrew cask `ghostty`, declared in
+**Ghostty** on `neptune` via Homebrew cask `ghostty`, declared in
 `modules/darwin/homebrew.nix` per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s
 clause 1 (upstream `pkgs.ghostty.meta.platforms` is Linux-only).
 User config managed via home-manager at `home/darwin/ghostty.nix`.

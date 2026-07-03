@@ -1,5 +1,7 @@
 # Hammerspoon
 
+> **Decommissioned 2026-07-02** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md), #494). Retired from the macOS interaction stack — **AeroSpace** now owns window management and every Hyper bind (via the `aerospace-action` registry emitter), and the terminal/browser spawns moved to `exec-and-forget open`. The Homebrew cask, `~/.hammerspoon/init.lua` (`home/darwin/hammerspoon.nix`), and the `hammerspoon-handler` realization were all removed; the stack is now Karabiner (Hyper substrate) + AeroSpace only. This document is retained as the selection record for the Hammerspoon era. See [macos-window-management.md](./macos-window-management.md) and the design note [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md).
+
 Desktop automation app for macOS — Lua runtime with bindings into
 macOS's Accessibility, window-management, and event-tap APIs. Picked
 as the **macOS hotkey-binding layer** that lives on top of the Hyper
@@ -178,10 +180,12 @@ directory is the target of the rename). Empirically the
 watcher usually fires; when it doesn't, the `init.lua` symlink
 has been updated but the running Hammerspoon Lua state is
 stale. The fallback is `hs -c 'hs.reload()'` (the cask's `hs`
-CLI shim is on PATH; quitting from the menu bar is not an option
-because this config hides the menu-bar icon — see §Configuration).
-A more robust path would be a post-activation hook that always
-invokes `hs -c 'hs.reload()'`; not in scope today.
+CLI shim is on PATH and the config loads `hs.ipc` to open the
+port it talks to — see §"hs CLI" below; quitting from the menu
+bar is not an option because this config hides the menu-bar icon
+— see §Configuration). A more robust path would be a
+post-activation hook that always invokes `hs -c 'hs.reload()'`;
+not in scope today.
 
 **UI edits do not survive activation.** Same posture as Karabiner
 and Ghostty: `home.file` symlinks `init.lua` from the nix store
@@ -193,16 +197,28 @@ console (Cmd+Shift+`), the write will fail. **Edit
 `home/darwin/hammerspoon.nix` to change Lua source; the console
 is for ephemeral experimentation, not persistent config.**
 
-**`hs` CLI shim is wired by the cask.** Hammerspoon ships a tiny
-CLI at
+**`hs` CLI shim is wired by the cask; the port is opened by the
+config.** Hammerspoon ships a tiny CLI at
 `/Applications/Hammerspoon.app/Contents/Frameworks/hs/hs` that
-the cask's `binary` stanza puts on PATH. Useful for scripted
-reload (`hs -c "hs.reload()"`) or eval'ing arbitrary Lua against
-the running Hammerspoon (`hs -c "return hs.host.localizedName()"`).
-Not used by the bindings today; documented for future scripting.
+the cask's `binary` stanza puts on PATH (`/opt/homebrew/bin/hs`).
+The shim is only half of it: it talks to a Mach message port that
+exists only when the running instance has loaded `hs.ipc`. The
+`init.lua` therefore calls `require("hs.ipc")` (a bare `require`
+opens the port; the cask already provides the binary, so no
+`hs.ipc.cliInstall()`). With both halves present, `hs -c
+"hs.reload()"` (the reload fallback above) and on-box Lua spikes
+(`hs -c "hs.inspect(hs.spaces.allSpaces())"`, e.g. the #453
+`hs.spaces` reliability check) work.
+
+**Posture.** The IPC port lets any *same-user, local* process
+eval arbitrary Lua inside Hammerspoon, which holds Accessibility
+(full input/window control) — a deliberately-accepted local
+attack-surface widening for this single-operator box. It is
+local-only (no network surface). Revisit if neptune ever becomes
+multi-user.
 
 **macOS Ventura floor.** Cask `depends_on macos: :ventura`. Not a
-constraint for mac-mini.
+constraint for neptune.
 
 **Multi-monitor + native fullscreen.** macOS native fullscreen on
 multi-monitor setups depends on System Settings → Desktop &
@@ -216,7 +232,7 @@ Stage Manager → "Displays have separate Spaces":
   all displays; other displays show the linen-pattern
   wallpaper while the fullscreen lasts.
 
-mac-mini today is single-display so this is theoretical; the
+neptune today is single-display so this is theoretical; the
 doc records it because the binds are evergreen and will travel
 to multi-monitor Macs.
 
@@ -225,7 +241,7 @@ to multi-monitor Macs.
 `hs.application:name()`, which returns the *localized* display
 name on non-English macOS locales. Today's binds
 (`GHOSTTY.name = "Ghostty"`, `CHROME.name = "Google Chrome"`)
-work because (a) mac-mini's locale is English and (b) neither
+work because (a) neptune's locale is English and (b) neither
 vendor localizes its app name. Adding a localizing app
 (Microsoft Word, Outlook, Pages) on a non-English Mac would
 silently break its filter — the filter registers but never
@@ -233,7 +249,7 @@ matches, and the bind appears dead. If/when this becomes
 relevant, switch the affected app's filter to bundle-ID
 matching via `hs.window.filter.new(function(win) return
 win:application():bundleID() == BUNDLE_ID end)` instead of
-`setAppFilter`. Theoretical on mac-mini today; flagged because
+`setAppFilter`. Theoretical on neptune today; flagged because
 the binds are evergreen.
 
 **Hammerspoon must be running for binds to fire.** Stating the

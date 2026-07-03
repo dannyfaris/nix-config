@@ -35,27 +35,23 @@
 # stance.
 #
 # If you import this module on a host whose foundation doesn't enable
-# Stylix, the option paths below don't exist and eval fails loudly.
-#
-# btop deliberately omitted — programs.btop isn't enabled anywhere in
-# the repo; enabling the Stylix target would generate dead theme
-# config + closure bloat. Add when btop earns a place in cli-utils.nix.
-#
-# eza and lazydocker have no Stylix target upstream. eza uses
-# LS_COLORS; lazydocker uses its own colour defaults.
+# Stylix, the `stylix.targets` option path doesn't exist and eval
+# fails loudly.
 _: {
-  stylix.targets = {
-    helix.enable = true;
-    bat.enable = true;
-    fzf.enable = true;
-    starship.enable = true;
-    zellij.enable = true;
-    yazi.enable = true;
-    lazygit.enable = true;
-    # fish — enables Stylix's HM-side fish target (sets fish_color_*
-    # via base16-fish). Fish is the only Stylix target with options on
-    # both NixOS and HM layers; foundation deliberately enables
-    # neither, so this is the sole switch-on for fish theming.
-    fish.enable = true;
-  };
+  # The whitelist is deliberately EMPTY (2026-07-02): the TUI surface
+  # converted from build-time Stylix hex to terminal-following ANSI
+  # config — the terminal palette is the runtime colour bus, so every
+  # TUI repaints with a polarity flip and renders in the local palette
+  # over SSH. See ADR-041 for the direction (ends ADR-028 item 1's TUI
+  # clause; the fish target's OSC clobber of Ghostty's dual theme was
+  # the precipitating find, #499). Per-tool config lives with each tool:
+  # bat/fzf/yazi/lazygit (cli-utils.nix), helix (editor.nix), zellij
+  # (multiplexer.nix), starship (prompt.nix).
+  #
+  # The module (and its whitelist stance) survives empty: a future tool
+  # with no ANSI mode re-enters through an explicit enable here, never
+  # via autoEnable. Stylix itself stays enabled fleet-wide as the colour
+  # table for the statuslines (#411) and the palette engine for
+  # lib/scheme-pair.nix + the Ghostty target (home/darwin/ghostty.nix).
+  stylix.targets = { };
 }

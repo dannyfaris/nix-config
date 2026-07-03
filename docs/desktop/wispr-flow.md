@@ -96,10 +96,10 @@ developers didn't rebrand their bundle ID, same shape as Fellow's
 `zap` block.
 
 **ARM64 + x64 both supported.** The cask publishes per-arch
-`.dmg` URLs; mac-mini's Apple Silicon takes the ARM64 build. No
+`.dmg` URLs; neptune's Apple Silicon takes the ARM64 build. No
 manual arch flag needed.
 
-**Requires macOS Monterey (12) or later.** The cask declares `depends_on macos: :monterey`; mac-mini is well past this floor, so it's a non-issue today — recorded for the day a host on an older macOS would join the fleet.
+**Requires macOS Monterey (12) or later.** The cask declares `depends_on macos: :monterey`; neptune is well past this floor, so it's a non-issue today — recorded for the day a host on an older macOS would join the fleet.
 
 **Migration candidate to nixpkgs.** Not viable today — there is
 no `pkgs.wispr-flow` for Darwin. If future packaging lands,

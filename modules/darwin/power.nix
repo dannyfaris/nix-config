@@ -3,13 +3,13 @@
 #
 #   - `power.restartAfterPowerFailure = true;` — host auto-reboots
 #     when AC returns after an outage. Essential for the always-on
-#     SSH-bastion / builder role mac-mini fills; otherwise a power
+#     SSH-bastion / builder role neptune fills; otherwise a power
 #     blip during operator-elsewhere hours leaves the host off until
 #     someone walks to it and presses the power button.
 #
 #   - `power.sleep.computer = "never";` — host never sleeps. The
 #     fleet's other hosts (mercury, metis, nixos-vm) SSH into
-#     mac-mini for shared-state work; computer sleep would break those
+#     neptune for shared-state work; computer sleep would break those
 #     flows. nix-darwin's `power.sleep.computer` type accepts either
 #     a positive integer (minutes) or the literal "never" — verified
 #     against the pinned input.

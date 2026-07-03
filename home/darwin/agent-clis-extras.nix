@@ -1,7 +1,11 @@
 # Darwin variant of home/shared/agent-clis-extras.nix. Same opt-in
-# extras (Codex + Gemini CLI), but with `codex` overridden to use the
+# extras (Codex + Antigravity CLI), but with `codex` overridden to use the
 # upstream-published prebuilt aarch64-darwin binary instead of
 # nixpkgs's `rustPlatform.buildRustPackage` source build.
+#
+# (`antigravity-cli` needs no such override — nixpkgs already fetches it as
+# a vendor prebuilt for aarch64-darwin, so the Darwin path is the same as
+# Linux. It replaced Gemini CLI; see ADR-008 2026-06-24 revision and #433.)
 #
 # Why: nixpkgs's source build of codex (Rust crate + librusty_v8 link
 # = the V8 JavaScript engine) is the dominant cost in cold-cache
@@ -106,6 +110,6 @@ in
 {
   home.packages = [
     codex-prebuilt
-    pkgs.gemini-cli
+    pkgs.antigravity-cli
   ];
 }

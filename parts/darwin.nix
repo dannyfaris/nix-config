@@ -9,6 +9,6 @@ let
 in
 {
   flake.darwinConfigurations = {
-    mac-mini = mkDarwinHost { hostname = "mac-mini"; };
+    neptune = mkDarwinHost { hostname = "neptune"; };
   };
 }

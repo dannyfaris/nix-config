@@ -1,6 +1,6 @@
 # Microsoft 365 — Word, Excel, PowerPoint, Outlook
 
-Operator's work-supplied productivity suite on `mac-mini`. Picked
+Operator's work-supplied productivity suite on `neptune`. Picked
 because it is the suite the operator's workplace runs on — work
 documents, work email, work calendar all live there.
 Selection-by-incumbency; no comparison weigh-up needed.

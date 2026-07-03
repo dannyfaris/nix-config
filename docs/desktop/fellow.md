@@ -91,7 +91,7 @@ didn't rebrand their bundle ID). Verified against the upstream
 cask's `zap` block (`~/Library/Preferences/com.electron.fellow.plist`).
 
 **macOS Ventura or later required.** The cask declares
-`depends_on macos: :ventura`. mac-mini's Sequoia install meets
+`depends_on macos: :ventura`. neptune's Sequoia install meets
 this comfortably.
 
 **Migration candidate to nixpkgs.** Not viable today — there is

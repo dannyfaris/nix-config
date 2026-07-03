@@ -1,7 +1,7 @@
 # 1Password
 
 Operator password manager. Cross-platform; managed today on
-`mac-mini` only in this configuration. NixOS desktop adoption
+`neptune` only in this configuration. NixOS desktop adoption
 (metis) tracked separately and out of scope for #13.
 
 ## Selection
@@ -177,7 +177,7 @@ This section re-litigated the #112 intent per its own `[!IMPORTANT]` mandate: ad
 
 ### Triggering need
 
-metis (and any future NixOS host with a desktop environment) must be able to SSH *out* to the other fleet hosts (mercury, mac-mini). Today it cannot: metis has no outbound SSH identity (`~/.ssh/` holds no private key, the agent has no identities), and only `dbf@mac` is authorized fleet-wide (`lib/operator.nix`). This is the ADR-010 "SSH between the desktop and other hosts" migration trigger, finally fired. Resolving it is in scope here.
+metis (and any future NixOS host with a desktop environment) must be able to SSH *out* to the other fleet hosts (mercury, neptune). Today it cannot: metis has no outbound SSH identity (`~/.ssh/` holds no private key, the agent has no identities), and only `dbf@mac` is authorized fleet-wide (`lib/operator.nix`). This is the ADR-010 "SSH between the desktop and other hosts" migration trigger, finally fired. Resolving it is in scope here.
 
 ### Decision summary
 
@@ -206,7 +206,7 @@ The interactive-password-manager role has no real contender. The operator alread
 
 1. **The headline appeal was illusory.** The draw of "1Password owns SSH, so keys leave the public repo" doesn't hold — what's in the repo is *public* keys (audited: no private key material is committed), which are designed to be published. Each destination host must declare the authorized *public* keys at build time regardless of where the *private* key lives, so 1Password removes nothing from the repo.
 2. **It can't be uniform fleet-wide.** 1Password's SSH agent needs the desktop app, so the headless hosts (mercury, nixos-vm) can never use it. "One vault key for all SSH" was never achievable; some hosts keep per-host keys regardless — so the whole fleet may as well.
-3. **The triggering need is met without it.** The thing that started this — metis reaching mercury / mac-mini — is solved by a per-host ed25519 key + one authorized line (Decision 3). 1Password buys nothing for the actual requirement.
+3. **The triggering need is met without it.** The thing that started this — metis reaching mercury / neptune — is solved by a per-host ed25519 key + one authorized line (Decision 3). 1Password buys nothing for the actual requirement.
 4. **Poor Linux ergonomics where it would run.** On metis the approval is GUI-bound: an SSH'd-in-while-locked or unattended signing request stalls because the prompt renders on the physical display with no TTY fallback; the agent also stops when the app locks, and the 6-key OpenSSH limit needs `agent.toml` scoping.
 5. **Keeping per-host keys is zero-disruption.** The incumbent `gcr-ssh-agent` already owns `SSH_AUTH_SOCK` on metis, so nothing has to be evicted.
 
@@ -214,14 +214,14 @@ Blast radius (one unlocked-vault key authenticating everywhere vs. per-host isol
 
 > Should this ever be revisited (e.g. you decide Touch-ID-to-SSH on the GUI hosts is worth it), the override is: enable 1Password's agent, mask `gcr-ssh-agent.socket` at the user-systemd layer, and accept the 6-key/`agent.toml` management and the Linux locked-session edges. Recorded for the future, not an open question today.
 
-**Per-platform note (Darwin).** The Mac reaches the same verdict — and for an additional Mac-specific reason (sops pins an on-disk key there regardless, neutralizing the key-never-on-disk benefit) — settled in §"Darwin adoption (mac-mini)" below.
+**Per-platform note (Darwin).** The Mac reaches the same verdict — and for an additional Mac-specific reason (sops pins an on-disk key there regardless, neutralizing the key-never-on-disk benefit) — settled in §"Darwin adoption (neptune)" below.
 
 ### Decision 3 — metis outbound SSH (the triggering need)
 
 With 1Password's agent rejected (Decision 2), metis's outbound SSH uses a per-host key — the mechanism ADR-010 already prescribes:
 
 1. Generate a fresh passphrase-protected ed25519 on metis (`ssh-keygen -t ed25519`), per ADR-010.
-2. Add its **public** key to `lib/operator.nix authorizedKeys` (the single source of truth that renders authorized_keys on every host). After `nh os switch` fleet-wide, mercury and mac-mini accept metis.
+2. Add its **public** key to `lib/operator.nix authorizedKeys` (the single source of truth that renders authorized_keys on every host). After `nh os switch` fleet-wide, mercury and neptune accept metis.
 3. The same pattern repeats for any future NixOS desktop host: one key per box, one new authorized line.
 
 `gcr-ssh-agent` (incumbent) loads the key on first use and should cache the passphrase via gnome-keyring (smoke-test on first use); no new SSH agent tooling is required. Plain `ssh-agent` is the fallback if gcr-ssh-agent proves unsatisfactory.
@@ -290,9 +290,9 @@ authorizedKeys = [
 - [polkit.md](./polkit.md) — mate-polkit, the live unlock dependency (#103).
 - `home/shared/ssh.nix`, `lib/operator.nix` — outbound config + the authorized-key source of truth.
 
-## Darwin adoption (mac-mini) — SSH-agent verdict + `op` (deferred) (#112)
+## Darwin adoption (neptune) — SSH-agent verdict + `op` (deferred) (#112)
 
-The 1Password GUI is already managed on mac-mini (Homebrew cask, above). This section records the Mac's verdict on the two net-new questions #112 raised — whether 1Password should own `SSH_AUTH_SOCK` here, and the `op` CLI. Both are settled: SSH stays on the existing per-host `dbf@mac` key (same as metis, plus a Mac-specific reason), and `op` is deferred. Strategy only; no code wired.
+The 1Password GUI is already managed on neptune (Homebrew cask, above). This section records the Mac's verdict on the two net-new questions #112 raised — whether 1Password should own `SSH_AUTH_SOCK` here, and the `op` CLI. Both are settled: SSH stays on the existing per-host `dbf@mac` key (same as metis, plus a Mac-specific reason), and `op` is deferred. Strategy only; no code wired.
 
 ### Decision summary
 
@@ -315,7 +315,7 @@ So the honest balance on the Mac:
 
 **Verdict: rejected on the Mac too.** 1Password is the password manager; SSH stays on the existing per-host `dbf@mac` key. The only thing forgone is Touch-ID-to-SSH, which is ergonomics, not security. The fleet posture is uniform — per-host on-disk ed25519 keys for SSH everywhere, 1Password never owning `SSH_AUTH_SOCK`.
 
-> Should this ever be revisited: if Touch-ID-to-SSH on the Mac becomes worth a split model, the override is to enable 1Password's SSH agent on macOS (it exposes its own agent socket via `IdentityAgent`), keep `~/.ssh/id_ed25519` for sops only, and accept that metis and mac-mini then run different SSH-agent models by design. Defensible, but deliberately non-uniform — recorded for the future, not open today.
+> Should this ever be revisited: if Touch-ID-to-SSH on the Mac becomes worth a split model, the override is to enable 1Password's SSH agent on macOS (it exposes its own agent socket via `IdentityAgent`), keep `~/.ssh/id_ed25519` for sops only, and accept that metis and neptune then run different SSH-agent models by design. Defensible, but deliberately non-uniform — recorded for the future, not open today.
 
 ### `op` CLI install path (for if/when it's adopted)
 
@@ -323,7 +323,7 @@ So the honest balance on the Mac:
 
 ### Sharp edges
 
-- **Do not break `~/.ssh/id_ed25519`.** It is the sops decryption identity on mac-mini; losing or rotating it without re-deriving the age key breaks `sops -d` fleet-wide. The settled decision deliberately leaves this key exactly where it is.
+- **Do not break `~/.ssh/id_ed25519`.** It is the sops decryption identity on neptune; losing or rotating it without re-deriving the age key breaks `sops -d` fleet-wide. The settled decision deliberately leaves this key exactly where it is.
 - **`op` (if later adopted) is unfree.** `_1password-cli` is unfree; it would ride one `allowUnfreePredicate` entry in `modules/shared/nix-daemon.nix` (shared across both platforms), not a separate Darwin entry. Never blanket `allowUnfree`.
 
 ### References

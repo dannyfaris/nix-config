@@ -16,7 +16,7 @@
 # Darwin (config emission is gated inside each target via
 # `programs.<X>.enable` + per-config arg availability). Co-locating the
 # desktop targets with the bundle that actually enables them is an
-# architectural cleanup — it makes "what does mac-mini's HM tree
+# architectural cleanup — it makes "what does neptune's HM tree
 # include?" answerable by the import graph alone, rather than by
 # tracing per-target gates inside a cross-platform file. The split is
 # closure-identical for every NixOS host (verified pre/post; mercury

@@ -1,6 +1,6 @@
 # colima — Lima-VM-backed Docker daemon for Darwin. The Darwin parallel
 # to modules/nixos/docker.nix (rootless dockerd); imported per-host,
-# currently only by mac-mini.
+# currently only by neptune.
 #
 # Decision (colima vs Docker Desktop vs OrbStack) + the ADR-031
 # install-path classification live in ADR-021 (amended 2026-06-03 for

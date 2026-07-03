@@ -1,7 +1,7 @@
 # Touch ID for sudo
 
 Operator's authentication shortcut for `sudo` on every Darwin host that
-has Touch ID hardware available. On `mac-mini` the hardware reaches macOS
+has Touch ID hardware available. On `neptune` the hardware reaches macOS
 through the Apple Magic Keyboard with Touch ID; the same wiring carries
 over to any future MacBook with built-in Touch ID. The Apple Watch
 "approve with Watch" prompt is enabled by the same option as a free
@@ -12,7 +12,7 @@ side-effect — nix-darwin's `touchIdAuth` toggle activates both the
 
 `security.pam.services.sudo_local.touchIdAuth = true;`, set in
 `modules/darwin/touch-id.nix` and imported per-host by Darwin hosts that
-want it (today: `mac-mini`). The module is a single-line capability and
+want it (today: `neptune`). The module is a single-line capability and
 sits as a standalone module per ADR-027 — capabilities, even universally
 desired ones, do not belong in `foundation.nix`.
 
@@ -20,7 +20,7 @@ desired ones, do not belong in `foundation.nix`.
 
 `sudo` defaults to password authentication on macOS. Without Touch ID
 wiring, every `nh darwin switch`, every `sudo -v`, every script-driven
-elevation prompts the operator for the account password. The mac-mini's
+elevation prompts the operator for the account password. neptune's
 day-to-day workload is rebuild-and-activate-heavy; the password friction
 is real.
 
@@ -54,7 +54,7 @@ rename.
 This option only makes `sudo` *accept* Touch ID. It does not — and
 cannot — enroll fingerprints. Enrolment is a one-time physical step per
 Mac via System Settings → Touch ID & Password → "Add Fingerprint." On
-`mac-mini`, enrolment uses the Magic Keyboard's Touch ID sensor; the
+`neptune`, enrolment uses the Magic Keyboard's Touch ID sensor; the
 operator completed this manually before the module landed.
 
 On the next Mac (whichever Darwin host joins the fleet next), the

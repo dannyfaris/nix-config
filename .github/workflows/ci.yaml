@@ -39,11 +39,17 @@ jobs:
           # Darwin runner pinned to macos-15 (current Apple-Silicon line,
           # billed-free on public repos; -large/-xlarge/-intel are not,
           # and *-latest moves under us). nix flake check realises the
-          # mac-mini derivation but runs no nix-darwin activation, so CI
+          # neptune derivation but runs no nix-darwin activation, so CI
           # is side-effect-free. See docs/ci.md §Runners.
           - arch: aarch64-darwin
             runner: macos-15
     runs-on: ${{ matrix.runner }}
+    # Wall-time backstop, generous over the cold-cache worst case (a
+    # lockfile bump can force a ~30-40 min Darwin closure rebuild, per
+    # ADR-025 §History) plus the 3× retry, but far short of the 360 min
+    # default — a hung leg fails fast instead of burning a runner-hour.
+    # See docs/ci.md §Timeouts.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 

@@ -2,7 +2,7 @@
 
 Living documents for the operator's desktop tools — primarily the
 Wayland desktop environment on metis (and any future Linux desktop
-host), and also the per-tool selections on macOS clients (mac-mini
+host), and also the per-tool selections on macOS clients (neptune
 and any future Mac) where a tool is the operator's daily-driver
 GUI for that platform. Each per-tool document captures a selection,
 the rationale, alternatives considered, configuration choices,
@@ -26,7 +26,7 @@ rather than creating a new artifact.
 
 | Doc | Subject | Landed |
 |---|---|---|
-| [keybinds.md](./keybinds.md) | Niri keybindings + three-namespace philosophy (philosophy now cross-platform: Hyper realized on macOS via Karabiner — see karabiner.md) | #80 |
+| [keybinds.md](./keybinds.md) | Cross-platform keybind taxonomy (audited target) — `Hyper` command layer + `Super` (Cmd-parity); per-platform realization via keyd / Karabiner / niri / AeroSpace + the registry | #80 |
 | [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
@@ -35,6 +35,7 @@ rather than creating a new artifact.
 | [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #75 |
 | [noctalia.md](./noctalia.md) | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036 | ADR-036 (#385) |
 | [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
+| [thunderbird.md](./thunderbird.md) | Thunderbird email client (personal Gmail + iCloud; Gecko toolkit shared with Firefox; runtime/GUI-managed accounts; polarity-follows/palette-vanilla) | #388 |
 | [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
 | [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |
 | [popups.md](./popups.md) | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred) | #308 |
@@ -44,8 +45,12 @@ rather than creating a new artifact.
 | [input.md](./input.md) | Input device config — device layer (G502 HERO DPI/buttons/onboard profiles via libratbag/ratbagd + Piper, settings travel on the mouse) + compositor layer (key-repeat/scroll/`accel-profile "flat"` via niri's category `input` block) | #107 |
 | [screen-lock.md](./screen-lock.md) | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #97 |
 | [power-session.md](./power-session.md) | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) — _mooted (unbuilt), subsumed by Noctalia (ADR-036, #385)_ | #98 |
+| [audio.md](./audio.md) | Audio stack for the niri desktop — PipeWire sound server + volume/mute, media transport, status-bar indicator, graphical mixer; Bluetooth + patchbay routing out of scope | #96 |
+| [clipboard.md](./clipboard.md) | Clipboard persistence + history — _the `clipse` selection was never built; subsumed by Noctalia (ADR-036, #385); session-PATH `wl-clipboard` gap fixed under #360_ | #99 |
+| [visual-identity.md](./visual-identity.md) | The desktop's aesthetic north-star (living doc) — typography / colour / line-weight / radii / spacing / motion / pointer intent the per-surface selection docs implement against | #108 |
+| [zen.md](./zen.md) | Zen browser — _audit-phase parallel install vs Firefox (#127); audit concluded in Firefox's favour, Zen retired_ | #127 |
 
-### macOS clients (mac-mini)
+### macOS clients (neptune)
 
 | Doc | Subject | Landed |
 |---|---|---|
@@ -66,9 +71,10 @@ rather than creating a new artifact.
 | [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
 | [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | #11 |
 | [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | #11 |
-| [hammerspoon.md](./hammerspoon.md) | Hammerspoon macOS hotkey-binding layer on top of Karabiner's Hyper; Homebrew cask + Sparkle silent (`.zip`-enclosure, same shape as Ghostty) (clause-1, no nixpkgs Darwin) | #11 |
+| [hammerspoon.md](./hammerspoon.md) | **Decommissioned (ADR-040, #494)** — retired from the macOS interaction stack; AeroSpace + Karabiner only. Retained as the selection record for the Hammerspoon era | #11 |
+| [macos-window-management.md](./macos-window-management.md) | **Superseded (ADR-040, #494)** — the pure-Hammerspoon / native-fullscreen-Spaces model is replaced by AeroSpace (tiling WM). Retained as the selection record; current design → [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md) | #440 |
 
-_macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on mac-mini, not pending._
+_macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on neptune, not pending._
 
 ### Cross-platform (NixOS desktop + macOS)
 

@@ -4,7 +4,7 @@
 
 Evergreen NixOS + nix-darwin configuration. Four live hosts: `nixos-vm`
 (UTM/aarch64 refinement target), `mercury` (AWS EC2/x86_64 work-only
-headless), `metis` (HP ProDesk/x86_64 shared work + personal dev box), and `mac-mini`
+headless), `metis` (HP ProDesk/x86_64 shared work + personal dev box), and `neptune`
 (Apple Silicon, first nix-darwin host, onboarded 2026-06-02). Metis is
 the first desktop host, running niri per
 [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends
@@ -23,7 +23,7 @@ companion.
 
 Work on this repo happens across all four hosts. Claude Code's file-based
 memory (`~/.claude/projects/.../memory/`) is **per-host and never synced** —
-a fact learned on `metis` is invisible on `mac-mini`. So anything durable —
+a fact learned on `metis` is invisible on `neptune`. So anything durable —
 decisions, conventions, gotchas, host quirks — must be committed to the repo
 where every host sees it: this CLAUDE.md for working agreements and
 deliberate stances, `docs/` (ADRs, selection docs) for the *why*, and inline
@@ -35,17 +35,23 @@ host, write it down in git.
 
 ```
 flake.nix                          # flake-parts entry point
-parts/                             # flake-parts modules (nixosConfigurations, etc.)
-lib/mk-host.nix                    # host constructor — thin wrapper over lib.nixosSystem
+parts/                             # flake-parts modules — parts/nixos.nix builds the NixOS
+                                   # configs, parts/darwin.nix the nix-darwin ones
+lib/mk-host.nix                    # NixOS host constructor — thin wrapper over lib.nixosSystem
+lib/mk-darwin-host.nix             # Darwin host constructor — the nix-darwin parallel
 hosts/<hostname>/                  # host instance: hardware, hostname, stateVersion,
                                    # _module.args, imports of foundation + bundles
-modules/nixos/foundation.nix  # bundle every NixOS host imports by convention
-modules/nixos/bundles/        # NixOS-specific capability bundles (system-level)
-modules/nixos/                # NixOS-specific standalone modules
-modules/shared/               # cross-platform standalone system modules
-home/shared/bundles/          # capability bundles (home-level, cross-platform)
-home/shared/                  # cross-platform standalone home-manager modules
-home/nixos/                   # NixOS-specific home-manager modules (e.g. macchina-shell-init)
+modules/nixos/foundation.nix   # bundle every NixOS host imports by convention
+modules/nixos/bundles/         # NixOS-specific capability bundles (system-level)
+modules/nixos/                 # NixOS-specific standalone modules
+modules/darwin/foundation.nix  # bundle every Darwin host imports by convention
+modules/darwin/                # Darwin-specific standalone modules (no bundles/ yet)
+modules/shared/                # cross-platform standalone system modules
+home/shared/bundles/           # capability bundles (home-level, cross-platform)
+home/shared/                   # cross-platform standalone home-manager modules
+home/nixos/bundles/            # NixOS-specific home-manager bundles
+home/nixos/                    # NixOS-specific home-manager modules (e.g. macchina-shell-init)
+home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, hammerspoon)
 ```
 
 Composition follows the foundation + bundles model (ADR-027): every host
@@ -71,7 +77,7 @@ Implement exactly the change requested — nothing more. Do not add unrequested 
 | Stance | Rationale |
 |--------|-----------|
 | `users.mutableUsers = false` | This file is the sole source of truth for user state. `passwd` changes do not persist. |
-| SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (mac-mini) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis; Apple keyboard at the local login for mac-mini. |
+| SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (neptune) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis; Apple keyboard at the local login for neptune. |
 | `allowUnfreePredicate` whitelist | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`. |
 | `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
 | `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
@@ -86,10 +92,10 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 - **mercury**: AWS EC2 Instance Connect from the AWS console.
 - **metis**: physical console (monitor + keyboard); once ADR-028 lands,
   the greetd login is the same entry point.
-- **mac-mini**: Apple keyboard + display at the local login.
+- **neptune**: Apple keyboard + display at the local login.
 
 In all cases: log in, fix the config, and re-activate — `nh os switch`
-on NixOS, `nh darwin switch` on mac-mini (or the underlying
+on NixOS, `nh darwin switch` on neptune (or the underlying
 `sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on
 PATH).
 
@@ -128,6 +134,8 @@ sudo nixos-rebuild switch --flake .#<hostname>
   [docs/workflow.md](./docs/workflow.md). Fresh AI sessions and human
   contributors should read this before opening issues or cutting
   code.
+- **Non-trivial design moves through the design loop.** A cross-cutting or hard-to-reverse change is designed before it is coded — a design note in [docs/design/](./docs/design/) (intent → forces → options → de-risk), peer-reviewed, with the living-reference update landing in the same change. Invoke the `/design` skill for the procedure; [docs/design/design-loop.md](./docs/design/design-loop.md) is the *why*. The `design-note-structure` lint gates note shape (presence, not quality) in CI; tool/package choices use the `selecting-tooling` skill instead.
+- **Claims about runtime behaviour need runtime verification.** `nix flake check`, lints, and peer review confirm the *declared* (eval-time) state, not the *enforced* one — a change can pass all three and still be inert in production ("set ≠ enforced", tracked in [#303](https://github.com/dannyfaris/nix-config/issues/303)). For a change asserting a runtime, security, or network-posture property, confirm the behaviour on a host before calling it done; when it is unclear which layer actually enforces the property, probe it empirically first. Worked example: [#336](https://github.com/dannyfaris/nix-config/issues/336) removed a firewall rule that was never the gate (tailscale's `ts-input` pre-empts the NixOS firewall) — eval and a two-reviewer adversarial pass both missed it, a runtime probe caught it. This is the design loop's de-risk rung applied.
 - **PRs land via squash auto-merge.** After `gh pr create`, run
   `gh pr merge <num> --auto --squash` to enable auto-merge; the PR
   squash-merges itself once required checks pass. See

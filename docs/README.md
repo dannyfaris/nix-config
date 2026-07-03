@@ -12,10 +12,11 @@ choice was made. AI sessions also use these as reference; `CLAUDE.md` at the
 repo root is the higher-level entry point for AI sessions, and links here for
 depth.
 
-The companion to this directory is the auto-memory at
-`/home/dbf/.claude/projects/-home-dbf-nix-config/memory/`. After Tier 3, those
-memory files are thin pointers that reference these docs as the source of
-truth, eliminating drift between AI memory and in-repo reference.
+The companion to this directory is Claude Code's file-based auto-memory
+(`~/.claude/projects/<repo>/memory/`). That memory is per-host and never
+synced between machines, so it is a session scratchpad — anything durable
+lives here in `docs/` (and `CLAUDE.md`), committed to the repo where every
+host sees it. See CLAUDE.md §"Agent memory lives in git, not local state".
 
 ## Contents
 
@@ -64,6 +65,19 @@ truth, eliminating drift between AI memory and in-repo reference.
   `decisions/` (immutable ADRs) with mutable rationale that evolves as
   the desktop grows. See [desktop/README.md](./desktop/README.md) for
   the index and conventions.
+
+- **[darwin/](./darwin/)** — living documents for macOS-specific host
+  configuration: [touch-id.md](./darwin/touch-id.md) (Touch ID for sudo)
+  and [system-updates.md](./darwin/system-updates.md) (the unattended
+  macOS + App Store update posture). The macOS parallel to `desktop/`;
+  the nix-darwin framing ADRs stay in `decisions/`.
+
+- **[research/](./research/)** — point-in-time research notes: surveys,
+  prior-art scans, and option analyses that feed decisions and living
+  documents but are neither. Dated and cited; explicitly not decisions.
+  See [research/README.md](./research/README.md) for the index.
+
+- **[design/](./design/)** — design notes: the doc-before-code working-out of a non-trivial change (problem & intent → forces → options weighed → decision → architecture → de-risk → open items). *Proposed* artifacts that precede implementation; the decision graduates to an ADR in `decisions/`, while `research/` notes feed them. See [design/README.md](./design/README.md) for the index and conventions.
 
 - **[agents/](./agents/)** — living documents for the AI coding agents
   (Claude Code + Cursor CLI per ADR-008) and their per-surface decisions
