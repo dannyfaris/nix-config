@@ -6,8 +6,8 @@
 #   ~/.ssh/config            nix-store symlink, rendered from this module.
 #                            Regenerated on every `nh darwin switch` /
 #                            `nh os switch` — direct edits get clobbered.
-#                            Currently contains just one line:
-#                            `Include ~/.ssh/config.local`.
+#                            Contains the Include below, the fleet host
+#                            blocks, and the Host * baseline (#517).
 #
 #   ~/.ssh/config.local      operator-maintained plain file, NEVER touched
 #                            by nix. Home for one-off Host blocks

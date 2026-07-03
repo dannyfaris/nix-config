@@ -50,10 +50,17 @@
   #   - Darwin: modules/darwin/users.nix → users.users.dbf.openssh
   #     .authorizedKeys.keys (renders /etc/ssh/nix_authorized_keys.d/dbf,
   #     consumed by nix-darwin's AuthorizedKeysCommand drop-in).
-  # Today the Mac is the sole operator key; a backup key (e.g. on a
-  # YubiKey) would append here rather than being introduced as parallel
-  # state.
+  # One user key PER HOST (#524), each labelled with its origin —
+  # generated on that host, private key never moves; a compromised host
+  # revokes by deleting its one line. Per-host keys are passphrase-less
+  # (operator-endorsed carve-out, ADR-010 §History). Exception: the
+  # neptune key predates this model — it is also GitHub-registered and
+  # the sops age-identity source; rotation onto a fresh fleet-only key
+  # is tracked in #526 (see ADR-010 §History 2026-07-03). A backup
+  # key (e.g. on a YubiKey) would append here rather than being
+  # introduced as parallel state.
   authorizedKeys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@mac"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@neptune"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis"
   ];
 }

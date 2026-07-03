@@ -356,26 +356,38 @@ vs operator-maintained boundary:
 # `Include ~/.ssh/config.local`. THIS file is where one-off Host blocks
 # live so they survive `nh darwin switch` without being clobbered.
 # See docs/decisions/ADR-010-ssh.md.
+#
+# Fleet hosts (mercury, metis, neptune) are declared in git since #517
+# — do NOT re-add them here: this file renders BEFORE the declared
+# blocks and would silently shadow them. Break-glass fallbacks only.
 
-Host mercury
+Host mercury-aws
   User dbf
   HostName <mercury's current AWS DNS>
-
-Host metis
-  HostName metis.<tailnet>.ts.net
-  User dbf
 
 Host metis-lan
   HostName <metis's LAN IP>
   User dbf
 ```
 
-Entries depend on what's reachable from the Mac. `mercury` (public
-AWS DNS) works from anywhere. `metis` via tailnet resolves once
-the Mac is signed into Tailscale — the `tailscale-app` cask is
-installed via `modules/darwin/homebrew.nix` per ADR-031, but the
-operator still has to sign the Mac into the tailnet on first
-launch; use the `metis-lan` LAN entry until then.
+Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares
+them by bare MagicDNS name (#517), resolvable once the Mac is signed
+into Tailscale (the `tailscale-app` cask is installed via
+`modules/darwin/homebrew.nix` per ADR-031, but the operator still has
+to sign the Mac into the tailnet on first launch; use the break-glass
+entries above until then). This file carries only the non-tailnet
+fallbacks.
+
+## Post-activation — fleet SSH enrolment (#517 / #524)
+
+Same two steps as the headless runbook (see
+[headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment):
+commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to
+`hosts/<host>/` + add its `ssh-known-hosts.nix` and `ssh.nix` entries,
+and generate its passphrase-less outbound user key
+(`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`),
+appending the pubkey to `lib/operator.nix` `authorizedKeys`. Existing
+hosts pick both up at their own next switch.
 
 ## Post-activation — enable FileVault (manual, not declarable)
 
