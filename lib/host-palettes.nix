@@ -40,8 +40,8 @@
 # each host's own terminal, statuslines (#411 pending), and the macchina
 # banner; the prompt's host marker carries the SSH signal.
 #
-# Future hosts (jupiter, saturn — celestial names per ADR-038) get
-# entries here at bring-up.
+# Future host jupiter (celestial name per ADR-038) gets its entry here
+# at bring-up.
 {
   nixos-vm = {
     polarity = "dark";
@@ -98,6 +98,20 @@
     schemes = {
       dark = "gruvbox-dark-hard";
       light = "gruvbox-light-hard";
+    };
+  };
+  # Solarized's deep teal-navy bg (base00 #002b36) is unused across the
+  # fleet (catppuccin / tokyo-night / rose-pine / gruvbox), so the palette
+  # shift is obvious when an SSH session moves between saturn and any other
+  # host. Slots read on-intent (08 red, 0A amber, 0B olive-green, 0C teal,
+  # 0D blue, 0E violet = the purple-family SSH host marker shared by every
+  # host), so no #331-style slot-correction override is needed. Paired
+  # dark/light per the convention above.
+  saturn = {
+    polarity = "dark";
+    schemes = {
+      dark = "solarized-dark";
+      light = "solarized-light";
     };
   };
 }
