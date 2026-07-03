@@ -10,8 +10,9 @@
 #
 # Keybinds are single-sourced from lib/capabilities.nix (ADR-039): the
 # `aerospace-action` emitter (caps.aerospaceBinds) renders the simple verbs +
-# app-launch into `[mode.main.binding]`; the two `aerospace-exec` binds
-# (edge-scroll, maximise-by-isolation) are hand-authored below because they
+# app-launch into `[mode.main.binding]`; the three `aerospace-exec` binds
+# (edge-scroll, maximise-by-isolation, cycle-terminal-windows) are
+# hand-authored below because they
 # shell out to the `aerospace` CLI by an absolute (package-derived) path — which
 # the repo-decoupled registry (only `{ lib }`) cannot form. Their chords come
 # from the registry via caps.aerospaceChord, so the merged-namespace collision
@@ -59,6 +60,11 @@ let
     mods = [ "Shift" ];
     key = "M";
   };
+  hyperShiftReturn = chordFor {
+    tier = "hyper";
+    mods = [ "Shift" ];
+    key = "Return";
+  };
 
   # Edge-scroll fallthrough (darwin-specific; focus-column-{left,right}): try to
   # focus that way; at the workspace edge `focus` exits non-zero, so fall through
@@ -78,10 +84,24 @@ let
   # ≥2. Known limitation (carried): no empty workspace left → silent no-op.
   maximiseByIsolation = "exec-and-forget AS=${aerospace}; n=$($AS list-windows --workspace focused --format '%{window-layout}' | grep -vc '^floating$'); [ \"$n\" -le 1 ] || { ws=$($AS list-workspaces --monitor focused --empty | head -1); [ -n \"$ws\" ] && $AS move-node-to-workspace --focus-follows-window \"$ws\"; }";
 
+  # Cycle-terminal-windows (cycle-terminal-windows cap): focus the next Ghostty
+  # window in window-id (creation) order, wrapping past the end; from a
+  # non-Ghostty window, focus the first — that case needs no branch of its own
+  # (unset i coerces to 0, so the i%NR+1 wrap arithmetic selects a[1]).
+  # Matching is by bundle id, so it spans
+  # the one-app-instance-per-window processes that spawn-terminal's `open -na`
+  # creates (which is also why macOS's native Cmd+` cannot do this).
+  # `--monitor all` not `--all` — the alias is rejected alongside filtering
+  # flags like --app-bundle-id. The explicit `sort -n` matters: list-windows
+  # sorts by window *title*, and Ghostty titles mutate (shell/session titles),
+  # which would make the cycle order shift under the operator's feet.
+  cycleTerminalWindows = "exec-and-forget AS=${aerospace}; cur=$($AS list-windows --focused --format '%{window-id}'); next=$($AS list-windows --monitor all --app-bundle-id com.mitchellh.ghostty --format '%{window-id}' | sort -n | awk -v c=\"$cur\" '{a[NR]=$0; if ($0==c) i=NR} END{if (NR) print a[i%NR+1]}'); [ -n \"$next\" ] && $AS focus --window-id \"$next\"";
+
   handAuthoredBinds = {
     ${hyperLeft} = edgeScrollLeft;
     ${hyperRight} = edgeScrollRight;
     ${hyperShiftM} = maximiseByIsolation;
+    ${hyperShiftReturn} = cycleTerminalWindows;
   };
 in
 {
@@ -121,7 +141,7 @@ in
       };
 
       # Main mode: the emitted simple verbs + app-launch (caps.aerospaceBinds)
-      # merged with the two hand-authored complex binds. The collision lint
+      # merged with the hand-authored complex binds. The collision lint
       # (caps.darwinCollisions) guards the merged namespace, so this `//` cannot
       # silently shadow an emitted chord.
       mode.main.binding = caps.aerospaceBinds // handAuthoredBinds;
