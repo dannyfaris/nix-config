@@ -63,8 +63,7 @@ _: {
     ../../modules/darwin/system-prefs.nix
 
     # macOS keyboard shortcuts (com.apple.symbolichotkeys) — the screenshot
-    # file/clipboard chord swap and Switch-to-Desktop N. See
-    # docs/desktop/keybinds.md §Screenshots.
+    # file/clipboard chord swap. See docs/desktop/keybinds.md §Screenshots.
     ../../modules/darwin/keyboard-shortcuts.nix
 
     # JankyBorders — the focused-window border for AeroSpace tiles (the macOS
