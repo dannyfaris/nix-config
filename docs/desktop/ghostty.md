@@ -108,9 +108,7 @@ selection / palette) and sets `font-family` to the Stylix monospace +
 emoji faces (`MonaspiceAr Nerd Font`, `Noto Color Emoji` — the faces
 `modules/darwin/desktop-fonts.nix` installs system-wide, #209). The
 palette tracks scheme + polarity flips with no extra wiring (#256).
-(The target also writes `background-opacity = 1.0` from
-`stylix.opacity.terminal`'s default — inert, since we don't set
-opacity; it'll appear in the emitted config as a Stylix-owned line.)
+(The target emits `background-opacity` from `stylix.opacity.terminal`, which we set to `0.9` for a translucent background — matched to foot's `alpha = 0.9` on the Linux desktop hosts for cross-terminal parity. Opacity flows through the Stylix knob rather than a raw `background-opacity` setting precisely so it doesn't duplicate the Stylix-owned line. We pair it with `background-blur = 20` (the radius Ghostty's `background-blur = true` expands to); blur is inert unless opacity < 1. macOS applies an opacity change only after a full Ghostty restart.)
 
 **Font-size is pinned, deliberately.** The target also sets
 `font-size = fonts.sizes.terminal * 4/3` (the macOS 72→96-DPI scale);

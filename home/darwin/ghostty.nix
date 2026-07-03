@@ -77,6 +77,11 @@ in
   # themes/stylix file remains as inert dead weight — accepted, see
   # docs/design/macos-live-theme-switching.md §De-risk evidence.
   stylix.targets.ghostty.enable = true;
+  # Translucent terminal background, matched to foot's alpha=0.9 on the
+  # Linux desktop hosts. Driven through the Stylix opacity knob (not a raw
+  # background-opacity setting) so it doesn't duplicate the Stylix-owned
+  # line. See docs/desktop/ghostty.md; paired with background-blur below.
+  stylix.opacity.terminal = 0.9;
   # Make Ghostty's cask-bundled terminfo discoverable by non-Ghostty-
   # launched TUIs. The cask installs its compiled terminfo inside the
   # .app bundle (at the path below), outside the nix-derived
@@ -144,6 +149,11 @@ in
       # (Ghostty's macOS default is 13, per its Config.zig: "On macOS
       # we default a little bigger since this tends to look better.")
       font-size = lib.mkForce 13;
+
+      # Blur behind the translucent window, matched to foot's blur on the
+      # Linux desktop hosts. 20 is the radius background-blur = true expands
+      # to; inert unless opacity < 1 (set via stylix.opacity.terminal above).
+      background-blur = 20;
 
       # Under AeroSpace (ADR-040), `Hyper+Return` spawns a new Ghostty window
       # via `open -na Ghostty.app`, which starts a new app *instance* per
