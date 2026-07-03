@@ -39,26 +39,42 @@
 # warning and shrinks the inbound-keys surface to a single per-platform
 # system-side path. See #234.
 #
-# No matchBlocks declared here, no identity files, no key generation. Git
-# auth uses HTTPS + token via gh/glab (see ADR-009), so SSH keys aren't
-# needed for git. The Include directive below lets the operator maintain
-# one-off matchBlocks (e.g. for bootstrap-only access to a new cloud host
-# via nixos-anywhere) at ~/.ssh/config.local without having them clobbered
-# on every nh os switch — home-manager owns the generated ~/.ssh/config
-# but the Include'd file is untouched.
+# Fleet matchBlocks are declared here (#517): every host knows how to
+# reach every other after a switch, nothing hand-maintained. Entries use
+# bare MagicDNS names — the tailscale search domain expands them on
+# every host, and the bare form keeps the tailnet identifier out of this
+# public repo. Host *identity* is the system layer's job: the committed
+# host keys in modules/shared/ssh-known-hosts.nix mean these connections
+# never TOFU-prompt.
 #
-# When SSH keys become a permanent fixture (e.g. for a future x86_64
-# desktop or cloud servers used routinely), generate fresh ed25519 keys
-# on this box, use a passphrase + ssh-agent, and add matchBlocks here
-# directly. Agent forwarding from the Mac stays explicitly OFF (standard
-# security best practice).
-_: {
+# Tailscale outage: these names die with MagicDNS; recovery is the
+# host-specific break-glass table in CLAUDE.md §Break-glass, plus the
+# operator-maintained fallback blocks (LAN IP, EC2 DNS) in
+# ~/.ssh/config.local — deliberately NOT promoted here (dynamic EC2
+# name; operator chose not to commit fleet IPs).
+#
+# Git auth uses HTTPS + token via gh/glab (see ADR-009), so SSH keys
+# aren't needed for git. The Include directive below lets the operator
+# maintain one-off matchBlocks (bootstrap targets, temporary access,
+# break-glass fallbacks) at ~/.ssh/config.local without having them
+# clobbered on every nh os switch — home-manager owns the generated
+# ~/.ssh/config but the Include'd file is untouched.
+_:
+let
+  operator = import ../../lib/operator.nix;
+  # One block shape for every fleet destination; a host's own entry is
+  # harmless (self-SSH is rare but valid). nixos-vm deliberately absent
+  # (excluded as a destination, #517).
+  fleetHost = {
+    User = operator.name;
+  };
+in
+{
   programs.ssh = {
     enable = true;
     # Opt out of home-manager's deprecated "default match-block contents"
     # behaviour. Upstream is removing the implicit defaults; this silences
-    # the trace warning and makes the stance explicit. We don't depend on
-    # any of those defaults (no matchBlocks declared; no SSH keys yet).
+    # the trace warning and makes the stance explicit.
     enableDefaultConfig = false;
     # Pull in ~/.ssh/config.local at file scope. Standard pattern for
     # mixing nix-managed SSH config with operator-maintained one-offs
@@ -69,6 +85,46 @@ _: {
     # programs.ssh.includes emits the Include at file scope (before any
     # Host blocks), which is the upstream-blessed mechanism and avoids
     # the scoping subtleties of putting Include inside a Host * block.
+    #
+    # Include renders BEFORE the blocks below and ssh takes the first
+    # value per option — so a config.local block naming a fleet host
+    # would shadow the declared one. The operator keeps config.local to
+    # break-glass-only entries (metis-lan, mercury-aws) for exactly this
+    # reason.
     includes = [ "~/.ssh/config.local" ];
+
+    # `settings`, not the deprecated `matchBlocks` (HM renders "*" last
+    # regardless of sort; upstream ssh_config directive names).
+    settings = {
+      neptune = fleetHost;
+      mercury = fleetHost;
+      metis = fleetHost;
+
+      # Baseline stance for every destination, declared rather than
+      # inherited from defaults (explicit > implicit). No option overlap
+      # with the fleet blocks above (they set only User), so first-match
+      # semantics can't shadow anything here.
+      "*" = {
+        # A compromised remote must not be able to borrow this host's
+        # keys — no hop-through topology needs forwarding (each fleet
+        # host is directly reachable). ADR-010's stance, now declared.
+        ForwardAgent = false;
+        # No silent key caching in the agent. Moot while keys are
+        # passphrase-free; the day passphrases arrive, prompting is the
+        # deliberate default and caching the opt-in.
+        AddKeysToAgent = "no";
+        # Text-heavy interactive traffic compresses well over the WAN
+        # path (mercury); negligible CPU.
+        Compression = true;
+        # Explicit default-restatement: connection multiplexing off — a
+        # control socket grants connection hijacking to anything running
+        # as this user, for milliseconds of saving over the tailnet.
+        ControlMaster = "no";
+        # HashKnownHosts deliberately NOT set: this repo publishes the
+        # fleet's names and host keys (ssh-known-hosts.nix), so hashing
+        # the local file would obscure nothing coherent — and it costs
+        # known_hosts debuggability. Declared-trust over hidden-trust.
+      };
+    };
   };
 }

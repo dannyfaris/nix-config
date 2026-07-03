@@ -33,6 +33,8 @@
     ./users.nix
     ../shared/system-packages.nix
     ../shared/editor-defaults.nix
+    # Fleet host keys pinned system-wide — cross-host SSH without TOFU (#517).
+    ../shared/ssh-known-hosts.nix
     ./host-context.nix
     ./home-manager.nix
     # Stylix theming: the stylix module + per-host base16 palette. Its
