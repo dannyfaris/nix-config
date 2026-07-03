@@ -3,7 +3,9 @@
 **Date**: 2026-05-06
 **Status**: Accepted
 
-> **Amendment (2026-06-05):** mosh was removed from the fleet ([#47](https://github.com/dannyfaris/nix-config/issues/47), [ADR-011](./ADR-011-remote-dev-qol.md)). References below to mosh "pairing" with zellij are historical — zellij now carries cross-disconnect persistence on its own (reconnect over plain SSH, then `zellij attach`); there is no mosh layer. The zellij decision itself is unchanged.
+> **Amendment (2026-06-05):** mosh was removed from the fleet ([#47](https://github.com/dannyfaris/nix-config/issues/47), [ADR-011](./ADR-011-remote-dev-qol.md)). References below to mosh "pairing" with zellij are historical — there is no mosh layer; cross-disconnect persistence is carried by zellij alone (reconnect over plain SSH, then `zellij attach`). The zellij decision itself is unchanged.
+>
+> **Correction (2026-06-27):** the removal was *not* because mosh had become redundant — it was forced. mosh and zellij fight over the screen (two independent terminal-state models re-emitting escape sequences), producing rendering corruption that made the pairing unusable. Absent that conflict mosh was the *preferred* remote experience: its local-echo "feels-local" responsiveness and IP-roaming are exactly what plain-SSH reconnect does not recover. So what was lost with mosh is the no-reconnect, low-latency *feel* — not persistence, which zellij keeps. This is the live migration pressure behind any future "feels-local over SSH" reassessment (e.g. herdr, whose own remote mode sidesteps the conflict by being the multiplexer rather than wrapping one).
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

@@ -32,10 +32,13 @@
 # scheme and its polarity can never drift apart silently — the
 # fragility the previous interim shape (#123 / #141) carried.
 #
-# Visibly-distinct hues per host so SSH'ing between them surfaces a
-# palette shift in prompt / Zellij frame / helix / macchina banner —
-# the fourth signal layer in the SSH-context awareness stack
-# (issues #4, #6, #7, #17 land the other three).
+# Per-host hues were originally also an SSH-context signal (a palette
+# shift in prompt / zellij frame / helix on SSH'ing between hosts). That
+# signal is deliberately retired for TUIs (ADR-041: TUIs follow the
+# *local* terminal palette; operator-endorsed — the signal was
+# higher-friction than it earned). The per-host scheme still colours
+# each host's own terminal, statuslines (#411 pending), and the macchina
+# banner; the prompt's host marker carries the SSH signal.
 #
 # Future host jupiter (celestial name per ADR-038) gets its entry here
 # at bring-up.

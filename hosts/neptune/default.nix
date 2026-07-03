@@ -69,10 +69,16 @@ _: {
     ../../modules/darwin/system-prefs.nix
 
     # macOS keyboard shortcuts (com.apple.symbolichotkeys) — the
-    # screenshot file/clipboard chord swap and the Switch-to-Desktop
-    # N enablement. Authoritative for the symbolichotkeys domain; see
-    # the module header and docs/desktop/keybinds.md §Screenshots.
+    # screenshot file/clipboard chord swap. Authoritative for the
+    # symbolichotkeys domain; see the module header and
+    # docs/desktop/keybinds.md §Screenshots.
     ../../modules/darwin/keyboard-shortcuts.nix
+
+    # JankyBorders — the focused-window border for AeroSpace tiles (the macOS
+    # analogue of the window border niri draws). Colours source from the design
+    # tokens; runs as a launchd user agent. See the module header and
+    # docs/design/macos-deterministic-tiling.md (ADR-040 Stage 2, #494).
+    ../../modules/darwin/jankyborders.nix
 
     # Power / sleep / recovery for the always-on builder + SSH-bastion
     # role. Auto-restart after outage, never sleep the computer,
@@ -141,18 +147,25 @@ _: {
       # Karabiner-Elements karabiner.json (~/.config/karabiner/karabiner.json).
       # Cask owns the .app + DriverKit system extension + launchd jobs;
       # this module owns the declarative remap config. Realizes the
-      # Hyper modifier from docs/desktop/keybinds.md (caps_lock → ⌘⌃⌥⇧).
-      # See docs/desktop/karabiner.md.
+      # Hyper modifier (caps_lock → Ctrl+Opt); the Mission-Control /
+      # Space-jump remaps are retired (ADR-040 — those chords fall through
+      # to AeroSpace). See docs/desktop/karabiner.md.
       ../../home/darwin/karabiner.nix
-      # Hammerspoon init.lua (~/.hammerspoon/init.lua). Cask owns
-      # the .app; this module owns the declarative Lua source.
-      # Binds Hyper+letter / Hyper+key actions on top of Karabiner's
-      # modifier. Enumerated bindings live in docs/desktop/keybinds.md
-      # §"Active bindings — macOS clients". See docs/desktop/hammerspoon.md.
-      ../../home/darwin/hammerspoon.nix
+      # AeroSpace window manager (~/.config/aerospace/aerospace.toml + launchd).
+      # Owns macOS window management (tiling, workspaces, the Hyper keymap) via
+      # the aerospace-action registry emitter. Supersedes the retired
+      # Hammerspoon layer (ADR-040). See docs/design/macos-deterministic-tiling.md.
+      ../../home/darwin/aerospace.nix
       # Ensures ~/Pictures/Screenshots exists; pairs with
       # screencapture.location in modules/darwin/system-prefs.nix.
       ../../home/darwin/screenshots-dir.nix
+      # Runtime theme switching (#499): the appearance watcher + hook
+      # option, the JankyBorders repaint hook, and theme-following
+      # wallpaper pools. Ghostty's half is native dual-theme in its own
+      # module. See docs/design/macos-live-theme-switching.md.
+      ../../home/darwin/dark-mode-notify.nix
+      ../../home/darwin/jankyborders-hook.nix
+      ../../home/darwin/wallpapers.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream-published
       # prebuilt aarch64-darwin binary, sidestepping the heavy

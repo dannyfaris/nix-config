@@ -30,9 +30,14 @@ in
     enable = true;
 
     settings = {
-      # `programs.helix.settings.theme` is owned by Stylix's helix target
-      # (enabled via home/shared/stylix-targets.nix per ADR-028).
-      # Stylix writes the theme name here at default priority.
+      # base16_terminal ships in helix's runtime: an ANSI-16 theme that
+      # renders entirely from the terminal palette — follows runtime
+      # polarity flips and SSH context (the terminal-authority direction,
+      # replacing the Stylix helix target's baked hex). Trade-off: coarser
+      # than truecolor (selection/cursor go reversed-video, some syntax
+      # classes share a colour); per-host dual named themes are the
+      # fallback if it grates.
+      theme = "base16_terminal";
 
       editor = {
         line-number = "relative";

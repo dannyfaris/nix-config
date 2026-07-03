@@ -1,4 +1,4 @@
-# ADR-008: AI coding agents — Claude Code, Codex, Gemini, Cursor
+# ADR-008: AI coding agents — Claude Code, Codex, Antigravity, Cursor
 
 **Date**: 2026-05-06
 **Status**: Accepted
@@ -7,6 +7,8 @@
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
 > per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
 > tier prefix. Navigability fix only — the decision recorded here is unchanged.
+
+> **Revision (2026-06-24):** Gemini CLI is replaced by the **Antigravity CLI** (`pkgs.antigravity-cli`, binary `agy`) in the opt-in extras. Google announced this on 2026-05-19 ([developers.googleblog.com](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/)): it is folding Gemini CLI into Antigravity and on 2026-06-18 retired the free / AI Pro / Ultra hosted backend that served Gemini CLI — the consumer tier this config authenticated against via "Sign in with Google". (Issue #433's "June 17" is that retirement, off by one.) Antigravity CLI keeps the same Google-OAuth auth shape, so the OAuth-not-sops decision below stands and this ADR is amended in place rather than superseded; only the roster member swaps. Antigravity CLI is unfree, so it joins the `allowUnfreePredicate` whitelist alongside `cursor-cli` (Gemini CLI was Apache-2.0 and needed no entry). Headless/API-key auth for `agy` is an open upstream request (antigravity-cli#78); not a blocker here, since the only headless host (Mercury) omits these extras and the four extras hosts each reach a browser-or-URL OAuth flow. See #433. Body references below are updated to the current roster; the original 2026-05-06 pre-flight notes about Gemini CLI are retained as history.
 
 ## Context
 
@@ -28,14 +30,16 @@ sops-nix integration is needed for these tools.
 
 - **Claude Code** — `claude login` (existing pattern, unchanged).
 - **Codex** — "Sign in with ChatGPT" via `codex` first-run, OAuth.
-- **Gemini CLI** — "Sign in with Google" via `gemini` first-run, OAuth.
+- **Antigravity CLI** — "Sign in with Google" via `agy` first-run, OAuth
+  (replaced Gemini CLI; see the 2026-06-24 revision above).
 - **Cursor CLI** — login flow via the `cursor-agent` binary (note: the
   nixpkgs `cursor-cli` package installs the binary as `cursor-agent`,
   not `cursor`).
 
-Cursor CLI is the only unfree package; it's added to the
-`allowUnfreePredicate` whitelist in `modules/shared/nix-daemon.nix`. Codex and
-Gemini CLI are both Apache-licensed; no whitelist entries needed.
+Cursor CLI and Antigravity CLI are the unfree packages; both are in the
+`allowUnfreePredicate` whitelist in `modules/shared/nix-daemon.nix`. Codex is
+Apache-licensed; no whitelist entry needed. (Antigravity CLI replaced the
+Apache-2.0 Gemini CLI — see the 2026-06-24 revision above.)
 
 ## Rationale
 
@@ -90,7 +94,7 @@ This is documented here as the future path; not implemented now.
   (`~/.config/...` typically), where the user's existing tools already
   store theirs.
 - ✓ The set is split along a host-policy axis: Claude Code + Cursor are
-  the always-on base in `agent-clis.nix`; Codex + Gemini CLI are
+  the always-on base in `agent-clis.nix`; Codex + Antigravity CLI are
   opt-in via `agent-clis-extras.nix`, applied on hosts that want the
   broader set. Work-only hosts (e.g. Mercury) get only the base,
   reflecting the work environment's narrower vendor scope. The split
@@ -107,9 +111,9 @@ This is documented here as the future path; not implemented now.
 - ⚠ Migration trigger: an agent CLI changing its auth model. If that
   happens, this ADR gets superseded by a new one with the actual
   implementation.
-- ⚠ Migration trigger: a host wanting Codex *xor* Gemini (one but not the
-  other). The current grouped split assumes they toggle together;
-  unbundling into per-tool files (`codex.nix`, `gemini-cli.nix`) is the
+- ⚠ Migration trigger: a host wanting Codex *xor* Antigravity CLI (one but
+  not the other). The current grouped split assumes they toggle together;
+  unbundling into per-tool files (`codex.nix`, `antigravity-cli.nix`) is the
   easy refactor.
 
 ## Implementation
@@ -133,21 +137,22 @@ only on hosts that include the file in `hostContext.extraHomeModules`:
 { pkgs, ... }: {
   home.packages = with pkgs; [
     codex
-    gemini-cli
+    antigravity-cli
   ];
 }
 ```
 
-(Specifically `gemini-cli`, not `gemini-cli-bin`; the source-built variant
-is preferred.)
+(`antigravity-cli` ships the `agy` binary as a vendor prebuilt for all four
+platforms — no Darwin-side source-build override is needed, unlike `codex`.)
 
-Cursor CLI is the only unfree package among the new additions. The
-unfree whitelist in `modules/shared/nix-daemon.nix` extends to include it
-alongside the existing `claude-code` entry:
+Cursor CLI and Antigravity CLI are the unfree packages. The unfree whitelist
+in `modules/shared/nix-daemon.nix` lists both alongside the existing
+`claude-code` entry:
 
 ```nix
 nixpkgs.config.allowUnfreePredicate = pkg:
   builtins.elem (lib.getName pkg) [
+    "antigravity-cli"
     "claude-code"
     "cursor-cli"
   ];

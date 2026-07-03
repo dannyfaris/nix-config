@@ -1,11 +1,11 @@
 # stylix-palette — the per-host base16 palette, and the Stylix module that
 # consumes it.
 #
-# This is the *system half* of the repo's theming wiring; the home half
-# is split across home/shared/stylix-targets.nix (cross-platform TUI
-# targets) and home/nixos/stylix-targets-desktop.nix (desktop-only
-# targets, picked up via the desktop-env bundle). This module owns the
-# upstream:
+# This is the *system half* of the repo's theming wiring. Since ADR-041
+# the TUI surface follows the terminal palette (the shared target
+# whitelist is empty); this engine remains as the colour table the
+# eval-time statuslines read and the palette source for
+# lib/scheme-pair.nix. This module owns the upstream:
 #   - imports inputs.stylix.nixosModules.stylix (the engine), and
 #   - sets the per-host base16 scheme that every Stylix target downstream
 #     reads from.

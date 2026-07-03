@@ -1,7 +1,7 @@
 # ADR-039: Single-source capability registry — the cross-platform keybind & interaction architecture
 
 **Date**: 2026-06-24
-**Status**: Accepted, Implementation pending
+**Status**: Accepted, Implementation pending; **§7 (macOS window-management realization) superseded by [ADR-040](./ADR-040-macos-window-manager-aerospace.md)** — the registry architecture (§1–6, §8–9) stands
 
 > One semantic capability registry (`lib/capabilities.nix`) becomes the single source for the cross-platform interaction layer: it generates the keybind configs (niri/keyd/Karabiner/Hammerspoon), a unified action/cheatsheet **palette**, and the `keybinds.md` reference table — from one declaration per capability. Freezes the load-bearing decisions of the 2026-06-23 keybind audit and the interaction-design thread: the Hyper taxonomy keystone (Hyper = primary cross-platform layer at `Ctrl+Alt`/`Ctrl+Opt`, parity-not-identity; Super = the Cmd-parity command modifier), the three-dimension schema (chord-tokens · per-platform realization · descriptive metadata), the atomic base-shape cutover, the unified palette, and the pure-Hammerspoon macOS realization. Detail lives in the living docs (`keybinds.md`, the research notes) and the build issues (#384/#437/#442/#440); this ADR is the frozen *why*.
 
@@ -26,19 +26,24 @@ Concretely — one capability (illustrative shape; the full field spec is #384's
 {
   id = "lock-screen";
 
-  # descriptive (shared default; a platform may override below) — searched & shown by the palette; rendered into the doc table
+  # descriptive (shared default; a platform may add a `label`/`description`/
+  # `keywords` override under `platforms.<p>` where the prose diverges) —
+  # searched & shown by the palette; rendered into the doc table
   label       = "Lock screen";
   description = "Lock the session and show the login screen";
   keywords    = [ "logout" "secure" "away" ];
 
-  # chord — tier + key tokens; the `Hyper` tier resolves per-platform (Ctrl+Alt / Ctrl+Opt)
-  chord = "Hyper+Escape";
+  # chord — an attrset of tier + key tokens (plus optional `mods = [ "Shift" ]` /
+  # `[ "Super" ]` escalators); the `hyper` tier resolves per-platform (Ctrl+Alt / Ctrl+Opt)
+  chord = { tier = "hyper"; key = "Escape"; };
 
-  # realization — per-platform, typed; the payload follows the type
-  platforms.linux  = { realization = "niri-action";        spawn = [ "loginctl" "lock-session" ]; };
+  # realization — per-platform, typed; the payload follows the type. A
+  # niri-action carries its verb under `action.<verb>`; a hammerspoon-handler
+  # names a Lua handler whose body is hand-authored in hammerspoon.nix.
+  platforms.linux  = { realization = "niri-action";        action.spawn = [ "loginctl" "lock-session" ]; };
   platforms.darwin = { realization = "hammerspoon-handler"; handler = "lockScreen"; };
 }
-# other realizations: niri-action (verb) · karabiner-remap (→ keystroke) · menu/command
+# other declared realization types, not yet emitted: karabiner-remap (→ keystroke) · menu/command
 ```
 
 **3. The Hyper taxonomy (keystone).** `Hyper` = the primary command layer, base `Ctrl+Alt` (Linux) / `Ctrl+Opt` (macOS); `Super` = the Cmd-parity command modifier (app-commands, text-nav, launcher, app-switch). The minimal two-modifier base deliberately frees `Shift` and `Super`/`Cmd` to stack as escalators — individually or together (e.g. `Hyper+Shift`, `Hyper+Super`) — which is the whole point of dropping the old all-four base. niri's spatial model is the organizing frame (macOS Space ≈ niri column, by spatial cognition). The full, living taxonomy — the per-tier bind table — is `keybinds.md` (#439); this ADR freezes only the load-bearing shape, not the bind inventory.
@@ -49,9 +54,9 @@ Concretely — one capability (illustrative shape; the full field spec is #384's
 
 **6. The unified capability palette (#442).** The action menu and the keybind cheatsheet are *one* surface: a flat, type-to-filter spotlight over the registry, where every entry shows its keybind + description and is invokable, with no ranking hierarchy. Dataset = registry-only (Tier 1; app-internal and un-declared-OS binds out). niri's `show-hotkey-overlay` retires when it lands. Renderer per the research (Noctalia dmenu / `hs.chooser`); fuzzel excluded (decommissioned with the Noctalia adoption, ADR-036 / #385).
 
-**7. macOS window-management realization** *(resolves #440's open ADR-placement)*. Pure Hammerspoon, standalone — **no tiling WM**. Maximized columns = native full-screen Spaces (navigated natively, leaning on macOS's fullscreen-state memory); stateless geometry hotkeys; a Hammerspoon focus/move-mirror gives niri-like 2-D directional focus/move. Rejected with rationale (full detail in #440): AeroSpace (i3 tree, not scrollable), Paneru/OmniWM (0.x single-maintainer — daily-driver risk), PaperWM.spoon/custom tiler (stateful-tiler fragility), yabai (SIP), Magnet (non-declarative).
+**7. macOS window-management realization** *(resolves #440's open ADR-placement)*. **⚠ Superseded by [ADR-040](./ADR-040-macos-window-manager-aerospace.md)** — a live trial (GO) reversed this: AeroSpace *is* adopted as a tiling WM (the "i3 tree, not scrollable" rejection below rested on the niri-feel *negotiable*, not an immovable). The original realization, preserved as record: Pure Hammerspoon, standalone — **no tiling WM**. Maximized columns = native full-screen Spaces (navigated natively, leaning on macOS's fullscreen-state memory); stateless geometry hotkeys; a Hammerspoon focus/move-mirror gives niri-like 2-D directional focus/move. Rejected with rationale (full detail in #440): AeroSpace (i3 tree, not scrollable), Paneru/OmniWM (0.x single-maintainer — daily-driver risk), PaperWM.spoon/custom tiler (stateful-tiler fragility), yabai (SIP), Magnet (non-declarative).
 
-**8. Validation.** Collision lint at eval time — a new check riding the eval-check machinery ADR-033 established (`lib/stances.nix` → `parts/checks.nix`) — from Phase 1; availability lint (chord not shadowed by OS/WM/app-reserved binds, HotkeyClash-style) later. The one hard inherited reservation honored from day one: **the `Ctrl+Alt` base never binds the F-row** (`Ctrl+Alt+F1‑12`, niri's unbindable VT switch).
+**8. Validation.** Collision lint at eval time — a new check riding the eval-check machinery ADR-033 established (`lib/stances.nix` → `parts/checks.nix`) — from Phase 1; availability lint (chord not shadowed by OS/WM/app-reserved binds, HotkeyClash-style) later. The one hard inherited reservation honored from day one: **the `Ctrl+Alt` base never binds the F-row** (`Ctrl+Alt+F1‑12`, niri's unbindable VT switch). The lint reasons over registry-emitted binds; binds still hand-authored outside the registry are brought into its view rather than left as silent gaps (#455): the macOS spawn binds route their chords through the emitter, the Karabiner substrate's reserved chords are single-sourced so production and lint cannot drift, and the niri merge seam asserts no hand-authored chord shadows a generated one. The remaining uncovered surface is the niri `Super` namespace (and the screenshot binds alongside it), which joins the registry under #323.
 
 **9. Extraction-ready.** Structure `lib/` as a clean, repo-decoupled unit so future packaging stays cheap — *designed-for-the-option*, not publishing now (#428 scope note 1).
 
@@ -62,7 +67,7 @@ Concretely — one capability (illustrative shape; the full field spec is #384's
 - **Why a realization-typed schema.** niri verbs, Karabiner consumed-modifier remaps, and Hammerspoon Lua handlers are not shell commands; a flat command string fits only the menu case. Designing against the hardest consumers keeps the emitters honest.
 - **Why one unified palette.** A keybind and a menu entry are the same capability (id · chord · description) differing only in trigger; the registry shows chords inline for free, so one surface serves both "invoke" and "learn the bind." A separate cheatsheet would duplicate the data.
 - **Why atomic cutover.** Half-migrating a modifier base across five surfaces is precisely the drift the registry exists to prevent.
-- **Why pure Hammerspoon on macOS.** Native-fullscreen-as-column is the stable, supported, niri-approximate path; making a 0.x single-maintainer project the window manager of a daily-driver Mac is a reliability bet, and the mature option (AeroSpace) is the wrong paradigm. Drag-to-reflow is conceded as the one niri behaviour macOS doesn't get (it needs a stateful tiler).
+- **Why pure Hammerspoon on macOS** *(⚠ reversed by [ADR-040](./ADR-040-macos-window-manager-aerospace.md); see §7)*. Native-fullscreen-as-column is the stable, supported, niri-approximate path; making a 0.x single-maintainer project the window manager of a daily-driver Mac is a reliability bet, and the mature option (AeroSpace) is the wrong paradigm. Drag-to-reflow is conceded as the one niri behaviour macOS doesn't get (it needs a stateful tiler). *(ADR-040: "wrong paradigm" was a niri-feel judgment — a negotiable — and a live trial earned relaxing it; AeroSpace is adopted.)*
 - **Why kanata stays out.** It's a runtime input engine, not an emitter; the input layer needs no engine beyond plain modifier stacking + tap-hold + chord-opens-chooser.
 
 ## Consequences
@@ -74,7 +79,7 @@ Concretely — one capability (illustrative shape; the full field spec is #384's
 - ✗ A new `lib/` codegen primitive plus emitters to build and maintain — the registry is real engineering, not config.
 - ✗ The schema couples the keybind and palette features at the source (mitigated: emitters ship independently; the palette is added without touching the keybind emitters).
 - ✗ macOS gives up true scrollable tiling and drag-to-reflow — a deliberate trade of fidelity for native stability.
-- ⚠ Revisit **kanata** only if a concrete input-layer residue emerges beyond plain stacking + tap-hold + chord-opens-chooser. Revisit the **macOS tiling** stance if a scrollable WM matures past 0.x / single-maintainer.
+- ⚠ Revisit **kanata** only if a concrete input-layer residue emerges beyond plain stacking + tap-hold + chord-opens-chooser. ~~Revisit the **macOS tiling** stance if a scrollable WM matures past 0.x / single-maintainer.~~ **Revisited and reversed by [ADR-040](./ADR-040-macos-window-manager-aerospace.md)** — not via a scrollable WM, but by reframing scrollability as a negotiable and adopting AeroSpace after a live trial.
 - ⚠ The Super-layer realization (copy/paste + text-nav via xremap, #323) and the palette **renderer** choice (#442) ride parallel tracks; this ADR does not settle them.
 
 ## Implementation
@@ -83,8 +88,8 @@ Build sequence, walking-skeleton first:
 
 1. **#384** — registry + the three-dimension schema + collision lint + the **niri emitter (walking skeleton)** + the atomic `Ctrl+Alt` cutover. The keyd→niri `ISO_Level3_Shift` delivery verify rides this phase — it decides only the optional AltGr padding; bare `Ctrl+Alt` is the known-good fallback.
 2. macOS emitters (the `Hyper`-constant consumer in keyd, Karabiner, Hammerspoon) + **#440** (the macOS window-management realization).
-3. **#437** — the external capability dataset (the data-home / declarative-boundary contract).
-4. **#442** — the unified capability palette (renderer per the research; niri overlay retires on landing).
-5. The generated `keybinds.md` table; then, deferred, the availability lint.
+3. The generated `keybinds.md` table — **prioritised ahead of the palette**: the table is still hand-maintained, so the doc-drift this registry exists to kill is live today (a handler change still has to be mirrored into prose by hand), and the table generates from the registry's already-built descriptive dimension, so it is also the cheapest remaining surface.
+4. **#437** — the external capability dataset (the data-home / declarative-boundary contract).
+5. **#442** — the unified capability palette (renderer per the research; niri overlay retires on landing); then, deferred, the availability lint.
 
 Living detail is single-sourced elsewhere (ADR-032), not restated here: the taxonomy → `docs/desktop/keybinds.md`; the analysis → `docs/research/{hyper-layer-redesign, cross-platform-action-menu, keymap-single-sourcing-prior-art, launcher-strategy}.md`; the macOS realization → #440; the epics → #428 (F), #425 (C), #427 (E).

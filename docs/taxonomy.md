@@ -59,7 +59,7 @@ In practice, "most communicative" resolves to one of three name sources:
 |------|------------------|
 | `cli-utils.nix` | rg, fd, fzf, bat, eza, zoxide, lazygit, yazi, htop, dust — modern Unix replacements. No single tool is the umbrella; the category is. |
 | `nix-tooling.nix` | nh, nom, nixd, nixfmt, statix, deadnix — six tools improving the nix dev experience. Same pattern. |
-| `agent-clis.nix` | Claude Code + Cursor CLI — the always-on base. Codex + Gemini CLI live in the sibling `agent-clis-extras.nix`, imported per-host (ADR-008, ADR-020). |
+| `agent-clis.nix` | Claude Code + Cursor CLI — the always-on base. Codex + Antigravity CLI live in the sibling `agent-clis-extras.nix`, imported per-host (ADR-008, ADR-020). |
 
 ### `modules/system/` (mixed, all communicative)
 

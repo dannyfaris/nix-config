@@ -25,7 +25,7 @@ The Hyper chord **need not be the same combination on both platforms.** The obje
 
 ## 5. The landing — per platform
 
-- **Linux (niri + keyd):** base Hyper = **`Ctrl+Alt`**, leaving Shift and Super free as escalators. Optionally pad the chord with **`ISO_Level3_Shift` (AltGr)** for extra collision insulation (see §7) — niri binds it, keyd can synthesize it, and on a `us` layout it is otherwise unused, so it costs no escalator. Padding is *optional hardening*: bare `Ctrl+Alt` is already clean because niri captures compositor binds before any app — the only real conflict is `Ctrl+Alt+F1–F12` (VT switch), avoided by not binding the F-row.
+- **Linux (niri + keyd):** base Hyper = **`Ctrl+Alt`**, leaving Shift and Super free as escalators. (An optional **`ISO_Level3_Shift` (AltGr)** pad for extra collision insulation was investigated — §7 — but the on-box verify found it doesn't deliver Level3 on a `us` layout; **not adopted**, see §12.) Bare `Ctrl+Alt` is already clean because niri captures compositor binds before any app — the only real conflict is `Ctrl+Alt+F1–F12` (VT switch), avoided by not binding the F-row.
 - **macOS (Karabiner):** base Hyper = **`Ctrl+Opt`**, leaving Shift and Cmd free. No level-shifts exist on macOS, but none are needed — Karabiner's *exact-modifier* matching already insulates `Ctrl+Opt+<key>` (it fires only on exactly that set).
 
 Same UX on both (Caps → a layer + Shift / platform-meta escalators); different underlying chords — exactly the parity-not-identity model of §4.
@@ -70,7 +70,7 @@ Because the operator uses **Mac-layout keyboards on both machines**, the spare k
 
 ## 12. Open / to verify
 
-- **keyd → niri Level3 delivery on metis:** bind `ISO_Level3_Shift+<key>` to something and confirm the keyd-Hyper chord triggers it. If fussy, plain `Ctrl+Alt` is fine.
+- **keyd → niri Level3 delivery on metis — resolved (2026-06-26): not adopted.** Verified at the physical metis keyboard (a temp `[hyper:C-A-G]` keyd layer + `wev`): keyd's `G` (altgr) emits `Alt_R`, which the `us` xkb layout folds into `Mod1` (plain Alt), **not** `Mod5`/`ISO_Level3_Shift` — so the pad delivers a redundant Alt, no Level3 insulation. Bare `Ctrl+Alt` stands. Making it work would need niri's xkb `lv3:ralt_switch` or keyd emitting the real `iso-level3-shift` keycode — not worth it for optional hardening. See #384.
 - **Escalator ergonomics:** confirm `Caps+Super` (Linux) / `Caps+Cmd` (macOS) is comfortable; reserve the extended tier for infrequent ops. Fallback escalator if not: Shift only.
 - **The redesign is a #384 change.** It ripples across keyd, Karabiner, Hammerspoon, `niri.nix`, and `keybinds.md`; redefining the base chord by hand across five surfaces is the anti-pattern. Land it through the single-source registry so it is one edit — and resolve it *before* #384 generates, or the emitters reproduce the superseded all-four shape.
 
@@ -79,7 +79,7 @@ Because the operator uses **Mac-layout keyboards on both machines**, the spare k
 | Tier | Linux chord | macOS chord | Use |
 |---|---|---|---|
 | `Mod` alone | Super | (n/a — macOS owns WM) | niri manipulation |
-| Hyper | `Ctrl+Alt` (+ opt. AltGr) | `Ctrl+Opt` | cross-platform base |
+| Hyper | `Ctrl+Alt` | `Ctrl+Opt` | cross-platform base |
 | Hyper+Shift | + Shift | + Shift | in-layer reverse / move |
 | Hyper+Mod | + Super | + Cmd | extended (window geometry) |
 

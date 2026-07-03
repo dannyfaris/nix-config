@@ -398,6 +398,42 @@ Notes:
 - On Apple Silicon, FileVault keys to the Secure Enclave, so encryption is effectively instant (no multi-hour conversion pass) and the operator login already unlocks the disk at boot.
 - On an always-on host that imports `modules/darwin/power.nix` (neptune): `restartAfterPowerFailure = true` still auto-reboots after an outage, but with FileVault on the host stops at the boot-time unlock screen (shown before macOS finishes booting) and waits for an operator to authenticate — it will not reach a logged-in, SSH-serving state unattended. `sudo fdesetup authrestart` caches the unlock key for a single *planned* restart, but does nothing for an unexpected power-failure reboot; accept the manual unlock as the cost of at-rest security on an always-on host. This interaction does not arise on a laptop such as saturn, which omits `power.nix` (no unattended-reboot expectation).
 
+## Post-activation — enable Screen Sharing (manual, not declarable)
+
+Inbound Screen Sharing (reach this host's desktop from another Mac over the tailnet, e.g. `vnc://neptune`) **cannot be declared.** nix-darwin has no option for it, and while the underlying `com.apple.screensharing` LaunchDaemon *is* loadable from the command line (`launchctl enable system/com.apple.screensharing`), that only brings the daemon up to listen on 5900 — it does **not** authorize the service. Apple changed Screen Sharing / Remote Management handling in macOS Monterey 12.1 and the "permitted" state is now TCC-gated: it can only be written through the System Settings UI, not by `sudo`, `launchctl`, `defaults`, or `kickstart`. A daemon-only enable connects, then fails with *"Screen Sharing is not permitted on this Mac. Disable and re-enable Screen Sharing or Remote Management in System Settings."* This was verified on neptune (macOS 26 Tahoe); a `launchctl`-driven activation module was prototyped and dropped for exactly this reason.
+
+Enable it once, after first activation:
+
+- **System Settings → General → Sharing → Screen Sharing → on.**
+
+Notes:
+
+- No access-control step is needed for the operator. The `com.apple.access_screensharing` group nests the `admin` group, and `dbf` is an admin, so the login password authenticates the VNC session. A non-admin account *would* need adding (`dseditgroup -o edit -a <user> -t user com.apple.access_screensharing`).
+- No firewall change is needed. The host ALF (`modules/darwin/firewall.nix`) runs with `allowSigned = true`, and the screen-sharing daemon is Apple-signed, so inbound VNC (5900) passes without a rule.
+- **Hyper hotkeys don't fire over Screen Sharing — use the literal `Ctrl+Opt` chord.** Karabiner remaps the *physical* keyboard (DriverKit virtual-HID); Screen Sharing *injects* CGEvents that bypass Karabiner's grab, so `Caps Lock → Hyper` never happens remotely (Caps is also a locking key, delivered as a state-toggle). Workaround, confirmed working on neptune: press the literal `Ctrl+Opt+<key>` on the remote keyboard — the window manager's global hotkeys catch the injected chord directly. This is WM-independent (a property of the Karabiner Hyper substrate, true of any Hyper hotkey — AeroSpace or otherwise).
+
+## Post-activation — grant AeroSpace Accessibility + Mission Control settings (manual, not declarable)
+
+neptune's window manager is **AeroSpace** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md); `home/darwin/aerospace.nix`), with **JankyBorders** drawing the focus-border (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts both, but AeroSpace needs one manual grant before it can tile, and one Mission Control setting cleared. Neither is declarable — the grant is TCC-gated (same wall as Screen Sharing above), the setting is a per-user Dock preference AeroSpace reads at runtime.
+
+### AeroSpace needs the Accessibility permission
+
+AeroSpace moves windows through the macOS Accessibility (AX) API, so it **cannot tile anything** until it is granted Accessibility. Until then it launches and its menu-bar item appears, but windows stay where they are — the failure mode is "AeroSpace is running but does nothing," not a crash. AeroSpace prompts on first launch; approve via:
+
+- **System Settings → Privacy & Security → Accessibility → enable AeroSpace.**
+
+**The grant is lost on every AeroSpace upgrade — expect to re-grant.** The `pkgs.aerospace` bundle is **ad-hoc signed with no Team Identifier** (verified: `codesign -dv` reports `flags=…(adhoc,linker-signed)`, `TeamIdentifier=not set`), so macOS keys the Accessibility grant to the binary's *store path + cdhash* rather than a stable signing identity. Both change whenever `pkgs.aerospace` bumps version, so after a `nix flake update` that moves AeroSpace, the old grant no longer matches and tiling silently stops. Fix: in the Accessibility list, remove the stale AeroSpace entry (`−`) and re-add / re-toggle the new one, then relaunch AeroSpace (`aerospace reload-config` is not enough — the *process* needs the grant). This is intrinsic to running a store-path-installed unsigned app under TCC; it is not a misconfiguration.
+
+### JankyBorders needs no grant
+
+Deliberately called out so a future operator doesn't hunt for a missing permission: **JankyBorders requires no Accessibility (or any TCC) grant** in this config. By design it tracks windows through the window-server API rather than the AX API (that is its speed advantage), and `ax_focus` — the one option that would opt into the slower Accessibility path — is left off. Borders render immediately after activation with no prompt.
+
+### Disable "Automatically rearrange Spaces based on most recent use"
+
+- **System Settings → Desktop & Dock → Mission Control → turn *off* "Automatically rearrange Spaces based on most recent use"** (verified on macOS 26 Tahoe). Equivalent from the shell: `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (`mru-spaces` = `0` when disabled).
+
+AeroSpace recommends this so macOS doesn't reorder Spaces out from under the tiler's Space-index tracking. neptune runs a **single** native Space (AeroSpace owns the workspace layer — ADR-040), so there is little for macOS to rearrange, but the setting is cleared as a precaution and to match AeroSpace's documented baseline. AeroSpace's guide lists further optional macOS tweaks (e.g. "Displays have separate Spaces", "Group windows by application") aimed at multi-monitor setups; none are needed on this single-display host.
+
 ## Verification
 
 ### Phase 1 — local on the new Mac
@@ -423,7 +459,7 @@ Run from the new Mac's user shell.
   returns "not found"; that's expected.)
 - `which claude` and `which cursor-agent` both resolve — the base
   agent set is on every host (ADR-008).
-- `which codex` and `which gemini` both resolve (neptune imports
+- `which codex` and `which agy` both resolve (neptune imports
   `agent-clis-extras.nix` for the full agent set).
 
 ### Phase 2 — SSH-context stack into the Linux fleet

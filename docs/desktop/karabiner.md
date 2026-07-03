@@ -6,8 +6,9 @@ modifier-remap systems, allowing arbitrary key-to-key and
 key-to-modifier-combo remaps. Picked as the macOS-side realization
 of the **Hyper modifier** from
 [`docs/desktop/keybinds.md`](./keybinds.md)'s three-namespace
-philosophy: Karabiner remaps `caps_lock` to `⌘ + ⌃ + ⌥ + ⇧` (the
-macOS analogue of the Linux `Super + Ctrl + Alt + Shift` Hyper).
+philosophy: Karabiner remaps `caps_lock` to `⌃ + ⌥` (`Ctrl+Opt`,
+the macOS analogue of the Linux `Ctrl+Alt` Hyper) — single-sourced
+from `tiers.hyper.darwin` in `lib/capabilities.nix` (ADR-039 §4, #440).
 
 ## Selection
 
@@ -178,7 +179,7 @@ layering" for the full set.
 `xdg.configFile."karabiner/karabiner.json".text` with the JSON
 serialized from a Nix attrset.
 
-The `global` block sets `show_in_menu_bar = false` to hide Karabiner's menu-bar status item — the shipped manipulators run headless (caps_lock → Hyper and the Mission Control remaps need no menu interaction), so the icon is pure clutter. Karabiner's own default is `true`.
+The `global` block sets `show_in_menu_bar = false` to hide Karabiner's menu-bar status item — the shipped manipulator (caps_lock → Hyper) runs headless, so the icon is pure clutter. Karabiner's own default is `true`.
 
 Two rule classes live in the config:
 
@@ -186,17 +187,18 @@ Two rule classes live in the config:
   foundational rule that makes Hyper exist as a chord this Mac
   can emit. Owned by this doc because the choice of Karabiner
   is in service of producing the modifier; the chord shape
-  (`caps_lock` source; `left_shift` + `cmd` + `ctrl` + `option`
-  target) is the load-bearing detail captured in the
+  (`caps_lock` source; `left_control` + `left_option` target,
+  i.e. `Ctrl+Opt`) is the load-bearing detail captured in the
   carve-out's §Rationale.
 - **Bind rules** — `Hyper + X → <native macOS chord>` remaps
-  that translate Hyper-anchored bindings into existing macOS
-  shortcuts at the DriverKit layer (consuming Hyper's mandatory
-  modifiers in the process, so the emitted event is clean and
-  macOS routes it natively). These are *bindings* and live in
-  the bind manifest, not this doc; see
-  [`keybinds.md`](./keybinds.md) §"Active bindings — macOS
-  clients" for the enumeration.
+  (the Mission-Control / Space-jump family). **Retired under
+  [ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md):**
+  AeroSpace now owns the Hyper keymap, so `Hyper+arrows` / `Hyper+1‑9`
+  fall through to it instead of native Spaces. `karabinerHyperRemapKeys`
+  is emptied, so this rule class generates nothing (the empty
+  manipulators are dropped by the #488 filter); the mechanism is
+  retained should a native remap ever be wanted again. Karabiner's
+  sole live job is now caps_lock → Hyper.
 
 The `home/darwin/karabiner.nix` source carries both classes in
 its `complex_modifications.rules` list. The bind-rule entries
@@ -312,10 +314,9 @@ installed.
   boundary rule placing Karabiner on the Mac via cask under
   clause 2; this doc owns the carve-out justification.
 - [`docs/desktop/keybinds.md`](./keybinds.md) — bind manifest
-  covering both the Karabiner-implemented Hyper modifier
-  (caps_lock → ⌘⌃⌥⇧) and the Hyper-anchored Mission Control
-  binds (`Hyper+Arrow`, `Hyper+1`..`9`) layered on top via
-  additional `complex_modifications.rules`.
+  covering the Karabiner-implemented Hyper modifier (caps_lock →
+  `Ctrl+Opt`); the Hyper keymap itself is realized by AeroSpace
+  (ADR-040), and the former Mission-Control remaps are retired.
 - Homebrew `karabiner-elements` cask source (pkg installer,
   DriverKit uninstall block, Sparkle livecheck) —
   https://github.com/Homebrew/homebrew-cask/blob/master/Casks/k/karabiner-elements.rb

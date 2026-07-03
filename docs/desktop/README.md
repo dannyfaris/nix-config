@@ -26,7 +26,7 @@ rather than creating a new artifact.
 
 | Doc | Subject | Landed |
 |---|---|---|
-| [keybinds.md](./keybinds.md) | Cross-platform keybind taxonomy (audited target) — `Hyper` command layer + `Super` (Cmd-parity); per-platform realization via keyd / Karabiner / Hammerspoon + the registry | #80 |
+| [keybinds.md](./keybinds.md) | Cross-platform keybind taxonomy (audited target) — `Hyper` command layer + `Super` (Cmd-parity); per-platform realization via keyd / Karabiner / niri / AeroSpace + the registry | #80 |
 | [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
 | [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
 | [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
@@ -71,7 +71,8 @@ rather than creating a new artifact.
 | [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
 | [utm.md](./utm.md) | UTM virtualisation platform (hosts nixos-vm); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | #11 |
 | [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | #11 |
-| [hammerspoon.md](./hammerspoon.md) | Hammerspoon macOS hotkey-binding layer on top of Karabiner's Hyper; Homebrew cask + Sparkle silent (`.zip`-enclosure, same shape as Ghostty) (clause-1, no nixpkgs Darwin) | #11 |
+| [hammerspoon.md](./hammerspoon.md) | **Decommissioned (ADR-040, #494)** — retired from the macOS interaction stack; AeroSpace + Karabiner only. Retained as the selection record for the Hammerspoon era | #11 |
+| [macos-window-management.md](./macos-window-management.md) | **Superseded (ADR-040, #494)** — the pure-Hammerspoon / native-fullscreen-Spaces model is replaced by AeroSpace (tiling WM). Retained as the selection record; current design → [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md) | #440 |
 
 _macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on neptune, not pending._
 

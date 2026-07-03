@@ -2,7 +2,7 @@
 # See docs/decisions/ADR-008-agent-clis.md for rationale.
 #
 # Imported by every host via the standard home-manager imports list.
-# Hosts that also want Codex + Gemini CLI add agent-clis-extras.nix via
+# Hosts that also want Codex + Antigravity CLI add agent-clis-extras.nix via
 # hostContext.extraHomeModules — split per ADR-020's host-divergences-via-
 # import-splits convention. Work-only hosts (Mercury) keep only the base.
 #

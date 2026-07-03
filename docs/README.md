@@ -77,6 +77,8 @@ host sees it. See CLAUDE.md §"Agent memory lives in git, not local state".
   documents but are neither. Dated and cited; explicitly not decisions.
   See [research/README.md](./research/README.md) for the index.
 
+- **[design/](./design/)** — design notes: the doc-before-code working-out of a non-trivial change (problem & intent → forces → options weighed → decision → architecture → de-risk → open items). *Proposed* artifacts that precede implementation; the decision graduates to an ADR in `decisions/`, while `research/` notes feed them. See [design/README.md](./design/README.md) for the index and conventions.
+
 - **[agents/](./agents/)** — living documents for the AI coding agents
   (Claude Code + Cursor CLI per ADR-008) and their per-surface decisions
   — model-tier colour mapping, statusline signal selection, behavioural
