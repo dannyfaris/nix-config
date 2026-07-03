@@ -4,8 +4,17 @@
 # Settings declared inline as a nix attrset (programs.starship.settings)
 # rather than in a separate starship.toml file. Fish hook auto-wired by
 # programs.starship.enable.
-{ pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
+  # Role→ANSI projection from the design tokens; only the static `.ansi`
+  # field is read (the config-forcing `.hex` is never touched).
+  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+
   # Glyphs decoded from codepoints via fromJSON `"\uXXXX"` escapes —
   # ASCII-safe in source (some editors strip raw PUA UTF-8 bytes) and
   # eval-time-decoded to literal UTF-8 in the rendered config. Pattern
@@ -58,16 +67,13 @@ in
       # within a prompt. Compact spacing stays.
       add_newline = false;
 
-      # Per-module styles — match the role-based palette mapping in the
-      # Claude statusline. Stylix exposes both base16-slot names (base0D
-      # etc.) AND friendly aliases (blue, cyan, green, yellow, purple,
-      # red) in the active palette. We use the friendly aliases because
-      # starship silently rejects `base0X`-style names (treats them as
-      # something other than palette lookups), causing every style to
-      # fall through to default foreground.
-      #
-      # blue = base0D / cyan = base0C / green = base0B / yellow = base0A
-      # / purple = base0E / red = base08 — all wired by Stylix.
+      # Per-module styles — starship's *native* ANSI colour names (blue,
+      # cyan, green, yellow, purple, red), which resolve through the
+      # terminal's 16-colour palette. Terminal-following by construction:
+      # the prompt repaints with the terminal on a polarity flip, and an
+      # SSH session renders in the local terminal's palette (the Stylix
+      # starship target that used to inject these as baked-hex palette
+      # aliases is dropped — see stylix-targets.nix).
       directory.style = "blue";
       git_branch.style = "cyan";
 
@@ -79,15 +85,17 @@ in
       # parity between the two surfaces. Add back here (and in the
       # statusline) if the upstream-divergence signal earns its place.
       #
-      # Untracked uses `orange` (base09) rather than the base16-canonical
-      # `purple` (base0E) so the SSH host marker (which uses purple) is
-      # the only purple element on the line. See agent-clis.nix and
-      # claude-statusline.sh for the matching statusline change.
+      # Untracked carries the *attention* role (base09/orange in the
+      # statuslines) rather than the base16-canonical purple, so the SSH
+      # host marker (purple) stays the only purple element on the line.
+      # Styled via the tokens' ANSI projection — the 16-colour bus has no
+      # orange slot, so this renders the nearest on-bus colour
+      # (bright-yellow; warm gold in gruvbox). See lib/theme-tokens.nix.
       git_status = {
         conflicted = " [!\${count}](red)";
         staged = " [+\${count}](green)";
         modified = " [~\${count}](yellow)";
-        untracked = " [?\${count}](orange)";
+        untracked = " [?\${count}](${tokens.color.role.attention.ansi})";
         format = "$all_status";
         style = "";
       };
@@ -106,7 +114,7 @@ in
         # width 1 -- producing the phantom `( )` gap. The PUA codepoint
         # has a stable width-1 cell. Matches the statusline's NIX_GLYPH.
         symbol = snowGlyph;
-        style = "blue"; # nix blue (base0D via Stylix palette)
+        style = "blue"; # nix blue (ANSI blue — base0D on the terminal bus)
       };
 
       # Host segments — glyph + hostname styled by SSH state. Chevron

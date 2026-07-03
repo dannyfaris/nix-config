@@ -29,7 +29,7 @@ Surfaces divide into two classes:
 **Class 1 — native followers (build-time config, zero runtime plumbing):**
 
 - **Ghostty** — native dual-theme: `settings.theme = "light:stylix-light,dark:stylix-dark"` (via `lib.mkForce`, overriding the Stylix target's single-polarity selector) with `window-theme = "system"`. Both palette variants are generated at build time into `programs.ghostty.themes` from the host's declared scheme pair, using Stylix's own scheme-parsing machinery; the Stylix target stays enabled for its font contribution *(shape and interplay de-risked against the pinned sources — see §De-risk evidence)*. Ghostty repaints open windows itself when the appearance flips (community-config-survey.md §5.1).
-- **fish** and **bat** — the assumption here inverted on-host. The Stylix fish target was not a follower but a *saboteur*: it sourced base16-fish, which OSC-painted the terminal (bg/fg + all 16 slots) with the built polarity at every shell init, clobbering Ghostty's own theme selection and pinning windows dark regardless of appearance. Removed universally (operator call, 2026-07-02 — the SSH per-host-identity painting it also provided was judged not worth the interference); fish now runs its defaults, which respect the terminal palette. Dual `[light]/[dark]` fish theme sections (survey §5.5) remain the follow-up if fish-specific colours are missed; bat `theme = auto` (survey §5.6) is the same class of follow-up (#411-adjacent — its static Stylix theme doesn't clobber, it just reads dark-tuned against a light background).
+- **fish** and **bat** — the assumption here inverted on-host. The Stylix fish target was not a follower but a *saboteur*: it sourced base16-fish, which OSC-painted the terminal (bg/fg + all 16 slots) with the built polarity at every shell init, clobbering Ghostty's own theme selection and pinning windows dark regardless of appearance. Removed universally (operator call, 2026-07-02 — the SSH per-host-identity painting it also provided was judged not worth the interference); fish now runs its defaults, which respect the terminal palette. The find then generalised: the *whole* TUI target whitelist shared the polarity-mismatch half of the problem, and was converted to terminal-following ANSI config fleet-wide — see [ADR-041](../decisions/ADR-041-terminal-authority-tui-theming.md).
 - **TUI statuslines** — today baked to the built polarity as absolute hex; their conversion to ANSI-slot references is #411's cross-platform work, after which they follow Ghostty's palette flip for free. Not re-solved here.
 
 **Class 2 — watched surfaces (the fan-out):**
@@ -90,7 +90,7 @@ The standing price once chosen: **store size scales with the declared variants**
 Remaining after the stage-1 build (2026-07-02 — the runtime verification and the working-theory items landed as designed; the fish assumption inverted, see §Design and §De-risk evidence):
 
 - The CLI switcher (SLS helper) is not yet provisioned — the native toggle exercises the whole chain, so it lands with the action-menu / capability-registry integration when that work arrives.
-- fish/bat polish: dual `[light]/[dark]` fish theme sections and bat `theme = auto` if their default/static colours grate (see §Design Class 1).
+- fish/bat polish: resolved by [ADR-041](../decisions/ADR-041-terminal-authority-tui-theming.md)'s terminal-authority conversion (bat `base16`, whole TUI surface ANSI); dual `[light]/[dark]` fish theme sections remain the recorded fallback only if fish-specific colours are ever missed.
 
 Deferred to stage 2:
 

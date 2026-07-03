@@ -25,9 +25,15 @@ let
 
   # A colour role aliases a base16 slot: `.slot` is the alias target (for
   # @define-color CSS and slot-keyed helpers), `.hex` the resolved value (for
-  # "${...}ff" RRGGBBAA strings). Consumers pick whichever field minimises churn.
-  role = slot: {
-    inherit slot;
+  # "${...}ff" RRGGBBAA strings), `.ansi` the role's projection onto the
+  # 16-colour terminal bus (for terminal-following surfaces — prompt,
+  # #411 statuslines). The bus doesn't carry every slot (base09 has no
+  # ANSI position — the base16→ANSI mapping doubles 08/0A–0E into the
+  # bright slots), so `.ansi` is the *nearest on-bus* name, chosen here
+  # once so approximations can't drift per-surface. Consumers pick
+  # whichever field minimises churn.
+  role = slot: ansi: {
+    inherit slot ansi;
     hex = hexOf slot;
   };
 
@@ -61,10 +67,12 @@ in
   # Semantic colour roles (visual-identity.md §Colour) — each ALIASES a base16
   # slot. Dynamic: resolves per-host/per-polarity through config.lib.stylix.colors.
   color.role = {
-    focus = role "base0D"; # the surface that holds focus
-    attention = role "base09"; # chrome shown without taking focus (notifications)
-    critical = role "base08"; # error / urgent
-    muted = role "base03"; # inactive
+    focus = role "base0D" "blue"; # the surface that holds focus
+    # bright-yellow is the nearest on-bus colour to base09 (in gruvbox it
+    # renders warm gold — orange-adjacent); ANSI-16 has no orange.
+    attention = role "base09" "bright-yellow"; # chrome shown without taking focus (notifications)
+    critical = role "base08" "red"; # error / urgent
+    muted = role "base03" "bright-black"; # inactive
   };
 
   # Font sizes ALIAS stylix.fonts.sizes.* (modules/nixos/desktop-fonts.nix),

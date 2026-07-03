@@ -33,10 +33,23 @@
       defaultCommand = "fd --type f --hidden --exclude .git";
       fileWidgetCommand = "fd --type f --hidden --exclude .git"; # Ctrl-T
       changeDirWidgetCommand = "fd --type d --hidden --exclude .git"; # Alt-C
+      # `--color=16` base scheme: render from the terminal's 16-colour
+      # palette (terminal-authority — follows polarity flips + SSH;
+      # replaces the Stylix fzf target's baked hex).
+      defaultOptions = [ "--color=16" ];
     };
-    bat.enable = true;
+    # bat's built-in `base16` theme highlights via the terminal's ANSI-16
+    # palette (NOT `base16-256`, which hardcodes greys and breaks
+    # palette-following). Polarity-correct in both modes and over SSH;
+    # MANPAGER inherits it (see below).
+    bat = {
+      enable = true;
+      config.theme = "base16";
+    };
     eza.enable = true;
     zoxide.enable = true;
+    # lazygit's default theme uses named ANSI colours — terminal-following
+    # out of the box; its former Stylix target baked hex over that.
     lazygit.enable = true;
     lazydocker.enable = true;
     yazi = {
@@ -45,6 +58,9 @@
       # wrapper spawns yazi and cd's the parent shell to whatever
       # directory yazi finished in on exit.
       shellWrapperName = "y";
+      # No theme config: yazi ships dual dark/light presets and selects by
+      # terminal background — polarity-correct with nothing declared (its
+      # former Stylix target pinned a single-polarity flavor over that).
     };
   };
 
