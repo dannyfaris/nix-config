@@ -9,7 +9,54 @@
 # Sibling to home/darwin/macchina-shell-init.nix in the home/darwin/
 # tree. macOS-only — foot is the chosen terminal on Linux desktop
 # hosts per ADR-028 §History.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  inputs,
+  hostContext,
+  ...
+}:
+let
+  # Both polarity variants of the host's scheme couplet, pre-baked so
+  # Ghostty can flip with the macOS appearance at runtime — no rebuild.
+  # See docs/design/macos-live-theme-switching.md §Design (Class 1).
+  schemePair = import ../../lib/scheme-pair.nix {
+    inherit
+      inputs
+      pkgs
+      lib
+      hostContext
+      ;
+  };
+  # Same slot mapping as the Stylix ghostty target's themes.stylix —
+  # kept identical so the dual variants can't drift from what the
+  # target would have written for the active polarity.
+  mkGhosttyTheme = colors: {
+    background = colors.base00;
+    foreground = colors.base05;
+    cursor-color = colors.base05;
+    selection-background = colors.base02;
+    selection-foreground = colors.base05;
+    palette = with colors.withHashtag; [
+      "0=${base00}"
+      "1=${base08}"
+      "2=${base0B}"
+      "3=${base0A}"
+      "4=${base0D}"
+      "5=${base0E}"
+      "6=${base0C}"
+      "7=${base05}"
+      "8=${base03}"
+      "9=${base08}"
+      "10=${base0B}"
+      "11=${base0A}"
+      "12=${base0D}"
+      "13=${base0E}"
+      "14=${base0C}"
+      "15=${base07}"
+    ];
+  };
+in
 {
   # Bring Ghostty under Stylix theming, the macOS parallel of foot on
   # metis (home/nixos/stylix-targets-desktop.nix). The target writes
@@ -20,11 +67,15 @@
   # installs system-wide) so TUI glyphs render — desirable.
   #
   # Placement: the enable lives here, colocated with the Ghostty
-  # module, rather than in a Darwin stylix-targets file. The TUI
-  # whitelist (home/shared/stylix-targets.nix) is cross-platform and
-  # deliberately terminal-free; the NixOS terminal target (foot) lives
-  # in the desktop-env home bundle, which Darwin has no analogue of.
-  # One terminal, one Darwin-only module — the toggle belongs with it.
+  # module, rather than in the shared whitelist — and it is the one
+  # Stylix target that *survives* the TUI terminal-authority conversion
+  # (ADR-041): the terminal is the palette bus the TUIs now follow, so
+  # its own theming (palette generation + fonts) stays Stylix-fed.
+  #
+  # The target stays enabled for its font contribution even though its
+  # theme selector is mkForce-overridden below (dual-theme, #499); its
+  # themes/stylix file remains as inert dead weight — accepted, see
+  # docs/design/macos-live-theme-switching.md §De-risk evidence.
   stylix.targets.ghostty.enable = true;
   # Make Ghostty's cask-bundled terminfo discoverable by non-Ghostty-
   # launched TUIs. The cask installs its compiled terminfo inside the
@@ -102,6 +153,22 @@
       # delay knob is Linux-only, so on macOS this quits immediately — the
       # intended behaviour here.
       quit-after-last-window-closed = true;
+
+      # Native dual-theme: Ghostty follows the macOS appearance signal
+      # itself and repaints open windows on a polarity flip — the
+      # zero-plumbing half of runtime theme switching (#499). mkForce
+      # overrides the Stylix target's single-polarity `theme = "stylix"`
+      # (plain assignment upstream, no mkDefault). See
+      # docs/design/macos-live-theme-switching.md §Design.
+      theme = lib.mkForce "light:stylix-light,dark:stylix-dark";
+      window-theme = "system";
+    };
+
+    # The pre-baked polarity variants the selector above points at,
+    # written to ~/.config/ghostty/themes/.
+    themes = {
+      stylix-dark = mkGhosttyTheme schemePair.dark;
+      stylix-light = mkGhosttyTheme schemePair.light;
     };
   };
 }

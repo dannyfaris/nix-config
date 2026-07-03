@@ -230,6 +230,13 @@ in
     enable = true;
 
     settings = {
+      # Built-in ANSI-16 theme (ships in zellij, indices 0–15 only) —
+      # chrome renders from the terminal palette, following polarity flips
+      # and SSH context (terminal-authority direction). Replaces the
+      # Stylix zellij target, which shadowed the built-in `default` theme
+      # by name with baked hex. The zjstatus bar formats above remain
+      # hex — their ANSI conversion is #411.
+      theme = "ansi";
       # Default 10k lines is too small for verbose agent output — keep a
       # deep scrollback so a long agent run stays fully reviewable.
       scroll_buffer_size = 100000;

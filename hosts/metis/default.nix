@@ -77,12 +77,14 @@
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
       ../../home/shared/bundles/git-multi-identity.nix
-      # No stylix-targets.nix here (unlike the other hosts): on the Linux
-      # desktop Noctalia owns the terminal/TUI palette (ADR-036, #385, E1).
-      # Leaving the Stylix `fish` target on in particular would re-emit the
-      # base16 palette via OSC on every shell, overriding Noctalia — see
-      # docs/desktop/noctalia.md §Sharp edges. stylix.enable stays on (the
-      # four eval-time statuslines still read the colour table).
+      # No stylix-targets.nix here — historically because Noctalia owns
+      # the terminal palette on the Linux desktop (ADR-036, #385, E1);
+      # now moot fleet-wide, since the whitelist is empty (ADR-041: TUIs
+      # follow the terminal palette). The shared per-tool ANSI config
+      # (bat/helix/fzf/zellij/...) reaches metis through cli-tooling and
+      # follows foot's Noctalia-templated palette — coherent with the
+      # runtime-conductor model. stylix.enable stays on (the four
+      # eval-time statuslines still read the colour table).
       ../../home/nixos/bundles/desktop-env.nix
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix
