@@ -22,7 +22,7 @@ On the Linux desktop, Noctalia owns colour, runtime polarity, and fonts in its d
 
 **Sole authority avoids the two-writer seam.** A shell that owns the runtime polarity flip *and* a Stylix base writing colours at build time means two writers per surface and a reassert-on-rebuild flip-flop. Making Noctalia the single authority on the Linux desktop collapses that to one conductor. The cross-platform palette work is preserved where it still earns its keep — every other host.
 
-**Declarative-friendly.** `settings`/`colors`/`user-templates` are Nix values rendered to read-only store symlinks; Nix stays authoritative. (Trade-off: the in-shell GUI scheme-tweaker is not a live source of truth — runtime GUI edits don't persist back; use *Settings → Copy Settings* to extract state and graduate it into Nix.) *(v4.7.7)*
+**Declarative-capable, but run GUI-managed.** The home-module *can* render `settings`/`colors`/`user-templates` as read-only Nix store symlinks (Nix-authoritative) — but we deliberately **don't**. The chosen posture is runtime/GUI-managed: Noctalia's mutable `settings.json` is the source of truth, edited in its control centre, with `programs.noctalia-shell` kept to `enable` + `package`. Full rationale in the **Settings are runtime/GUI-managed** note below and ADR-036 (the declarative-pin path is the rejected alternative there). *(v4.7.7)*
 
 **It ends the stitching.** Noctalia owns a strict superset of the waybar + fuzzel + fnott + swaylock surface in one project, plus surfaces the desktop never had (clipboard history, tray, dock, OSD, control-centre, wallpaper). The per-tool cohesion ADR-029 traded away for stability returns — at a coordination cost that is now bounded and local, not cross-project.
 
