@@ -226,7 +226,8 @@ let
 
   # ── darwin-only capabilities (ADR-040) ─────────────────────────────────────
   # macOS-only binds with no niri twin: app-launch, the tiles↔accordion toggle,
-  # the service-mode leader, and maximise-by-isolation. They live in the
+  # the service-mode leader, maximise-by-isolation, and cycle-terminal-windows.
+  # They live in the
   # registry (not hand-authored) so the future palette/cheatsheet (ADR-039 §6,
   # registry-only dataset) can show them and the collision lint covers them.
   # `platforms.linux` is omitted (structural "linux: N/A"); the keybinds.md
@@ -374,6 +375,29 @@ let
         tier = "hyper";
         mods = [ "Shift" ];
         key = "M";
+      };
+      platforms.darwin.realization = "aerospace-exec";
+    }
+    {
+      # aerospace-exec: body hand-authored in home/darwin/aerospace.nix (it
+      # shells out to the `aerospace` CLI by absolute path). Cycles focus
+      # through all Ghostty windows across workspaces; from a non-Ghostty
+      # window it focuses the first. Pairs with spawn-terminal (Hyper+Return
+      # = new window; +Shift = cycle existing).
+      id = "cycle-terminal-windows";
+      label = "Cycle terminal windows";
+      description = "Focus the next Ghostty window, across workspaces (wraps; from elsewhere, focuses the first)";
+      keywords = [
+        "terminal"
+        "ghostty"
+        "cycle"
+        "focus"
+        "window"
+      ];
+      chord = {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "Return";
       };
       platforms.darwin.realization = "aerospace-exec";
     }
@@ -967,8 +991,9 @@ let
   #     (only `{ lib }`, ADR-039 §9) cannot form. Its body is hand-authored in
   #     home/darwin/aerospace.nix (`lib.getExe cfg.package`); here it contributes
   #     only its *chord + descriptive* so the palette/table/collision-lint see
-  #     it. The emitter does NOT emit it. Today: the `Hyper+←/→` edge-scroll and
-  #     `Hyper+Shift+M` maximise-by-isolation.
+  #     it. The emitter does NOT emit it. Today: the `Hyper+←/→` edge-scroll,
+  #     `Hyper+Shift+M` maximise-by-isolation, and `Hyper+Shift+Return`
+  #     cycle-terminal-windows.
   # `aerospaceBinds` is the attrset home/darwin/aerospace.nix merges into
   # `programs.aerospace.settings.mode.main.binding` (the hand-authored
   # aerospace-exec bodies are merged alongside it). Parametrised over a registry
