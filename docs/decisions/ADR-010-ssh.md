@@ -105,3 +105,7 @@ When SSH keys are eventually added:
 - Register the public key with the destination service.
 - Add a `matchBlocks.<host> = { identityFile = "~/.ssh/<purpose>_ed25519"; };`
   entry to this module.
+
+## History
+
+- 2026-07-03 (#517) — Client config gains declarative fleet host blocks (bare MagicDNS names, operator user) and an explicit `Host *` hardening baseline (`ForwardAgent no`, `AddKeysToAgent no`, `Compression yes`, `ControlMaster no`; `HashKnownHosts` deliberately skipped — rationale inline in `home/shared/ssh.nix`). Host identity moves to declared trust: each fleet host's ed25519 public host key is committed (`hosts/<name>/ssh_host_ed25519_key.pub`) and pinned system-wide via `modules/shared/ssh-known-hosts.nix` — no TOFU between fleet hosts; a reinstalled host fails loudly. `~/.ssh/config.local` survives as the break-glass escape hatch (LAN/EC2 fallbacks stay there; the operator declined committing fleet IPs), pruned of the promoted fleet blocks so they cannot shadow the declared ones. nixos-vm excluded as a destination.

@@ -13,6 +13,7 @@
 #                                       managed by nix-darwin) + SSH keys
 #   - modules/darwin/home-manager.nix — HM attr-name + homeDirectory
 #   - modules/darwin/host-context.nix — flakePath default
+#   - home/shared/ssh.nix             — fleet matchBlock User (#517)
 #
 # The sibling `modules/darwin/users.nix` (listed above) consumes the
 # same record with the `darwinHome` field. The deliberate split between
