@@ -41,3 +41,4 @@ The alternative mechanism was already on the shelf: every affected tool has an A
 ## History
 
 - 2026-07-02 — Accepted; implemented in the same change (per-tool conversion + whitelist empty + token projection). Adversarial plan review preceded implementation (starship `orange` gap, ADR-need, and mercury-switch sequencing were its blocking findings, all resolved here).
+- 2026-07-03 — Runtime-verified fleet-wide (the set-≠-enforced rung): neptune both polarities across all seven tools; mercury switched and SSH'd from neptune — remote TUIs render in the local palette, including following a mid-session polarity flip; metis switched — TUIs follow foot's Noctalia palette cleanly, resolving the one open unknown (Noctalia's foot template populates all 16 ANSI slots).
