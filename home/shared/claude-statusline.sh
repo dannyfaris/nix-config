@@ -8,109 +8,47 @@
 #
 # Cross-platform: works on macOS and Linux. Requires jq and a Nerd Font.
 # Schema reference: https://code.claude.com/docs/en/statusline
+#
+# Shared rendering core — glyphs, width machinery (vw/pad2), git-state
+# parser, path shortener, segment/bar renderers — lives in
+# ~/.claude/statusline-lib.sh (home/shared/statusline-lib.sh), sourced
+# below; this script owns only Claude's payload schema and its unique
+# segments (account, model tier, effort, rate limit). See #339.
 
 input=$(cat)
 NOW=$(date +%s)
 hostname=$(hostname -s)
 
-# Palette-driven colour bindings — sourced from a Nix-generated file at
-# startup; mapping lives in home/shared/agent-clis.nix. The file
-# defines BLUE / GREEN / YELLOW / RED / MAUVE / ORANGE / TEAL / MUTED
-# as truecolor SGR escapes derived from config.lib.stylix.colors. See
-# ADR-024 §Implementation and ADR-028 slice 6 for the migration
-# rationale.
+# Palette-driven colour bindings (BLUE/GREEN/YELLOW/RED/MAUVE/ORANGE/TEAL/
+# MUTED, truecolor SGR from config.lib.stylix.colors) and the account →
+# label map, both Nix-generated — mappings live in home/shared/agent-clis.nix.
+# The shared rendering lib is static. See ADR-024 §Implementation, ADR-028
+# slice 6, and #339.
 # shellcheck source=/dev/null
 source ~/.claude/statusline-colours.sh
-DIM='' # dim SGR too low-contrast in practice; keep var for one-point reintro
-RST=$'\033[0m'
-SEP=" ${DIM}│${RST} " # line 1 status-bar separator (parallel segments)
-CHEV=" ❯ "            # line 2 reading-flow separator (sequential segments)
-# Nerd Font glyphs as UTF-8 hex bytes — bash 3.2+ compatible and avoids
-# putting raw Nerd Font bytes in the source file.
-BRANCH_GLYPH=$'\xee\x82\xa0'  # U+E0A0 Powerline branch
-DESKTOP_GLYPH=$'\xef\x84\x88' # U+F108 nf-fa-desktop (local host marker)
-SSH_GLYPH=$'\xef\x92\x89'     # U+F489 nf-mdi-console_network (SSH host marker)
-CLOCK_GLYPH=$'\xef\x80\x97'   # U+F017 nf-fa-clock_o (rate-limit marker)
-# NIX_GLYPH: picked U+F2DC over Unicode U+2744 to dodge VS16 width
-# disagreements in Zellij (emoji-presentation forces width 2, Zellij's
-# grid reads U+2744 as width 1) and stay consistent with the Nerd Font
-# glyphs above.
-NIX_GLYPH=$'\xef\x8b\x9c' # U+F2DC nf-fa-snowflake (nix-shell marker)
+# shellcheck source=/dev/null
+source ~/.claude/statusline-identities.sh
+# shellcheck source=/dev/null
+source ~/.claude/statusline-lib.sh
 
-# Presentation-wide glyphs — render as TWO terminal cells in a Nerd Font but
-# are single code points, which vw() corrects for (#354). The set: the PUA
-# glyphs above, the ✦ model marker, and the │ separator (box-drawing, wide in
-# this font). The bar's █/░ are intentionally ABSENT — though also East-Asian-
-# ambiguous like │, the renderer counts them as one cell (a doubled bar would
-# mis-render), so listing them would over-pad. A standard wcwidth reports all
-# of these as width 1 (the bug), so the correction is an explicit per-glyph
-# table, not a wcwidth call — see docs/agents/cursor-statusline.md §Sharp edges.
-# A new wide glyph MUST be added here, or its line over-pads and truncates.
-WIDE_GLYPHS=("$BRANCH_GLYPH" "$DESKTOP_GLYPH" "$SSH_GLYPH" "$CLOCK_GLYPH" "$NIX_GLYPH" "✦" "│")
-
-# Host marker — glyph + colour by connection type, via the shared
-# `session-type` command (home/shared/session-type.nix). Inside zellij it
-# reads the live client's connection, so the marker is correct after a
-# detach/reattach across contexts (#270); outside zellij it's the prior
-# $SSH_CONNECTION + who -m check (survives sudo -i / su -). One of four
-# surfaces sharing that detector (prompt, zjstatus bar, Cursor statusline).
-# GREEN/MAUVE map to base0B/base0E via Stylix; the prompt uses the matching
-# palette aliases (`green`/`purple`).
-HOST_GLYPH=$DESKTOP_GLYPH
-HOST_COLOUR=$GREEN
-if [ "$(session-type 2>/dev/null)" = ssh ]; then
-  HOST_GLYPH=$SSH_GLYPH
-  HOST_COLOUR=$MAUVE
-fi
+# Host marker (HOST_GLYPH/HOST_COLOUR) + git state — shared lib. The marker
+# reads the live connection so it's correct after a zellij detach/reattach
+# across contexts (#270); one of four surfaces sharing that detector.
+statusline_host_marker
 
 # ─── Account label — leading line-1 segment ───────────────────────
 # The statusline stdin JSON carries no account info; the address
 # /status shows lives in ~/.claude.json (.oauthAccount.emailAddress).
-# Identity↔label set is the personal/work split from docs/identities.md.
-# Unknown address → raw email (visibly unmapped, never silently wrong);
-# unreadable/absent → segment and its separator are omitted entirely.
+# The email→label map is single-sourced from lib/operator.nix's identities
+# (generated into statusline-identities.sh, #339). Unknown address → raw
+# email (visibly unmapped, never silently wrong); unreadable/absent →
+# segment and its separator are omitted entirely.
 ACCOUNT_SEG=""
 ACCOUNT_EMAIL=$(jq -r '.oauthAccount.emailAddress // empty' "$HOME/.claude.json" 2>/dev/null)
 if [ -n "$ACCOUNT_EMAIL" ]; then
-  case "$ACCOUNT_EMAIL" in
-  daniel@faris.co.nz) ACCOUNT_LABEL="Personal" ;;
-  daniel.faris@gotaxi.co.nz) ACCOUNT_LABEL="Grey St." ;;
-  *) ACCOUNT_LABEL="$ACCOUNT_EMAIL" ;;
-  esac
+  ACCOUNT_LABEL=$(statusline_account_label "$ACCOUNT_EMAIL")
   ACCOUNT_SEG="${MUTED}${ACCOUNT_LABEL}${RST}${SEP}"
 fi
-
-# ─── Two-cluster padding ──────────────────────────────────────────
-# Claude Code sets $COLUMNS to the live terminal width before each
-# render (≥ 2.1.153) and re-renders on resize, so flush-right padding
-# stays correct. Pad to COLUMNS−1: writing the final cell triggers
-# auto-wrap on some terminals.
-vw() {
-  # Visible display width: SGR escapes stripped, code points counted, then
-  # +1 per presentation-wide glyph (WIDE_GLYPHS) — each renders as two cells
-  # but counts as one code point. The flush-right pad below leaves zero
-  # slack, so an undercount overflows and the line truncates (#354). The
-  # scripts emit no other wide chars (no CJK/combining), so code points plus
-  # this fixed correction equals true display width.
-  local s stripped g
-  s=$(printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g')
-  stripped=$s
-  for g in "${WIDE_GLYPHS[@]}"; do stripped=${stripped//$g/}; done
-  printf '%s' "$((${#s} + ${#s} - ${#stripped}))"
-}
-pad2() {
-  # left-cluster, gap, right-cluster. Gap clamps to ≥1 space: on narrow
-  # terminals the right cluster degrades to left-flow (and may soft-wrap
-  # if content alone exceeds the width — same as pre-cluster behaviour).
-  local left=$1 right=$2 gap
-  if [ -z "$right" ]; then
-    printf '%s\n' "$left"
-    return
-  fi
-  gap=$((${COLUMNS:-80} - 1 - $(vw "$left") - $(vw "$right")))
-  [ "$gap" -lt 1 ] && gap=1
-  printf '%s%*s%s\n' "$left" "$gap" '' "$right"
-}
 
 {
   read -r MODEL
@@ -146,84 +84,13 @@ case "$MODEL" in
 *) MODEL_COL="" ;;
 esac
 
-# ─── Git state — queried fresh each render, no cache ──────────────
-# Statusline renders are debounced (~300ms) and event-driven, not a hot
-# loop, so three git invocations per render is fine. Caching this was
-# the source of all of Slice 1's platform-specific bugs; not worth it.
-TOP=""
-PREFIX=""
-BRANCH=""
-HEAD_REF=""
-STAGED=0
-MODIFIED=0
-UNTRACKED=0
-CONFLICT=0
-if [ -n "$CWD" ]; then
-  {
-    read -r TOP
-    read -r PREFIX
-  } < <(
-    git -C "$CWD" rev-parse --show-toplevel --show-prefix 2>/dev/null
-  )
-  if [ -n "$TOP" ]; then
-    BRANCH=$(git -C "$CWD" branch --show-current 2>/dev/null)
-    [ -z "$BRANCH" ] && HEAD_REF=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
-    while IFS= read -r line; do
-      case "${line:0:2}" in
-      DD | AU | UD | UA | DU | AA | UU) CONFLICT=$((CONFLICT + 1)) ;;
-      '??') UNTRACKED=$((UNTRACKED + 1)) ;;
-      *)
-        [ "${line:0:1}" != " " ] && STAGED=$((STAGED + 1))
-        [ "${line:1:1}" != " " ] && MODIFIED=$((MODIFIED + 1))
-        ;;
-      esac
-    done < <(git -C "$CWD" status --porcelain 2>/dev/null)
-  fi
-fi
-
-# ─── Path: repo-rooted, with non-git fallback ─────────────────────
-SHORT_CWD=""
-if [ -n "$TOP" ]; then
-  repo_name="${TOP##*/}"
-  PREFIX="${PREFIX%/}"
-  if [ -n "$PREFIX" ]; then
-    SHORT_CWD="${repo_name}/${PREFIX}"
-  else
-    SHORT_CWD="${repo_name}"
-  fi
-elif [ -n "$CWD" ]; then
-  display_cwd="${CWD/#$HOME/~}"
-  SHORT_CWD=$(awk -F/ '{
-    n=NF
-    if (n<=3) print $0
-    else printf ".../%s/%s/%s", $(n-2), $(n-1), $n
-  }' <<<"$display_cwd")
-fi
-
-# ─── Git segment ──────────────────────────────────────────────────
-GIT_SEG=""
-if [ -n "$TOP" ]; then
-  GIT_LABEL=""
-  if [ -n "$BRANCH" ]; then
-    GIT_LABEL="$BRANCH"
-  elif [ -n "$HEAD_REF" ]; then
-    GIT_LABEL="@${HEAD_REF}"
-  fi
-  if [ -n "$GIT_LABEL" ]; then
-    # On a branch: "<path> on <glyph> <branch>" (DIM "on", TEAL glyph+name).
-    # Detached HEAD: "<path> <glyph> @<sha>" — "on" reads oddly with a SHA.
-    if [ -n "$BRANCH" ]; then
-      GIT_SEG=" ${DIM}on${RST} ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
-    else
-      GIT_SEG=" ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
-    fi
-    [ -n "$WORKTREE" ] && GIT_SEG+=" ${DIM}(${WORKTREE})${RST}"
-    [ "$CONFLICT" -gt 0 ] && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
-    [ "$STAGED" -gt 0 ] && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
-    [ "$MODIFIED" -gt 0 ] && GIT_SEG+=" ${YELLOW}~${MODIFIED}${RST}"
-    [ "$UNTRACKED" -gt 0 ] && GIT_SEG+=" ${ORANGE}?${UNTRACKED}${RST}"
-  fi
-fi
+# Git state + repo-rooted path + segment — shared lib (queried fresh each
+# render, no cache: renders are debounced/event-driven, so three git
+# invocations is fine; caching was Slice 1's bug source). WORKTREE feeds
+# the segment's `(worktree)` tag.
+statusline_git_state "$CWD"
+SHORT_CWD=$(statusline_short_cwd "$CWD")
+GIT_SEG=$(statusline_git_segment "$WORKTREE")
 
 # ─── Effort indicator ─────────────────────────────────────────────
 EFFORT_SEG=""
@@ -234,26 +101,6 @@ high) EFFORT_SEG="${SEP}${YELLOW}▲ high${RST}" ;;
 xhigh) EFFORT_SEG="${SEP}${RED}▲ xhigh${RST}" ;;
 max) EFFORT_SEG="${SEP}${RED}⬆ max${RST}" ;;
 esac
-
-# ─── Context bar with threshold colours ───────────────────────────
-PCT=${PCT_RAW%%.*}
-case "$PCT" in
-'' | *[!0-9]*) PCT=0 ;;
-esac
-[ "$PCT" -lt 0 ] && PCT=0
-[ "$PCT" -gt 100 ] && PCT=100
-if [ "$PCT" -ge 80 ]; then
-  BC="$RED"
-elif [ "$PCT" -ge 60 ]; then
-  BC="$YELLOW"
-else
-  BC="$GREEN"
-fi
-F=$((PCT / 10))
-E=$((10 - F))
-BAR=""
-for ((i = 0; i < F; i++)); do BAR+="█"; done
-for ((i = 0; i < E; i++)); do BAR+="░"; done
 
 # ─── 5h rate limit with reset countdown ───────────────────────────
 # Line 2's right cluster. The clock glyph stays load-bearing here: it
@@ -277,19 +124,20 @@ fi
 # ═══ LINE 1: account │ model │ effort ··· ctx% bar ════════════════
 # Right cluster is <pct%> <bar> — number BEFORE bar, so the fixed-width
 # bar is the flush-right anchor and only the digits float in the gap.
-# Bar-first would wobble the whole cluster as the % gains digits.
-pad2 "${ACCOUNT_SEG}${MODEL_COL}✦ ${MODEL}${RST}${EFFORT_SEG}" \
-  "${PCT}% ${BC}${BAR}${RST}"
+# Bar-first would wobble the whole cluster as the % gains digits. Claude
+# Code sets $COLUMNS to the live terminal width before each render and
+# re-renders on resize, so the flush-right pad stays correct; pad to
+# COLUMNS−1 because writing the final cell triggers auto-wrap on some
+# terminals.
+pad2 "$((${COLUMNS:-80} - 1))" \
+  "${ACCOUNT_SEG}${MODEL_COL}✦ ${MODEL}${RST}${EFFORT_SEG}" \
+  "$(statusline_context_cluster "$PCT_RAW")"
 
 # ═══ LINE 2: host ❯ path on branch ··· 5h% countdown ══════════════
-# Nix-shell indicator — `(❄️)` as path-metadata immediately after the
-# cwd, mirroring the starship prompt's nix_shell module placement (see
-# ADR-002's `(…)`-as-metadata convention). $IN_NIX_SHELL set by
-# nix-direnv on flake-env activation; inherited into the Claude Code
-# subprocess. Same env-at-spawn caveat as $SSH_CONNECTION.
-NIX_SHELL_SEG=""
-[ -n "$IN_NIX_SHELL" ] && NIX_SHELL_SEG=" (${BLUE}${NIX_GLYPH}${RST})"
-
-LINE2="${HOST_COLOUR}${HOST_GLYPH}  ${hostname}${RST}"
-[ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${NIX_SHELL_SEG}${GIT_SEG}"
-pad2 "$LINE2" "$RLIM"
+# Nix-shell metadata `(❄️)` folds into the shared line-2 left cluster.
+# $IN_NIX_SHELL is set by nix-direnv on flake-env activation and inherited
+# into the Claude Code subprocess (same env-at-spawn caveat as
+# $SSH_CONNECTION). See ADR-002's `(…)`-as-metadata convention.
+pad2 "$((${COLUMNS:-80} - 1))" \
+  "$(statusline_line2_left "$hostname" "$SHORT_CWD" "$GIT_SEG")" \
+  "$RLIM"

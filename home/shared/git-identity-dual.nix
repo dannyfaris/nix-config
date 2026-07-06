@@ -4,6 +4,9 @@
 # git-identity-work.nix which is the single-work alternative used on
 # work-only hosts (Mercury). See ADR-009 § "Dual identity" and ADR-020.
 { lib, ... }:
+let
+  inherit (import ../../lib/operator.nix) identities;
+in
 {
   programs.git = {
     # Personal default identity matches the user's GitHub handle
@@ -11,18 +14,17 @@
     # so the name is purely cosmetic on commit logs. Under ~/grey-st/ the
     # gitdir-include below overrides BOTH name and email to the work
     # identity ("Daniel Faris" / Grey St email) so commits to the work
-    # GitLab show the user's real name (employer convention).
+    # GitLab show the user's real name (employer convention). Both
+    # identities are single-sourced from lib/operator.nix (#339).
     settings.user = {
-      name = "dannyfaris";
-      email = "daniel@faris.co.nz";
+      inherit (identities.personal) name email;
     };
 
     includes = [
       {
         condition = "gitdir:~/grey-st/";
         contents.user = {
-          name = "Daniel Faris";
-          email = "daniel.faris@gotaxi.co.nz";
+          inherit (identities.work) name email;
         };
       }
     ];
