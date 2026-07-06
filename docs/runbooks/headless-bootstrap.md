@@ -266,13 +266,23 @@ nh os switch
 `nh` resolves the flake via `NH_FLAKE`, set from `hostContext.flakePath`
 in each host's `default.nix` (ADR-019).
 
-## Fleet SSH enrolment (#517 / #524)
+## Fleet SSH enrolment (#517 / #524 / ADR-042)
 
-Two imperative steps make the new host a full fleet-SSH citizen; both
-end in one commit and a fleet re-switch.
+Fleet SSH trust is a declared edge whitelist (ADR-042): `lib/operator.nix` holds per-host `hostKeys` (name → pubkey) and `sshEdges` (destination → authorised source hosts), and each platform's `users.nix` derives its `authorizedKeys` by mapping its own edge entry through `hostKeys`. Enrolling a new host is four steps, ending in one commit and a fleet re-switch.
 
-1. **Host identity → declared trust (#517).** Commit the host's public
-   host key and pin it fleet-wide:
+1. **Generate the per-host outbound user key on the host** — passphrase-less by deliberate carve-out (ADR-010 §History); the private key never leaves the host.
+
+   ```bash
+   # && (not ;): if a key already exists, keygen's overwrite prompt
+   # aborts over a non-tty — ; would then silently print the STALE key.
+   ssh dbf@<host> 'ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q && cat ~/.ssh/id_ed25519.pub'
+   ```
+
+2. **Add the pubkey to `lib/operator.nix` `hostKeys`** — one entry `<host> = "ssh-ed25519 … dbf@<host>";`, labelled with its origin.
+
+3. **Add or extend the relevant `sshEdges` entries.** Add the destination's own entry (`<host> = [ … ];`) listing which sources may reach it, and add `<host>` to the source list of every existing destination it should be able to SSH into. A host that runs sshd (or is a pending destination) with no `sshEdges` entry throws at eval — the whitelist is loud, never a silent keyless host.
+
+4. **Host identity → declared trust (#517).** Commit the host's public host key and pin it fleet-wide.
 
    ```bash
    scp dbf@<host>:/etc/ssh/ssh_host_ed25519_key.pub hosts/<host>/ssh_host_ed25519_key.pub
@@ -280,21 +290,17 @@ end in one commit and a fleet re-switch.
    # fleet block to home/shared/ssh.nix
    ```
 
-2. **Outbound user key (#524).** Generate the host's own user key —
-   passphrase-less by deliberate carve-out (ADR-010 §History); the
-   private key never leaves the host:
+Existing hosts accept the newcomer (and trust its host key) only after their *own* next switch — the authorized_keys and ssh_known_hosts files are rendered per-host at activation.
 
-   ```bash
-   # && (not ;): if a key already exists, keygen's overwrite prompt
-   # aborts over a non-tty — ; would then silently print the STALE key.
-   ssh dbf@<host> 'ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q && cat ~/.ssh/id_ed25519.pub'
-   # append the printed pubkey to lib/operator.nix authorizedKeys,
-   # labelled dbf@<host>
-   ```
+### saturn's pending destination flip (ADR-042)
 
-Existing hosts accept the newcomer (and trust its host key) only after
-their *own* next switch — the authorized_keys and ssh_known_hosts files
-are rendered per-host at activation.
+saturn is client-only today (`hosts/saturn/default.nix` deliberately omits `sshd.nix`); ADR-042 flips it to a destination. Its `sshEdges` entry already exists behaviour-preservingly, but no sshd yet serves it. Landing the flip:
+
+- Generate saturn's outbound user key on saturn (step 1 above) and add it to `hostKeys` — saturn is both a source (workstation) and, post-flip, a destination.
+- Enable a Darwin sshd for it: import `modules/darwin/sshd.nix` in `hosts/saturn/default.nix` (the same hardened `extraConfig` posture neptune uses; the stance layer covers it automatically once `services.openssh.enable` is true).
+- Harvest and commit saturn's host pubkey and its `ssh-known-hosts.nix` + `ssh.nix` entries (step 4 above).
+- Set saturn's `sshEdges` entry to its intended sources (per the ADR-042 target: the interactive workstations), narrowing from the behaviour-preserving default as a reviewed data change.
+- Evaluate binding sshd to the tailnet interface at that commit — a `ListenAddress` on saturn's tailnet IP versus a firewall scope — the roaming-laptop mitigation ADR-042 names (a travelling laptop must not expose :22 on hotel/café networks). Decide and record which mechanism at the flip.
 
 ## Verification
 

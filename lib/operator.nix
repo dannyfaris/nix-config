@@ -4,16 +4,19 @@
 # operator record is plain data that any module needs at any phase.
 #
 # Consumed by (today):
-#   - modules/nixos/users.nix         — user declaration + SSH keys
+#   - modules/nixos/users.nix         — user declaration + edge-derived
+#                                       SSH keys (hostKeys/sshEdges, ADR-042)
 #   - modules/nixos/networking-networkmanager.nix
 #                                     — networkmanager group membership
 #   - modules/nixos/home-manager.nix  — HM attr-name + homeDirectory
 #   - modules/nixos/host-context.nix  — flakePath default
-#   - modules/darwin/users.nix        — user declaration (subset
-#                                       managed by nix-darwin) + SSH keys
+#   - modules/darwin/users.nix        — user declaration (subset managed
+#                                       by nix-darwin) + edge-derived SSH keys
 #   - modules/darwin/home-manager.nix — HM attr-name + homeDirectory
 #   - modules/darwin/host-context.nix — flakePath default
 #   - home/shared/ssh.nix             — fleet matchBlock User (#517)
+#   - lib/stances.nix                 — AllowUsers whitelist + the
+#                                       SSH-edges stance (hostKeys/sshEdges)
 #
 # The sibling `modules/darwin/users.nix` (listed above) consumes the
 # same record with the `darwinHome` field. The deliberate split between
@@ -43,26 +46,64 @@
   # `hostContext.flakePath`.
   flakeRepoDirname = "nix-config";
 
-  # SSH public keys authorised for inbound SSH on every host. Consumed
+  # Fleet SSH trust as declared data (ADR-042): per-host user keys plus
+  # the trust topology, derived per host into openssh.authorizedKeys.keys
   # by the system layer on each platform:
-  #   - NixOS: modules/nixos/users.nix → users.users.dbf.openssh
-  #     .authorizedKeys.keys (renders /etc/ssh/authorized_keys.d/dbf).
-  #   - Darwin: modules/darwin/users.nix → users.users.dbf.openssh
-  #     .authorizedKeys.keys (renders /etc/ssh/nix_authorized_keys.d/dbf,
+  #   - NixOS: modules/nixos/users.nix (renders /etc/ssh/authorized_keys.d/dbf).
+  #   - Darwin: modules/darwin/users.nix (renders /etc/ssh/nix_authorized_keys.d/dbf,
   #     consumed by nix-darwin's AuthorizedKeysCommand drop-in).
-  # One user key PER HOST (#524), each labelled with its origin —
+  # Each derives its own list by looking up its hostContext.hostName in
+  # sshEdges and mapping the named sources through hostKeys. The *why* of
+  # the edge model (declared-edge whitelist over the flat any→any matrix)
+  # lives in docs/design/fleet-ssh-identity.md; ADR-042 freezes it.
+  #
+  # hostKeys — one user key PER HOST (#524), each labelled with its origin:
   # generated on that host, private key never moves; a compromised host
   # revokes by deleting its one line. Per-host keys are passphrase-less
   # (operator-endorsed carve-out, ADR-010 §History). Exception: the
   # neptune key predates this model — it is also GitHub-registered and
   # the sops age-identity source; rotation onto a fresh fleet-only key
-  # is tracked in #526 (see ADR-010 §History 2026-07-03). A backup
-  # key (e.g. on a YubiKey) would append here rather than being
-  # introduced as parallel state.
-  authorizedKeys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@neptune"
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis"
-  ];
+  # is tracked in #526 (see ADR-010 §History 2026-07-03). A backup key
+  # (e.g. on a YubiKey) would append here rather than becoming parallel
+  # state. Only enrolled hosts appear (neptune, metis today); the rest
+  # enrol at their bootstrap events.
+  hostKeys = {
+    neptune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@neptune";
+    metis = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis";
+  };
+
+  # sshEdges — destination host → the source hosts whose keys it accepts.
+  # Every host that runs sshd (and saturn, pending its flip) needs an
+  # entry: the derivation indexes this by hostName, so a missing host
+  # throws at eval (whitelist, not silent-empty default — an absent edge
+  # is a loud build failure, never a quietly keyless host). This first
+  # commit is behaviour-preserving — the flat list authorised every
+  # enrolled key on every host, so every entry lists all enrolled sources
+  # (self included, reproducing today's rendered keys). Narrowing toward
+  # the target topology (ADR-042; design note §target shape) is then a
+  # reviewed, data-only change.
+  sshEdges = {
+    mercury = [
+      "neptune"
+      "metis"
+    ];
+    metis = [
+      "neptune"
+      "metis"
+    ];
+    neptune = [
+      "neptune"
+      "metis"
+    ];
+    nixos-vm = [
+      "neptune"
+      "metis"
+    ];
+    saturn = [
+      "neptune"
+      "metis"
+    ];
+  };
 
   # The operator's git identities — one record per identity, the single
   # source for the git author name/email AND the statusline account label

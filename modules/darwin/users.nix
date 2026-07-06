@@ -17,7 +17,7 @@
 # Identity attributes (name, description) come from lib/operator.nix
 # per #49 so the same record feeds both the NixOS and Darwin user
 # declarations.
-{ pkgs, ... }:
+{ pkgs, hostContext, ... }:
 
 let
   operator = import ../../lib/operator.nix;
@@ -34,8 +34,13 @@ in
     # which sets `AuthorizedKeysCommand /bin/cat /etc/ssh/nix_authorized_keys.d/%u`
     # (sshd won't follow ~/.ssh/authorized_keys when it's a /nix/store symlink,
     # which is what home-manager's `home.file` produces). That command's source
-    # file is populated from this option. Mirrors modules/nixos/users.nix:23.
-    openssh.authorizedKeys.keys = operator.authorizedKeys;
+    # file is populated from this option. Keys derived from the declared
+    # trust edges (ADR-042): this host's sshEdges entry mapped through
+    # hostKeys; an absent entry throws (whitelist). Mirrors
+    # modules/nixos/users.nix.
+    openssh.authorizedKeys.keys = map (
+      src: operator.hostKeys.${src}
+    ) operator.sshEdges.${hostContext.hostName};
   };
 
   # Identifies the macOS account that user-domain defaults
