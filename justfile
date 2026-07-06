@@ -16,6 +16,19 @@
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+# Fixed scratch base for the bootstrap recipes: gen-host-key stages the host
+# key here, bootstrap reads it, bootstrap-clean sweeps it — separate
+# invocations, possibly from different shells, so the path must be
+# deterministic per-OS (setup-sops-identity's random mktemp scratch doesn't
+# transfer, and an env-derived base like $TMPDIR diverges between contexts —
+# nix strips TMPDIR from child envs on Darwin, verified 2026-07-06, so
+# `nix run nixpkgs#just` and a PATH-installed just would resolve different
+# bases and strand the staged key mid-flow). tmpfs on Linux so the staged
+# key never touches disk; /tmp on macOS (no /dev/shm; gen-host-key's
+# `install -d -m 700` keeps the staging dir private). See #539.
+
+bootstrap-scratch := if os() == "linux" { "/dev/shm" } else { "/tmp" }
+
 # Default: list available recipes.
 default:
     @just --list
@@ -30,7 +43,7 @@ default:
 gen-host-key host:
     #!/usr/bin/env bash
     set -euo pipefail
-    tmp="/dev/shm/nix-bootstrap-{{host}}"
+    tmp="{{bootstrap-scratch}}/nix-bootstrap-{{host}}"
     if [[ -e "$tmp" ]]; then
         echo "ERROR: $tmp already exists." >&2
         echo "  Stale from a previous run? Clean with 'just bootstrap-clean' or" >&2
@@ -49,7 +62,7 @@ gen-host-key host:
         "ssh-to-age < $tmp/etc/ssh/ssh_host_ed25519_key.pub")
     echo
     echo "Host key generated at $tmp/etc/ssh/ssh_host_ed25519_key"
-    echo "(tmpfs, in-memory; cleaned automatically by 'just bootstrap')"
+    echo "(scratch under {{bootstrap-scratch}}; cleaned automatically by 'just bootstrap')"
     echo
     echo "Age recipient for .sops.yaml:"
     echo "  $age_recipient"
@@ -89,7 +102,7 @@ gen-host-key host:
 bootstrap host target:
     #!/usr/bin/env bash
     set -euo pipefail
-    tmp="/dev/shm/nix-bootstrap-{{host}}"
+    tmp="{{bootstrap-scratch}}/nix-bootstrap-{{host}}"
     if [[ ! -f "$tmp/etc/ssh/ssh_host_ed25519_key" ]]; then
         echo "ERROR: no host key at $tmp." >&2
         echo "  Run 'just gen-host-key {{host}}' first." >&2
@@ -165,10 +178,10 @@ bootstrap host target:
     echo "  git diff hosts/{{host}}/hardware-configuration.nix"
     echo "  git add hosts/{{host}}/hardware-configuration.nix"
 
-# Remove stale tmpfs scratch directories from gen-host-key.
+# Remove stale bootstrap scratch directories from gen-host-key.
 bootstrap-clean:
-    @rm -rf /dev/shm/nix-bootstrap-*
-    @echo "Cleaned /dev/shm/nix-bootstrap-*"
+    @rm -rf {{bootstrap-scratch}}/nix-bootstrap-*
+    @echo "Cleaned {{bootstrap-scratch}}/nix-bootstrap-*"
 
 # One-time-per-clone operator setup. Derives ~/.config/sops/age/keys.txt
 # from an SSH private key — defaults to /etc/ssh/ssh_host_ed25519_key
