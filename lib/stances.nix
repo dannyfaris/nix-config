@@ -37,6 +37,32 @@ let
       want (config.nixpkgs.config ? allowUnfreePredicate)
         "nixpkgs.config.allowUnfreePredicate must be set (the unfree whitelist that fails loudly on a new unfree package)";
 
+  # SSH declared-edge stance (ADR-042) — the rendered authorizedKeys.keys
+  # for the operator must equal, as a set, the keys the edge map derives
+  # for this host. Deliberately keyed on config.networking.hostName, NOT
+  # hostContext.hostName: the derivation in users.nix used hostContext, so
+  # an independent hostname source keeps the check non-tautological and
+  # also catches drift between the two hostname declarations. A host with
+  # no sshEdges entry yields a violation string (via `or`), not an eval
+  # throw — matching the file's `want` idiom. Platform-shared: both
+  # platforms set the same option from the same edge data.
+  sshEdges =
+    config:
+    let
+      host = config.networking.hostName;
+      want' = operator.sshEdges.${host} or null;
+      have = config.users.users.${operator.name}.openssh.authorizedKeys.keys;
+      # True set compare — order- AND multiplicity-insensitive (unique
+      # before sort), so a one-sided dedup can't fire it spuriously:
+      # trust-set membership is the stance, not list shape.
+      asSet = xs: lib.sort (a: b: a < b) (lib.unique xs);
+    in
+    if want' == null then
+      [ "sshd: host ${host} has no sshEdges entry (declared-edge whitelist, ADR-042)" ]
+    else
+      want (asSet have == asSet (map (src: operator.hostKeys.${src}) want'))
+        "sshd: authorizedKeys for ${operator.name} on ${host} must equal the sshEdges-derived key set (ADR-042)";
+
   # SSH posture, NixOS shape — only asserted when the host runs sshd
   # (the stance is "if SSH is enabled, it is hardened"; a host without
   # sshd is not in scope and would otherwise trip on upstream defaults).
@@ -112,9 +138,10 @@ in
     ++
       want (config.programs.command-not-found.enable == false)
         "programs.command-not-found.enable must be false (flakes don't generate programs.sqlite; it silently fails)"
-    ++ sshNixos config;
+    ++ sshNixos config
+    ++ sshEdges config;
 
   # Darwin omits the NixOS-only stances: `mutableUsers` (macOS owns user
   # creation) and `command-not-found` (option exists only on NixOS).
-  darwin = config: shared config ++ sshDarwin config;
+  darwin = config: shared config ++ sshDarwin config ++ sshEdges config;
 }

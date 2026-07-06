@@ -56,9 +56,9 @@ The Full Name (the display name) can be anything.
 
 The `dbf@mac` recipient in `.sops.yaml` is derived from a specific
 ed25519 keypair the operator has been using. The same public key is
-whitelisted in `modules/nixos/users.nix:authorizedKeys` for inbound
-SSH on every NixOS host. **Minting a new key on the Mac breaks both
-ends silently**:
+declared in `lib/operator.nix` `hostKeys` (as `dbf@neptune`) and
+reaches every host it has an `sshEdges` entry for (ADR-042). **Minting
+a new key on the Mac breaks both ends silently**:
 
 - Sops decryption will fail at activation when it can't open
   `secrets/secrets.yaml` for the `dbf@mac` recipient.
@@ -104,7 +104,7 @@ Remote Login can't reach the source. Either way, end state must be the
 same two files at `~/.ssh/id_ed25519{,.pub}` with the perms above.
 
 If you've genuinely lost the old keypair, the recovery path is:
-generate a new key, update `modules/nixos/users.nix:authorizedKeys`,
+generate a new key, update its `lib/operator.nix` `hostKeys` entry,
 update `.sops.yaml`'s `mac` anchor (use `nix shell nixpkgs#ssh-to-age -c
 ssh-to-age -i ~/.ssh/id_ed25519.pub` to derive the new age
 recipient — drop the old anchor value at the same time so it can't
@@ -378,16 +378,9 @@ to sign the Mac into the tailnet on first launch; use the break-glass
 entries above until then). This file carries only the non-tailnet
 fallbacks.
 
-## Post-activation — fleet SSH enrolment (#517 / #524)
+## Post-activation — fleet SSH enrolment (#517 / #524 / ADR-042)
 
-Same two steps as the headless runbook (see
-[headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment):
-commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to
-`hosts/<host>/` + add its `ssh-known-hosts.nix` and `ssh.nix` entries,
-and generate its passphrase-less outbound user key
-(`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`),
-appending the pubkey to `lib/operator.nix` `authorizedKeys`. Existing
-hosts pick both up at their own next switch.
+Same steps as the headless runbook (see [headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment): generate this host's passphrase-less outbound user key (`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`), add its pubkey to `lib/operator.nix` `hostKeys`, add/extend the relevant `sshEdges` entries (ADR-042's declared-edge model), and commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to `hosts/<host>/` with its `ssh-known-hosts.nix` and `ssh.nix` entries. Existing hosts pick all of it up at their own next switch. saturn's client→destination flip has its own subsection in that runbook.
 
 ## Post-activation — enable FileVault (manual, not declarable)
 

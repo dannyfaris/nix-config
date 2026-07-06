@@ -2,7 +2,12 @@
 # sole source of truth for user state. Identity attributes (name,
 # description, SSH keys) come from lib/operator.nix per #49 so the same
 # record feeds the sibling modules/darwin/users.nix (Darwin, epic #11).
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  hostContext,
+  ...
+}:
 
 let
   operator = import ../../lib/operator.nix;
@@ -20,7 +25,13 @@ in
 
     hashedPasswordFile = config.sops.secrets.dbf-password.path;
 
-    openssh.authorizedKeys.keys = operator.authorizedKeys;
+    # Inbound keys derived from the declared trust edges (ADR-042): this
+    # host's sshEdges entry names its authorised source hosts, mapped
+    # through hostKeys. A host absent from sshEdges throws here (whitelist,
+    # not silent-empty). See lib/operator.nix.
+    openssh.authorizedKeys.keys = map (
+      src: operator.hostKeys.${src}
+    ) operator.sshEdges.${hostContext.hostName};
 
     # fish as the login shell. Requires programs.fish.enable below — the
     # system-side enable is what registers fish in /etc/shells, which is

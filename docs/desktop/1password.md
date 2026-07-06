@@ -221,7 +221,7 @@ Blast radius (one unlocked-vault key authenticating everywhere vs. per-host isol
 With 1Password's agent rejected (Decision 2), metis's outbound SSH uses a per-host key — the mechanism ADR-010 already prescribes:
 
 1. Generate a fresh passphrase-protected ed25519 on metis (`ssh-keygen -t ed25519`), per ADR-010.
-2. Add its **public** key to `lib/operator.nix authorizedKeys` (the single source of truth that renders authorized_keys on every host). After `nh os switch` fleet-wide, mercury and neptune accept metis.
+2. Add its **public** key to `lib/operator.nix` `hostKeys` and metis to the relevant `sshEdges` entries (the single source of truth that each host renders its authorized_keys from; ADR-042). After `nh os switch` fleet-wide, mercury and neptune accept metis.
 3. The same pattern repeats for any future NixOS desktop host: one key per box, one new authorized line.
 
 `gcr-ssh-agent` (incumbent) loads the key on first use and should cache the passphrase via gnome-keyring (smoke-test on first use); no new SSH agent tooling is required. Plain `ssh-agent` is the fallback if gcr-ssh-agent proves unsatisfactory.
@@ -268,11 +268,11 @@ users.users.dbf.extraGroups = [ "onepassword" ];  # module does NOT add it
 ```
 
 ```nix
-# lib/operator.nix — append metis's public key (Decision 3)
-authorizedKeys = [
-  "ssh-ed25519 AAAA…dbf@mac"
-  "ssh-ed25519 AAAA…dbf@metis"   # generated on metis, passphrase-protected
-];
+# lib/operator.nix — metis's public key as a hostKeys entry (Decision 3; ADR-042)
+hostKeys = {
+  neptune = "ssh-ed25519 AAAA…dbf@neptune";
+  metis = "ssh-ed25519 AAAA…dbf@metis"; # generated on metis, passphrase-protected
+};
 ```
 
 ### Sharp edges
