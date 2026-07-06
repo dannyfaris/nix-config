@@ -141,7 +141,17 @@ statusline_short_cwd() {
       printf '%s' "${repo_name}"
     fi
   elif [ -n "$cwd" ]; then
-    local display_cwd="${cwd/#$HOME/~}"
+    # Collapse $HOME to a literal ~. NOT `${cwd/#$HOME/~}`: bash 5.2+
+    # tilde-expands the replacement, so that idiom re-expands ~ back to
+    # $HOME and silently no-ops (#544). `case` avoids substitution and only
+    # matches a genuinely home-rooted path (so a sibling like /home/dbfoo
+    # isn't mangled). The quoted `"$HOME"` in the strip keeps it literal.
+    local display_cwd
+    case "$cwd" in
+    "$HOME") display_cwd="~" ;;
+    "$HOME"/*) display_cwd="~${cwd#"$HOME"}" ;;
+    *) display_cwd="$cwd" ;;
+    esac
     awk -F/ '{
       n=NF
       if (n<=3) print $0
