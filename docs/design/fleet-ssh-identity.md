@@ -1,6 +1,6 @@
 # Fleet SSH identity — declared edges, no new trust anchor
 
-**Status:** Proposed — design note (`docs/design/`). Not built. #558 (reconciles #524; adjacent to #526, #551, #556, #570). Drafted 2026-07-07. Expect an ADR on acceptance (amending ADR-010).
+**Status:** Accepted (2026-07-07) — design note (`docs/design/`). Not built. #558 (reconciles #524; adjacent to #526, #551, #556, #570). Drafted and accepted 2026-07-07; decision frozen in [ADR-042](../decisions/ADR-042-fleet-ssh-declared-edges.md) (amends ADR-010).
 
 ## Summary
 
@@ -44,13 +44,13 @@ hostKeys = {
 };
 
 # destination → source hosts whose keys it authorises
-# (strawman set — the operator settles which flows are real; see
-# Unresolved questions)
+# (interim strawman — the settled target shape is the table below;
+# exact interim edges settle at the implementation commit)
 sshEdges = {
-  mercury  = [ "neptune" "saturn" "metis" ];
-  metis    = [ "neptune" "saturn" ];
-  neptune  = [ "metis" ];
-  nixos-vm = [ ];
+  mercury = [ "neptune" "saturn" "metis" ]; # sink; retiring — drops with the host
+  metis   = [ "neptune" "saturn" ];
+  neptune = [ "metis" "saturn" ];
+  saturn  = [ "neptune" "metis" ]; # newly a destination — deliberate stance flip
 };
 ```
 
@@ -67,7 +67,7 @@ Each platform's `users.nix` derives its `authorizedKeys` by looking up its own h
 | saturn | jupiter, neptune |
 | Raspberry Pi (new, name TBD) | jupiter, neptune, saturn |
 
-The table has one rule in it: **sources are exactly the three interactive workstations** (jupiter, neptune, saturn); the service tier (metis post-#387, M720q, Pi) is pure sink — accepting only workstations and never each other. Trust flows downhill, never up, never sideways within the service tier. Three structural consequences follow. First, sink hosts never *generate* outbound fleet keys — the standing key surface at target is three keys on encrypted interactive machines, not one per host. Second, the closed edges are precisely the attack direction: the service tier is where the riskiest code will run (homelab services per #387, CI runners executing input-controlled jobs per #546/#547 — #568's threat surface) while the workstations hold the crown jewels; any→any's marginal edges would hand a compromised service box an SSH rail into them. Third, the convenience forgone is thin because SSH direction ≠ data direction — a copy *from* a sink is initiated from the key-holding side — and an emergency edge is a data change plus a destination rebuild via its own break-glass path, the same property the flat list has. metis illustrates that edges are time-varying data: a legitimate source today (it is a desktop), it moves to sink at #387's re-role — a one-line map change plus key retirement, not an architecture event. The first commit expresses the *current* flat semantics as edge data (behaviour-preserving refactor); narrowing the edge set is then a data-only change the operator makes deliberately. The any→any question stops being an architecture and becomes a reviewable attrset — the strawman set above is exactly that, a strawman, held in Unresolved questions for the operator to settle.
+The table has one rule in it: **sources are exactly the three interactive workstations** (jupiter, neptune, saturn); the service tier (metis post-#387, M720q, Pi) is pure sink — accepting only workstations and never each other. Trust flows downhill, never up, never sideways within the service tier. Three structural consequences follow. First, sink hosts never *generate* outbound fleet keys — the standing key surface at target is three keys on encrypted interactive machines, not one per host. Second, the closed edges are precisely the attack direction: the service tier is where the riskiest code will run (homelab services per #387, CI runners executing input-controlled jobs per #546/#547 — #568's threat surface) while the workstations hold the crown jewels; any→any's marginal edges would hand a compromised service box an SSH rail into them. Third, the convenience forgone is thin because SSH direction ≠ data direction — a copy *from* a sink is initiated from the key-holding side — and an emergency edge is a data change plus a destination rebuild via its own break-glass path, the same property the flat list has. metis illustrates that edges are time-varying data: a legitimate source today (it is a desktop), it moves to sink at #387's re-role — a one-line map change plus key retirement, not an architecture event. Review resolutions (operator, 2026-07-07): **saturn** becomes a destination deliberately — its client-only stance flips at implementation, with binding sshd to the tailnet interface the roaming-laptop mitigation to evaluate there; **mercury** is planned for retirement — it never enrols as a source and persists as a workstation-only sink until decommission; **nixos-vm** is likewise leaving the fleet, making the table above the complete target fleet. The first commit expresses the *current* flat semantics as edge data (behaviour-preserving refactor); narrowing the edge set is then a data-only change the operator makes deliberately. The any→any question stops being an architecture and becomes a reviewable attrset — the strawman set above is exactly that, a strawman, held in Unresolved questions for the operator to settle.
 
 **Enforcement follows the existing rungs.** An eval stance (`lib/stances.nix`) asserts per host that the rendered `authorizedKeys` equals the edge-derived set — a key present on a host with no declaring edge fails CI, exactly the shape ADR-033 already gates. When #551 lands its registry, this stance grows the runtime rung: a probe demonstrating a non-edge key is *refused* by the live sshd, retiring another "set ≠ enforced" gap (#303 lineage).
 
@@ -126,7 +126,7 @@ The chosen design is the only option that satisfies F1, F4, F5, F6, F8, F9 simul
 
 ## Unresolved questions
 
-- **The edge set** — the target topology is now recorded (Design §target shape, operator-provided 2026-07-07); the code-block strawman covers the interim fleet. Three confirmations remain: **(a)** saturn as a destination flips its recorded no-inbound-SSH stance (`hosts/saturn/default.nix`) — if deliberate, the roaming-laptop mitigation is binding sshd to the tailnet interface; **(b)** mercury is absent from the target table — retiring, or persisting as a sink (the downhill rule would give the work box no personal-fleet keys, quietly settling #570's SSH slice)? **(c)** nixos-vm stays a keyless sink (a narrowing from today's flat list).
+- **The interim edge map** — the target topology and its three confirmations are settled (Design §target shape); what remains is the interim data while metis is still a desktop and mercury/nixos-vm await decommission, settled by the operator at the implementation commit.
 - **Where the edge data lives** (`lib/operator.nix` growing a `sshEdges` attr vs a sibling `lib/` file) — implementation detail, decided at build time.
 - **Stance and probe wording** — lands with the implementation commit and, for the runtime rung, with #551.
 - **#524 reconciliation mechanics** — on acceptance, #524 re-scopes to "complete enrolment under the declared-edge shape" rather than closing; its runbook §Fleet SSH enrolment gains the edge step.
