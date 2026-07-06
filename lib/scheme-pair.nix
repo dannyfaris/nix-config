@@ -5,10 +5,11 @@
 # Stylix itself derives colours only for the *active* polarity
 # (config.lib.stylix.colors). Runtime polarity switching needs both
 # halves pre-baked at build time (docs/design/macos-live-theme-switching.md
-# §Design), so this helper runs the same machinery — the same scheme
-# YAMLs and override merge as modules/*/stylix-palette.nix — once per
-# declared polarity. Single-sourced here because two consumers need the
-# identical derivation (Ghostty dual themes, JankyBorders hook pair).
+# §Design), so this helper runs the same machinery — selection semantics
+# from lib/palette-for.nix (#541), the same base16.nix mkSchemeAttrs +
+# override merge the stylix-palette twins feed — once per declared
+# polarity. Single-sourced here because two consumers need the identical
+# derivation (Ghostty dual themes, JankyBorders hook pair).
 {
   inputs,
   pkgs,
@@ -16,14 +17,14 @@
   hostContext,
 }:
 let
-  palettes = import ./host-palettes.nix;
-  palette = palettes.${hostContext.hostName};
+  paletteFor = import ./palette-for.nix hostContext.hostName;
   base16 = inputs.stylix.inputs.base16.lib { inherit pkgs lib; };
   mkPolarity =
     polarity:
-    (base16.mkSchemeAttrs "${pkgs.base16-schemes}/share/themes/${palette.schemes.${polarity}}.yaml")
-    .override
-      (palette.overrides.${polarity} or { });
+    let
+      sel = paletteFor.select polarity;
+    in
+    (base16.mkSchemeAttrs "${pkgs.base16-schemes}/share/themes/${sel.scheme}.yaml").override sel.override;
 in
 {
   dark = mkPolarity "dark";
