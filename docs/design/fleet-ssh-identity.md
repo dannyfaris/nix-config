@@ -54,7 +54,20 @@ sshEdges = {
 };
 ```
 
-Each platform's `users.nix` derives its `authorizedKeys` by looking up its own hostname in `sshEdges` and mapping the named sources through `hostKeys`. The hostname arrives through the established `hostContext` module argument (`lib/mk-host-context.nix`'s `_module.args` bridge, ADR-019); `users.nix` does not take that argument today, so the implementation adds `hostContext` to its signature — the same one-word change `modules/{nixos,darwin}/stylix-palette.nix` already made to consume it. The first commit expresses the *current* flat semantics as edge data (behaviour-preserving refactor); narrowing the edge set is then a data-only change the operator makes deliberately. The any→any question stops being an architecture and becomes a reviewable attrset — the strawman set above is exactly that, a strawman, held in Unresolved questions for the operator to settle.
+Each platform's `users.nix` derives its `authorizedKeys` by looking up its own hostname in `sshEdges` and mapping the named sources through `hostKeys`. The hostname arrives through the established `hostContext` module argument (`lib/mk-host-context.nix`'s `_module.args` bridge, ADR-019); `users.nix` does not take that argument today, so the implementation adds `hostContext` to its signature — the same one-word change `modules/{nixos,darwin}/stylix-palette.nix` already made to consume it.
+
+**The target shape (operator, 2026-07-07).** Asked for the expected future fleet, the operator produced a topology — recorded here verbatim as the target the edge data grows toward:
+
+| Destination | Accepts keys from |
+|---|---|
+| metis | jupiter, neptune, saturn |
+| M720q (new, name TBD) | jupiter, neptune, saturn |
+| jupiter (desktop tower, new) | neptune, saturn |
+| neptune | jupiter, saturn |
+| saturn | jupiter, neptune |
+| Raspberry Pi (new, name TBD) | jupiter, neptune, saturn |
+
+The table has one rule in it: **sources are exactly the three interactive workstations** (jupiter, neptune, saturn); the service tier (metis post-#387, M720q, Pi) is pure sink — accepting only workstations and never each other. Trust flows downhill, never up, never sideways within the service tier. Three structural consequences follow. First, sink hosts never *generate* outbound fleet keys — the standing key surface at target is three keys on encrypted interactive machines, not one per host. Second, the closed edges are precisely the attack direction: the service tier is where the riskiest code will run (homelab services per #387, CI runners executing input-controlled jobs per #546/#547 — #568's threat surface) while the workstations hold the crown jewels; any→any's marginal edges would hand a compromised service box an SSH rail into them. Third, the convenience forgone is thin because SSH direction ≠ data direction — a copy *from* a sink is initiated from the key-holding side — and an emergency edge is a data change plus a destination rebuild via its own break-glass path, the same property the flat list has. metis illustrates that edges are time-varying data: a legitimate source today (it is a desktop), it moves to sink at #387's re-role — a one-line map change plus key retirement, not an architecture event. The first commit expresses the *current* flat semantics as edge data (behaviour-preserving refactor); narrowing the edge set is then a data-only change the operator makes deliberately. The any→any question stops being an architecture and becomes a reviewable attrset — the strawman set above is exactly that, a strawman, held in Unresolved questions for the operator to settle.
 
 **Enforcement follows the existing rungs.** An eval stance (`lib/stances.nix`) asserts per host that the rendered `authorizedKeys` equals the edge-derived set — a key present on a host with no declaring edge fails CI, exactly the shape ADR-033 already gates. When #551 lands its registry, this stance grows the runtime rung: a probe demonstrating a non-edge key is *refused* by the live sshd, retiring another "set ≠ enforced" gap (#303 lineage).
 
@@ -86,7 +99,7 @@ Unverified, stated rather than implied:
 ## Drawbacks
 
 - **No passive expiry — F2-time is genuinely unmet.** A quietly exfiltrated key stays valid until noticed, the edge or key line deleted, and every affected host rebuilt. This is the CA's real advantage and this design declines it. The bounds offered instead: edge scoping caps what the key reaches; the private keys never leave their hosts by construction (per-host generation, ADR-010); and detection-side coverage (#551 probes, #553's audit) is where the program invests. If this residual is judged unacceptable, B is the answer and this note's weighing says what it costs.
-- **N passphrase-less private keys at rest, per ADR-010's operator-endorsed carve-out** — every enrolled host is one theft or live compromise away from its declared edges. Containment is breach-side, not credential-side: #557's TPM sealing (deferred) and the Macs' FileVault bound physical theft; nothing bounds a live compromise except the edge scope itself. This is the price of declining expiry, named plainly.
+- **Passphrase-less private keys at rest, per ADR-010's operator-endorsed carve-out** — every key-holding host is one theft or live compromise away from its declared edges. Containment is breach-side, not credential-side: #557's TPM sealing (deferred) and the Macs' FileVault bound physical theft; nothing bounds a live compromise except the edge scope itself. This is the price of declining expiry, named plainly. The target topology eases it structurally — only the three workstations hold keys at all — but does not remove it.
 - **The edge map can ossify.** A stale edge (a flow that stopped existing) is invisible to the stance, which asserts derivation, not need. Periodic honesty is on the operator; #571's usage-ledger idea is the eventual instrument if this bites.
 - **Declining Tailscale SSH keeps all authz eggs in the key basket** even after #556 lands ACLs-as-code; the network ring will scope reachability but never identity.
 - **If the operator settles on the full any→any edge set anyway,** the mechanism degenerates into today's flat list with extra indirection — in that case the honest move is keeping the flat list and closing #558 with "matrix affirmed", not shipping unused machinery.
@@ -113,11 +126,12 @@ The chosen design is the only option that satisfies F1, F4, F5, F6, F8, F9 simul
 
 ## Unresolved questions
 
-- **The edge set itself** — the strawman in Design (operator workstations → everywhere; metis → mercury + neptune; mercury and nixos-vm → nothing) is for review, not decided. In particular: does mercury need *any* outbound fleet key at its recovery enrolment, and does metis→neptune reflect a real flow?
+- **The edge set** — the target topology is now recorded (Design §target shape, operator-provided 2026-07-07); the code-block strawman covers the interim fleet. Three confirmations remain: **(a)** saturn as a destination flips its recorded no-inbound-SSH stance (`hosts/saturn/default.nix`) — if deliberate, the roaming-laptop mitigation is binding sshd to the tailnet interface; **(b)** mercury is absent from the target table — retiring, or persisting as a sink (the downhill rule would give the work box no personal-fleet keys, quietly settling #570's SSH slice)? **(c)** nixos-vm stays a keyless sink (a narrowing from today's flat list).
 - **Where the edge data lives** (`lib/operator.nix` growing a `sshEdges` attr vs a sibling `lib/` file) — implementation detail, decided at build time.
 - **Stance and probe wording** — lands with the implementation commit and, for the runtime rung, with #551.
 - **#524 reconciliation mechanics** — on acceptance, #524 re-scopes to "complete enrolment under the declared-edge shape" rather than closing; its runbook §Fleet SSH enrolment gains the edge step.
-- Out of scope here: tailnet ACL content (#556), the full work/personal boundary (#570 — this note settles only its SSH-edge slice), neptune's key untangling (#526), and any change to inbound sshd posture (already stanced).
+- **Backup topology is the one foreseeable flow that could bend the downhill rule** — a *pull*-based fleet backup design makes the backup box a source holding keys into everything, inverting the trust graph in one place; push-to-sink or transport-native designs (e.g. restic rest-server over HTTPS) preserve it. Flagged for the eventual backup design, not decided here.
+- Out of scope here: tailnet ACL content (#556 — the network ring that should eventually mirror the same shape), the full work/personal boundary (#570 — this note settles only its SSH-edge slice), neptune's key untangling (#526), and any change to inbound sshd posture (already stanced).
 
 ## Future possibilities
 
