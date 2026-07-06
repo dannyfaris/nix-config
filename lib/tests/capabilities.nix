@@ -14,6 +14,7 @@ let
     aerospaceBindsFor
     collisionsFor
     darwinCollisionsFor
+    validationFailuresFor
     descriptiveFor
     ;
 
@@ -470,5 +471,136 @@ lib.runTests {
       onShift = true;
       onSuper = false;
     };
+  };
+
+  # ── Registry shape validation (#535) ──────────────────────────────────────
+  # A well-formed fixture produces no failures.
+  testValidationCleanIsEmpty = {
+    expr = validationFailuresFor [
+      (mkCap "a" {
+        tier = "hyper";
+        key = "Left";
+      } { focus-column-left = { }; })
+    ];
+    expected = [ ];
+  };
+
+  # The demonstrated silent-drop: a typo'd realization tag was invisible to
+  # the emitters AND the collision lint; the validator names it.
+  testValidationTypoRealizationFires = {
+    expr = validationFailuresFor [
+      (
+        (mkCap "a" {
+          tier = "hyper";
+          key = "Left";
+        } { focus-column-left = { }; })
+        // {
+          platforms.linux = {
+            realization = "niri-actoin";
+            action.focus-column-left = { };
+          };
+        }
+      )
+    ];
+    expected = [ "a: unknown platforms.linux realization \"niri-actoin\" (known: niri-action)" ];
+  };
+
+  # A misspelled top-level field is caught by the whitelist (and the field it
+  # displaced is caught as missing) — the `platfroms` typo class.
+  testValidationUnknownTopFieldFires = {
+    expr = validationFailuresFor [
+      (
+        builtins.removeAttrs (mkCap "a" {
+          tier = "hyper";
+          key = "Left";
+        } { focus-column-left = { }; }) [ "platforms" ]
+        // {
+          platfroms.linux = {
+            realization = "niri-action";
+            action.focus-column-left = { };
+          };
+        }
+      )
+    ];
+    expected = [
+      "a: unknown top-level field `platfroms`"
+      "a: declares no platform realization (needs platforms.linux and/or platforms.darwin)"
+    ];
+  };
+
+  # A missing required descriptive field is reported.
+  testValidationMissingFieldFires = {
+    expr = builtins.length (validationFailuresFor [
+      (builtins.removeAttrs (mkCap "a" {
+        tier = "hyper";
+        key = "Left";
+      } { focus-column-left = { }; }) [ "label" ])
+    ]);
+    expected = 1;
+  };
+
+  # An unknown chord tier is reported.
+  testValidationBadTierFires = {
+    expr = builtins.length (validationFailuresFor [
+      (mkCap "a" {
+        tier = "hyprr";
+        key = "Left";
+      } { focus-column-left = { }; })
+    ]);
+    expected = 1;
+  };
+
+  # A chord modifier neither renderer maps is reported.
+  testValidationBadModFires = {
+    expr = builtins.length (validationFailuresFor [
+      (mkCap "a" {
+        tier = "hyper";
+        mods = [ "Cmd" ];
+        key = "Left";
+      } { focus-column-left = { }; })
+    ]);
+    expected = 1;
+  };
+
+  # A darwin-realized cap with a key token AeroSpace can't parse fails at
+  # eval — not at the runtime config reload (whole-file rejection).
+  testValidationDarwinKeyTokenFires = {
+    expr = validationFailuresFor [
+      (mkAsCap "a" {
+        tier = "hyper";
+        key = "Enter";
+      } "focus up")
+    ];
+    expected = [
+      "a: chord key \"Enter\" is not a verified AeroSpace key token (asKey ∪ single [A-Za-z0-9])"
+    ];
+  };
+
+  # aerospace-exec bodies are hand-authored; a payload here would be silently
+  # ignored, so it's a violation.
+  testValidationExecActionFires = {
+    expr = builtins.length (validationFailuresFor [
+      (
+        (mkAsExecCap "a" {
+          tier = "hyper";
+          mods = [ "Shift" ];
+          key = "M";
+        })
+        // {
+          platforms.darwin = {
+            realization = "aerospace-exec";
+            action = "stray";
+          };
+        }
+      )
+    ]);
+    expected = 1;
+  };
+
+  # Guard: the live registry stays shape-valid — a malformed entry should
+  # fail this in CI, not just the fixtures above.
+  testLiveRegistryShapeValid = {
+    expr = caps.validationFailures;
+    expected = [ ];
   };
 }

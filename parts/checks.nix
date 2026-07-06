@@ -154,6 +154,13 @@ in
         mkReportCheck "x86_64-linux" "keybind-collisions-darwin"
           "Keybind chord collisions — darwin/AeroSpace (lib/capabilities.nix; ADR-039 §8, ADR-040)"
           capabilities.darwinCollisions;
+      # Registry shape gate: a malformed entry (typo'd realization tag,
+      # misspelled field, unmapped darwin key) is silently dropped by the
+      # emitters, so its absence must fail here instead (#535).
+      keybind-registry-shape =
+        mkReportCheck "x86_64-linux" "keybind-registry-shape"
+          "Keybind registry shape violations (lib/capabilities.nix; #535)"
+          capabilities.validationFailures;
       # Doc-freshness gate: the keybinds.md generated region must equal the
       # registry's emitted table. Platform-independent like the unit tests, so it
       # rides the x86_64-linux runner once (#457; ADR-037 rung 3).

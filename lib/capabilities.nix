@@ -29,8 +29,9 @@
 #   - home/darwin/karabiner.nix   → `tiers.hyper.darwin` (the Ctrl+Opt substrate)
 #                                    + `karabinerHyperRemapKeys` (now emptied —
 #                                    the Mission-Control remaps retired, ADR-040)
-#   - parts/checks.nix            → `collisions` + `darwinCollisions`
-#                                    (mkReportCheck) + `keybindsTable` (the
+#   - parts/checks.nix            → `collisions` + `darwinCollisions` +
+#                                    `validationFailures` (mkReportCheck, #535)
+#                                    + `keybindsTable` (the
 #                                    fragment package + the generate-and-diff
 #                                    check) + the unit tests in
 #                                    lib/tests/capabilities.nix
@@ -1085,6 +1086,116 @@ let
     dupFailures;
   darwinCollisions = darwinCollisionsFor registry;
 
+  # ── Registry shape validation (#535) ───────────────────────────────────────
+  # The emitters and lints above SELECT entries by matching known field values
+  # (isNiriAction, isAerospaceBind, …), so a malformed entry — typo'd
+  # realization tag, misspelled field, unmapped key token — is an *absence*,
+  # not an error: dropped from emission and invisible to the collision lint
+  # (docs/reviews/engineering-review-2026-07-06.md §1). This pass makes the
+  # registry's shape a contract: every entry either emits exactly as declared
+  # or fails eval with a named violation. Pure failure-string list (empty =
+  # ok), parametrised for unit fixtures — the collisionsFor house pattern;
+  # parts/checks.nix renders it via mkReportCheck.
+  requiredCapFields = [
+    "id"
+    "label"
+    "description"
+    "keywords"
+    "chord"
+  ];
+  knownCapFields = requiredCapFields ++ [ "platforms" ];
+  knownChordFields = [
+    "tier"
+    "mods"
+    "key"
+  ];
+  knownPlatforms = [
+    "linux"
+    "darwin"
+  ];
+  knownPlatformFields = [
+    "realization"
+    "action"
+    "label"
+    "description"
+    "keywords"
+  ];
+  knownRealizations = {
+    linux = [ "niri-action" ];
+    darwin = [
+      "aerospace-action"
+      "aerospace-exec"
+    ];
+  };
+  # The escalator tokens BOTH chord renderers can map (darwinMod's domain);
+  # the niri renderer passes unknown tokens through and defers to build-time
+  # `niri validate`, so this stricter cross-platform set is the gate.
+  knownChordMods = lib.attrNames darwinMod;
+  # A darwin-bindable key token: an explicit asKey name, or a single
+  # letter/digit (asKeyFor lowercases those). Anything else would be
+  # lowercased into the config and reject the WHOLE file at AeroSpace's
+  # runtime parse — this check moves that failure to eval.
+  validDarwinKey = k: lib.hasAttr k asKey || builtins.match "[A-Za-z0-9]" k != null;
+  validationFailuresFor =
+    reg:
+    lib.concatLists (
+      lib.imap0 (
+        i: c:
+        let
+          name = c.id or "<entry ${toString i}>";
+          err = msg: "${name}: ${msg}";
+          unknownIn =
+            where: allowed: attrs:
+            map (f: err "unknown ${where} field `${f}`") (lib.subtractLists allowed (lib.attrNames attrs));
+          chord = c.chord or { };
+          platforms = c.platforms or { };
+          declaredPlatforms = lib.intersectLists knownPlatforms (lib.attrNames platforms);
+          checkPlatform =
+            p:
+            let
+              entry = platforms.${p};
+              known = knownRealizations.${p};
+              r = entry.realization or null;
+            in
+            unknownIn "platforms.${p}" knownPlatformFields entry
+            ++ lib.optional (r == null) (err "platforms.${p} is missing `realization`")
+            ++ lib.optional (r != null && !lib.isString r) (err "platforms.${p} `realization` must be a string")
+            ++ lib.optional (lib.isString r && !lib.elem r known) (
+              err "unknown platforms.${p} realization \"${r}\" (known: ${lib.concatStringsSep ", " known})"
+            )
+            ++ lib.optional (p == "linux" && r == "niri-action" && !lib.isAttrs (entry.action or null)) (
+              err "niri-action requires a typed `action` attrset"
+            )
+            ++ lib.optional (p == "darwin" && r == "aerospace-action" && !lib.isString (entry.action or null)) (
+              err "aerospace-action requires a verbatim `action` string"
+            )
+            ++ lib.optional (p == "darwin" && r == "aerospace-exec" && entry ? action) (
+              err "aerospace-exec must not carry an `action` — its body is hand-authored in home/darwin/aerospace.nix"
+            );
+        in
+        map (f: err "missing required field `${f}`") (lib.filter (f: !(lib.hasAttr f c)) requiredCapFields)
+        ++ unknownIn "top-level" knownCapFields c
+        ++ unknownIn "chord" knownChordFields chord
+        ++ lib.optional (c ? chord && !(chord ? key)) (err "chord is missing `key`")
+        ++ lib.optional (c ? chord && !(chord ? tier)) (err "chord is missing `tier`")
+        ++ lib.optional (chord ? tier && !lib.hasAttr chord.tier tiers) (
+          err "unknown chord tier \"${chord.tier}\" (known: ${lib.concatStringsSep ", " (lib.attrNames tiers)})"
+        )
+        ++ map (
+          m: err "unknown chord modifier \"${m}\" (known: ${lib.concatStringsSep ", " knownChordMods})"
+        ) (lib.subtractLists knownChordMods (chord.mods or [ ]))
+        ++ unknownIn "platforms" knownPlatforms platforms
+        ++ lib.optional (declaredPlatforms == [ ]) (
+          err "declares no platform realization (needs platforms.linux and/or platforms.darwin)"
+        )
+        ++ lib.concatMap checkPlatform declaredPlatforms
+        ++ lib.optional (platforms ? darwin && chord ? key && !validDarwinKey chord.key) (
+          err "chord key \"${chord.key}\" is not a verified AeroSpace key token (asKey ∪ single [A-Za-z0-9])"
+        )
+      ) reg
+    );
+  validationFailures = validationFailuresFor registry;
+
   # ── Descriptive resolution (per-platform override → shared default) ─────────
   # The contract for the future palette/doc consumers (#442/#437): a platform's
   # effective descriptive is its override field falling back to the shared default.
@@ -1216,6 +1327,8 @@ in
     collisionsFor
     darwinCollisions
     darwinCollisionsFor
+    validationFailures
+    validationFailuresFor
     karabinerHyperRemapKeys
     descriptiveFor
     tierChordDisplay
