@@ -39,17 +39,12 @@
   ...
 }:
 let
-  palettes = import ../../lib/host-palettes.nix;
-  palette = palettes.${hostContext.hostName};
-  # Polarity drives scheme selection — a single host-side toggle flips
-  # both the base16 palette and the cross-app dark/light signal,
-  # eliminating the lockstep-by-convention coupling the previous
-  # interim shape (#123 / #141) carried. Fails loudly with a clear
-  # message if a host's polarity is set to a variant it hasn't declared
-  # (e.g., a dark-only host flipped to light).
-  scheme =
-    palette.schemes.${palette.polarity}
-      or (throw "host-palettes: ${hostContext.hostName} has no `${palette.polarity}` scheme declared");
+  # Selection semantics (scheme + slot-overrides per polarity, loud failure
+  # on an undeclared polarity or host) are single-sourced in
+  # lib/palette-for.nix (#541) — shared with the darwin twin and
+  # lib/scheme-pair.nix.
+  paletteFor = import ../../lib/palette-for.nix hostContext.hostName;
+  active = paletteFor.select paletteFor.polarity;
 in
 {
   imports = [ inputs.stylix.nixosModules.stylix ];
@@ -57,14 +52,11 @@ in
   stylix = {
     enable = true;
     autoEnable = false;
-    base16Scheme = "${pkgs.base16-schemes}/share/themes/${scheme}.yaml";
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/${active.scheme}.yaml";
     # Per-host polarity so dark-aware apps (Firefox web content, GTK
     # file pickers, Qt platform theme) follow the host's
     # actual visual intent. Also drives the scheme selection above.
-    inherit (palette) polarity;
-    # Per-host slot corrections for ports that violate base16 slot
-    # intents, merged over the scheme by base16.nix. Empty for
-    # conformant hosts. See ADR-028 §History (2026-06-10, #331).
-    override = palette.overrides.${palette.polarity} or { };
+    inherit (paletteFor) polarity;
+    inherit (active) override;
   };
 }

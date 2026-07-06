@@ -128,6 +128,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - **Enforcement is proportionate.** Guardrails are sized to the severity they guard — the lightest mechanism that holds the guarantee (convention → `grep`-lint → bespoke parser), escalating only on repeated evidence; mechanical gates are reserved for correctness-severity issues. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md).
 - Module file naming follows the "most-communicative term" rule. See
   [docs/taxonomy.md](./docs/taxonomy.md).
+- **Platform twin-pairs share a lib constructor only when values-only.** A `modules/{nixos,darwin}` pair whose bodies differ solely in platform-constant values is built from one `lib/mk-*.nix` constructor taking explicit per-platform args (host-context, home-manager; stylix-palette shares its selection logic via `lib/palette-for.nix` but keeps twin shells — its engine import differs). Pairs differing in logic, option surface, or upstream module semantics (firewall, sshd, nix-daemon) stay two files. No central platform record — the args are stated at the two call sites. See #541.
 - **Project workflow conventions** (intent-first issue framing,
   doc-before-code for selections, peer-review staged diffs before
   commit, sense-check `main` before implementing, etc.) live in
