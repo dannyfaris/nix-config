@@ -24,6 +24,35 @@
 }:
 let
   c = config.lib.stylix.colors;
+  operator = import ../../lib/operator.nix;
+
+  # The account email → short-label map the Claude statusline sources,
+  # generated from lib/operator.nix's identities so the mapping is
+  # single-sourced with the git author identities (#339, retiring the two
+  # hardcoded emails in the statusline's account case). Emits a
+  # `statusline_account_label` shell function; an unknown email passes
+  # through as itself (visibly unmapped, never silently wrong), matching
+  # the prior hand-written case. Patterns are escapeShellArg-quoted so an
+  # email is matched literally. Claude-only — cursor has no account segment.
+  statuslineIdentities = pkgs.writeText "statusline-identities.sh" (
+    lib.concatStringsSep "\n" (
+      [
+        "# Generated from lib/operator.nix identities — see home/shared/agent-clis.nix."
+        "# Maps a Claude account email to its short label (#339); unknown → raw email."
+        "statusline_account_label() {"
+        "  case \"$1\" in"
+      ]
+      ++ lib.mapAttrsToList (
+        _: id: "  ${lib.escapeShellArg id.email}) printf '%s' ${lib.escapeShellArg id.label} ;;"
+      ) operator.identities
+      ++ [
+        "  *) printf '%s' \"$1\" ;;"
+        "  esac"
+        "}"
+        ""
+      ]
+    )
+  );
 
   # Truecolor SGR foreground escape for a given base16 slot. Returns
   # the literal 4-char string `\033[38;2;R;G;Bm` — bash's $'...' ANSI-C
@@ -93,11 +122,18 @@ in
         executable = true;
       };
       ".claude/statusline-colours.sh".source = statuslineColours;
+      # Shared rendering core (static) + the generated identity map, sourced
+      # by the Claude statusline (#339).
+      ".claude/statusline-lib.sh".source = ./statusline-lib.sh;
+      ".claude/statusline-identities.sh".source = statuslineIdentities;
       ".cursor/statusline.sh" = {
         source = ./cursor-statusline.sh;
         executable = true;
       };
       ".cursor/statusline-colours.sh".source = statuslineColours;
+      # Same shared rendering core; cursor sources no identity map (no
+      # account segment).
+      ".cursor/statusline-lib.sh".source = ./statusline-lib.sh;
     };
 
     # Non-destructively merge the .statusLine block into each tool's

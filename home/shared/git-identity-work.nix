@@ -7,10 +7,13 @@
 # would get the work identity, which is wrong. Don't mix work and
 # personal on the same host. See ADR-020 and ADR-009.
 { lib, ... }:
+let
+  inherit (import ../../lib/operator.nix) identities;
+in
 {
+  # Work identity single-sourced from lib/operator.nix (#339).
   programs.git.settings.user = {
-    name = "Daniel Faris";
-    email = "daniel.faris@gotaxi.co.nz";
+    inherit (identities.work) name email;
   };
 
   # Only ~/grey-st/ is ensured (named for the employer, Grey St). On this

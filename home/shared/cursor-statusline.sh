@@ -8,77 +8,28 @@
 # Selection rationale: docs/agents/cursor-statusline.md.
 # Schema reference: bundle-extracted; cursor's docs do not yet cover
 # .statusLine. Pinned upstream: cursor-cli 0-unstable-2026-05-16.
+#
+# Shared rendering core — glyphs, width machinery (vw/pad2), git-state
+# parser, path shortener, segment/bar renderers — lives in
+# ~/.cursor/statusline-lib.sh (home/shared/statusline-lib.sh), sourced
+# below; this script owns only Cursor's payload schema and its unique
+# segments (model tier, max-mode, effort-from-id). Cursor has no account
+# segment, so it sources no identities map. See #339.
 
 input=$(cat)
 hostname=$(hostname -s)
 
-# Palette-driven colour bindings — sourced from a Nix-generated file at
-# startup; mapping lives in home/shared/agent-clis.nix. The file defines
-# BLUE / GREEN / YELLOW / RED / MAUVE / ORANGE / TEAL / MUTED as
-# truecolor SGR escapes derived from config.lib.stylix.colors. Same
-# derivation as Claude's; no second palette source.
+# Palette-driven colour bindings — Nix-generated (same derivation as
+# Claude's; mapping in home/shared/agent-clis.nix). The shared rendering lib
+# is static. See docs/agents/cursor-statusline.md and #339.
 # shellcheck source=/dev/null
 source ~/.cursor/statusline-colours.sh
-DIM='' # dim SGR too low-contrast in practice; keep var for one-point reintro
-RST=$'\033[0m'
-SEP=" ${DIM}│${RST} "
-CHEV=" ❯ "
-BRANCH_GLYPH=$'\xee\x82\xa0'
-DESKTOP_GLYPH=$'\xef\x84\x88'
-SSH_GLYPH=$'\xef\x92\x89'
-NIX_GLYPH=$'\xef\x8b\x9c'
+# shellcheck source=/dev/null
+source ~/.cursor/statusline-lib.sh
 
-# Presentation-wide glyphs — render as TWO terminal cells in a Nerd Font but
-# are single code points, which vw() corrects for (#354). The set: the PUA
-# glyphs above, the ✦ model marker, and the │ separator (box-drawing, wide in
-# this font); cursor omits Claude's clock glyph (no rate-limit). The bar's █/░
-# are intentionally ABSENT — also East-Asian-ambiguous like │, but the renderer
-# counts them as one cell, so listing them would over-pad. A standard wcwidth
-# calls all of these width 1 (the bug), so the correction is an explicit
-# per-glyph table, not a wcwidth call — see docs/agents/cursor-statusline.md
-# §Sharp edges. A new wide glyph added here MUST be listed, or its line truncates.
-WIDE_GLYPHS=("$BRANCH_GLYPH" "$DESKTOP_GLYPH" "$SSH_GLYPH" "$NIX_GLYPH" "✦" "│")
-
-# Two-cluster flush-right layout — shared with Claude's statusline (#354).
-# vw() is identical to Claude's; pad2 pads to render_width_chars — the cursor
-# payload's own usable-width signal, already net of statusLine.padding — rather
-# than $COLUMNS, which cursor does not set. See docs/agents/cursor-statusline.md.
-vw() {
-  # Visible display width: SGR escapes stripped, code points counted, then
-  # +1 per presentation-wide glyph (WIDE_GLYPHS) — each renders as two cells
-  # but counts as one code point. The flush-right pad below leaves zero
-  # slack, so an undercount overflows and the line truncates (#354). The
-  # scripts emit no other wide chars (no CJK/combining), so code points plus
-  # this fixed correction equals true display width.
-  local s stripped g
-  s=$(printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g')
-  stripped=$s
-  for g in "${WIDE_GLYPHS[@]}"; do stripped=${stripped//$g/}; done
-  printf '%s' "$((${#s} + ${#s} - ${#stripped}))"
-}
-pad2() {
-  # left-cluster, gap, right-cluster, flush to render_width_chars. Empty
-  # right → left-only (cursor's line 2 has no rate-limit cluster). Gap clamps
-  # to ≥1 space; on a narrow pane the right cluster degrades to left-flow.
-  local left=$1 right=$2 gap
-  if [ -z "$right" ]; then
-    printf '%s\n' "$left"
-    return
-  fi
-  gap=$((${RENDER_WIDTH:-80} - $(vw "$left") - $(vw "$right")))
-  [ "$gap" -lt 1 ] && gap=1
-  printf '%s%*s%s\n' "$left" "$gap" '' "$right"
-}
-
-# Host marker — glyph + colour by connection type, via the shared
-# `session-type` command (home/shared/session-type.nix); identical to
-# Claude's. Correct after a zellij detach/reattach across contexts (#270).
-HOST_GLYPH=$DESKTOP_GLYPH
-HOST_COLOUR=$GREEN
-if [ "$(session-type 2>/dev/null)" = ssh ]; then
-  HOST_GLYPH=$SSH_GLYPH
-  HOST_COLOUR=$MAUVE
-fi
+# Host marker (HOST_GLYPH/HOST_COLOUR) — shared lib; identical to Claude's.
+# Correct after a zellij detach/reattach across contexts (#270).
+statusline_host_marker
 
 # ─── Stdin parse — cursor's payload shape ─────────────────────────
 # Schema diverges from Claude's: no .effort.level (effort encoded in
@@ -141,116 +92,29 @@ case "$MODEL_ID" in
 *-low*) EFFORT_SEG="${SEP}${DIM}▽ low${RST}" ;;
 esac
 
-# ─── Git state — identical to Claude's, vendor-neutral ────────────
-TOP=""
-PREFIX=""
-BRANCH=""
-HEAD_REF=""
-STAGED=0
-MODIFIED=0
-UNTRACKED=0
-CONFLICT=0
-if [ -n "$CWD" ]; then
-  {
-    read -r TOP
-    read -r PREFIX
-  } < <(
-    git -C "$CWD" rev-parse --show-toplevel --show-prefix 2>/dev/null
-  )
-  if [ -n "$TOP" ]; then
-    BRANCH=$(git -C "$CWD" branch --show-current 2>/dev/null)
-    [ -z "$BRANCH" ] && HEAD_REF=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
-    while IFS= read -r line; do
-      case "${line:0:2}" in
-      DD | AU | UD | UA | DU | AA | UU) CONFLICT=$((CONFLICT + 1)) ;;
-      '??') UNTRACKED=$((UNTRACKED + 1)) ;;
-      *)
-        [ "${line:0:1}" != " " ] && STAGED=$((STAGED + 1))
-        [ "${line:1:1}" != " " ] && MODIFIED=$((MODIFIED + 1))
-        ;;
-      esac
-    done < <(git -C "$CWD" status --porcelain 2>/dev/null)
-  fi
-fi
-
-# ─── Path: repo-rooted, with non-git fallback ─────────────────────
-SHORT_CWD=""
-if [ -n "$TOP" ]; then
-  repo_name="${TOP##*/}"
-  PREFIX="${PREFIX%/}"
-  if [ -n "$PREFIX" ]; then
-    SHORT_CWD="${repo_name}/${PREFIX}"
-  else
-    SHORT_CWD="${repo_name}"
-  fi
-elif [ -n "$CWD" ]; then
-  display_cwd="${CWD/#$HOME/~}"
-  SHORT_CWD=$(awk -F/ '{
-    n=NF
-    if (n<=3) print $0
-    else printf ".../%s/%s/%s", $(n-2), $(n-1), $n
-  }' <<<"$display_cwd")
-fi
-
-# ─── Git segment — identical to Claude's ──────────────────────────
-GIT_SEG=""
-if [ -n "$TOP" ]; then
-  GIT_LABEL=""
-  if [ -n "$BRANCH" ]; then
-    GIT_LABEL="$BRANCH"
-  elif [ -n "$HEAD_REF" ]; then
-    GIT_LABEL="@${HEAD_REF}"
-  fi
-  if [ -n "$GIT_LABEL" ]; then
-    if [ -n "$BRANCH" ]; then
-      GIT_SEG=" ${DIM}on${RST} ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
-    else
-      GIT_SEG=" ${TEAL}${BRANCH_GLYPH} ${GIT_LABEL}${RST}"
-    fi
-    [ -n "$WORKTREE" ] && GIT_SEG+=" ${DIM}(${WORKTREE})${RST}"
-    [ "$CONFLICT" -gt 0 ] && GIT_SEG+=" ${RED}!${CONFLICT}${RST}"
-    [ "$STAGED" -gt 0 ] && GIT_SEG+=" ${GREEN}+${STAGED}${RST}"
-    [ "$MODIFIED" -gt 0 ] && GIT_SEG+=" ${YELLOW}~${MODIFIED}${RST}"
-    [ "$UNTRACKED" -gt 0 ] && GIT_SEG+=" ${ORANGE}?${UNTRACKED}${RST}"
-  fi
-fi
-
-# ─── Context bar with threshold colours ───────────────────────────
-PCT=${PCT_RAW%%.*}
-case "$PCT" in
-'' | *[!0-9]*) PCT=0 ;;
-esac
-[ "$PCT" -lt 0 ] && PCT=0
-[ "$PCT" -gt 100 ] && PCT=100
-if [ "$PCT" -ge 80 ]; then
-  BC="$RED"
-elif [ "$PCT" -ge 60 ]; then
-  BC="$YELLOW"
-else
-  BC="$GREEN"
-fi
-F=$((PCT / 10))
-E=$((10 - F))
-BAR=""
-for ((i = 0; i < F; i++)); do BAR+="█"; done
-for ((i = 0; i < E; i++)); do BAR+="░"; done
+# Git state + repo-rooted path + segment — shared lib. WORKTREE (cursor's
+# .worktree.name) feeds the segment's `(worktree)` tag.
+statusline_git_state "$CWD"
+SHORT_CWD=$(statusline_short_cwd "$CWD")
+GIT_SEG=$(statusline_git_segment "$WORKTREE")
 
 # ═══ LINE 1: model [max] │ effort ··· ctx% bar ════════════════════
 # Right cluster is <pct%> <bar> — number BEFORE bar so the fixed-width bar
 # anchors flush-right (mirrors Claude's line 1). No rate-limit segment —
 # cursor's billing has no rolling-window analogue to Claude's
-# .rate_limits.five_hour.*. See docs/agents/cursor-statusline.md §Selection.
-pad2 "${MODEL_COL}✦ ${MODEL}${MAX_MODE_SUFFIX}${RST}${EFFORT_SEG}" \
-  "${PCT}% ${BC}${BAR}${RST}"
+# .rate_limits.five_hour.*. Pads to render_width_chars (the payload's own
+# usable-width signal, net of statusLine.padding) — cursor does not set
+# $COLUMNS. See docs/agents/cursor-statusline.md §Selection.
+pad2 "${RENDER_WIDTH:-80}" \
+  "${MODEL_COL}✦ ${MODEL}${MAX_MODE_SUFFIX}${RST}${EFFORT_SEG}" \
+  "$(statusline_context_cluster "$PCT_RAW")"
 
 # ═══ LINE 2: host ❯ path on branch ════════════════════════════════
 # Structural pad2 with an EMPTY right cluster — cursor has no rate-limit
 # segment, so output is left-flow today, but the layout call stays aligned
 # with Claude's and gains a right cluster for free if cursor ever exposes a
-# rolling-window signal (#354).
-NIX_SHELL_SEG=""
-[ -n "$IN_NIX_SHELL" ] && NIX_SHELL_SEG=" (${BLUE}${NIX_GLYPH}${RST})"
-
-LINE2="${HOST_COLOUR}${HOST_GLYPH}  ${hostname}${RST}"
-[ -n "$SHORT_CWD" ] && LINE2+="${CHEV}${BLUE}${SHORT_CWD}${RST}${NIX_SHELL_SEG}${GIT_SEG}"
-pad2 "$LINE2" ""
+# rolling-window signal (#354). Nix-shell metadata folds into the shared
+# line-2 left cluster.
+pad2 "${RENDER_WIDTH:-80}" \
+  "$(statusline_line2_left "$hostname" "$SHORT_CWD" "$GIT_SEG")" \
+  ""

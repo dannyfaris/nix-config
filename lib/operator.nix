@@ -63,4 +63,32 @@
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@neptune"
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis"
   ];
+
+  # The operator's git identities — one record per identity, the single
+  # source for the git author name/email AND the statusline account label
+  # (#339, retiring the four literal sites: git-identity-{dual,work}.nix and
+  # the two hardcoded emails in claude-statusline.sh's account case). The
+  # `label` is the identity's short display name (metadata, not statusline-
+  # specific presentation): "Personal" for personal code, "Grey St." (the
+  # employer, Grey St) for work. Consumers:
+  #   - home/shared/git-identity-dual.nix — personal default + the
+  #     ~/grey-st/ gitdir-include (name + email of both).
+  #   - home/shared/git-identity-work.nix — work identity (name + email).
+  #   - home/shared/agent-clis.nix — generates the email→label map the
+  #     Claude statusline sources (statusline-identities.sh).
+  # The personal `name` is the GitHub handle (attribution is email-based, so
+  # the name is cosmetic on commit logs); the work `name` is the real name
+  # (employer convention on the work GitLab). See ADR-009, docs/identities.md.
+  identities = {
+    personal = {
+      name = "dannyfaris";
+      email = "daniel@faris.co.nz";
+      label = "Personal";
+    };
+    work = {
+      name = "Daniel Faris";
+      email = "daniel.faris@gotaxi.co.nz";
+      label = "Grey St.";
+    };
+  };
 }

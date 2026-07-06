@@ -118,43 +118,42 @@ let
     name = "zjstatus-git";
     runtimeInputs = [ pkgs.git ];
     text = ''
+      # Repo guard first: statusline_git_state's rev-parse read would trip
+      # this widget's `set -e` in a non-repo dir, so exit before the shared
+      # parser runs where its reads can't succeed.
       git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
+
+      # Shared git-state parser (home/shared/statusline-lib.sh) — the single
+      # home for the porcelain counter the two statuslines also use (#339,
+      # retiring this third hand-mirrored copy). Sets BRANCH / HEAD_REF /
+      # CONFLICT / STAGED / MODIFIED / UNTRACKED for $PWD; this widget keeps
+      # its own zjstatus-markup renderer below (its dialect + Nix-interpolated
+      # hex are a different harness — the parser is the drift-prone part).
+      # shellcheck source=/dev/null
+      source ${./statusline-lib.sh}
+      statusline_git_state "$PWD"
+
       # On a real branch, prefix a dim "on" (like the statusline). Detached
       # HEAD shows just `@<sha>` with no "on" — "on @sha" reads oddly, and
       # the statusline drops it there too.
       on=""
-      branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
-      if [ -n "$branch" ]; then
+      if [ -n "''${BRANCH}" ]; then
+        branch="''${BRANCH}"
         on="#[fg=${mutedHex}]on "
+      elif [ -n "''${HEAD_REF}" ]; then
+        branch="@''${HEAD_REF}"
       else
-        sha=$(git rev-parse --short HEAD 2>/dev/null || true)
-        [ -n "$sha" ] && branch="@$sha"
+        exit 0
       fi
-      [ -z "$branch" ] && exit 0
-
-      staged=0
-      modified=0
-      untracked=0
-      conflict=0
-      while IFS= read -r line; do
-        case "''${line:0:2}" in
-        DD | AU | UD | UA | DU | AA | UU) conflict=$((conflict + 1)) ;;
-        '??') untracked=$((untracked + 1)) ;;
-        *)
-          [ "''${line:0:1}" != " " ] && staged=$((staged + 1))
-          [ "''${line:1:1}" != " " ] && modified=$((modified + 1))
-          ;;
-        esac
-      done < <(git status --porcelain 2>/dev/null)
 
       # Mirrors claude-statusline.sh's git segment: dim "on" (real branch
       # only), cyan branch glyph + name, then the counts (same symbols/
       # colours/order).
       out=" ''${on}#[fg=${cyanHex}]${branchGlyph} $branch"
-      [ "$conflict" -gt 0 ] && out="$out #[fg=${redHex}]!$conflict"
-      [ "$staged" -gt 0 ] && out="$out #[fg=${greenHex}]+$staged"
-      [ "$modified" -gt 0 ] && out="$out #[fg=${yellowHex}]~$modified"
-      [ "$untracked" -gt 0 ] && out="$out #[fg=${orangeHex}]?$untracked"
+      [ "''${CONFLICT}" -gt 0 ] && out="$out #[fg=${redHex}]!''${CONFLICT}"
+      [ "''${STAGED}" -gt 0 ] && out="$out #[fg=${greenHex}]+''${STAGED}"
+      [ "''${MODIFIED}" -gt 0 ] && out="$out #[fg=${yellowHex}]~''${MODIFIED}"
+      [ "''${UNTRACKED}" -gt 0 ] && out="$out #[fg=${orangeHex}]?''${UNTRACKED}"
       printf '%s' "$out"
     '';
   };
