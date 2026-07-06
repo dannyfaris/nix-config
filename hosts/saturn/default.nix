@@ -123,28 +123,11 @@ _: {
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix
       ../../home/darwin/macchina-shell-init.nix
-      # Ghostty user config (~/.config/ghostty/config). Cask owns the .app —
-      # see modules/darwin/homebrew.nix and docs/desktop/ghostty.md.
-      ../../home/darwin/ghostty.nix
-      # Karabiner-Elements karabiner.json. Cask owns the .app + DriverKit
-      # extension + launchd jobs; this module owns the declarative remap
-      # config (caps_lock → Hyper). See docs/desktop/karabiner.md.
-      ../../home/darwin/karabiner.nix
-      # AeroSpace window manager (~/.config/aerospace/aerospace.toml + launchd).
-      # Owns macOS window management (tiling, workspaces, the Hyper keymap) via
-      # the aerospace-action registry emitter. Supersedes the retired
-      # Hammerspoon layer (ADR-040). See docs/design/macos-deterministic-tiling.md.
-      ../../home/darwin/aerospace.nix
-      # Ensures ~/Pictures/Screenshots exists; pairs with
-      # screencapture.location in modules/darwin/system-prefs.nix.
-      ../../home/darwin/screenshots-dir.nix
-      # Runtime theme switching (#499): the appearance watcher + hook
-      # option, the JankyBorders repaint hook, and theme-following
-      # wallpaper pools. Ghostty's half is native dual-theme in its own
-      # module. See docs/design/macos-live-theme-switching.md.
-      ../../home/darwin/dark-mode-notify.nix
-      ../../home/darwin/jankyborders-hook.nix
-      ../../home/darwin/wallpapers.nix
+      # macOS desktop workflow — Ghostty, Karabiner (Hyper), AeroSpace, the
+      # screenshots dir, and the runtime theme-switching trio. The Darwin
+      # parallel of home/nixos/bundles/desktop-env.nix; per-module rationale
+      # lives in the bundle.
+      ../../home/darwin/bundles/desktop-env.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream prebuilt
       # aarch64-darwin binary, sidestepping the source build cache.nixos.org
