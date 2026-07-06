@@ -14,10 +14,11 @@
 # (edge-scroll, maximise-by-isolation, cycle-terminal-windows) are
 # hand-authored below because they
 # shell out to the `aerospace` CLI by an absolute (package-derived) path — which
-# the repo-decoupled registry (only `{ lib }`) cannot form. Their chords come
-# from the registry via caps.aerospaceChord, so the merged-namespace collision
-# lint (caps.darwinCollisions) sees them and they cannot drift from the caps
-# they realize.
+# the repo-decoupled registry (only `{ lib }`) cannot form. The bodies are keyed
+# by capability id and chorded from the registry entries themselves
+# (caps.aerospaceExecCaps), with a both-directions completeness assert — a
+# registry chord change moves these binds with it, and a cap↔body mismatch
+# fails eval instead of leaving a reserved-but-inert chord (#537).
 #
 # SEQUENCING HAZARD (Stage-4 teardown, #494): before the first `nh darwin switch`
 # with this module, remove any pre-existing unmanaged
@@ -42,29 +43,6 @@ let
 
   # Absolute path to the AeroSpace CLI for the exec-and-forget bodies.
   aerospace = lib.getExe pkgs.aerospace;
-
-  # Chords for the hand-authored aerospace-exec binds, rendered from the same
-  # registry caps they realize (single-source; the collision lint reserves these
-  # exact chords via those caps).
-  chordFor = c: caps.aerospaceChord c;
-  hyperLeft = chordFor {
-    tier = "hyper";
-    key = "Left";
-  };
-  hyperRight = chordFor {
-    tier = "hyper";
-    key = "Right";
-  };
-  hyperShiftM = chordFor {
-    tier = "hyper";
-    mods = [ "Shift" ];
-    key = "M";
-  };
-  hyperShiftReturn = chordFor {
-    tier = "hyper";
-    mods = [ "Shift" ];
-    key = "Return";
-  };
 
   # Edge-scroll fallthrough (darwin-specific; focus-column-{left,right}): try to
   # focus that way; at the workspace edge `focus` exits non-zero, so fall through
@@ -97,12 +75,44 @@ let
   # which would make the cycle order shift under the operator's feet.
   cycleTerminalWindows = "exec-and-forget AS=${aerospace}; cur=$($AS list-windows --focused --format '%{window-id}'); next=$($AS list-windows --monitor all --app-bundle-id com.mitchellh.ghostty --format '%{window-id}' | sort -n | awk -v c=\"$cur\" '{a[NR]=$0; if ($0==c) i=NR} END{if (NR) print a[i%NR+1]}'); [ -n \"$next\" ] && $AS focus --window-id \"$next\"";
 
-  handAuthoredBinds = {
-    ${hyperLeft} = edgeScrollLeft;
-    ${hyperRight} = edgeScrollRight;
-    ${hyperShiftM} = maximiseByIsolation;
-    ${hyperShiftReturn} = cycleTerminalWindows;
+  # Hand-authored aerospace-exec bodies, keyed by the CAPABILITY ID they
+  # realize. Chords are rendered from the registry entries below, so a
+  # registry chord change moves these binds with it — restating the chord
+  # here was the drift seam #537 closed.
+  execBodies = {
+    focus-column-left = edgeScrollLeft;
+    focus-column-right = edgeScrollRight;
+    maximise-by-isolation = maximiseByIsolation;
+    cycle-terminal-windows = cycleTerminalWindows;
   };
+
+  # Registry↔body completeness, both directions: an exec cap with no body here
+  # would be lint-reserved and table-documented yet inert at runtime; a body
+  # with no exec cap would be an unlinted bind. Either fails at host eval (so
+  # the toplevel builds gate it), not only in a check derivation.
+  execIds = map (c: c.id) caps.aerospaceExecCaps;
+  missingBodies = lib.subtractLists (lib.attrNames execBodies) execIds;
+  strayBodies = lib.subtractLists execIds (lib.attrNames execBodies);
+  handAuthoredBinds =
+    lib.throwIf (missingBodies != [ ] || strayBodies != [ ])
+      "aerospace.nix: aerospace-exec bodies out of sync with lib/capabilities.nix — registry caps missing a body: [${lib.concatStringsSep ", " missingBodies}]; bodies with no registry cap: [${lib.concatStringsSep ", " strayBodies}] (#537)"
+      (
+        lib.listToAttrs (
+          map (c: lib.nameValuePair (caps.aerospaceChord c.chord) execBodies.${c.id}) caps.aerospaceExecCaps
+        )
+      );
+
+  # Merge guard — mirrors home/nixos/niri.nix's mergeBinds (#455): the
+  # collision lint covers the merged namespace only via its check derivation,
+  # so the host-eval-time disjointness guarantee for this `//` lives here.
+  mergeBinds =
+    generated: handAuthored:
+    let
+      shadowed = lib.intersectLists (lib.attrNames generated) (lib.attrNames handAuthored);
+    in
+    lib.throwIf (shadowed != [ ])
+      "aerospace.nix: hand-authored bind(s) ${lib.concatStringsSep ", " shadowed} shadow registry-emitted chords — declare them in lib/capabilities.nix instead (ADR-039 §8, #537)"
+      (generated // handAuthored);
 in
 {
   programs.aerospace = {
@@ -141,10 +151,10 @@ in
       };
 
       # Main mode: the emitted simple verbs + app-launch (caps.aerospaceBinds)
-      # merged with the hand-authored complex binds. The collision lint
-      # (caps.darwinCollisions) guards the merged namespace, so this `//` cannot
-      # silently shadow an emitted chord.
-      mode.main.binding = caps.aerospaceBinds // handAuthoredBinds;
+      # merged with the hand-authored complex binds. mergeBinds hard-fails on a
+      # shadowing chord at host eval; the collision lint (caps.darwinCollisions)
+      # additionally gates the merged namespace in CI.
+      mode.main.binding = mergeBinds caps.aerospaceBinds handAuthoredBinds;
 
       # Service mode (Hyper+Shift+; enters it): low-frequency ops, each returning
       # to main. Hand-authored — an AeroSpace modal submap, not a chord→cap.

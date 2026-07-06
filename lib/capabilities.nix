@@ -22,8 +22,10 @@
 # Consumers:
 #   - home/nixos/niri.nix         → `niriBinds` (the generated bind attrset)
 #   - home/darwin/aerospace.nix   → `aerospaceBinds` (the emitted
-#                                    mode.main.binding attrset) + `aerospaceChord`
-#                                    (to key the hand-authored aerospace-exec binds)
+#                                    mode.main.binding attrset) + `aerospaceExecCaps`
+#                                    + `aerospaceChord` (the hand-authored exec
+#                                    bodies are keyed by cap id and chorded from
+#                                    the registry entries, #537)
 #   - modules/nixos/keyd.nix      → `tiers.hyper.linux` (substrate reads the
 #                                    same constant — base shape is one edit, §4)
 #   - home/darwin/karabiner.nix   → `tiers.hyper.darwin` (the Ctrl+Opt substrate)
@@ -1010,6 +1012,10 @@ let
       )
     );
   aerospaceBinds = aerospaceBindsFor registry;
+  # The exec-realized caps themselves, exported for home/darwin/aerospace.nix:
+  # it keys its hand-authored bodies by these ids, renders their chords from
+  # these entries, and asserts its body set matches this list exactly (#537).
+  aerospaceExecCaps = lib.filter isAerospaceExec registry;
 
   # ── Collision lint (ADR-039 §8) ────────────────────────────────────────────
   # Pure: returns a list of human-legible failure strings (empty = ok), which
@@ -1323,6 +1329,7 @@ in
     aerospaceChord
     aerospaceBinds
     aerospaceBindsFor
+    aerospaceExecCaps
     collisions
     collisionsFor
     darwinCollisions
