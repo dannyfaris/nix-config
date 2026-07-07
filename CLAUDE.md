@@ -2,10 +2,7 @@
 
 ## Purpose
 
-Evergreen NixOS + nix-darwin configuration. Four live hosts: `nixos-vm`
-(UTM/aarch64 refinement target), `mercury` (AWS EC2/x86_64 work-only
-headless), `metis` (HP ProDesk/x86_64 shared work + personal dev box), and `neptune`
-(Apple Silicon, first nix-darwin host, onboarded 2026-06-02). Metis is
+Evergreen NixOS + nix-darwin configuration. Five hosts: `nixos-vm` (UTM/aarch64 refinement target, retiring), `mercury` (AWS EC2/x86_64 work-only headless, retiring), `metis` (HP ProDesk/x86_64 shared work + personal dev box), `neptune` (Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02), and `saturn` (Apple Silicon MacBook Air, first laptop, client-only — no inbound sshd). Metis is
 the first desktop host, running niri per
 [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends
 [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)).
@@ -21,7 +18,7 @@ companion.
 
 ## Agent memory lives in git, not local state
 
-Work on this repo happens across all four hosts. Claude Code's file-based
+Work on this repo happens across every live host. Claude Code's file-based
 memory (`~/.claude/projects/.../memory/`) is **per-host and never synced** —
 a fact learned on `metis` is invisible on `neptune`. So anything durable —
 decisions, conventions, gotchas, host quirks — must be committed to the repo
@@ -77,7 +74,7 @@ Implement exactly the change requested — nothing more. Do not add unrequested 
 | Stance | Rationale |
 |--------|-----------|
 | `users.mutableUsers = false` | This file is the sole source of truth for user state. `passwd` changes do not persist. |
-| SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (neptune) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Break-glass is host-specific: UTM console for nixos-vm; AWS EC2 Instance Connect for mercury; physical console (or greetd, once landed) for metis; Apple keyboard at the local login for neptune. |
+| SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (neptune) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Fleet SSH trust (which host may reach which) is a declared edge whitelist per [ADR-042](./docs/decisions/ADR-042-fleet-ssh-declared-edges.md). Break-glass is host-specific: UTM console for nixos-vm (retiring); AWS EC2 Instance Connect for mercury (retiring); greetd or physical console for metis; Apple keyboard at the local login for neptune and saturn. |
 | `allowUnfreePredicate` whitelist | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`. |
 | `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
 | `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
@@ -88,11 +85,11 @@ These stances are asserted as eval-only CI checks (`lib/stances.nix`, wired in `
 
 If SSH wedges or keys go wrong, recovery is host-specific:
 
-- **nixos-vm**: UTM console window accepts the user password directly.
-- **mercury**: AWS EC2 Instance Connect from the AWS console.
-- **metis**: physical console (monitor + keyboard); once ADR-028 lands,
-  the greetd login is the same entry point.
+- **nixos-vm** (retiring): UTM console window accepts the user password directly.
+- **mercury** (retiring): AWS EC2 Instance Connect from the AWS console.
+- **metis**: physical console (monitor + keyboard) or the greetd login.
 - **neptune**: Apple keyboard + display at the local login.
+- **saturn**: Apple keyboard + display at the local login.
 
 In all cases: log in, fix the config, and re-activate — `nh os switch`
 on NixOS, `nh darwin switch` on neptune (or the underlying
