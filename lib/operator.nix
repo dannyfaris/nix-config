@@ -76,33 +76,20 @@
   # Every host that runs sshd (and saturn, pending its flip) needs an
   # entry: the derivation indexes this by hostName, so a missing host
   # throws at eval (whitelist, not silent-empty default — an absent edge
-  # is a loud build failure, never a quietly keyless host). This first
-  # commit is behaviour-preserving — the flat list authorised every
-  # enrolled key on every host, so every entry lists all enrolled sources
-  # (self included, reproducing today's rendered keys). Narrowing toward
-  # the target topology (ADR-042; design note §target shape) is then a
-  # reviewed, data-only change.
+  # is a loud build failure, never a quietly keyless host). This is the
+  # interim edge map toward the target topology (ADR-042; design note
+  # §target shape) — self-edges are deliberately absent (no host SSHes
+  # itself); nixos-vm is a keyless sink (retiring, break-glass is the UTM
+  # console); saturn is empty until its destination flip (no sshd today).
   sshEdges = {
     mercury = [
       "neptune"
       "metis"
     ];
-    metis = [
-      "neptune"
-      "metis"
-    ];
-    neptune = [
-      "neptune"
-      "metis"
-    ];
-    nixos-vm = [
-      "neptune"
-      "metis"
-    ];
-    saturn = [
-      "neptune"
-      "metis"
-    ];
+    metis = [ "neptune" ];
+    neptune = [ "metis" ];
+    nixos-vm = [ ];
+    saturn = [ ];
   };
 
   # The operator's git identities — one record per identity, the single

@@ -125,7 +125,7 @@ utmctl list                          # list configured VMs
 utmctl status <vm-name>
 utmctl start <vm-name>               # boot the VM
 utmctl stop <vm-name>                # graceful shutdown
-utmctl ip-address <vm-name>          # for SSHing into the VM
+utmctl ip-address <vm-name>          # the VM's guest IP
 utmctl snapshot list <vm-name>       # list snapshots
 utmctl snapshot save <vm-name> <tag> # create a snapshot
 utmctl snapshot restore <vm-name> <tag>
@@ -135,10 +135,10 @@ For the `nixos-vm` host's typical lifecycle:
 
 ```bash
 utmctl start "NixOS VM"              # start the VM
-ssh nixos-vm                         # then via the
-                                     # ~/.ssh/config.local entry
 utmctl stop "NixOS VM"               # when done
 ```
+
+Fleet SSH into the VM ended with ADR-042's edge narrowing (nixos-vm is a keyless sink, retiring); the entry points are the UTM console window for a shell in the guest and `utmctl` for lifecycle control.
 
 (The VM's display name in UTM is whatever the operator named it
 during creation — check `utmctl list` for the exact string.)
