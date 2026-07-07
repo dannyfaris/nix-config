@@ -1,3 +1,6 @@
+# macOS directory-metadata turds
+.DS_Store
+
 # Nix build outputs
 result
 result-*
