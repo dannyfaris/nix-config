@@ -553,7 +553,7 @@ The exact commands for each scenario live in the repository README and `CLAUDE.m
 
 For any host, bootstrap consists of the same conceptual phases:
 
-1. **Provide Nix.** Install Nix on the target machine, with flakes and the `nix-command` experimental feature enabled. The installer used should be the Determinate Systems installer with the upstream Nix variant (not Determinate Nix).
+1. **Provide Nix.** Install Nix on the target machine, with flakes and the `nix-command` experimental feature enabled. (⚠ Superseded for darwin/macOS bootstrap: the Determinate Systems installer recommended here aborted on the live mac-mini bring-up — the canonical path is now the **NixOS official installer**, per [docs/runbooks/darwin-bootstrap.md](./runbooks/darwin-bootstrap.md) §Provide Nix.)
 2. **Provide the repository.** Clone this repository onto the target machine. On NixOS hosts being installed from scratch, this may happen as part of the install process.
 3. **Activate.** Run the appropriate rebuild command (`darwin-rebuild switch` or `nixos-rebuild switch`) against the flake, targeting the specific host configuration.
 4. **Authenticate.** Sign into 1Password on the new machine to make runtime secrets available to the configured environment.
