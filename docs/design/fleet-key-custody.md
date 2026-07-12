@@ -1,6 +1,6 @@
 # Fleet key custody — one key, one role, one lifecycle
 
-**Status:** Proposed — design note (`docs/design/`). Not built. #526 (the identity-architecture hub its own comments recognize — comment 3, "the hub of the fleet's key-custody architecture"; supersedes its bench sequence with a moved-context revision); consumes ADR-042; imposes a constraint on #557; upstream of #563, #566, #572; adjacent #387, ADR-009, ADR-010, ADR-034. Drafted 2026-07-07. Expect an ADR on acceptance.
+**Status:** Proposed — design note (`docs/design/`). Not built. #526 (the identity-architecture hub its own comments recognize — comment 3, "the hub of the fleet's key-custody architecture"; supersedes its bench sequence with a moved-context revision); consumes ADR-042; imposes a constraint on #557; upstream of #563, #566, #572; adjacent #387, ADR-009, ADR-010, ADR-034. Drafted 2026-07-07; custody calls settled at review 2026-07-13. Expect an ADR on acceptance.
 
 ## Summary
 
@@ -35,7 +35,7 @@ Forces any custody model must satisfy:
 **Three key classes, three lifecycles.**
 
 1. **Machine-decryption identities — host-key-derived, reproducible-from-source.** Each NixOS host that holds a secret decrypts via its `/etc/ssh/ssh_host_ed25519_key` through `ssh-to-age` (`sops.age.sshKeyPaths`, already the NixOS pattern). One per such host — metis today; jupiter/M720q/Pi as they land *and if they hold a secret*. Lifecycle: born with the host, dies with it, recovered by reprovisioning it (F4). **Darwin hosts get no machine identity** — they decrypt nothing; if a darwin secret is ever declared, neptune needs a real decryption identity and the host-key-vs-operator-key question reopens (migration trigger, below).
-2. **Operator identity — the standalone edit + recovery root.** A fresh `age-keygen` key with no SSH ancestry, listed as a recipient on every secret. It is what the operator uses to run `sops`/`sops updatekeys` from a daily-driver Mac (via `~/.config/sops/age/keys.txt`, repopulated from the vault — *not* derived from any SSH key), and it is the disaster-recovery root. Custody: 1Password as primary, **plus a second offline copy** (see F3/the open decision). Lifecycle: long-lived; rotated only on suspected compromise, and rotation is atomic across all copies (F5).
+2. **Operator identity — the standalone edit + recovery root.** A fresh `age-keygen` key with no SSH ancestry, listed as a recipient on every secret. It is what the operator uses to run `sops`/`sops updatekeys` from a daily-driver Mac (via `~/.config/sops/age/keys.txt`, repopulated from the vault — *not* derived from any SSH key), and it is the disaster-recovery root. Custody: 1Password as primary, **plus a second offline copy** (F3). Lifecycle: long-lived; rotated only on suspected compromise, and rotation is atomic across all copies (F5).
 3. **Re-homed roles (leaving the retiring triple-role key).** Fleet SSH → a fresh `dbf@neptune` key in `hostKeys.neptune` (passphrase-less per the #524 carve-out; ADR-042 defines the slot). GitHub → deregister the old key (git is HTTPS+token, ADR-009, so its registration is vestigial; a dedicated key only if SSH-git is ever genuinely wanted). The old `id_ed25519` retires once all three roles are re-homed.
 
 **The recipient set collapses, it does not grow.** Today: `nixos-vm, mercury, metis, mac` (where `mac` = the id_ed25519-derived triple-role key). Target: `metis` (+ future NixOS secret-holders) + `operator` (the standalone key). nixos-vm and mercury drop (retiring); `mac` becomes `operator` (standalone, severed from SSH/GitHub); neptune and saturn are *not* recipients (no darwin secrets — they *use* the operator key to edit, they don't hold a host identity; today's `mac` was already the operator recipient, not a neptune host key, so nothing host-shaped is being dropped for them). The bench's "every host incl. neptune gets a host key + the operator key" over-counted; the moved fleet is smaller and cleaner.
@@ -44,18 +44,18 @@ Forces any custody model must satisfy:
 
 1. `age-keygen` the standalone operator key → 1Password + the offline copy + (if #572 is live) the escrow, all three at once (F5).
 2. Add the new operator recipient to `.sops.yaml` *alongside* the existing `mac`; `sops updatekeys`. [old key still decrypts]
-3. Repopulate `~/.config/sops/age/keys.txt` on the Macs from the standalone key (not `id_ed25519`); runtime-verify `sops -d secrets/secrets.yaml` on neptune and saturn (set ≠ enforced). [darwin change is *repopulate*, not flip-to-host-key]
+3. Repopulate `~/.config/sops/age/keys.txt` on neptune from the standalone key (not `id_ed25519`); runtime-verify `sops -d secrets/secrets.yaml` on neptune (set ≠ enforced; saturn is not yet stood up — it bootstraps straight onto the new model, its check landing with step 7's runbook rewrite). [darwin change is *repopulate*, not flip-to-host-key]
 4. Fresh `dbf@neptune` fleet SSH key → swap `hostKeys.neptune`; re-switch destinations per the ADR-042 edges; verify fleet SSH.
 5. Deregister the old key from GitHub; verify `gh` flows unaffected.
-6. Drop the old `mac` recipient *and* the retiring `nixos-vm` + `mercury` recipients from `.sops.yaml`; `sops updatekeys`; retire the old key file.
-7. Reconcile the living references in the same change: `.sops.yaml`'s recovery comment (rewrite — no longer "back up `id_ed25519`"), `modules/darwin/sops.nix`'s now-inverted rationale comment, `docs/desktop/1password.md`, `docs/runbooks/darwin-bootstrap.md`, ADR-010 §History, and record the #557 disk-seal-not-key-bind invariant where #557 will see it.
+6. Drop the old `mac` recipient *and* the retiring `nixos-vm` + `mercury` recipients from `.sops.yaml`; `sops updatekeys`; retire the old key file. (Operator-confirmed 2026-07-13: neither retiring host rebuilds again before decommission. A post-drop rebuild would fail activation — `dbf-password` is `neededForUsers`.)
+7. Reconcile the living references in the same change: `.sops.yaml`'s recovery comment (rewrite — no longer "back up `id_ed25519`"), `modules/darwin/sops.nix`'s now-inverted rationale comment, `docs/desktop/1password.md`, `docs/runbooks/darwin-bootstrap.md` (picks up saturn's step-3 `sops -d` check), ADR-010 §History, and record the #557 disk-seal-not-key-bind invariant where #557 will see it.
 
 **Two invariants this hub imposes on its neighbours:**
 
 - **On #557 (verified from pinned sops-nix source):** the host-key machine tier reads `/etc/ssh/ssh_host_ed25519_key` as a plain file (`importAgeSSHKeys` → `os.ReadFile`). #557 may seal the *disk* (LUKS + TPM-sealed passphrase; the key is a normal file once booted — composes fine) but must **not** TPM-*bind* the host key (key never on disk — breaks derivation on every host, silently). If TPM-bound keys are ever wanted, this tier migrates to an `age-plugin-tpm` identity (`sops.age.plugins`; not in the current pin) — a deliberate, separate decision, not a side effect of #557.
 - **On #572/#566:** the operator key is the escrowed artifact (#572) and the sole surviving credential at network-dark recovery (#566). Both make F5 (atomic rotation) and the offline copy (F3) non-optional — a rotation that updates the vault but not the escrow leaves #572 decrypting nothing; a vault-only root can't be reached in #566's from-zero scenario.
 
-How the design meets the forces: F1 (three single-role classes; the triple-role key retired), F2 (the standalone operator key is host-independent by construction), F3 (the offline copy — the open decision — closes the network-dark gap the de-risk found), F4 (host keys reproduce on reprovision; no machine-key backup needed), F5 (atomic-rotation invariant, guarded by #569's heartbeat on the escrow), F6 (consumes ADR-042's slot, imposes the #557 invariant, retires #558's dead CA leg), F7 (the sequence is seven steps done once; the standing ritual is just "rotate all three copies together," rare).
+How the design meets the forces: F1 (three single-role classes; the triple-role key retired), F2 (the standalone operator key is host-independent by construction), F3 (the offline copy closes the network-dark gap the de-risk found), F4 (host keys reproduce on reprovision; no machine-key backup needed), F5 (atomic-rotation invariant, guarded by #569's heartbeat on the escrow), F6 (consumes ADR-042's slot, imposes the #557 invariant, retires #558's dead CA leg), F7 (the sequence is seven steps done once; the standing ritual is just "rotate all three copies together," rare).
 
 ## De-risk evidence
 
@@ -69,7 +69,7 @@ Verified this session (pinned source, the repo, official docs):
 Unverified / needs on-host check, stated rather than implied:
 
 - **1Password offline reach (#566)** — official docs indicate 1Password 8 unlocks offline on a *previously-synced, cached-session* device, but a new device or expired session needs a server round-trip. So the durable root is reachable for a running fleet but **not guaranteed in #566's from-zero network-dark rebuild** — the gap the offline-copy decision closes. The exact session-expiry edge needs an on-box check; the architectural gap does not.
-- **The offline-copy medium** (paper age key, hardware token, cold storage) is an open operator decision, below.
+- **The offline-copy medium** (paper age key, hardware token, cold storage) is deferred to implementation, below.
 - Step 3's darwin `sops -d` verification and step 5's `gh`-flow check are on-host confirmations at implementation, not pre-verifiable here.
 
 ## Drawbacks
@@ -87,7 +87,7 @@ The standing price: rotating the operator key is now a three-place atomic update
 
 - **A0 — keep the triple-role key.** Fails F1/F2 outright; the surfaced supply-chain-plus-recovery entanglement stands. Rejected — this is the problem.
 - **A1 — the bench sequence as written** (flip neptune to a host-key path; every host incl. neptune a recipient). Correct in shape but drawn for the old fleet: it builds a darwin host identity for a host that decrypts nothing, keeps the retiring hosts as recipients, and carries the darwin-timing risk it flagged. Superseded, not reversed — same two-tier destination, a plan that matches the current fleet.
-- **A2 — vault-only operator key (no offline copy).** Simpler custody, satisfies F1/F2, but fails F3 in #566's from-zero network-dark case (the de-risk finding). Viable *if* the operator scopes network-dark-from-zero recovery to #566 and accepts the 1Password-session dependency otherwise — a legitimate call, surfaced below.
+- **A2 — vault-only operator key (no offline copy).** Simpler custody, satisfies F1/F2, but fails F3 in #566's from-zero network-dark case (the de-risk finding). Viable *if* the operator scopes network-dark-from-zero recovery to #566 and accepts the 1Password-session dependency otherwise — a legitimate call, declined at review (below).
 - **A3 — this model (host-derived machine keys + standalone operator key, vault + offline).** The only option satisfying F1–F7 together, at the cost of the on-disk-Macs drawback and the offline-copy obligation. Doing nothing keeps A0's live entanglement.
 
 ## Prior art
@@ -97,11 +97,15 @@ The standing price: rotating the operator key is now a three-place atomic update
 
 ## Unresolved questions
 
-The operator's calls at review:
+Settled at review (operator, 2026-07-13):
 
-- **The offline copy (F3 vs F7).** Does the operator key get a second offline copy (paper/hardware) to satisfy #566's from-zero network-dark recovery — or does #526 scope that case to #566 and accept the 1Password-session dependency (A2)? Lean: require the offline copy; it is cheap and #566's entire premise is a reachable sole-surviving credential.
-- **Whether the #557 invariant is imposed or the plugin path is left open.** Record "seal the disk, don't TPM-bind the host key" as a constraint on #557 (lean, matches likely intent) — or accept that #557 may migrate the machine tier to `age-plugin-tpm`.
-- **The offline-copy medium**, if adopted — paper vs hardware vs cold storage; deferred to implementation.
+- **The offline copy (F3 vs F7): required.** The operator key gets a second offline copy alongside the vault; A2 (vault-only, scoping the network-dark case to #566) was declined.
+- **The #557 invariant: imposed.** "Seal the disk, don't TPM-bind the host key" is recorded as the constraint on #557; `age-plugin-tpm` stays the documented escape hatch, a deliberate future migration rather than a #557 side effect.
+- **Step 6's folded-in recipient drop: confirmed** — the retiring hosts do not rebuild again before decommission (the step-6 clause).
+
+Still open:
+
+- **The offline-copy medium** — paper vs hardware vs cold storage; deferred to implementation.
 - Out of scope, named not decided: #563's fleet signing key (another standalone key on this model — vault + offline + escrow — deferred to its own note); the AI-account custody leg (#387 — same *template*, but recovery codes are not age keys, so a sibling custody item, not a sops recipient); #572's escrow *procedure* (this note fixes the artifact it escrows and the atomic-rotation invariant, not the succession runbook); #557's own mechanism.
 
 ## Future possibilities
