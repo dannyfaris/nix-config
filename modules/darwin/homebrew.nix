@@ -88,6 +88,7 @@ in
       "wispr-flow" # docs/desktop/wispr-flow.md
       "alt-tab" # docs/desktop/alt-tab.md
       "karabiner-elements" # docs/desktop/karabiner.md
+      "logitune" # docs/desktop/logi-tune.md
     ];
     # Mac App Store apps installed via mas-cli per ADR-031 clause 3.
     # Keys are display-only; the numeric ID is the load-bearing
