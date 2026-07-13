@@ -392,10 +392,7 @@ Run from the new Mac's user shell.
   via direnv and exports `SOPS_AGE_KEY_FILE`, so no env-var
   ceremony is needed. (If you see "no identity found", verify you
   `cd`d into the repo — outside it, the env var is not set.)
-- macchina banner renders at every new interactive fish shell — every
-  terminal tab, every zellij pane. The Apple-logo ASCII should display
-  with colour. **If the `$2`/`$3`/etc. characters render literally
-  rather than as colour escapes**, see Troubleshooting below.
+- macchina banner renders at every new interactive fish shell — every terminal tab, every zellij pane. The Apple-logo ASCII should display in the host's Stylix two-tone colours (base0D stem/leaf, base0C body). **If it renders uncoloured**, see Troubleshooting below.
 - `hx` opens a `.nix` file with `nixd` LSP working — hover over
   `programs.git` shows the option's type. `:lsp-restart` if
   uncertain. (The binary is `hx`, not `helix` — `which helix`
@@ -572,16 +569,9 @@ Neither is used in this config, so the gaps don't block activation,
 but if a future module reaches for those options, expect eval
 failures until upstream lands fixes.
 
-### macchina ASCII art renders `$2`/`$3` literally
+### macchina Apple-logo banner renders uncoloured
 
-The Apple-logo `ascii.txt` in `home/darwin/macchina-shell-init.nix`
-uses macchina's `$N` palette-index colour-escape syntax (operator-
-supplied). If the colours don't apply and you see literal `$2`,
-`$3`, etc. characters in the banner output, the syntax isn't
-honoured by the macchina version we ship. Mitigation: replace the
-`$N` markers with explicit ANSI 4-bit colour escapes
-(`\033[3{N}m...\033[0m`) in the module — same pattern the NixOS
-sibling uses for Stylix-driven colours.
+The Apple-logo `ascii.txt` in `home/darwin/macchina-shell-init.nix` injects Stylix true-colour (24-bit) ANSI escapes directly — the same mechanism as the NixOS sibling. (macchina's `$N` palette-index syntax is inert in `custom_ascii` files — markers print literally; the module used it historically and rendered uncoloured until #310.) If the banner renders uncoloured: confirm the terminal supports true colour, and that the HM-generated `~/.config/macchina/ascii.txt` contains `38;2;` escape sequences.
 
 ## What this runbook does NOT cover
 
