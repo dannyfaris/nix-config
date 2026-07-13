@@ -408,7 +408,7 @@ let
       # ---------- polarity helper ----------
       # Read the current polarity from dconf (portal axis).
       current_polarity() {
-        val=$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
+        val=$(${pkgs.dconf}/bin/dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
         if [ "$val" = "'prefer-dark'" ]; then echo "dark"; else echo "light"; fi
       }
 
@@ -464,11 +464,13 @@ let
       ln -sf "$state/current/colors-''${new_polarity}.json" "$state/colors.json"
 
       # ---------- polarity fan-out: dconf ----------
+      # Always write (idempotent) so a fresh machine whose seed ran bus-less
+      # self-heals on the next interactive switch.
       if [ "$new_polarity" = "dark" ]; then
-        dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" || \
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" || \
           echo "theme: dconf write failed (non-fatal outside session)" >&2
       else
-        dconf write /org/gnome/desktop/interface/color-scheme "'default'" || \
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'default'" || \
           echo "theme: dconf write failed (non-fatal outside session)" >&2
       fi
 
@@ -584,15 +586,20 @@ in
       # Branch A: seed from boot default
       $DRY_RUN_CMD ln -sfn "$data/$boot_default" "$state/current"
       _polarity="$boot_polarity"
-      # Write dconf polarity (only on seed — never on rebuild with valid pointer)
+      # Write dconf polarity (only on seed — never on rebuild with valid pointer).
+      # Absolute path: HM activation PATH lacks dconf; bare calls failed silently
+      # — caught by runtime verification, #609.
       if [ "$_polarity" = "dark" ]; then
-        $DRY_RUN_CMD dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" 2>/dev/null || true
+        $DRY_RUN_CMD ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" \
+          || echo "theme-menu: warning: dconf polarity write failed" >&2
       else
-        $DRY_RUN_CMD dconf write /org/gnome/desktop/interface/color-scheme "'default'" 2>/dev/null || true
+        $DRY_RUN_CMD ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'default'" \
+          || echo "theme-menu: warning: dconf polarity write failed" >&2
       fi
     else
-      # Branch B: read current polarity from dconf (don't change it)
-      _dconf_val=$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
+      # Branch B: read current polarity from dconf (don't change it).
+      # Absolute path: HM activation PATH lacks dconf (#609).
+      _dconf_val=$(${pkgs.dconf}/bin/dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
       if [ "$_dconf_val" = "'prefer-dark'" ]; then
         _polarity="dark"
       else
