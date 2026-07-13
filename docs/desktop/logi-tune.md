@@ -38,7 +38,7 @@ No `CustomUserPreferences` keys — the updater is not Sparkle; the `SU*` keys d
 
 ## Sharp edges
 
-**Manual installer cask.** `logitune` uses `installer manual: "LogiTuneInstaller.app"` — Homebrew mounts the DMG and runs the bundled installer application rather than copying a `.app` directly. On first `nh darwin switch` after adding the cask, Homebrew will launch the Logi Tune installer GUI. The operator must click through it; the activation blocks until the installer exits. Subsequent `nix-darwin switch` runs should skip the install once the cask receipt is recorded — confirm on first activation that Homebrew does not re-launch the installer GUI on a second switch (idempotency for `installer manual:` casks is less well-defined than for `app` or `pkg` types). No equivalent automation path exists — Logi Tune does not ship a silent-install mode in the cask's public release.
+**Manual installer cask — brew stages it, the operator installs it.** `logitune` uses `installer manual: "LogiTuneInstaller.app"`: Homebrew mounts the DMG, stages the installer app in the Caskroom, records the cask receipt, and completes — it does **not** launch the installer, and activation does not block. Completing the install is a one-time operator step after the switch: `open "/opt/homebrew/Caskroom/logitune/<version>/LogiTuneInstaller.app"` and click through the GUI. Consequence of the receipt-before-install ordering: Homebrew considers the cask installed whether or not the app exists, so subsequent switches re-launch nothing — and nothing ensures the app is actually present until the staged installer has been run once (§Verification's first check is the guard). No silent-install mode exists in the cask's public release.
 
 **TCC prompts on first use.** Logi Tune requires Camera access to control webcam settings. macOS will surface a TCC prompt on first launch: System Settings → Privacy & Security → Camera. One-time; not declaratively grantable from nix-darwin.
 
@@ -48,13 +48,15 @@ No `CustomUserPreferences` keys — the updater is not Sparkle; the `SU*` keys d
 
 ## Verification
 
-After the first `nh darwin switch` that installs Logi Tune, confirm the expected post-install state:
+After the first `nh darwin switch` stages the cask *and the operator has run the staged installer* (§Sharp edges), confirm the expected post-install state:
 
 ```bash
-# App is in place
-ls /Applications/LogiTune.app
+# App is in place — the installer writes "Logi Tune.app" (with a space;
+# the upstream cask's uninstall stanza names a space-less path — stale)
+ls "/Applications/Logi Tune.app"
 
-# LaunchAgent registered (user-session)
+# LaunchAgent registered (user-session; registers at the next login, not
+# immediately after the installer exits)
 launchctl print gui/$(id -u)/com.logitech.logitune.launcher
 
 # LaunchDaemon registered (system)
