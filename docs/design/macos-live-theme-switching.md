@@ -1,6 +1,6 @@
 # macOS live theme switching — polarity sync, themed wallpaper pools, native-first fan-out
 
-**Status:** Proposed — design note (`docs/design/`). Stage 1 built and runtime-verified on neptune (2026-07-02); stage 2 not built. #499 · sibling to [colour-conductor.md](./colour-conductor.md) (the Linux half of the same ambition); no ADR relationship yet — expected to graduate alongside implementation if accepted.
+**Status:** Accepted (2026-07-13) — design note (`docs/design/`). Stage 1 built and runtime-verified on neptune (2026-07-02; #499 closed complete for stage 1, 2026-07-13); stage 2 (named-theme menu) not built and not yet scoped to an issue — its open items live in §Unresolved questions. #499 · sibling to [colour-conductor.md](./colour-conductor.md) (the Linux half of the same ambition); no ADR relationship yet — expected to graduate alongside stage 2 if that lands.
 
 ## Summary
 
