@@ -107,7 +107,7 @@ Structurally, foundation is a bundle. The `bundle-purity` rule (§8.1) applies t
 
 A bundle is a file at `modules/<platform>/bundles/<name>.nix` (or `home/<platform>/bundles/<name>.nix`). Its body is an `imports` list naming two or more modules toward a coherent named capability.
 
-Bundle names describe what is in the bundle, not what kind of host imports it. Illustrative examples (final decomposition lives in slice 2 of the role-removal migration):
+Bundle names describe what is in the bundle, not what kind of host imports it. Illustrative examples:
 
 - `remote-access` — sshd + ghostty.terminfo
 - `cli-tooling` — shell + prompt + direnv + multiplexer + editor + cli-utils + nix-tooling
@@ -176,8 +176,10 @@ docs/
   desktop/                   # Wayland desktop living docs
   darwin/                    # macOS host living docs
   research/                  # point-in-time research notes
+  design/                    # pre-implementation design notes (doc-before-code)
   agents/                    # AI coding-agent living docs
   runbooks/                  # operational procedures
+  reviews/                   # record-coherence sweeps and adversarial review records
 hosts/
   <hostname>/
     default.nix              # imports list + identifying data

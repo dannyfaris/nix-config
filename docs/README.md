@@ -92,9 +92,7 @@ host sees it. See CLAUDE.md §"Agent memory lives in git, not local state".
   [headless-bootstrap.md](./runbooks/headless-bootstrap.md) —
   bringing up a new headless NixOS host (AWS or bare-metal) from
   clean OS to `nh os switch` via `nixos-anywhere` + `disko`. And
-  [darwin-bootstrap.md](./runbooks/darwin-bootstrap.md) — bringing up
-  a new macOS host from clean state to `nh darwin switch` via the
-  Determinate Systems installer + `nix run nix-darwin -- switch`.
+  [darwin-bootstrap.md](./runbooks/darwin-bootstrap.md) — bringing up a new macOS host from clean state to `nh darwin switch` via the NixOS official installer + `nix run nix-darwin -- switch`.
 
 ## Reading order
 
