@@ -25,6 +25,8 @@ keys:
   - &mercury  age1vze2vqnjtmyltqez5uw3g5dzr64wa0qaz0mwngvq662djxcwlefsnjlx2t
   - &metis    age1fum23dvym045wsc0g85lgtpvhjgekj66nkg9krslx0fa8ahmyffsu5nj2t
   - &mac      age1qh0dm468a2pqr9rs4wr0zxslfmart8as8s7md93ah6dgd9rw55kqu94frp
+  # Standalone operator key (edit + recovery root) — supersedes &mac at rotation step 6; see docs/design/fleet-key-custody.md.
+  - &operator age12dv25pjp7xccjagz2mmpg0pcwutee8eut34tuaqzaqn9wvqmvysqumvgx8
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
@@ -34,3 +36,4 @@ creation_rules:
           - *mercury
           - *metis
           - *mac
+          - *operator
