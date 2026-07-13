@@ -23,6 +23,12 @@ _: {
     # Foundation — bundle every Darwin host imports by convention.
     ../../modules/darwin/foundation.nix
 
+    # AeroSpace 0.21.2-Beta overlay (ahead of the nixpkgs pin). Carries
+    # an eval-time versionGate that throws once nixpkgs catches up.
+    # See the module header for the retirement contract and the TCC
+    # Accessibility re-grant step required after switching.
+    ../../modules/darwin/overlay-packages.nix
+
     # nix-homebrew + declarative cask list per ADR-031. The cask + masApps
     # list is fleet-shared (single source of truth in homebrew.nix), so
     # saturn carries the same full work + personal app set as neptune.
