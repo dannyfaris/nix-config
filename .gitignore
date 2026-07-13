@@ -21,3 +21,6 @@ result-*
 # under that directory tracks cleanly.
 .claude/scheduled_tasks.lock
 .claude/pr-body-*.md
+# Agent git-worktrees — per-session sibling checkouts, never content of
+# this tree (statix.toml carries the matching lint-side exclusion).
+.claude/worktrees/
