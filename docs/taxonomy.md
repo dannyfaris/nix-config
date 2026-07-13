@@ -244,7 +244,7 @@ Whether a planet carries moons is itself the owned-vs-rented marker: your own me
 
 ## The fleet
 
-The framework and every name below are ratified ([#368](https://github.com/dannyfaris/nix-config/issues/368)); the per-host directory renames roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands. The pilot — `mac-mini` → `neptune` ([#403](https://github.com/dannyfaris/nix-config/issues/403)) — has landed; `metis` → Mars and `nixos-vm` → Triton are still pending.
+The framework and every name below are ratified ([#368](https://github.com/dannyfaris/nix-config/issues/368)); the per-host directory renames roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands. The pilot — `mac-mini` → `neptune` ([#403](https://github.com/dannyfaris/nix-config/issues/403)) — has landed; `metis` → Mars is still pending (`nixos-vm`'s rename is mooted — reserve-typed per [#448](https://github.com/dannyfaris/nix-config/issues/448), and the host is retiring).
 
 | Target name | Class | Machine | `hosts/` dir today |
 |------|-------|---------|--------------------|
@@ -253,6 +253,6 @@ The framework and every name below are ratified ([#368](https://github.com/danny
 | **Mars** | moon-capable planet | NixOS x86_64 work + personal dev (ProDesk) | `metis` |
 | **Neptune** | moon-capable planet | darwin home Mac | `neptune` |
 | **Mercury** | moonless planet | AWS EC2 x86_64 work, headless | `mercury` (name survives) |
-| **Triton** | moon (of Neptune) | UTM/aarch64 refinement VM, pinned to the home Mac | `nixos-vm` |
+| *(minor-body reserve — no name minted)* | minor body (reserve) | UTM/aarch64 refinement VM on a non-host Mac; retiring | `nixos-vm` |
 
 VPS hosts cap at two — only Mercury and Venus are moonless among the major planets (a deliberate ceiling, per ADR-038). Moon-capable planets and the minor-body reserve both scale freely; per-planet moon budgets do not (Mars has only two named moons).

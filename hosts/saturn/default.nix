@@ -72,6 +72,11 @@ _: {
     # docs/design/macos-deterministic-tiling.md (ADR-040 Stage 2, #494).
     ../../modules/darwin/jankyborders.nix
 
+    # Weekly launchd daemon to prune dead GC roots. nix-darwin does not
+    # automatically remove dangling gcroot symlinks, so dead `result` links
+    # silently pin store paths against GC (#512).
+    ../../modules/darwin/nix-gcroots-cleanup.nix
+
     # Deliberately NOT imported (both laptop-driven; their absence is the
     # design, not an oversight):
     #   - sshd.nix — saturn is an SSH client, not a server; no inbound SSH

@@ -16,4 +16,10 @@
 ignore = [
   "hosts/*/hardware-configuration.nix",
   "hosts/nixos-vm/hardware.nix",
+  # Not part of the ADR-023 carve-out: agent git-worktrees are sibling
+  # checkouts, not this tree's content — statix's whole-tree scan must not
+  # descend into them (their copies of the globs above don't match the
+  # relative patterns). Their derived regex/treefmt forms are inert:
+  # pre-commit's per-file hooks and CI checkouts never see this path.
+  ".claude/worktrees",
 ]

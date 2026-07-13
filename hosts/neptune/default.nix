@@ -89,9 +89,7 @@ _: {
 
     # Weekly launchd daemon to prune dead GC roots. nix-darwin does not
     # automatically remove dangling gcroot symlinks, so dead `result` links
-    # silently pin store paths against GC (#512). Saturn does not import
-    # this — both hosts share the same upstream gap, so it is a candidate
-    # there too (tracked separately rather than silently extended here).
+    # silently pin store paths against GC (#512).
     ../../modules/darwin/nix-gcroots-cleanup.nix
 
     # launchd job-failure surfacing via ntfy (#346). Polls every 10 minutes
