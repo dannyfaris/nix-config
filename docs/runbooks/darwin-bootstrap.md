@@ -37,6 +37,8 @@ It **must** be `dbf` exactly. `lib/operator.nix`'s `name` field is the single so
 
 The Full Name (the display name) can be anything.
 
+Take Setup Assistant's other offers where they appear: **Touch ID fingerprint enrolment** (without it the declared `pam_tid` sudo silently falls back to password — docs/darwin/touch-id.md §Prerequisite) and **FileVault** (turning the §FileVault step below into verify-only; saturn's declared Phase-1 build has FileVault on from bring-up — `hosts/saturn/default.nix`, leaned on by the key-custody chain, ADR-043).
+
 ### 1 — Install the operator age identity from the vault
 
 The Mac edits fleet secrets with the standalone operator age key — the fleet's edit + disaster-recovery root (docs/design/fleet-key-custody.md). It is held in 1Password (item "sops age key - operator", with a second offline copy) and has no SSH ancestry: nothing is carried over from another machine, and no key is derived from any SSH keypair.
@@ -94,6 +96,8 @@ git clone https://github.com/dannyfaris/nix-config.git ~/nix-config
 cd ~/nix-config
 ```
 
+The CLT prompt *aborts* the triggering command (`xcrun: error: invalid active developer path`) — re-run the clone once the install completes.
+
 The expected path is `/Users/dbf/nix-config` — this matches
 `hostContext.flakePath`'s Darwin default in
 `modules/darwin/host-context.nix` (`${operator.darwinHome}/${operator.flakeRepoDirname}`).
@@ -131,12 +135,7 @@ user account — without that, `id -u dbf` returns nothing.
 id -u dbf
 ```
 
-macOS's first-user default is 501. Pin this value in
-`hosts/<host>/default.nix` as `users.users.dbf.uid = <value>;` *and*
-`users.knownUsers = [ "dbf" ];` (see `modules/darwin/users.nix` — the
-foundation declares the rest, but the UID is host-specific and must
-match what macOS assigned during first-boot setup; nix-darwin refuses
-to manage a user with a mismatched UID).
+macOS's first-user default is 501. Pin this value in `hosts/<host>/default.nix` as `users.users.dbf.uid = <value>;` — only the UID is host-specific; `users.knownUsers` is already declared foundation-wide via `modules/darwin/users.nix`, so don't restate it. The UID must match what macOS assigned during first-boot setup; nix-darwin refuses to manage a user with a mismatched UID.
 
 ### 6 — Move aside `/etc/{bashrc,zshrc}` (NixOS-installer safety guard)
 
@@ -240,11 +239,7 @@ prompt surfaced; treat this as "may appear, may not".)
 
 ## First activation
 
-> The `neptune` (and eventually `mba`) darwinConfiguration is its
-> own PR — the host file at `hosts/<host>/default.nix` plus the
-> mkDarwinHost invocation in `parts/darwin.nix`. If `nix flake show
-> .#darwinConfigurations` returns an empty attrset for your host, the
-> host PR hasn't landed yet — `git pull` the merge before continuing.
+> A new host's darwinConfiguration is its own PR — the host file at `hosts/<host>/default.nix` plus the mkDarwinHost invocation in `parts/darwin.nix`. If `nix flake show .#darwinConfigurations` returns an empty attrset for your host, the host PR hasn't landed yet — `git pull` the merge before continuing.
 
 The first activation needs `sudo` because `nix run nix-darwin -- switch`
 doesn't escalate on its own:
@@ -261,14 +256,25 @@ After this, `darwin-rebuild` is on PATH. Subsequent activations use
 either:
 
 ```bash
-darwin-rebuild switch --flake .#<host>
+sudo darwin-rebuild switch --flake .#<host>
 # or
-nh darwin switch
+nh darwin switch   # self-elevates
 ```
 
 `nh darwin switch` is the canonical command going forward (parallel
 to `nh os switch` on NixOS); `NH_FLAKE` is set from
 `hostContext.flakePath` per ADR-019.
+
+## Post-activation — first-run grants, sign-ins, and staged installers (manual, per-tool)
+
+The app set carries non-declarable first-run ceremony beyond AeroSpace's own section below. Walk these once per Mac; each per-tool doc has the detail:
+
+- **Karabiner-Elements — without this, every Hyper bind is dead.** Three prompts (docs/desktop/karabiner.md §Sharp edges): the pkg installer's admin password; **DriverKit driver-extension approval** — System Settings → General → Login Items & Extensions → Driver Extensions → enable `Karabiner-DriverKit-VirtualHIDDevice`; and **Input Monitoring** for `karabiner_grabber`, `karabiner_observer`, and the Karabiner-Elements UI. Until the driver extension is approved, Karabiner runs but no remaps fire — Caps→Hyper never happens and every AeroSpace chord is silently inert, the same "running but does nothing" failure mode as the AeroSpace Accessibility grant.
+- **Tailscale — sign the Mac into the tailnet and approve its NetworkExtension** on first launch (docs/desktop/tailscale.md). Fleet SSH and Verification Phase 2's MagicDNS names depend on this.
+- **Installer-manual casks are staged, never run** (Homebrew records the receipt regardless — docs/desktop/logi-tune.md §Sharp edges). Today that's Logi Tune: `open "$(ls -d /opt/homebrew/Caskroom/logitune/*/LogiTuneInstaller.app | tail -1)"`, click through, expect the one-time Camera TCC prompt on first app launch.
+- **colima — one-time first start with explicit resources** (`colima start --cpu 4 --memory 4 --disk 100`; flag-less defaults are usually too tight, and the flags persist in the profile — docs/desktop/colima.md). Verify: `colima status` and `docker run --rm hello-world`.
+- **AltTab** (Accessibility + Screen Recording) and **Wispr Flow** (Accessibility + Microphone) prompt on first launch — approve per their docs.
+- **Touch ID:** confirm a fingerprint is enrolled (System Settings → Touch ID & Password) if Setup Assistant didn't do it (§0) — without enrolment the declared `pam_tid` sudo silently falls back to password (docs/darwin/touch-id.md).
 
 ## Post-activation — author `~/.ssh/config.local`
 
@@ -291,14 +297,12 @@ vs operator-maintained boundary:
 # — do NOT re-add them here: this file renders BEFORE the declared
 # blocks and would silently shadow them. Break-glass fallbacks only.
 
-Host mercury-aws
-  User dbf
-  HostName <mercury's current AWS DNS>
-
 Host metis-lan
   HostName <metis's LAN IP>
   User dbf
 ```
+
+(neptune's own `config.local` also carries a `mercury-aws` EC2 entry — neptune-era break-glass for a retiring host; new hosts don't add it.)
 
 Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares
 them by bare MagicDNS name (#517), resolvable once the Mac is signed
@@ -310,13 +314,15 @@ fallbacks.
 
 ## Post-activation — fleet SSH enrolment (#517 / #524 / ADR-042)
 
-Same steps as the headless runbook (see [headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment): generate this host's passphrase-less outbound user key (`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`), add its pubkey to `lib/operator.nix` `hostKeys`, add/extend the relevant `sshEdges` entries (ADR-042's declared-edge model), and commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to `hosts/<host>/` with its `ssh-known-hosts.nix` and `ssh.nix` entries. Existing hosts pick all of it up at their own next switch. saturn's client→destination flip has its own subsection in that runbook.
+Same steps as the headless runbook (see [headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment): generate this host's passphrase-less outbound user key (`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`), add its pubkey to `lib/operator.nix` `hostKeys`, add/extend the relevant `sshEdges` entries (ADR-042's declared-edge model), and commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to `hosts/<host>/` with its `ssh-known-hosts.nix` and `ssh.nix` entries. Existing hosts pick all of it up at their own next switch.
+
+Client-only hosts (saturn today) run the first three steps only — mint the key, add it to `hostKeys`, and add this host to the source lists of the destinations it should reach (metis, neptune). Committing a host public key + `ssh-known-hosts`/`ssh.nix` entries is the *destination flip's* work — saturn's pending flip has its own subsection in that runbook. The enrolment lands via a normal PR: run `gh auth login` first (git is HTTPS+token per ADR-009 — nothing earlier in this runbook sets up push auth).
 
 ## Post-activation — enable FileVault (manual, not declarable)
 
 `modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters on every Darwin host, and the threat differs by role: neptune is the SSH bastion holding shared fleet state, while saturn is a laptop that physically travels — theft or loss is its dominant threat. The step below applies to both.
 
-Enable it once, after first activation:
+Enable it once, after first activation — or take Setup Assistant's offer at §0 and make this step verify-only. On saturn this is required from bring-up — the declared Phase-1 build (`hosts/saturn/default.nix`; ADR-043's theft-at-rest bound leans on it) — not optional:
 
 ```bash
 # Prompts for the unlocking user's password, then prints the recovery key to
@@ -337,7 +343,9 @@ Notes:
 
 Inbound Screen Sharing (reach this host's desktop from another Mac over the tailnet, e.g. `vnc://neptune`) **cannot be declared.** nix-darwin has no option for it, and while the underlying `com.apple.screensharing` LaunchDaemon *is* loadable from the command line (`launchctl enable system/com.apple.screensharing`), that only brings the daemon up to listen on 5900 — it does **not** authorize the service. Apple changed Screen Sharing / Remote Management handling in macOS Monterey 12.1 and the "permitted" state is now TCC-gated: it can only be written through the System Settings UI, not by `sudo`, `launchctl`, `defaults`, or `kickstart`. A daemon-only enable connects, then fails with *"Screen Sharing is not permitted on this Mac. Disable and re-enable Screen Sharing or Remote Management in System Settings."* This was verified on neptune (macOS 26 Tahoe); a `launchctl`-driven activation module was prototyped and dropped for exactly this reason.
 
-Enable it once, after first activation:
+**Per-host: enable on neptune** (the always-on mini serving inbound desktop access); **skip on saturn** — a roaming laptop's declared posture is outbound-only (`hosts/saturn/default.nix` — no inbound surfaces), and once enabled, inbound VNC:5900 passes the ALF unconditionally (Apple-signed daemon).
+
+Where wanted, enable it once, after first activation:
 
 - **System Settings → General → Sharing → Screen Sharing → on.**
 
@@ -349,7 +357,7 @@ Notes:
 
 ## Post-activation — grant AeroSpace Accessibility + Mission Control settings (manual, not declarable)
 
-neptune's window manager is **AeroSpace** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md); `home/darwin/aerospace.nix`), with **JankyBorders** drawing the focus-border (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts both, but AeroSpace needs one manual grant before it can tile, and one Mission Control setting cleared. Neither is declarable — the grant is TCC-gated (same wall as Screen Sharing above), the setting is a per-user Dock preference AeroSpace reads at runtime.
+The Macs' window manager is **AeroSpace** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md); `home/darwin/aerospace.nix`), with **JankyBorders** drawing the focus-border (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts both, but AeroSpace needs one manual grant before it can tile, and one Mission Control setting cleared. Neither is declarable — the grant is TCC-gated (same wall as Screen Sharing above), the setting is a per-user Dock preference AeroSpace reads at runtime.
 
 ### AeroSpace needs the Accessibility permission
 
@@ -367,7 +375,7 @@ Deliberately called out so a future operator doesn't hunt for a missing permissi
 
 - **System Settings → Desktop & Dock → Mission Control → turn *off* "Automatically rearrange Spaces based on most recent use"** (verified on macOS 26 Tahoe). Equivalent from the shell: `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (`mru-spaces` = `0` when disabled).
 
-AeroSpace recommends this so macOS doesn't reorder Spaces out from under the tiler's Space-index tracking. neptune runs a **single** native Space (AeroSpace owns the workspace layer — ADR-040), so there is little for macOS to rearrange, but the setting is cleared as a precaution and to match AeroSpace's documented baseline. AeroSpace's guide lists further optional macOS tweaks (e.g. "Displays have separate Spaces", "Group windows by application") aimed at multi-monitor setups; none are needed on this single-display host.
+AeroSpace recommends this so macOS doesn't reorder Spaces out from under the tiler's Space-index tracking. The Macs each run a **single** native Space (AeroSpace owns the workspace layer — ADR-040), so there is little for macOS to rearrange, but the setting is cleared as a precaution and to match AeroSpace's documented baseline. AeroSpace's guide lists further optional macOS tweaks (e.g. "Displays have separate Spaces", "Group windows by application") aimed at multi-monitor setups; none are needed on these single-display hosts.
 
 ## Verification
 
@@ -394,55 +402,20 @@ Run from the new Mac's user shell.
   returns "not found"; that's expected.)
 - `which claude` and `which cursor-agent` both resolve — the base
   agent set is on every host (ADR-008).
-- `which codex` and `which agy` both resolve (neptune imports
-  `agent-clis-extras.nix` for the full agent set).
+- `which codex` and `which agy` both resolve (both Mac daily-drivers import `agent-clis-extras.nix` for the full agent set).
 
-### Phase 2 — SSH-context stack into the Linux fleet
+### Phase 2 — SSH-context stack into the fleet
 
-For each reachable Linux host (`mercury`, `metis`, `nixos-vm`),
-`ssh dbf@<host>` and verify the five signals visible and distinct.
+Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `metis` (and `neptune`, Mac-to-Mac). `mercury` and `nixos-vm` are retiring — mercury never learns a new host's key, and nixos-vm is a keyless sink (break-glass only, ADR-042).
 
-There are **two verification modes**, with different coverage:
+For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not** expect a terminal palette shift: ADR-041 deliberately retired the per-host palette repaint (TUIs follow the local terminal's palette; the Stylix fish target that emitted the OSC escapes was removed fleet-wide).
 
-| Signal | Interactive `ssh mercury` | Capture via `ssh -t mercury 'fish -ic exit'` |
-|---|---|---|
-| 1. Palette shift (per-host base16) | visual | OSC palette escapes (`]4;0;rgb:…`) emitted to stdout |
-| 2. Starship hostname segment | visual | starship `[custom]` over-SSH block fires in `~/.config/starship.toml` |
-| 3. Terminal tab title reflects the host | visual; **deferred on Darwin** | not observable without terminal-frontend support |
-| 4. macchina banner with NixOS logo + two-tone Stylix palette | visual | full banner emitted, escapes intact |
-| 5. Claude Code statusline colours | visual; requires `claude` over SSH | not observable without launching the agent |
+- **Starship prompt host marker** — the over-SSH `[custom]` block fires and names the remote host. This is *the* SSH-context signal post-ADR-041.
+- **macchina banner** — renders on the remote's interactive fish init with the distro logo. Capture-mode smoke test without eyeballing: `ssh -t <host> 'fish -ic exit'` emits the banner + prompt block to stdout (`interactiveShellInit` fires regardless of TTY presence).
+- **Terminal tab title** reflects the remote host (Ghostty is the `ghostty` cask on Darwin per ADR-031; tab-title behaviour matches Linux Ghostty).
+- Claude Code statusline per-host colours are **#411-pending** — don't gate the bring-up on them.
 
-The interactive mode is the canonical full check. The capture mode
-is useful for smoke-testing 1+2+4 without operator eyeballing
-(handy for CI or AI-assisted bootstrap); `interactiveShellInit` fires
-regardless of TTY presence so macchina's banner and the palette OSC
-escapes round-trip cleanly into stdout.
-
-Per-host palettes are defined in `lib/host-palettes.nix`:
-`nixos-vm` → catppuccin-mocha, `mercury` → tokyo-night-dark,
-`metis` → rose-pine, `neptune` → gruvbox-dark-hard.
-
-**Palette persistence after `exit` is expected, not a bug.** Signal 1's
-OSC palette escapes are stateful in the terminal: when the remote
-host's fish init emits `]4;…rgb:…` / `]11;…rgb:…` codes (via the
-`base16-<slug>` invocation from Stylix's fish target), the terminal
-repaints its runtime palette + background to the remote's base16.
-After `exit`, the local fish doesn't re-fire its `base16-<slug>`
-invocation on SSH return — no `fish_postexec` hook is wired today —
-so the terminal stays in the last-applied palette until something
-else emits OSC escapes (opening a new tab, SSHing somewhere else,
-restarting fish). Operators can read this as "lingering visual
-signal of last-touched host" — a feature in practice, not a defect.
-If a future operator prefers strict revert, the fix is a
-`fish_postexec` hook that re-runs the local Stylix palette OSC
-block.
-
-**Signal 3 on Darwin hosts** — Ghostty distributes as a native
-`.app` on macOS, not via nixpkgs (see issue #167 root cause); it
-is installed via the `ghostty` cask declared in
-`modules/darwin/homebrew.nix` per ADR-031. With the cask in place,
-tab-title verification works the same as on Linux Ghostty (signals
-1, 2, 4, 5 also in scope).
+Per-host palettes remain defined in `lib/host-palettes.nix` (saturn included); post-ADR-041 they no longer repaint terminals over SSH — the statuslines' ANSI conversion (#411) is the palette consumer still pending.
 
 ### Phase 3 — linux-builder
 
@@ -488,6 +461,8 @@ nc -zv localhost 31022
 second builder system to `nix.linux-builder.systems` — today only
 `aarch64-linux` is declared.
 
+Two calibration notes: the build target above rides `nixos-vm`, a retiring host — re-point this check at the then-current aarch64-linux target once it decommissions; and the ~30-minute first-build baseline was measured on an actively-cooled Mac mini — expect longer on a fanless MacBook Air.
+
 ## Subsequent updates
 
 Day-to-day:
@@ -501,23 +476,21 @@ nh darwin switch
 Generation rollback if something breaks:
 
 ```bash
-darwin-rebuild --rollback
+sudo darwin-rebuild --rollback
 # or pick a specific generation:
-darwin-rebuild --list-generations
-darwin-rebuild --switch-generation <N>
+darwin-rebuild --list-generations   # list is fine unprivileged
+sudo darwin-rebuild --switch-generation <N>
 ```
+
+(The `sudo` is load-bearing: the pinned darwin-rebuild hard-errors on switch/rollback/activate as non-root — "system activation must now be run as root".)
 
 ## Break-glass
 
 If `nh darwin switch` / `darwin-rebuild switch` produces a broken
 generation:
 
-1. **Roll back** — `darwin-rebuild --rollback` reverts to the previous
-   generation. Reliable because the rollback works entirely from
-   local generations and requires no network.
-2. **Physical console** — if you can't log in (broken shell config,
-   etc.), boot into Recovery (Cmd-R at boot) or the Apple-keyboard
-   admin login. macOS itself remains functional even when the
+1. **Roll back** — `sudo darwin-rebuild --rollback` reverts to the previous generation. Reliable because the rollback works entirely from local generations and requires no network.
+2. **Physical console** — if you can't log in (broken shell config, etc.), boot into Recovery (on Apple Silicon: shut down, then hold the power button until "Loading startup options" → Options) or the Apple-keyboard admin login. macOS itself remains functional even when the
    nix-darwin generation is broken — the OS isn't replaced by
    nix-darwin, only configured.
 3. **Disable the launchd job temporarily** — if a managed service
