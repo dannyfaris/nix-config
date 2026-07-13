@@ -185,11 +185,12 @@ bootstrap-clean:
 
 # One-time-per-clone operator setup. Derives ~/.config/sops/age/keys.txt
 # from an SSH private key — defaults to /etc/ssh/ssh_host_ed25519_key
-# (the local host's SSH key, which on the UTM VM is this repo's sops
-# decryption identity — same key sops-nix uses at activation time as
-# root). Operators can override with a user key to seed sops from a
-# non-host identity:
-#   just setup-sops-identity ~/.ssh/id_ed25519     # Mac operator flow
+# (the local host's SSH key — on a NixOS secret-holder like metis this
+# is the repo's sops decryption identity, the same key sops-nix uses at
+# activation time as root). NixOS hosts only: operator Macs do NOT
+# derive keys.txt from any SSH key — they populate it from the vault
+# (docs/runbooks/darwin-bootstrap.md pre-bootstrap step 1;
+# docs/design/fleet-key-custody.md).
 # sops doesn't read SSH keys directly (perms + format quirks:
 # SOPS_AGE_SSH_PRIVATE_KEY_FILE produced wrong age identities in sops
 # 3.12.1 testing), so we pre-convert via ssh-to-age. Reading the
@@ -206,10 +207,11 @@ bootstrap-clean:
 # passed (host key by default, user key when overridden). For it to
 # actually decrypt secrets/secrets.yaml, the derived age recipient
 # must be on .sops.yaml + sops updatekeys re-encrypted from a host
-# that already has decryption capability. As of 2026-05-25 the UTM VM,
-# Mercury, Metis, and the operator's Mac all hold seeds; a new
-# operator (or new key) needs the derived recipient added + sops
-# updatekeys run from any current seed-holder (see
+# that already has decryption capability. Current seed-holders: metis
+# (host-key identity) and the operator's Macs (standalone operator key,
+# from the vault — docs/design/fleet-key-custody.md); a new operator
+# (or new key) needs the derived recipient added + sops updatekeys run
+# from any current seed-holder (see
 # docs/runbooks/headless-bootstrap.md "Operator prerequisites").
 #
 # Tilde-expansion gotcha: invoke with an unquoted path so the caller's

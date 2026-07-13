@@ -14,27 +14,14 @@ the broader mac-mini onboarding context.
 
 ## Operator prerequisites
 
-Run once per fresh clone of this repo on the operator machine (the
-*existing* operator host — for the first Mac, that's the UTM VM or
-metis, since the Mac being bootstrapped doesn't yet have a working
-sops decryption identity):
+Run once per fresh clone of this repo on the operator machine:
 
 - `nix` with flakes enabled. Repo cloned. devShell entered once
   (`nix develop`, or direnv-reload via the repo's `.envrc`). The
   devShell's `shellHook` installs the pre-commit hooks (ADR-025) and
   exports `SOPS_AGE_KEY_FILE` so `sops --decrypt` works in-repo
   without env-var ceremony.
-- An existing age decryption identity for `secrets/secrets.yaml`. On
-  Linux operator hosts this comes from `just setup-sops-identity`
-  (see [`headless-bootstrap.md`](./headless-bootstrap.md) §Operator
-  prerequisites).
-- Daniel's Mac SSH key in `modules/nixos/users.nix` matches the
-  private key you intend to *carry over* to the new Mac (see
-  pre-bootstrap step 1 below). If you're minting a brand-new key on
-  the Mac instead, plan to update `modules/nixos/users.nix` and
-  re-key sops *before* attempting first activation — both `dbf@mac`
-  in `.sops.yaml` and the inbound-SSH whitelist on every NixOS host
-  derive from the same keypair.
+- Vault access (1Password) from the new Mac or a neighbouring signed-in device. Nothing key-shaped is carried between machines: the Mac's sops identity is populated from the vault in pre-bootstrap step 1, and its fleet SSH key is minted on-box at §Fleet SSH enrolment and lands via a normal PR (docs/design/fleet-key-custody.md).
 
 ## Pre-bootstrap (operator-side, on the Mac)
 
@@ -46,71 +33,25 @@ must run in order — each depends on the previous.
 Walk through Setup Assistant. The only setting that matters downstream
 is **Account Name** (the Unix short name shown under "Username" /
 "Account Name" — Setup Assistant auto-derives one from the Full Name).
-It **must** be `dbf` exactly. `lib/operator.nix:24` is the single source
-of truth; `users.users.dbf`, `home-manager.users.dbf`, `/Users/dbf`,
-and the `&mac` sops recipient pathway all key off this string.
+It **must** be `dbf` exactly. `lib/operator.nix`'s `name` field is the single source of truth; `users.users.dbf`, `home-manager.users.dbf`, `/Users/dbf`, and the sops `age.keyFile` path (`~/.config/sops/age/keys.txt` under `darwinHome`) all key off this string.
 
 The Full Name (the display name) can be anything.
 
-### 1 — Carry over the operator SSH keypair
+### 1 — Install the operator age identity from the vault
 
-The `dbf@mac` recipient in `.sops.yaml` is derived from a specific
-ed25519 keypair the operator has been using. The same public key is
-declared in `lib/operator.nix` `hostKeys` (as `dbf@neptune`) and
-reaches every host it has an `sshEdges` entry for (ADR-042). **Minting
-a new key on the Mac breaks both ends silently**:
+The Mac edits fleet secrets with the standalone operator age key — the fleet's edit + disaster-recovery root (docs/design/fleet-key-custody.md). It is held in 1Password (item "sops age key - operator", with a second offline copy) and has no SSH ancestry: nothing is carried over from another machine, and no key is derived from any SSH keypair.
 
-- Sops decryption will fail at activation when it can't open
-  `secrets/secrets.yaml` for the `dbf@mac` recipient.
-- `ssh dbf@<linux-host>` from the new Mac will be refused because the
-  whitelisted key doesn't match.
+1Password itself isn't installed yet at this point (its cask arrives at first activation) — use 1Password's web vault in Safari, or copy from another signed-in device via Universal Clipboard.
 
-Identify the right keypair on the source machine. **Filename is not
-authoritative** — `id_ed25519` / `id_ed25519_personal` / etc. may
-coexist, and the key comment (`dbf@mac`) is not an identity guarantee.
-The keypair-of-record is identified by public-key body. Disambiguate:
+Populate `~/.config/sops/age/keys.txt`. Type the command first and press Enter only after the copy — the 1Password item's full contents must be the *last* thing copied (any copy in between, including re-copying the command itself, silently clobbers the clipboard and writes junk):
 
 ```bash
-# On the source machine, find the .pub whose key body matches the
-# `&mac` recipient's public key from lib/operator.nix:
-grep -l "AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI" \
-  ~/.ssh/*.pub
+umask 077
+mkdir -p ~/.config/sops/age
+pbpaste > ~/.config/sops/age/keys.txt && chmod 600 ~/.config/sops/age/keys.txt && pbcopy < /dev/null
 ```
 
-Transfer to the new Mac via Remote Login + `scp` (the canonical path):
-
-1. On the new Mac: System Settings → General → Sharing → Remote Login
-   on. Restrict access to "Only these users: dbf".
-2. From the source machine:
-
-   ```bash
-   scp ~/.ssh/<the-right-key>{,.pub} dbf@<new-mac>:~/.ssh/
-   ```
-
-3. On the new Mac, fix permissions (`scp` doesn't preserve them):
-
-   ```bash
-   chmod 700 ~/.ssh
-   chmod 600 ~/.ssh/id_ed25519
-   chmod 644 ~/.ssh/id_ed25519.pub
-   ```
-
-   Rename the private key to `id_ed25519` if it had a non-default name
-   on the source — every downstream step (age derivation, ssh defaults)
-   assumes that filename.
-
-AirDrop and USB-stick variants work and may be more convenient if
-Remote Login can't reach the source. Either way, end state must be the
-same two files at `~/.ssh/id_ed25519{,.pub}` with the perms above.
-
-If you've genuinely lost the old keypair, the recovery path is:
-generate a new key, update its `lib/operator.nix` `hostKeys` entry,
-update `.sops.yaml`'s `mac` anchor (use `nix shell nixpkgs#ssh-to-age -c
-ssh-to-age -i ~/.ssh/id_ed25519.pub` to derive the new age
-recipient — drop the old anchor value at the same time so it can't
-be silently re-used), `sops updatekeys secrets/secrets.yaml` on an
-existing operator host, and push the changes to the repo *before*
-continuing.
+Verification is step 4 — it needs `nix` (installed in step 2) for `age-keygen`.
 
 ### 2 — Install Nix
 
@@ -166,33 +107,22 @@ it isn't a problem):
 nix shell nixpkgs#git -c git clone https://github.com/dannyfaris/nix-config.git ~/nix-config
 ```
 
-### 4 — Install the operator age identity
-
-The Darwin sops module reads `~/.config/sops/age/keys.txt` (see
-`modules/darwin/sops.nix`). Derive the age key from the SSH key
-carried over in step 1:
-
-```bash
-mkdir -m 700 -p ~/.config/sops/age
-nix shell nixpkgs#ssh-to-age -c \
-  ssh-to-age -private-key -i ~/.ssh/id_ed25519 \
-                          -o ~/.config/sops/age/keys.txt
-chmod 600 ~/.config/sops/age/keys.txt
-```
-
-### 5 — Verify the age key matches the `&mac` recipient
+### 4 — Verify the operator age identity
 
 ```bash
 nix shell nixpkgs#age -c age-keygen -y ~/.config/sops/age/keys.txt
 ```
 
-Output must match `&mac` in `.sops.yaml` (currently
-`age1qh0dm468a2pqr9rs4wr0zxslfmart8as8s7md93ah6dgd9rw55kqu94frp`). If
-it doesn't, **stop** — the SSH key you carried over isn't the one
-that produced the `dbf@mac` recipient. Re-do step 1 with the correct
-key, or update `.sops.yaml` per the step 1 recovery path.
+Output must match the `operator` recipient in `.sops.yaml` (currently `age12dv25pjp7xccjagz2mmpg0pcwutee8eut34tuaqzaqn9wvqmvysqumvgx8`). If it doesn't, **stop** — the pasted vault item wasn't the operator key, or the clipboard was clobbered mid-procedure; re-do step 1.
 
-### 6 — Collect the operator UID for the host file
+With the repo cloned (step 3), run the functional check — the new Mac's first decrypt. The `SOPS_AGE_KEY_FILE` prefix is required at this point: on macOS, sops does not search `~/.config/sops/age/keys.txt` unless `XDG_CONFIG_HOME` is set (it looks in `~/Library/Application Support` instead), and the devShell that exports the variable only arrives with first activation.
+
+```bash
+cd ~/nix-config
+SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt nix shell nixpkgs#sops -c sops -d secrets/secrets.yaml >/dev/null && echo OK
+```
+
+### 5 — Collect the operator UID for the host file
 
 This step runs *after* macOS Setup Assistant has created the `dbf`
 user account — without that, `id -u dbf` returns nothing.
@@ -208,7 +138,7 @@ foundation declares the rest, but the UID is host-specific and must
 match what macOS assigned during first-boot setup; nix-darwin refuses
 to manage a user with a mismatched UID).
 
-### 7 — Move aside `/etc/{bashrc,zshrc}` (NixOS-installer safety guard)
+### 6 — Move aside `/etc/{bashrc,zshrc}` (NixOS-installer safety guard)
 
 The NixOS official installer modifies `/etc/bashrc` and `/etc/zshrc`
 to source `/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh`.
@@ -223,7 +153,7 @@ sudo mv /etc/zshrc  /etc/zshrc.before-nix-darwin
 (The Determinate installer doesn't touch these files, which is why
 the old runbook didn't list this step.)
 
-### 8 — One-time interactive App Store sign-in (if the host declares `masApps`)
+### 7 — One-time interactive App Store sign-in (if the host declares `masApps`)
 
 `homebrew.masApps` apps are installed via `mas-cli` at activation, and
 `mas install` can only fetch apps already associated with the
@@ -299,7 +229,7 @@ prerequisite this very step covers).
 (Currently relevant only on hosts whose modules declare
 `homebrew.masApps` — see `modules/darwin/homebrew.nix`.)
 
-### 9 — Expect TCC prompts on first activation
+### 8 — Expect TCC prompts on first activation
 
 When nix-darwin writes to `/Library/LaunchDaemons/`, macOS may
 prompt for Full Disk Access for the activation process. Approve via
@@ -325,7 +255,7 @@ sudo nix run nix-darwin -- switch --flake .#<host>
 ```
 
 (If the run errors part-way through with a `/etc/bashrc` /
-`/etc/zshrc` safety message, you skipped step 7 — fix it and re-run.)
+`/etc/zshrc` safety message, you skipped step 6 — fix it and re-run.)
 
 After this, `darwin-rebuild` is on PATH. Subsequent activations use
 either:
@@ -611,7 +541,7 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
 ### First activation errors with a `/etc/bashrc` or `/etc/zshrc` safety message
 
-You skipped step 7. Move them aside and re-run:
+You skipped step 6. Move them aside and re-run:
 
 ```bash
 sudo mv /etc/bashrc /etc/bashrc.before-nix-darwin 2>/dev/null
