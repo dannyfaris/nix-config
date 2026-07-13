@@ -1,5 +1,5 @@
 # Linux-side half of the macchina wiring — owns the NixOS-logo
-# `ascii.txt` (with Stylix-driven two-tone colouring) and the
+# `ascii.txt` (with two-tone ANSI-slot colouring) and the
 # interactive-shell init that prints the banner at every fish shell
 # launch (Ghostty tab, zellij pane, helix `:sh`, every login). The
 # trigger is `programs.fish.interactiveShellInit` rather than
@@ -30,19 +30,16 @@
 # Local IP readout is simply absent. The `command -q macchina` guard
 # prevents a startup error if macchina is transiently missing from
 # PATH (e.g. during a partial activation).
-{ config, lib, ... }:
+{ lib, ... }:
 let
   esc = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
-  # Per-host two-tone NixOS logo from the Stylix palette (ADR-028).
-  # base0D = primary accent (blue/cyan family in most base16 schemes);
-  # base0C = secondary accent (cyan/teal family). The silhouette still
-  # reads as NixOS regardless of hue; the per-host SSH-context signal at
-  # shell launch is the win. `inherit (...)` doesn't work for these
-  # attrs because hyphens aren't valid in identifiers, so we read them
-  # off the colours attrset directly.
-  c = config.lib.stylix.colors;
-  dark = "${esc}[38;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
-  light = "${esc}[38;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
+  # Two-tone from the terminal's ANSI palette: blue (slot 4) and cyan
+  # (slot 6) are the bus positions of the base0D/base0C accents this file
+  # previously baked as Stylix truecolor (ADR-041 / #411). Direct canonical
+  # literals, not token roles — base0C has no role, and reading
+  # theme-tokens would reintroduce the Stylix eval this drops.
+  dark = "${esc}[34m"; # ANSI blue
+  light = "${esc}[36m"; # ANSI cyan
   reset = "${esc}[0m";
 in
 {
@@ -51,8 +48,8 @@ in
   # fastfetch-cli/fastfetch (MIT), chosen for being 7-bit ASCII
   # (` _/\` only) — every character is in MonaspiceAr Nerd Font
   # natively, so foot never engages fontconfig fallback for this
-  # banner. Sidesteps issue #161. Colour escapes (base0D / base0C
-  # from the Stylix palette) applied here. Written to the generic
+  # banner. Sidesteps issue #161. Colour escapes (ANSI blue / cyan
+  # slots — see the let block) applied here. Written to the generic
   # `ascii.txt` path the shared Hydrogen theme references.
   xdg.configFile."macchina/ascii.txt".text =
     "${dark}        __    ${light}____    __\n"

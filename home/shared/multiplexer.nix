@@ -18,29 +18,11 @@
   ...
 }:
 let
-  c = config.lib.stylix.colors;
-
-  # Palette pulled straight from the active Stylix scheme so the zjstatus
-  # top bar (agent.kdl below) stays cohesive even though stylix.targets
-  # .zellij doesn't reach a third-party plugin (it themes the stock
-  # status-bar + pane frames; zjstatus reads these hex values directly).
-  # Roles mirror the starship prompt and Claude statusline so the bar reads
-  # as a third surface of the same language: host green/purple by SSH
-  # state, session blue (the prompt's `$directory` slot), git "on" muted +
-  # branch cyan, status counts !conflict red / +staged green / ~modified
-  # yellow / ?untracked orange, clock foreground. (base0B green / base0E
-  # purple / base0D blue / base0C cyan /
-  # base0A yellow / base09 orange / base08 red / base05 fg / base03 muted —
-  # same slots as prompt.nix / claude-statusline.sh.)
-  greenHex = "#${c."base0B-hex"}";
-  purpleHex = "#${c."base0E-hex"}";
-  blueHex = "#${c."base0D-hex"}";
-  cyanHex = "#${c."base0C-hex"}";
-  yellowHex = "#${c."base0A-hex"}";
-  orangeHex = "#${c."base09-hex"}";
-  redHex = "#${c."base08-hex"}";
-  fgHex = "#${c."base05-hex"}";
-  mutedHex = "#${c."base03-hex"}";
+  # zjstatus `#[fg=…]` colours are ANSI-16 names (underscore spelling for
+  # brights) so the bar follows the terminal palette on a conductor flip
+  # (ADR-041). Roles: green/magenta by SSH state, blue for path, cyan for
+  # branch, yellow/bright_yellow/red/green for git counts, bright_black for
+  # "on", default for separators. Mirrors prompt.nix / claude-statusline.sh.
 
   # Glyphs decoded from codepoints (fromJSON `"\uXXXX"`) — same ASCII-safe
   # pattern and same codepoints as prompt.nix / claude-statusline.sh.
@@ -96,9 +78,9 @@ let
     ];
     text = ''
       if [ "$(session-type)" = ssh ]; then
-        printf '#[fg=%s,bold]%s  %s' '${purpleHex}' '${sshGlyph}' "$(hostname -s)"
+        printf '#[fg=magenta,bold]%s  %s' '${sshGlyph}' "$(hostname -s)"
       else
-        printf '#[fg=%s,bold]%s  %s' '${greenHex}' '${desktopGlyph}' "$(hostname -s)"
+        printf '#[fg=green,bold]%s  %s' '${desktopGlyph}' "$(hostname -s)"
       fi
     '';
   };
@@ -139,7 +121,7 @@ let
       on=""
       if [ -n "''${BRANCH}" ]; then
         branch="''${BRANCH}"
-        on="#[fg=${mutedHex}]on "
+        on="#[fg=bright_black]on "
       elif [ -n "''${HEAD_REF}" ]; then
         branch="@''${HEAD_REF}"
       else
@@ -149,11 +131,11 @@ let
       # Mirrors claude-statusline.sh's git segment: dim "on" (real branch
       # only), cyan branch glyph + name, then the counts (same symbols/
       # colours/order).
-      out=" ''${on}#[fg=${cyanHex}]${branchGlyph} $branch"
-      [ "''${CONFLICT}" -gt 0 ] && out="$out #[fg=${redHex}]!''${CONFLICT}"
-      [ "''${STAGED}" -gt 0 ] && out="$out #[fg=${greenHex}]+''${STAGED}"
-      [ "''${MODIFIED}" -gt 0 ] && out="$out #[fg=${yellowHex}]~''${MODIFIED}"
-      [ "''${UNTRACKED}" -gt 0 ] && out="$out #[fg=${orangeHex}]?''${UNTRACKED}"
+      out=" ''${on}#[fg=cyan]${branchGlyph} $branch"
+      [ "''${CONFLICT}" -gt 0 ] && out="$out #[fg=red]!''${CONFLICT}"
+      [ "''${STAGED}" -gt 0 ] && out="$out #[fg=green]+''${STAGED}"
+      [ "''${MODIFIED}" -gt 0 ] && out="$out #[fg=yellow]~''${MODIFIED}"
+      [ "''${UNTRACKED}" -gt 0 ] && out="$out #[fg=bright_yellow]?''${UNTRACKED}"
       printf '%s' "$out"
     '';
   };
@@ -233,8 +215,8 @@ in
       # chrome renders from the terminal palette, following polarity flips
       # and SSH context (terminal-authority direction). Replaces the
       # Stylix zellij target, which shadowed the built-in `default` theme
-      # by name with baked hex. The zjstatus bar formats above remain
-      # hex — their ANSI conversion is #411.
+      # by name with baked hex. zjstatus bar formats use ANSI names to
+      # match (ADR-041).
       theme = "ansi";
       # Default 10k lines is too small for verbose agent output — keep a
       # deep scrollback so a long agent run stays fully reviewable.
@@ -371,7 +353,7 @@ in
         default_tab_template {
             pane size=1 borderless=true {
                 plugin location="file:${zjstatus}" {
-                    format_left  " {command_host} #[fg=${fgHex}]${chevGlyph} #[fg=${blueHex}]{command_path}{command_git}"
+                    format_left  " {command_host} #[fg=default]${chevGlyph} #[fg=blue]{command_path}{command_git}"
                     format_right "{datetime}"
                     format_space ""
 
@@ -390,7 +372,7 @@ in
                     command_git_rendermode "dynamic"
                     command_git_interval   "2"
 
-                    datetime          "#[fg=${fgHex}]{format}"
+                    datetime          "#[fg=default]{format}"
                     datetime_format   "%I:%M%P"
                     datetime_timezone "Pacific/Auckland"
                 }

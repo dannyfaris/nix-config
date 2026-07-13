@@ -19,11 +19,16 @@
 {
   pkgs,
   lib,
-  config,
   ...
 }:
 let
-  c = config.lib.stylix.colors;
+  ansi = import ../../lib/ansi.nix;
+  # Classic SGR foreground escape for an ANSI-16 name: `\033[Nm` where N is
+  # 30–37 for normal slots or 90–97 for bright. Bash $'...' quoting decodes
+  # `\033` to ESC at runtime; the sequence stays textually readable in the
+  # generated file for easy debugging.
+  fgEscape = name: "\\033[${toString (ansi.fgCode name)}m";
+
   operator = import ../../lib/operator.nix;
 
   # The account email → short-label map the Claude statusline sources,
@@ -54,50 +59,23 @@ let
     )
   );
 
-  # Truecolor SGR foreground escape for a given base16 slot. Returns
-  # the literal 4-char string `\033[38;2;R;G;Bm` — bash's $'...' ANSI-C
-  # quoting decodes `\033` to the ESC byte at runtime. This differs
-  # from the macchina recolour (home/nixos/macchina.nix), which
-  # pre-decodes ESC at Nix eval time and interpolates it directly;
-  # here we keep the escape sequence textually readable in the
-  # generated file because operators may want to cat / grep / debug it.
-  fgEscape =
-    slot:
-    "\\033[38;2;${toString c."${slot}-rgb-r"};${toString c."${slot}-rgb-g"};${toString c."${slot}-rgb-b"}m";
-
-  # Eight statusline colour bindings derived from the host's base16
-  # palette. Role → base16 slot mapping mostly follows the standard
-  # base16 semantic convention (08=red, 09=orange, 0A=yellow, 0B=green,
-  # 0C=cyan, 0D=blue, 0E=magenta) so the colours come out semantically
-  # right regardless of which palette the host picks. ORANGE (base09)
-  # was added — and untracked moved to it — so the SSH host marker
-  # (MAUVE/base0E) is the only purple element on line 2; see
-  # `home/shared/prompt.nix` for the matching prompt change.
-  # MUTED (base04 — the base16 "status bar" foreground, the one
-  # non-accent slot) marks the account label as static metadata rather
-  # than a live signal; all seven accents already carry roles it would
-  # echo. See ADR-024 §Implementation (account-label entry).
-  #
-  # Two slots carry a deliberate dual role across the two lines:
-  #   - ORANGE: untracked counter (line 2) + Opus model label (line 1)
-  #   - TEAL:   branch (line 2) + Sonnet model label (line 1)
-  # Both pair semantically — "attention" or "label" hues, applied to
-  # similar-role elements at distinct positions across lines. Haiku
-  # and unknown models render in default foreground (no SGR) — that
-  # absence is itself a signal: lightweight tier, no flourish.
-  # See ADR-024 §Implementation and ADR-028 slice 6 for the why.
+  # Eight statusline colour bindings — ANSI-16 slot-relative so they follow
+  # the terminal palette on a conductor flip (ADR-041). Role assignment:
+  # blue/green/yellow/red/magenta/cyan on their canonical slots; orange
+  # (no ANSI slot) → bright-yellow (attention role, nearest on-bus);
+  # muted → bright-black. Dual roles unchanged: ORANGE is untracked +
+  # Opus label; TEAL is branch + Sonnet label. See ADR-024 §Implementation.
   statuslineColours = pkgs.writeText "statusline-colours.sh" ''
-    # Generated from config.lib.stylix.colors at activation time.
-    # See ADR-024 §Implementation and ADR-028 slice 6 for the why.
-    # Edit the role→base16-slot mapping in home/shared/agent-clis.nix.
-    BLUE=$'${fgEscape "base0D"}'
-    GREEN=$'${fgEscape "base0B"}'
-    YELLOW=$'${fgEscape "base0A"}'
-    RED=$'${fgEscape "base08"}'
-    MAUVE=$'${fgEscape "base0E"}'
-    ORANGE=$'${fgEscape "base09"}'
-    TEAL=$'${fgEscape "base0C"}'
-    MUTED=$'${fgEscape "base04"}'
+    # Classic ANSI-16 SGR foreground codes — slot-relative, follow the
+    # terminal palette on a conductor flip (ADR-041). See ADR-024 §Implementation.
+    BLUE=$'${fgEscape "blue"}'
+    GREEN=$'${fgEscape "green"}'
+    YELLOW=$'${fgEscape "yellow"}'
+    RED=$'${fgEscape "red"}'
+    MAUVE=$'${fgEscape "magenta"}'
+    ORANGE=$'${fgEscape "bright-yellow"}'
+    TEAL=$'${fgEscape "cyan"}'
+    MUTED=$'${fgEscape "bright-black"}'
   '';
 in
 {
@@ -111,11 +89,10 @@ in
     ];
 
     # Custom statusline — see ADR-024 (Claude side) and
-    # docs/agents/cursor-statusline.md (Cursor side). Colours are
-    # palette-driven via Stylix (ADR-028 slice 6 / issue #7); both
-    # scripts source the same statusline-colours.sh derivation at
-    # startup — no second palette source. DIM and RST (style codes,
-    # not colours) remain hardcoded in the scripts.
+    # docs/agents/cursor-statusline.md (Cursor side). Colours use
+    # ANSI-16 slot references (ADR-041) via the shared statusline-colours.sh
+    # derivation sourced at startup. DIM and RST (style codes, not colours)
+    # remain hardcoded in the scripts.
     file = {
       ".claude/statusline.sh" = {
         source = ./claude-statusline.sh;
