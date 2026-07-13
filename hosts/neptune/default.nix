@@ -93,6 +93,12 @@ _: {
     # this — both hosts share the same upstream gap, so it is a candidate
     # there too (tracked separately rather than silently extended here).
     ../../modules/darwin/nix-gcroots-cleanup.nix
+
+    # launchd job-failure surfacing via ntfy (#346). Polls every 10 minutes
+    # for org.nixos.* and org.nix-community.home.* jobs that have exited
+    # non-zero and stayed down; POSTs to the fleet ntfy endpoint over the
+    # tailnet. Neptune-only: saturn is a roaming laptop, asleep half the time.
+    ../../modules/darwin/launchd-failure-notifier.nix
   ];
 
   # All three macOS name facets are set together so they agree after the
