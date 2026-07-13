@@ -18,7 +18,10 @@
 #                            custom-property block for GTK4
 #   colors-{dark,light}.json — 16 M3-role keys for Noctalia's colors.json
 #
-# Per-target resolved symlinks in $stateDir (stable paths consumers read):
+# Per-target resolved symlinks in $stateDir (stable paths consumers read;
+# colors.json is instead the SOURCE for an atomic copy into
+# ~/.config/noctalia/ — Noctalia's inode-resolving watchers can't see
+# symlink swaps, #609):
 #   foot.ini   → current/foot-<polarity>.ini
 #   niri.kdl   → current/niri-<polarity>.kdl
 #   gtk3.css   → current/gtk3-<polarity>.css
@@ -408,7 +411,7 @@ let
       # ---------- polarity helper ----------
       # Read the current polarity from dconf (portal axis).
       current_polarity() {
-        val=$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
+        val=$(${pkgs.dconf}/bin/dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
         if [ "$val" = "'prefer-dark'" ]; then echo "dark"; else echo "light"; fi
       }
 
@@ -463,12 +466,26 @@ let
       ln -sf "$state/current/gtk4-''${new_polarity}.css" "$state/gtk4.css"
       ln -sf "$state/current/colors-''${new_polarity}.json" "$state/colors.json"
 
+      # ---------- Noctalia palette delivery: atomic copy-into-place ----------
+      # Noctalia's FileView watchers resolve inodes at watch-establishment
+      # time; a state-level symlink swap ($state/colors.json → different store
+      # artefact) never touches the watched inode or ~/.config/noctalia/, so
+      # no reload fires. Atomic replace inside the watched dir (tmp + mv -fT)
+      # is the pattern the upstream source comment anticipates — caught by
+      # #609 runtime verification.
+      mkdir -p "$HOME/.config/noctalia"
+      colors_tmp=$(mktemp "$HOME/.config/noctalia/.colors.XXXXXX")
+      cp "$state/colors.json" "$colors_tmp"
+      mv -fT "$colors_tmp" "$HOME/.config/noctalia/colors.json"
+
       # ---------- polarity fan-out: dconf ----------
+      # Always write (idempotent) so a fresh machine whose seed ran bus-less
+      # self-heals on the next interactive switch.
       if [ "$new_polarity" = "dark" ]; then
-        dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" || \
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" || \
           echo "theme: dconf write failed (non-fatal outside session)" >&2
       else
-        dconf write /org/gnome/desktop/interface/color-scheme "'default'" || \
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'default'" || \
           echo "theme: dconf write failed (non-fatal outside session)" >&2
       fi
 
@@ -531,9 +548,8 @@ let
       niri msg action load-config-file 2>/dev/null || \
         echo "theme: niri reload skipped (non-fatal outside session)" >&2
 
-      # colors.json — Noctalia's FileView watcher fires on the resolved path
-      # change (the symlink swap is sufficient; Noctalia monitors watchChanges
-      # on the parent directory, per source-verified on-metis findings).
+      # colors.json — already delivered by the atomic copy-into-place above;
+      # the in-dir replace is what fires Noctalia's watcher.
 
       echo "theme: switched to ''${new_family}/''${new_polarity}"
     '';
@@ -559,10 +575,11 @@ in
   #   B. Pointer valid → only (re)create any missing per-target symlinks (never
   #      change their polarity/family — the user's runtime selection is sacred).
   #
-  # Consumer-side symlinks (seeded once, then user's):
-  #   ~/.config/noctalia/colors.json  → $stateDir/colors.json
-  #   ~/.config/gtk-3.0/theme-menu.css → $stateDir/gtk3.css
-  #   ~/.config/gtk-4.0/theme-menu.css → $stateDir/gtk4.css
+  # Consumer-side wiring:
+  #   ~/.config/noctalia/colors.json  ← atomic copy of $stateDir/colors.json
+  #                                     (copy, not symlink — see #609 comment)
+  #   ~/.config/gtk-3.0/theme-menu.css → $stateDir/gtk3.css (symlink)
+  #   ~/.config/gtk-4.0/theme-menu.css → $stateDir/gtk4.css (symlink)
   home.activation.themeMenuSeed = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     data=${lib.escapeShellArg dataDir}
     state=${lib.escapeShellArg stateDir}
@@ -584,15 +601,20 @@ in
       # Branch A: seed from boot default
       $DRY_RUN_CMD ln -sfn "$data/$boot_default" "$state/current"
       _polarity="$boot_polarity"
-      # Write dconf polarity (only on seed — never on rebuild with valid pointer)
+      # Write dconf polarity (only on seed — never on rebuild with valid pointer).
+      # Absolute path: HM activation PATH lacks dconf; bare calls failed silently
+      # — caught by runtime verification, #609.
       if [ "$_polarity" = "dark" ]; then
-        $DRY_RUN_CMD dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" 2>/dev/null || true
+        $DRY_RUN_CMD ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" \
+          || echo "theme-menu: warning: dconf polarity write failed" >&2
       else
-        $DRY_RUN_CMD dconf write /org/gnome/desktop/interface/color-scheme "'default'" 2>/dev/null || true
+        $DRY_RUN_CMD ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'default'" \
+          || echo "theme-menu: warning: dconf polarity write failed" >&2
       fi
     else
-      # Branch B: read current polarity from dconf (don't change it)
-      _dconf_val=$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
+      # Branch B: read current polarity from dconf (don't change it).
+      # Absolute path: HM activation PATH lacks dconf (#609).
+      _dconf_val=$(${pkgs.dconf}/bin/dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null || true)
       if [ "$_dconf_val" = "'prefer-dark'" ]; then
         _polarity="dark"
       else
@@ -608,16 +630,25 @@ in
     $DRY_RUN_CMD ln -sf "$state/current/gtk4-$_polarity.css" "$state/gtk4.css"
     $DRY_RUN_CMD ln -sf "$state/current/colors-$_polarity.json" "$state/colors.json"
 
-    # Seed consumer-side symlinks:
+    # Seed consumer-side files:
 
-    # ~/.config/noctalia/colors.json → $stateDir/colors.json
-    # If a regular (non-symlink) file exists, back it up once so Noctalia
-    # never finds it writable in-place again.
+    # ~/.config/noctalia/colors.json — atomic copy-into-place, not a symlink:
+    # Noctalia's FileView watchers resolve inodes at watch time, so a
+    # state-level symlink swap is invisible to them; in-dir replace (tmp +
+    # mv -fT) is the pattern its watcher anticipates (#609).
+    # Back up a pre-existing foreign file once (only if .pre-609 doesn't
+    # already exist — our own copies must never clobber the original backup).
     $DRY_RUN_CMD mkdir -p "$HOME/.config/noctalia"
-    if [ -f "$HOME/.config/noctalia/colors.json" ] && [ ! -L "$HOME/.config/noctalia/colors.json" ]; then
+    if [ ! -e "$HOME/.config/noctalia/colors.json.pre-609" ] \
+        && [ -f "$HOME/.config/noctalia/colors.json" ] \
+        && [ ! -L "$HOME/.config/noctalia/colors.json" ]; then
       $DRY_RUN_CMD mv "$HOME/.config/noctalia/colors.json" "$HOME/.config/noctalia/colors.json.pre-609"
     fi
-    $DRY_RUN_CMD ln -sf "$state/colors.json" "$HOME/.config/noctalia/colors.json"
+    # mktemp -u: a created-but-unused tmp would be left behind on --dry-run
+    # (the guarded cp/mv below don't run); -u is race-safe enough in $HOME.
+    _colors_tmp=$(mktemp -u "$HOME/.config/noctalia/.colors.XXXXXX")
+    $DRY_RUN_CMD cp "$state/colors.json" "$_colors_tmp"
+    $DRY_RUN_CMD mv -fT "$_colors_tmp" "$HOME/.config/noctalia/colors.json"
 
     # ~/.config/gtk-3.0/theme-menu.css → $stateDir/gtk3.css
     $DRY_RUN_CMD mkdir -p "$HOME/.config/gtk-3.0"

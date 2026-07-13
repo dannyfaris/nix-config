@@ -57,7 +57,7 @@ Planned wiring; lands in reviewable slices behind ADR-036, each validated on the
 1. Set `useWallpaperColors: false` (prevents the wallpaper→colors.json writer from overwriting the Nix-rendered palette on wallpaper change).
 2. Disable all six `activeTemplates`: foot, gtk, helix, starship, yazi, niri (prevents Noctalia from writing its own colour files to those surfaces).
 3. Leave `enableUserTheming: false` — it gates template generation, not the colors.json read path; Noctalia follows `colors.json` unconditionally via its FileView watchers regardless.
-4. Verify: change wallpaper → `~/.config/noctalia/colors.json` is NOT rewritten (it should now always resolve through `~/.local/state/theme-menu/colors.json`).
+4. Verify: change wallpaper → `~/.config/noctalia/colors.json` is NOT rewritten (it is an atomic copy of `~/.local/state/theme-menu/colors.json`, refreshed by the seed and every `theme` switch — copy-into-place, not a symlink: Noctalia's FileView watchers resolve inodes at watch time and never see a state-level symlink swap; runtime-verified on metis, #609).
 
 **Must-not-touch controls after demotion:** Noctalia's built-in darkMode toggle and scheme/theme picker in the control centre are inert-by-convention — the `theme` CLI owns the selection. Using them would set `settings.json`'s `darkMode`/`activeScheme` but these fields are irrelevant once all `activeTemplates` are disabled and `useWallpaperColors` is false. The *conductor owns the colour*; Noctalia's pickers are cosmetically dead.
 
