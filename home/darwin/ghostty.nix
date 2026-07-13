@@ -10,6 +10,7 @@
 # tree. macOS-only — foot is the chosen terminal on Linux desktop
 # hosts per ADR-028 §History.
 {
+  config,
   lib,
   pkgs,
   inputs,
@@ -17,9 +18,10 @@
   ...
 }:
 let
-  # Both polarity variants of the host's scheme couplet, pre-baked so
-  # Ghostty can flip with the macOS appearance at runtime — no rebuild.
-  # See docs/design/macos-live-theme-switching.md §Design (Class 1).
+  # Every declared family's polarity variants, pre-baked so Ghostty can
+  # flip with the macOS appearance and follow a runtime theme switch —
+  # no rebuild. See docs/design/macos-live-theme-switching.md §Design
+  # (Class 1 + stage 2).
   schemePair = import ../../lib/scheme-pair.nix {
     inherit
       inputs
@@ -168,17 +170,29 @@ in
       # itself and repaints open windows on a polarity flip — the
       # zero-plumbing half of runtime theme switching (#499). mkForce
       # overrides the Stylix target's single-polarity `theme = "stylix"`
-      # (plain assignment upstream, no mkDefault). See
-      # docs/design/macos-live-theme-switching.md §Design.
-      theme = lib.mkForce "light:stylix-light,dark:stylix-dark";
+      # (plain assignment upstream, no mkDefault). The selector names
+      # the boot-default family; a runtime selection overrides it via
+      # the include below. See docs/design/macos-live-theme-switching.md
+      # §Design.
+      theme = lib.mkForce "light:${schemePair.family}-light,dark:${schemePair.family}-dark";
       window-theme = "system";
+
+      # Runtime theme switching (#605): the active-theme pointer's
+      # selector line. `?` = optional (absent pointer -> the built
+      # default above stands); includes load after this whole file and
+      # override its scalars — both semantics pinned from the installed
+      # 1.3.1's own docs. The switcher (home/darwin/theme-menu.nix)
+      # repoints the symlink and SIGUSR2s open windows.
+      config-file = "?${config.xdg.stateHome}/theme-menu/current/ghostty.conf";
     };
 
-    # The pre-baked polarity variants the selector above points at,
-    # written to ~/.config/ghostty/themes/.
-    themes = {
-      stylix-dark = mkGhosttyTheme schemePair.dark;
-      stylix-light = mkGhosttyTheme schemePair.light;
-    };
+    # The pre-baked polarity variants the selectors point at — one pair
+    # per declared family, written to ~/.config/ghostty/themes/ so both
+    # the boot-default selector above and any entry's include line
+    # resolve without a rebuild.
+    themes = lib.concatMapAttrs (name: couplet: {
+      "${name}-dark" = mkGhosttyTheme couplet.dark;
+      "${name}-light" = mkGhosttyTheme couplet.light;
+    }) schemePair.menu;
   };
 }
