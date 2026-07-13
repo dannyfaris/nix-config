@@ -258,7 +258,7 @@ Three operator-confirmed prompts on first install:
    macOS prompts on first launch; one-time.
 
 None of these have a nix-darwin-declarative path. Documented in
-the bootstrap runbook alongside the App Store sign-in.
+the bootstrap runbook's post-activation first-run-grants checklist.
 
 **UI edits do not survive activation.** `xdg.configFile` symlinks
 `karabiner.json` from the nix store. The Karabiner-Elements

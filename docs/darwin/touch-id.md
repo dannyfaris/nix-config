@@ -57,11 +57,7 @@ Mac via System Settings → Touch ID & Password → "Add Fingerprint." On
 `neptune`, enrolment uses the Magic Keyboard's Touch ID sensor; the
 operator completed this manually before the module landed.
 
-On the next Mac (whichever Darwin host joins the fleet next), the
-bootstrap runbook (`docs/runbooks/darwin-bootstrap.md`) will need a
-step pointing the operator at the System Settings panel. Without
-fingerprint enrolment, the option is inert — `sudo` falls back to
-password.
+For new Macs the bootstrap runbook (`docs/runbooks/darwin-bootstrap.md`) covers this — §0's Setup Assistant note and the post-activation first-run-grants checklist both point at enrolment. Without fingerprint enrolment, the option is inert — `sudo` falls back to password.
 
 Apple Watch unlock (the "approve with your Apple Watch" prompt) does
 not require explicit enrolment per Mac; it depends on the same iCloud
