@@ -292,30 +292,30 @@ hostKeys = {
 
 ## Darwin adoption (neptune) — SSH-agent verdict + `op` (deferred) (#112)
 
-The 1Password GUI is already managed on neptune (Homebrew cask, above). This section records the Mac's verdict on the two net-new questions #112 raised — whether 1Password should own `SSH_AUTH_SOCK` here, and the `op` CLI. Both are settled: SSH stays on the existing per-host `dbf@mac` key (same as metis, plus a Mac-specific reason), and `op` is deferred. Strategy only; no code wired.
+The 1Password GUI is already managed on neptune (Homebrew cask, above). This section records the Mac's verdict on the two net-new questions #112 raised — whether 1Password should own `SSH_AUTH_SOCK` here, and the `op` CLI. Both are settled: SSH stays on a per-host on-disk key (`dbf@neptune` since the #526 rotation; same model as metis, plus a Mac-specific reason), and `op` is deferred. Strategy only; no code wired.
 
 ### Decision summary
 
 | Capability | Decision | Why |
 |---|---|---|
-| SSH agent / `SSH_AUTH_SOCK` ownership | **Reject (settled), same as metis** | Plus a Mac-specific reason: the "key never on disk" benefit is moot — sops pins an on-disk key regardless (see below). |
-| SSH outbound | **Keep the existing per-host `dbf@mac` on-disk key** | Already authorized fleet-wide and already works; no change. |
+| SSH agent / `SSH_AUTH_SOCK` ownership | **Reject (settled), same as metis** | Plus a Mac-specific reason: the "key never on disk" benefit is blunted — the disk necessarily holds a secret-bearing key (sops's `keys.txt`) regardless (see below). |
+| SSH outbound | **Keep a per-host on-disk key** (`dbf@neptune`) | The #524 per-host model; authorized across its ADR-042 edges. |
 | `op` CLI | **Defer** | No current need (same as metis); #364 may cover the only candidate use via sops. Install path noted below for if/when. |
 
 ### SSH agent on the Mac — why it lands the same way as metis
 
 On macOS the metis reasoning weakens: Touch ID + 1Password's agent is excellent, there's no `gcr-ssh-agent` to evict, and no Wayland lock-screen popup failure mode. Taken alone, that's a real pull toward letting 1Password own SSH on the Mac.
 
-What tips it back to decouple is a Mac-specific fact: **`~/.ssh/id_ed25519` is load-bearing for sops on this host.** It is the `dbf@mac` key, and the Mac's sops age identity is derived from it (`ssh-to-age -private-key`; see `modules/darwin/sops.nix` and `.sops.yaml`). That on-disk key therefore **must** exist regardless of any SSH choice. So 1Password's headline SSH benefit — the private key never touches disk — buys little here: the disk already holds a mandatory key. Adopting 1Password's agent would mean either importing that key into the vault (same key, two homes) or generating a *second* SSH identity to manage, carrying the vault-key blast radius either way.
+What tips it back to decouple is a Mac-specific fact: **the Mac pins a mandatory secret-bearing on-disk key for sops regardless.** Since the #526 rotation that file is `~/.config/sops/age/keys.txt` — the standalone operator age key (the fleet's edit + recovery root, populated from the vault; docs/design/fleet-key-custody.md and `modules/darwin/sops.nix`), no longer derived from any SSH key, but still necessarily on disk for `sops`/`sops updatekeys` to work. So 1Password's headline SSH benefit — the private key never touches disk — buys little here: the disk holds a mandatory key either way. Adopting 1Password's agent would add a second identity model without removing that fact.
 
 So the honest balance on the Mac:
 
 - **For 1Password-owns-SSH:** Touch-ID-to-SSH ergonomics — genuinely nice.
-- **Against:** fleet model uniformity (metis rejected it); the key-never-on-disk benefit is moot because sops pins an on-disk key anyway; and keeping the per-host key is zero-work (the `dbf@mac` key already authenticates everywhere). (Blast radius is a wash, as on metis.)
+- **Against:** fleet model uniformity (metis rejected it); the key-never-on-disk benefit is blunted because sops pins an on-disk `keys.txt` anyway; and keeping the per-host key is zero-work (the `dbf@neptune` key already authenticates across its declared edges). (Blast radius is a wash, as on metis.)
 
-**Verdict: rejected on the Mac too.** 1Password is the password manager; SSH stays on the existing per-host `dbf@mac` key. The only thing forgone is Touch-ID-to-SSH, which is ergonomics, not security. The fleet posture is uniform — per-host on-disk ed25519 keys for SSH everywhere, 1Password never owning `SSH_AUTH_SOCK`.
+**Verdict: rejected on the Mac too.** 1Password is the password manager; SSH stays on the per-host `dbf@neptune` key. The only thing forgone is Touch-ID-to-SSH, which is ergonomics, not security. The fleet posture is uniform — per-host on-disk ed25519 keys for SSH everywhere, 1Password never owning `SSH_AUTH_SOCK`.
 
-> Should this ever be revisited: if Touch-ID-to-SSH on the Mac becomes worth a split model, the override is to enable 1Password's SSH agent on macOS (it exposes its own agent socket via `IdentityAgent`), keep `~/.ssh/id_ed25519` for sops only, and accept that metis and neptune then run different SSH-agent models by design. Defensible, but deliberately non-uniform — recorded for the future, not open today.
+> Should this ever be revisited: if Touch-ID-to-SSH on the Mac becomes worth a split model, the override is to enable 1Password's SSH agent on macOS (it exposes its own agent socket via `IdentityAgent`) and accept that metis and neptune then run different SSH-agent models by design — sops is unaffected either way, since its identity is the standalone operator key at `keys.txt`, not an SSH key. Defensible, but deliberately non-uniform — recorded for the future, not open today.
 
 ### `op` CLI install path (for if/when it's adopted)
 
@@ -323,11 +323,11 @@ So the honest balance on the Mac:
 
 ### Sharp edges
 
-- **Do not break `~/.ssh/id_ed25519`.** It is the sops decryption identity on neptune; losing or rotating it without re-deriving the age key breaks `sops -d` fleet-wide. The settled decision deliberately leaves this key exactly where it is.
+- **The sops-critical file is `~/.config/sops/age/keys.txt`** — the standalone operator age key (docs/design/fleet-key-custody.md). Losing it costs nothing durable — repopulate from the 1Password item "sops age key - operator" and verify with `age-keygen -y` — but without it `sops -d`/`sops updatekeys` fail on this Mac. `~/.ssh/id_ed25519` is the fleet SSH key only (`dbf@neptune`); losing it costs fleet SSH re-enrolment, not secrets.
 - **`op` (if later adopted) is unfree.** `_1password-cli` is unfree; it would ride one `allowUnfreePredicate` entry in `modules/shared/nix-daemon.nix` (shared across both platforms), not a separate Darwin entry. Never blanket `allowUnfree`.
 
 ### References
 
 - §"NixOS desktop adoption (metis)" above — the fleet posture and Decision 2's per-platform note this section settles.
 - #112 — deploy 1Password GUI to metis (the re-scoped issue); #364 — GitLab plaintext-token cleanup (the deferred-`op` candidate use).
-- `modules/darwin/sops.nix`, `.sops.yaml` — the `~/.ssh/id_ed25519`-derived age identity that pins the on-disk key.
+- `modules/darwin/sops.nix`, `.sops.yaml` — the standalone operator age identity (`keys.txt`) that pins the on-disk key; docs/design/fleet-key-custody.md.

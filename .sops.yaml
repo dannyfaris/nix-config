@@ -1,39 +1,35 @@
 # Recipients.
 #
-# Host recipients (nixos-vm, mercury, metis): age keys derived from each
-# host's /etc/ssh/ssh_host_ed25519_key. Used at activation time by
-# sops-nix to decrypt secrets for the running host. One per host.
+# Host recipients (metis): age keys derived from each NixOS
+# secret-holder's /etc/ssh/ssh_host_ed25519_key. Used at activation
+# time by sops-nix to decrypt secrets for the running host. One per
+# NixOS host that holds a secret — the identity reproduces with the
+# host on reprovision, so it needs no backup of its own
+# (docs/design/fleet-key-custody.md, machine-decryption tier). Darwin
+# hosts hold no host identity: they declare no secrets.
 #
-# Operator recipient (mac): age key derived from a human-controlled
-# credential. Used by the operator to run `sops`/`sops updatekeys` from
-# their daily-driver machine without depending on any individual host
-# being alive. Closes the sops-decryption bus-factor gap — formerly
-# only the VM held a decryption identity.
+# Operator recipient (operator): a standalone age-keygen key with no
+# SSH ancestry — the fleet's edit + disaster-recovery root
+# (docs/design/fleet-key-custody.md). Lives at
+# ~/.config/sops/age/keys.txt on the operator's Macs, repopulated
+# from the vault, never derived from an SSH key. Rotating it must
+# refresh every copy in the same sitting (vault + offline + any
+# escrow) or recovery silently splits.
 #
-# Recovery (last resort, #279). The mac recipient is the human-controlled,
-# host-independent identity, so a copy of its private key is kept
-# out-of-band in 1Password (item "sops age key — dbf@mac"). If every host
-# AND this Mac are lost: write that value to ~/.config/sops/age/keys.txt
-# (chmod 600) on any machine with sops + age, then `sops -d
-# secrets/secrets.yaml` decrypts. The key derives from ~/.ssh/id_ed25519
-# via `ssh-to-age -private-key`, so backing up that SSH key re-derives it.
-# Verify a restored keys.txt without exposing it: `age-keygen -y <file>`
-# (reads age-format keys, not the SSH key) must print the `mac` public
-# key below.
+# Recovery (last resort, #279). The operator key is held in 1Password
+# (item "sops age key - operator") with a second offline copy. If
+# every host AND every Mac are lost: write that value to
+# ~/.config/sops/age/keys.txt (chmod 600) on any machine with sops +
+# age, then `sops -d secrets/secrets.yaml` decrypts. Verify a
+# restored keys.txt without exposing it: `age-keygen -y <file>` must
+# print the `operator` public key below.
 keys:
-  - &nixos-vm age1wwg6k2xnt4kakkajl7y2eydxw3jf4ll7z8ql64v9hvjdm8svh5psjxxz3l
-  - &mercury  age1vze2vqnjtmyltqez5uw3g5dzr64wa0qaz0mwngvq662djxcwlefsnjlx2t
   - &metis    age1fum23dvym045wsc0g85lgtpvhjgekj66nkg9krslx0fa8ahmyffsu5nj2t
-  - &mac      age1qh0dm468a2pqr9rs4wr0zxslfmart8as8s7md93ah6dgd9rw55kqu94frp
-  # Standalone operator key (edit + recovery root) — supersedes &mac at rotation step 6; see docs/design/fleet-key-custody.md.
   - &operator age12dv25pjp7xccjagz2mmpg0pcwutee8eut34tuaqzaqn9wvqmvysqumvgx8
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
     key_groups:
       - age:
-          - *nixos-vm
-          - *mercury
           - *metis
-          - *mac
           - *operator

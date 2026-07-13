@@ -28,20 +28,7 @@ Run once per fresh clone of this repo on the operator machine:
   installs `.git/hooks/pre-commit` and clears any stale `core.hooksPath`
   setting; the hook enforces ADR-023's "don't hand-edit
   `hardware-configuration.nix`" rule. See ADR-025 for the framework.
-- An existing age decryption identity for `secrets/secrets.yaml`. Today
-  the UTM VM's host SSH key (`/etc/ssh/ssh_host_ed25519_key`) is the
-  only such identity; `sops updatekeys` (step 2 below) must therefore
-  run on the VM. Before first use, derive the operator-side age key
-  from the SSH host key:
-
-  ```bash
-  just setup-sops-identity
-  ```
-
-  One-time-per-fresh-clone; idempotent. Creates
-  `~/.config/sops/age/keys.txt` so subsequent `sops -d` /
-  `sops updatekeys` work as `dbf` without env-var ceremony. Without
-  this, the bootstrap pre-flight will refuse to proceed.
+- An existing age decryption identity for `secrets/secrets.yaml` — i.e. access to a current `.sops.yaml` recipient (docs/design/fleet-key-custody.md): either the standalone operator key (populated from the vault into `~/.config/sops/age/keys.txt` on the operator's Macs — darwin-bootstrap.md pre-bootstrap step 1) or a NixOS secret-holder's host-key identity (on metis, derive once with `just setup-sops-identity`; one-time-per-fresh-clone, idempotent). `sops updatekeys` (step 2 below) runs wherever such an identity lives. Without one, the bootstrap pre-flight will refuse to proceed.
 - An `~/.ssh/config.local` entry for the host being bootstrapped, so
   the operator can `ssh <host>` without typing the full target string.
   `home/shared/ssh.nix` includes this file at file scope; entries
@@ -59,10 +46,7 @@ Run once per fresh clone of this repo on the operator machine:
   `nixos` account is gone post-install and `root` SSH is disabled;
   you'll SSH as `dbf` from your Mac afterwards). You can leave the
   entry in place or remove it post-bootstrap — either is fine.
-- Daniel's Mac SSH key in `modules/nixos/users.nix` matches the
-  private key on the laptop you'll SSH from. Once `nixos-anywhere`
-  completes, that key is the sole inbound credential — get it right
-  before, not after.
+- The new host's `sshEdges` entry in `lib/operator.nix` names the source hosts you'll SSH from, with their `hostKeys` entries current (ADR-042 — `modules/nixos/users.nix` derives each host's authorized keys from these). Once `nixos-anywhere` completes, those edge-derived keys are the sole inbound credentials — get them right before, not after.
 
 ## Per-host preconditions
 
@@ -107,8 +91,8 @@ Run once per fresh clone of this repo on the operator machine:
 - Two SSH public keys appended to `/home/nixos/.ssh/authorized_keys`
   (or `/root/.ssh/authorized_keys` if connecting as root):
   1. **The operator machine's public key** — whatever machine will
-     run `just bootstrap` (today: the VM, since it holds the sops
-     decryption identity required by step 3's pre-flight). On the VM,
+     run `just bootstrap` (any host holding a sops decryption
+     identity — see §Operator prerequisites). On that machine,
      `cat ~/.ssh/id_ed25519.pub`. `nixos-anywhere`'s `ssh-copy-id`
      runs non-interactively from the operator, so without an
      already-authorized operator key it will exhaust `MaxAuthTries`
@@ -116,12 +100,7 @@ Run once per fresh clone of this repo on the operator machine:
      (Mercury-class) sidestep this via an AMI keypair (`mercury.pem`)
      referenced from `~/.ssh/config.local`; bare metal has no
      equivalent and the operator key must be seeded by hand.
-  2. **The Mac SSH key from `modules/nixos/users.nix`.** This
-     is the *post-install* credential — once `nixos-anywhere`
-     completes and `users.mutableUsers = false` activates, the Mac
-     key becomes `dbf`'s sole inbound credential. The operator key
-     from (1) is discarded with the live USB and never authorized
-     for `dbf`.
+  2. **The source-host keys from the new host's `sshEdges` entry** (`lib/operator.nix`, ADR-042). These are the *post-install* credentials — once `nixos-anywhere` completes and `users.mutableUsers = false` activates, the edge-derived keys become `dbf`'s sole inbound credentials. The operator key from (1) is discarded with the live USB and never authorized for `dbf`.
 
   Smoke-test both *before* kicking off step 3: from the operator
   machine, `ssh -o BatchMode=yes nixos@<target> 'echo ok'` must
@@ -168,19 +147,21 @@ fragile.
 
 1. Edit `.sops.yaml`. Add the new anchor under `keys:` (preserving
    existing anchors) and reference it in the relevant `key_groups`.
-   Example end state after adding `mercury`:
+   Example end state after adding a new host `jupiter`:
 
    ```yaml
    keys:
-     - &nixos-vm  age1wwg6k2xnt4kakkajl7y2eydxw3jf4ll7z8ql64v9hvjdm8svh5psjxxz3l
-     - &mercury   age1<recipient-from-step-1>
+     - &metis    age1fum23dvym045wsc0g85lgtpvhjgekj66nkg9krslx0fa8ahmyffsu5nj2t
+     - &operator age12dv25pjp7xccjagz2mmpg0pcwutee8eut34tuaqzaqn9wvqmvysqumvgx8
+     - &jupiter  age1<recipient-from-step-1>
 
    creation_rules:
      - path_regex: secrets/.*\.yaml$
        key_groups:
          - age:
-             - *nixos-vm
-             - *mercury
+             - *metis
+             - *operator
+             - *jupiter
    ```
 
 2. Re-encrypt `secrets/secrets.yaml` for the expanded recipient set:
