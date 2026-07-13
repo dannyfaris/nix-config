@@ -14,6 +14,12 @@ _: {
     # Foundation — bundle every Darwin host imports by convention.
     ../../modules/darwin/foundation.nix
 
+    # AeroSpace 0.21.2-Beta overlay (ahead of the nixpkgs pin). Carries
+    # an eval-time versionGate that throws once nixpkgs catches up.
+    # See the module header for the retirement contract and the TCC
+    # Accessibility re-grant step required after switching.
+    ../../modules/darwin/overlay-packages.nix
+
     # Standalone system modules.
     # Inbound SSH (key-only, no root, no password). Was the `remote-access`
     # bundle (sshd + mosh); mosh was removed (#47) and a single-module
