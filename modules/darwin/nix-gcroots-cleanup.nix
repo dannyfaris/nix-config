@@ -1,4 +1,4 @@
-# Nix GC-roots cleanup daemon for neptune. nix-darwin does not automatically
+# Nix GC-roots cleanup daemon for the Darwin hosts. nix-darwin does not automatically
 # remove dead symlinks from /nix/var/nix/gcroots — NixOS handles this via
 # its own periodic maintenance, but macOS has no equivalent. Dead symlinks
 # silently pin store paths against GC: `nix store gc` honours every gcroot
@@ -33,7 +33,7 @@
 #
 # Schedule: Sunday 03:30, chosen to run shortly before the existing nix GC
 # (nix-daemon-darwin.nix: Weekday = 7; Hour = 4; Minute = 0). If a run is
-# missed while the mini is asleep, launchd coalesces all missed intervals
+# missed while the host is asleep, launchd coalesces all missed intervals
 # into one event and fires it on next wake — semantics are catch-up, not skip.
 #
 # Post-activation verification:
