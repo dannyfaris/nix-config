@@ -53,6 +53,17 @@ in
     '';
   };
 
+  # The assembled runner, exposed read-only so the theme switcher
+  # (home/darwin/theme-menu.nix, #605) fires the identical hook path
+  # with a computed DARKMODE — one code path for every gesture.
+  options.appearance.runner = lib.mkOption {
+    type = lib.types.package;
+    readOnly = true;
+    description = "The assembled appearance.onChange runner script.";
+  };
+
+  config.appearance.runner = runner;
+
   config.launchd.agents.dark-mode-notify = {
     enable = true;
     config = {

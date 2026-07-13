@@ -1,69 +1,76 @@
-# wallpapers — theme-following desktop wallpaper on macOS (#499).
-# Consumes the pools declared in lib/theme-wallpapers.nix (scheme-keyed,
-# pure data), fetches every image into the store at build time, and
+# wallpapers — theme-following desktop wallpaper on macOS (#499, #605).
+# The pools are declared in lib/theme-wallpapers.nix (scheme-keyed, pure
+# data) and rendered per menu entry by home/darwin/theme-menu.nix
+# (`wallpapers-{dark,light}/` as indexed store symlinks); this module
 # drives the desktop through two paths:
 #
-#   1. home.activation — applies the built polarity's pool
-#      deterministically (first entry) on rebuild, so a fresh build is
-#      complete without the watcher ever firing (survey §2.8 pattern).
-#   2. appearance.onChange hook — on a polarity flip, picks randomly
-#      from the newly-active scheme's pool (variety is the point of a
-#      pool; a pool of one degrades to stable).
+#   1. home.activation — on a fresh provision (no runtime selection),
+#      applies the boot default's pool deterministically (first entry)
+#      so a fresh build is complete without the watcher ever firing
+#      (survey §2.8 pattern). With a live selection present, a rebuild
+#      leaves the desktop alone — the pointer owns the look.
+#   2. appearance.onChange hook — on a polarity flip or theme switch,
+#      picks randomly from the active entry's pool for the new half
+#      (variety is the point of a pool; a pool of one degrades to
+#      stable). Resolves the $XDG_STATE_HOME pointer, else the
+#      boot-default family — one hook path for both gestures.
 #
 # desktoppr sets all displays by default (verified against its README);
 # absolute store path for the launchd-context PATH reason documented in
 # jankyborders-hook.nix. Empty pools no-op everywhere — the module is
-# inert until lib/theme-wallpapers.nix declares entries for the host's
+# inert until lib/theme-wallpapers.nix declares entries for the active
 # schemes. See docs/design/macos-live-theme-switching.md §Design.
 {
+  config,
   lib,
   pkgs,
+  inputs,
   hostContext,
   ...
 }:
 let
   pools = import ../../lib/theme-wallpapers.nix;
-  # Scheme names for the host's boot-default couplet, via the shared
-  # selection seam (#541) rather than a raw catalogue read.
+  schemePair = import ../../lib/scheme-pair.nix {
+    inherit
+      inputs
+      pkgs
+      lib
+      hostContext
+      ;
+  };
   paletteFor = import ../../lib/palette-for.nix hostContext.hostName;
-
-  # Scheme name -> list of store paths (empty when no pool is declared).
-  poolFor = scheme: map (w: pkgs.fetchurl { inherit (w) url sha256; }) (pools.${scheme} or [ ]);
-  darkPool = poolFor (paletteFor.select "dark").scheme;
-  lightPool = poolFor (paletteFor.select "light").scheme;
 
   desktoppr = "${pkgs.desktoppr}/bin/desktoppr";
 
-  # Random pick at flip time; guarded no-op on an empty pool.
-  applyRandom =
-    pool:
-    if pool == [ ] then
-      "true # no pool declared for this scheme"
-    else
-      ''
-        pool=(${lib.concatMapStringsSep " " (p: "\"${p}\"") pool})
-        ${desktoppr} "''${pool[RANDOM % ''${#pool[@]}]}"
-      '';
+  # The boot default's built-polarity pool, for the activation step.
+  # Same fetchurl inputs as theme-menu.nix's entry render — the store
+  # dedupes, so this is a second reference, not a second fetch.
+  builtPool = map (w: pkgs.fetchurl { inherit (w) url sha256; }) (
+    pools.${(paletteFor.select paletteFor.polarity).scheme} or [ ]
+  );
 in
 {
   appearance.onChange.wallpaper = ''
-    if [ "$DARKMODE" = "1" ]; then
-      ${applyRandom darkPool}
-    else
-      ${applyRandom lightPool}
+    entry=${config.xdg.stateHome}/theme-menu/current
+    [ -e "$entry" ] || entry=${config.xdg.dataHome}/theme-menu/${schemePair.family}
+    if [ "$DARKMODE" = "1" ]; then dir=$entry/wallpapers-dark; else dir=$entry/wallpapers-light; fi
+    shopt -s nullglob
+    pool=("$dir"/*)
+    shopt -u nullglob
+    if [ ''${#pool[@]} -gt 0 ]; then
+      ${desktoppr} "''${pool[RANDOM % ''${#pool[@]}]}"
     fi
   '';
 
-  # Deterministic default on rebuild: first entry of the *built*
-  # polarity's pool — activation must be reproducible, so no randomness
-  # here. mkIf omits the DAG entry entirely when no pool is declared.
-  home.activation =
-    let
-      builtPool = if paletteFor.polarity == "dark" then darkPool else lightPool;
-    in
-    lib.mkIf (builtPool != [ ]) {
-      setWallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  # Deterministic default on a fresh provision only: first entry of the
+  # boot default's built-polarity pool. Gated on the pointer at runtime
+  # — activation must not stomp a live selection's wallpaper — and the
+  # DAG entry is omitted entirely when no pool is declared.
+  home.activation = lib.mkIf (builtPool != [ ]) {
+    setWallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ ! -e ${config.xdg.stateHome}/theme-menu/current ]; then
         run ${desktoppr} "${builtins.head builtPool}"
-      '';
-    };
+      fi
+    '';
+  };
 }

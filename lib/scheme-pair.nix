@@ -27,6 +27,10 @@ let
     (base16.mkSchemeAttrs "${pkgs.base16-schemes}/share/themes/${sel.scheme}.yaml").override sel.override;
 in
 {
+  # The boot-default family name, alongside its resolved couplet below —
+  # menu consumers need to know which entry is the fallback.
+  inherit (paletteFor) family;
+
   dark = mkVariant (paletteFor.select "dark");
   light = mkVariant (paletteFor.select "light");
   menu = builtins.mapAttrs (_: couplet: {

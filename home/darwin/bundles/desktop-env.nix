@@ -37,12 +37,14 @@
     # Ensures ~/Pictures/Screenshots exists; pairs with screencapture.location
     # in modules/darwin/system-prefs.nix.
     ../screenshots-dir.nix
-    # Runtime theme switching (#499): the appearance watcher + hook option, the
-    # JankyBorders repaint hook, and theme-following wallpaper pools. Ghostty's
-    # half is native dual-theme in its own module. See
-    # docs/design/macos-live-theme-switching.md.
+    # Runtime theme switching (#499, #605): the appearance watcher + hook
+    # option, the JankyBorders repaint hook, theme-following wallpaper
+    # pools, and the named-theme menu (entry dirs + the `theme` switcher
+    # CLI). Ghostty's half is native dual-theme + the menu include in its
+    # own module. See docs/design/macos-live-theme-switching.md.
     ../dark-mode-notify.nix
     ../jankyborders-hook.nix
     ../wallpapers.nix
+    ../theme-menu.nix
   ];
 }

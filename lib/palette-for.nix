@@ -40,6 +40,10 @@ in
   # cross-app dark/light signal.
   inherit (default) polarity;
 
+  # The boot-default family name — the menu entry consumers fall back to
+  # when no runtime selection exists (#605 stage 2).
+  inherit (default) family;
+
   # polarity -> selection, for the host's boot-default family.
   select = selectionFor default.family;
 
