@@ -28,31 +28,46 @@
 # simply absent. The `command -q macchina` guard prevents a startup
 # error if macchina is transiently missing from PATH.
 #
-# Apple-logo ASCII uses macchina's own `$N` palette-index escape
-# syntax (configured via the Hydrogen theme's `[custom_ascii]` block).
-# Each `$N` switches the rendering colour to palette index `N` — the
-# multi-stripe layout traditional to the macchina Apple ASCII variant.
-{ lib, ... }:
+# Apple-logo ASCII uses the same Stylix true-colour mechanism as
+# `home/nixos/macchina-shell-init.nix`: 24-bit ANSI escapes from
+# config.lib.stylix.colors (base0D/base0C), applied at eval time.
+# Two-tone: stem+leaf = base0D, body = base0C. Parity with #310.
+{ config, lib, ... }:
+let
+  esc = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
+  # Per-host two-tone Apple logo from the Stylix palette (ADR-028).
+  # base0D = primary accent; base0C = secondary accent. Mirrors the
+  # colour roles used by the NixOS sibling for the NixOS snowflake.
+  c = config.lib.stylix.colors;
+  dark = "${esc}[38;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
+  light = "${esc}[38;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
+  reset = "${esc}[0m";
+in
 {
-  xdg.configFile."macchina/ascii.txt".text = ''
-                         ..'
-                     ,xNMM.
-                   .OMMMMo
-                   lMM"
-         .;loddo:.  .olloddol;.
-       cKMMMMMMMMMMNWMMMMMMMMMM0:
-     $2.KMMMMMMMMMMMMMMMMMMMMMMMWd.
-     XMMMMMMMMMMMMMMMMMMMMMMMX.
-    $3;MMMMMMMMMMMMMMMMMMMMMMMM:
-    :MMMMMMMMMMMMMMMMMMMMMMMM:
-    $4.MMMMMMMMMMMMMMMMMMMMMMMMX.
-     kMMMMMMMMMMMMMMMMMMMMMMMMWd.
-     $5'XMMMMMMMMMMMMMMMMMMMMMMMMMMk
-      'XMMMMMMMMMMMMMMMMMMMMMMMMK.
-        $6kMMMMMMMMMMMMMMMMMMMMMMd
-         ;KMMMMMMMWXXWMMMMMMMk.
-           "cooc*"    "*coo'"
-  '';
+  # Apple logo — two-tone pure-ASCII art, stem+leaf in dark (base0D),
+  # body in light (base0C). Art is macchina's built-in macOS big
+  # variant (credit: Dylan Araps / Neofetch, MIT), with $N palette-
+  # index markers removed and alignment corrected; all characters are
+  # 7-bit ASCII, so JetBrainsMono Nerd Font never needs a fallback
+  # (sidesteps issue #161). Colour escapes applied here at eval time.
+  xdg.configFile."macchina/ascii.txt".text =
+    "${dark}                     ..'\n"
+    + "${dark}                 ,xNMM.\n"
+    + "${dark}               .OMMMMo\n"
+    + "${dark}               lMM\"\n"
+    + "${light}     .;loddo:.  .olloddol;.\n"
+    + "${light}   cKMMMMMMMMMMNWMMMMMMMMMM0:\n"
+    + "${light} .KMMMMMMMMMMMMMMMMMMMMMMMWd.\n"
+    + "${light} XMMMMMMMMMMMMMMMMMMMMMMMX.\n"
+    + "${light};MMMMMMMMMMMMMMMMMMMMMMMM:\n"
+    + "${light}:MMMMMMMMMMMMMMMMMMMMMMMM:\n"
+    + "${light}.MMMMMMMMMMMMMMMMMMMMMMMMX.\n"
+    + "${light} kMMMMMMMMMMMMMMMMMMMMMMMMWd.\n"
+    + "${light} 'XMMMMMMMMMMMMMMMMMMMMMMMMMMk\n"
+    + "${light}  'XMMMMMMMMMMMMMMMMMMMMMMMMK.\n"
+    + "${light}    kMMMMMMMMMMMMMMMMMMMMMMd\n"
+    + "${light}     ;KMMMMMMMWXXWMMMMMMMk.\n"
+    + "${light}       \"cooc*\"    \"*coo'\"${reset}\n";
 
   programs.fish.interactiveShellInit = lib.mkBefore ''
     if command -q macchina
