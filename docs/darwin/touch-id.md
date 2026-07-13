@@ -3,18 +3,12 @@
 Operator's authentication shortcut for `sudo` on every Darwin host that
 has Touch ID hardware available. On `neptune` the hardware reaches macOS
 through the Apple Magic Keyboard with Touch ID; the same wiring carries
-over to any future MacBook with built-in Touch ID. The Apple Watch
-"approve with Watch" prompt is enabled by the same option as a free
-side-effect — nix-darwin's `touchIdAuth` toggle activates both the
-`pam_tid.so` (Touch ID) and `pam_watchid.so` modules.
+over to any future MacBook with built-in Touch ID.
+The Apple Watch "approve with Watch" prompt is enabled by the same option as a free side-effect — `pam_tid.so` natively offers the Apple Watch as an approval channel when a paired Watch is present and no fingerprint is given, so `touchIdAuth` alone covers both (nix-darwin's separate `watchIdAuth`/`pam_watchid.so` option is not set here).
 
 ## Selection
 
-`security.pam.services.sudo_local.touchIdAuth = true;`, set in
-`modules/darwin/touch-id.nix` and imported per-host by Darwin hosts that
-want it (today: `neptune`). The module is a single-line capability and
-sits as a standalone module per ADR-027 — capabilities, even universally
-desired ones, do not belong in `foundation.nix`.
+`security.pam.services.sudo_local.touchIdAuth = true;` and `security.pam.services.sudo_local.reattach = true;`, set in `modules/darwin/touch-id.nix` and imported per-host by Darwin hosts that want it (today: `neptune`, `saturn`). The module is a single-capability standalone per ADR-027 — capabilities, even universally desired ones, do not belong in `foundation.nix`.
 
 ## Rationale
 
@@ -49,6 +43,8 @@ unlock — currently macOS-automatic, but if nix-darwin ever exposes a
 knob), this name still anchors the concept clearly without forcing a
 rename.
 
+**`reattach = true` closes the Ghostty/tmux/zellij gap.** Terminal multiplexers (tmux, zellij) and non-Terminal.app terminals (Ghostty) run in a process that has detached from the user's macOS bootstrap session — the session context that `pam_tid.so` requires to call the biometric subsystem. Without `reattach`, `sudo` in those environments silently falls back to a password prompt because the GUI agent is unreachable. `security.pam.services.sudo_local.reattach = true` installs `pam_reattach.so` from `pkgs.pam-reattach` and writes it as the first entry in `/etc/pam.d/sudo_local`, ordered *before* `pam_tid.so` — the ordering matters because `pam_reattach` must re-attach the session before `pam_tid` attempts to contact the biometric agent. **Boundary:** this only helps when a GUI session exists locally. Over SSH there is no bootstrap session to reattach; password fallback is correct and expected there — no change to SSH behaviour.
+
 ## Prerequisite: fingerprint enrolment
 
 This option only makes `sudo` *accept* Touch ID. It does not — and
@@ -67,12 +63,7 @@ approval channel automatically once `touchIdAuth = true` is set.
 
 ## TCC interactions
 
-None beyond the existing Touch ID enrolment dialog. `pam_tid.so` and
-`pam_watchid.so` are signed Apple modules that interact with `BiometricKit`
-through Apple's own entitlements; they don't require the operator to
-add `sudo` to any Privacy & Security pane. The first `sudo` after
-activation may prompt once for fingerprint, then accepts Touch ID for
-subsequent invocations within the standard sudo timestamp window.
+None beyond the existing Touch ID enrolment dialog. `pam_tid.so` is a signed Apple module that interacts with `BiometricKit` through Apple's own entitlements; it doesn't require the operator to add `sudo` to any Privacy & Security pane. The first `sudo` after activation may prompt once for fingerprint, then accepts Touch ID for subsequent invocations within the standard sudo timestamp window.
 
 ## Verification
 
@@ -80,25 +71,23 @@ After `nh darwin switch` lands the module:
 
 ```bash
 cat /etc/pam.d/sudo_local
-# Expect to see:
-#   # sudo_local: local config file which survives system updates
+# Expect to see (pam_reattach.so first, then pam_tid.so):
+#   auth       optional       /nix/store/…-pam-reattach-…/lib/pam/pam_reattach.so
 #   auth       sufficient     pam_tid.so
-#   auth       sufficient     pam_watchid.so
 
 sudo -k       # invalidate the existing sudo timestamp
 sudo -v       # should prompt with Touch ID, not password
 ```
 
-`sudo -v` validates the credential cache without running any command,
-which makes it the safest verification — the macOS Touch ID dialog
-appears, the operator authenticates, and the cache is refreshed. If the
-dialog doesn't appear and a password prompt does instead, either:
+`sudo -v` validates the credential cache without running any command, which makes it the safest verification — the macOS Touch ID dialog appears, the operator authenticates, and the cache is refreshed.
+
+**Multiplexer verification (the gap this module closes):** inside a Ghostty window running zellij or tmux, run `sudo -k && sudo -v` — the Touch ID dialog should appear, not a password prompt. This is the canonical check that `pam_reattach.so` is working correctly. Run it in a fresh Ghostty window with a freshly created zellij/tmux session opened after the switch — multiplexer sessions already running were spawned under the pre-reattach bootstrap session and can spuriously fail (same family as the repo's known zellij session-purge gotcha).
+
+If the dialog doesn't appear and a password prompt does instead, either:
 
 1. The fingerprint enrolment is missing — check System Settings.
-2. The `sudo_local` file isn't being read by PAM — verify
-   `/etc/pam.d/sudo` includes the line
-   `auth include sudo_local` (Apple's default in Sonoma+; nix-darwin
-   doesn't manage `/etc/pam.d/sudo` itself).
+2. The `sudo_local` file isn't being read by PAM — verify `/etc/pam.d/sudo` includes the line `auth include sudo_local` (Apple's default in Sonoma+; nix-darwin doesn't manage `/etc/pam.d/sudo` itself).
+3. Running over SSH — there is no GUI bootstrap session to reattach; password fallback is expected and correct there.
 
 ## Sharp edges
 
@@ -113,7 +102,7 @@ suspect is "post-upgrade activation hasn't run yet."
 
 **Apple Watch unlock requires the Watch to be on the wrist AND
 unlocked.** A locked Watch on the wrist won't satisfy the
-`pam_watchid.so` check. Operators occasionally hit this when the Watch
+Watch-approval check. Operators occasionally hit this when the Watch
 auto-locks because the wrist was off-wrist briefly (showers, charging,
 etc.) and forget to re-authenticate on the Watch itself.
 

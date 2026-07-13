@@ -1,11 +1,11 @@
 # Touch ID for sudo — accept fingerprint (and paired Apple Watch
 # approval) in place of password for sudo authentication.
 #
-# Single option: `security.pam.services.sudo_local.touchIdAuth = true;`.
-# nix-darwin writes `/etc/pam.d/sudo_local` with the `pam_tid.so` and
-# `pam_watchid.so` entries; Apple's `softwareupdate` mechanism leaves
-# that file alone (unlike `/etc/pam.d/sudo`), so the setting survives
-# every macOS upgrade without operator intervention. Selection
+# touchIdAuth writes `pam_tid.so` into `/etc/pam.d/sudo_local`; reattach
+# prepends `pam_reattach.so` so Touch ID works inside Ghostty/tmux/zellij
+# (those terminals detach from the GUI bootstrap session that pam_tid.so
+# requires). Apple's `softwareupdate` leaves `sudo_local` alone, so both
+# settings survive macOS upgrades without operator intervention. Selection
 # rationale, enrolment prerequisite, and sharp edges: see
 # docs/darwin/touch-id.md.
 #
@@ -23,4 +23,8 @@
 # will surface the step.
 _: {
   security.pam.services.sudo_local.touchIdAuth = true;
+  # Re-attach the terminal to the user's bootstrap session before pam_tid checks
+  # it, so Touch ID works inside Ghostty, tmux, and zellij — without this,
+  # those terminals detach from the GUI session and sudo falls back to password.
+  security.pam.services.sudo_local.reattach = true;
 }
