@@ -8,7 +8,7 @@
 # #111). Surfaces reference these tokens instead of restating literals.
 #
 # Imported per-consumer as `import ../../lib/theme-tokens.nix { inherit config; }`
-# — the lib/ import convention (host-palettes/operator are plain attrsets,
+# — the lib/ import convention (theme-families/operator are plain attrsets,
 # stances takes { lib }; this one takes config), not threaded via _module.args.
 # Takes `config` for the dynamic colour/type groups that read Stylix; the static
 # groups never touch it, so static-only consumers (niri) force no Stylix eval
