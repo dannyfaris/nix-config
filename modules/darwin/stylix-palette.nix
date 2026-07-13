@@ -10,8 +10,9 @@
 # the palette source for lib/scheme-pair.nix + the Ghostty target
 # (home/darwin/ghostty.nix).
 #
-# Per-host palette comes from lib/host-palettes.nix keyed on
-# hostContext.hostName. Missing-host lookups fail loudly at eval.
+# The boot-default palette comes from the lib/theme-families.nix
+# catalogue keyed on hostContext.hostName. Missing-host lookups fail
+# loudly at eval.
 #
 # autoEnable = false is the whitelist stance per CLAUDE.md "Deliberate
 # stances" — every Stylix target is enabled deliberately, not auto-
@@ -31,9 +32,9 @@
 }:
 let
   # Selection semantics (scheme + slot-overrides per polarity, loud failure
-  # on an undeclared polarity or host) are single-sourced in
-  # lib/palette-for.nix (#541) — shared with the NixOS twin and
-  # lib/scheme-pair.nix.
+  # on an undeclared family or host) are single-sourced in
+  # lib/palette-for.nix (#541) — shared with the NixOS twin,
+  # lib/scheme-pair.nix, and home/darwin/wallpapers.nix.
   paletteFor = import ../../lib/palette-for.nix hostContext.hostName;
   active = paletteFor.select paletteFor.polarity;
 in

@@ -23,13 +23,14 @@
 }:
 let
   pools = import ../../lib/theme-wallpapers.nix;
-  palettes = import ../../lib/host-palettes.nix;
-  palette = palettes.${hostContext.hostName};
+  # Scheme names for the host's boot-default couplet, via the shared
+  # selection seam (#541) rather than a raw catalogue read.
+  paletteFor = import ../../lib/palette-for.nix hostContext.hostName;
 
   # Scheme name -> list of store paths (empty when no pool is declared).
   poolFor = scheme: map (w: pkgs.fetchurl { inherit (w) url sha256; }) (pools.${scheme} or [ ]);
-  darkPool = poolFor palette.schemes.dark;
-  lightPool = poolFor palette.schemes.light;
+  darkPool = poolFor (paletteFor.select "dark").scheme;
+  lightPool = poolFor (paletteFor.select "light").scheme;
 
   desktoppr = "${pkgs.desktoppr}/bin/desktoppr";
 
@@ -58,7 +59,7 @@ in
   # here. mkIf omits the DAG entry entirely when no pool is declared.
   home.activation =
     let
-      builtPool = if palette.polarity == "dark" then darkPool else lightPool;
+      builtPool = if paletteFor.polarity == "dark" then darkPool else lightPool;
     in
     lib.mkIf (builtPool != [ ]) {
       setWallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

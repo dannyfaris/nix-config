@@ -412,7 +412,7 @@ For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not**
 - **Terminal tab title** reflects the remote host (Ghostty is the `ghostty` cask on Darwin per ADR-031; tab-title behaviour matches Linux Ghostty).
 - Claude Code statusline colours follow the **local** terminal's palette (#411) — deliberately not a per-host signal.
 
-Per-host palettes remain defined in `lib/host-palettes.nix` (saturn included); post-ADR-041 they no longer repaint terminals over SSH, and with the statuslines' ANSI conversion landed (#411) no TUI bakes them — they colour each host's own terminal via Stylix and `lib/scheme-pair.nix`.
+Each host's boot-default palette is declared in `lib/theme-families.nix` (saturn included; host-identity theming is retired — the catalogue is fleet-global and the per-host entry is a boot default only); post-ADR-041 palettes no longer repaint terminals over SSH, and with the statuslines' ANSI conversion landed (#411) no TUI bakes them — they colour each host's own terminal via Stylix and `lib/scheme-pair.nix`.
 
 ### Phase 3 — linux-builder
 
