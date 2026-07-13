@@ -45,21 +45,21 @@ let
       (generated // handAuthored);
 in
 {
-  # Hand niri's window-border colour to Noctalia at runtime (ADR-036, #385).
+  # Hand niri's window-border colour to the theme-menu conductor at runtime
+  # (ADR-044, #609 — replacing the Noctalia-owned noctalia.kdl per ADR-036).
   # niri-flake's `programs.niri.config` replaces `settings` wholesale and
   # exposes no settings→KDL renderer, so we reach the rendered document via the
   # option's own *default* — `settings.render cfg.settings`, which depends on
   # `settings`, not `config`, so there's no cycle — serialise it, and append a
   # top-level include. `optional=true` (niri 26.04) keeps the session up before
-  # Noctalia first writes noctalia.kdl; niri watches the file and live-reloads,
-  # so the border follows Noctalia's scheme/polarity. Noctalia's own niri
-  # post-hook can't do this injection itself — it can't write the read-only
-  # config.kdl symlink. See docs/desktop/noctalia.md §Sharp edges.
+  # the seed first creates the symlink; niri's inotify watch misses symlink swaps
+  # (niri#2658), so the `theme` CLI fires `niri msg action load-config-file`
+  # explicitly on every switch. See docs/desktop/noctalia.md §Sharp edges.
   programs.niri.config =
     inputs.niri-flake.lib.kdl.serialize.nodes options.programs.niri.config.default
     + ''
 
-      include optional=true "~/.config/niri/noctalia.kdl"
+      include optional=true "~/.local/state/theme-menu/niri.kdl"
     '';
 
   programs.niri.settings = {

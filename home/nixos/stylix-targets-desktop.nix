@@ -79,16 +79,16 @@ in
     # installed. See docs/desktop/polkit.md.
     gtk.enable = lib.mkIf desktopSession true;
 
-    # GTK colours come from Noctalia (ADR-036, #385), layered over Stylix via an
-    # @import at the end of gtk.css — Noctalia's gruvbox @define-colors override
-    # Stylix's earlier ones by cascade (GTK honours a trailing @import). We
-    # declare the @import here rather than leaving Noctalia's gtk-refresh to
-    # inject it: that keeps gtk.css a stable home-manager symlink (Noctalia sees
-    # its import already present and stops rewriting the file), so `nh os switch`
-    # no longer collides on a clobbered gtk.css. The Stylix gtk target stays for
-    # settings.ini (adw-gtk3 + font); only the colours are overridden. Full
-    # target removal is a later refinement. See docs/desktop/noctalia.md.
-    gtk.extraCss = lib.mkIf desktopSession ''@import url("noctalia.css");'';
+    # GTK colours come from the theme-menu conductor (ADR-044, #609), layered
+    # over Stylix via a relative @import at the end of gtk.css. The seed
+    # activation in theme-menu.nix creates ~/.config/gtk-{3,4}.0/theme-menu.css
+    # as a symlink to the per-target resolved state symlink, so Stylix's earlier
+    # @define-colors are overridden by cascade (GTK honours a trailing @import).
+    # The Stylix gtk target stays for settings.ini (adw-gtk3 + font); only the
+    # colours are overridden. Noctalia's stale noctalia.css files are cleanup
+    # artefacts — they are shadowed by this import and can be removed after
+    # the operator disables Noctalia's GTK template. See docs/desktop/noctalia.md.
+    gtk.extraCss = lib.mkIf desktopSession ''@import url("theme-menu.css");'';
   };
 
   # GTK app-UI (the polkit prompt, file pickers, app dialogs) rides the `Sans`

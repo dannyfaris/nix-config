@@ -1,15 +1,18 @@
 # foot — fast, lightweight, Wayland-native terminal emulator.
 #
-# Colours come from Noctalia, not Stylix (ADR-036, #385). The Stylix `foot`
-# target was removed; foot's palette lives in ~/.config/foot/themes/noctalia,
-# which Noctalia writes at runtime and refreshes on a scheme/polarity change.
-# We declare the `include` here rather than leaning on Noctalia's post-hook —
-# it can't edit foot.ini while that's a read-only home-manager symlink, and a
-# competing Stylix colour block in the same file would shadow the include
-# anyway. See docs/desktop/noctalia.md §Configuration + §Sharp edges. (foot
-# treats a missing include as a fatal config error, but Noctalia writes the
-# file at runtime and it is present on metis; relevant only if templating is
-# ever disabled.)
+# Colours come from the theme-menu conductor, not Noctalia (ADR-044, #609).
+# foot's palette include is the per-target resolved symlink managed by
+# home/nixos/theme-menu.nix's activation seed + the `theme` CLI. We declare
+# the `include` here rather than relying on any runtime hook — it can't edit
+# foot.ini while it's a read-only home-manager symlink. (foot treats a missing
+# include as a fatal config error exit 230 — the seed activation guarantees the
+# path exists before any foot window can spawn; see theme-menu.nix.)
+#
+# R4 guard: NEVER set initial-color-theme anywhere in foot's config. The
+# theme-menu renders BOTH polarities under [colors-dark] section headers (foot's
+# active mode never flips; the conductor swaps file content). Setting
+# initial-color-theme=light would invert the [colors-dark]-header convention and
+# render the wrong polarity's colours. See docs/desktop/foot.md.
 #
 # Font + dpi-aware are set here because Noctalia's templating is colour-only:
 # the face is the `monospace` fontconfig generic, resolved by the conductor
@@ -40,8 +43,8 @@ in
     settings.main = {
       font = "monospace:size=${toString profile.fonts.terminal}";
       "dpi-aware" = "no";
-      # Noctalia's runtime-written colour theme (see header). foot expands ~.
-      include = "~/.config/foot/themes/noctalia";
+      # theme-menu conductor's per-target resolved symlink (see header). foot expands ~.
+      include = "~/.local/state/theme-menu/foot.ini";
     };
     # Translucent background + compositor blur, matched to Ghostty's
     # background-opacity/blur on macOS for cross-terminal parity. blur needs

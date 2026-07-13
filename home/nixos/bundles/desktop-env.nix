@@ -22,10 +22,14 @@
 #   - cursor-ide.nix — home.packages addition for pkgs.code-cursor
 #     (AI-coding-focused vscode fork; Wayland via host-wide
 #     NIXOS_OZONE_WL set in modules/nixos/electron-wayland.nix).
-#   - portal-color-scheme.nix — bridges `stylix.polarity` to the
-#     xdg-desktop-portal `color-scheme` interface via dconf so
-#     portal-querying apps (Firefox, libadwaita) follow the
-#     host's polarity. Closes the gap #141 left unresolved.
+#   - theme-menu.nix — Nix-declared runtime theme menu: renders one entry dir
+#     per declared family (lib/theme-families.nix), maintains the per-target
+#     resolved symlinks in $XDG_STATE_HOME/theme-menu/, seeds them at first
+#     activation, and ships the `theme` CLI (ADR-044, #609).
+#   - portal-color-scheme.nix — documentation marker for the xdg-desktop-portal
+#     color-scheme bridge. The dconf write moved into theme-menu.nix's gated
+#     seed so rebuilds no longer reset runtime polarity. Closes the gap #141
+#     left unresolved (now via theme-menu's seed + `theme` CLI).
 #   - polkit-agent.nix — mate-polkit (GTK3) authentication agent,
 #     replacing niri-flake's default KDE agent (disabled system-side
 #     in modules/nixos/niri.nix). See docs/desktop/polkit.md (#103).
@@ -58,6 +62,7 @@
     ../firefox.nix
     ../thunderbird.nix
     ../cursor-ide.nix
+    ../theme-menu.nix
     ../portal-color-scheme.nix
     ../polkit-agent.nix
     ../removable-media.nix
