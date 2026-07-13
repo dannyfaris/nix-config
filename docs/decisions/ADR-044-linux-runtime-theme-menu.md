@@ -1,7 +1,7 @@
 # ADR-044: Nix-owned runtime theme menu on Linux
 
 **Date**: 2026-07-14
-**Status**: Accepted, Built; on-metis runtime verification pending (#609)
+**Status**: Accepted, Implemented; runtime-verified on metis 2026-07-14 (#609)
 
 > Nix (via Stylix's `base16.mkSchemeAttrs` engine) is the **single theming authority** on the Linux desktop. A Nix-declared catalogue of named families is rendered per entry into stable data derivations; a `~/.local/state/theme-menu/current` symlink + per-target resolved symlinks (`foot.ini`, `niri.kdl`, `gtk3.css`, `gtk4.css`, `colors.json`) are the runtime state, plus an atomic copy of `colors.json` delivered into `~/.config/noctalia/` (Noctalia's watchers can't see symlink swaps — see §Explicit triggers); the `theme` CLI switches them atomically with explicit reload fan-out. Noctalia is demoted from colour authority to a **themed-by-Nix shell** — the colour-authority half of ADR-036 is reversed (see §Amendment to ADR-036 below); Noctalia as the cohesive shell (bar, launcher, notifications, lock, OSD, wallpaper, idle) is **unchanged**. Host-identity theming is retired (operator call, landed with the shared core slice #610 — every desktop host offers the full catalogue at runtime, and a host's `defaults` entry is a boot default only). The two-axis persistence model (family = symlink, polarity = dconf `org/gnome/desktop/interface/color-scheme`) and the explicit-trigger rule (no passive file-watch assumed for any surface) are the load-bearing conventions.
 
@@ -51,7 +51,7 @@ The design note's forces — GUI-app relaunch acceptable (force 1), declarativel
 - ✓ Durable: Noctalia is now just a themed shell — a v4→v5 migration doesn't break theming; removing Noctalia is no longer a theming event.
 - ✓ Live switching across the full catalogue with no rebuild; foot, niri, GTK, Noctalia chrome, and portal-following apps (Firefox, libadwaita) are designed to repaint in one `theme` invocation.
 - ✓ Polarity persists across reboot (dconf GVDB) and rebuild (pointer-gated seed never stomps a live selection).
-- ⚠ The runtime behaviours above are the declared/designed state, not yet the verified one — on-metis runtime verification (switch latency, per-surface repaint, reboot persistence, two-writer absence) is pending and will be recorded on #609 (the set-≠-enforced rung).
+- ✓ Runtime-verified on metis 2026-07-14: live family + polarity switches repaint open windows (OSC slot-query proven), niri/GTK/Noctalia follow, persistence and non-stomp confirmed; evidence recorded on #609. Known per-tool light-polarity legibility gaps (yazi, gh-dash) are consumer-side and tracked in #615.
 - ✗ The live-repaint plumbing (foot OSC loop, niri msg, colors.json copy-into-place) is ours to maintain, not Noctalia's.
 - ✗ Adding a future colour-consuming surface requires adding it to the per-entry render list; it won't be covered automatically (same discipline `stylix.targets.<x>.enable` already required, but named here rather than assumed).
 - ✗ Noctalia's demotion is a documented operator step, not a Nix gate — the control centre and settings.json are out of Nix's reach by design; an accidentally re-enabled `activeTemplates` would create a two-writer situation until the operator fixes it.
@@ -76,3 +76,7 @@ Rollout sequence: (1) activate the new generation (`nh os switch`), (2) operator
 - [ADR-028](./ADR-028-stylix-foundation-and-desktop-env.md) §item 1 — Stylix re-asserted as the Linux-desktop theming authority (first asserted in ADR-028, demoted by ADR-036, re-asserted here).
 - #609 (this issue), #610 (shared core slice — catalogue + boot defaults), #611 (Darwin sibling).
 - `docs/research/omarchy-theme-switching.md` + `docs/research/omarchy-theme-switching-validation.md` — per-app reload evidence, foot OSC pty-discovery, symlink-watch blind spot findings that shaped the trigger design.
+
+## History
+
+**2026-07-14** — runtime-verified on metis via #609 and #614. Two verification-caught fixes landed in #614: (1) absolute-dconf path in the seed (bare `dconf` calls failed silently on the HM activation PATH, leaving the portal key unset on first activation); (2) Noctalia copy-into-place delivery — the earlier source-read conclusion that FileView's parent-directory `watchChanges` fires on a symlink re-point was falsified by on-metis observation; delivery is now an atomic tmp-file copy + `mv -fT` inside `~/.config/noctalia/` (the in-directory replace the upstream watcher anticipates). Both fixes re-proven live post-merge. Evidence on #609.
