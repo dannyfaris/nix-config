@@ -392,7 +392,7 @@ Run from the new Mac's user shell.
   via direnv and exports `SOPS_AGE_KEY_FILE`, so no env-var
   ceremony is needed. (If you see "no identity found", verify you
   `cd`d into the repo — outside it, the env var is not set.)
-- macchina banner renders at every new interactive fish shell — every terminal tab, every zellij pane. The Apple-logo ASCII should display in the host's Stylix two-tone colours (base0D stem/leaf, base0C body). **If it renders uncoloured**, see Troubleshooting below.
+- macchina banner renders at every new interactive fish shell — every terminal tab, every zellij pane. The Apple-logo ASCII should display as five ANSI rainbow stripes (green leaf, then yellow / red / magenta / blue bands), rendered from the terminal's palette. **If it renders uncoloured**, see Troubleshooting below.
 - `hx` opens a `.nix` file with `nixd` LSP working — hover over
   `programs.git` shows the option's type. `:lsp-restart` if
   uncertain. (The binary is `hx`, not `helix` — `which helix`
@@ -410,9 +410,9 @@ For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not**
 - **Starship prompt host marker** — the over-SSH `[custom]` block fires and names the remote host. This is *the* SSH-context signal post-ADR-041.
 - **macchina banner** — renders on the remote's interactive fish init with the distro logo. Capture-mode smoke test without eyeballing: `ssh -t <host> 'fish -ic exit'` emits the banner + prompt block to stdout (`interactiveShellInit` fires regardless of TTY presence).
 - **Terminal tab title** reflects the remote host (Ghostty is the `ghostty` cask on Darwin per ADR-031; tab-title behaviour matches Linux Ghostty).
-- Claude Code statusline per-host colours are **#411-pending** — don't gate the bring-up on them.
+- Claude Code statusline colours follow the **local** terminal's palette (#411) — deliberately not a per-host signal.
 
-Per-host palettes remain defined in `lib/host-palettes.nix` (saturn included); post-ADR-041 they no longer repaint terminals over SSH — the statuslines' ANSI conversion (#411) is the palette consumer still pending.
+Per-host palettes remain defined in `lib/host-palettes.nix` (saturn included); post-ADR-041 they no longer repaint terminals over SSH, and with the statuslines' ANSI conversion landed (#411) no TUI bakes them — they colour each host's own terminal via Stylix and `lib/scheme-pair.nix`.
 
 ### Phase 3 — linux-builder
 
@@ -571,7 +571,7 @@ failures until upstream lands fixes.
 
 ### macchina Apple-logo banner renders uncoloured
 
-The Apple-logo `ascii.txt` in `home/darwin/macchina-shell-init.nix` injects Stylix true-colour (24-bit) ANSI escapes directly — the same mechanism as the NixOS sibling. (macchina's `$N` palette-index syntax is inert in `custom_ascii` files — markers print literally; the module used it historically and rendered uncoloured until #310.) If the banner renders uncoloured: confirm the terminal supports true colour, and that the HM-generated `~/.config/macchina/ascii.txt` contains `38;2;` escape sequences.
+The Apple-logo `ascii.txt` in `home/darwin/macchina-shell-init.nix` carries classic ANSI slot escapes — macchina parses custom ascii with ansi-to-tui and re-emits palette-relative SGR, so the stripes render from the terminal's live palette (ADR-041 / #411; supersedes the Stylix true-colour two-tone from #310/#603). (macchina's `$N` palette-index syntax is inert in `custom_ascii` files — markers print literally; the module used it historically and rendered uncoloured until #310.) If the banner renders uncoloured: confirm the HM-generated `~/.config/macchina/ascii.txt` contains classic `[3Nm` escapes and that the terminal populates its 16-colour palette.
 
 ## What this runbook does NOT cover
 

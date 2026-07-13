@@ -28,8 +28,8 @@
     #
     # The `[custom_ascii].path` points at a per-platform file written by
     # the matching `home/<platform>/macchina-shell-init.nix` sibling
-    # (NixOS: Stylix-coloured NixOS logo; Darwin: macchina-coloured
-    # Apple logo).
+    # (NixOS logo on Linux, Apple logo on Darwin — both coloured by
+    # ANSI-slot escapes, so the art follows the terminal palette).
     "macchina/themes/Hydrogen.toml".text = ''
       # Hydrogen
 

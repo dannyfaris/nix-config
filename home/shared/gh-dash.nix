@@ -4,20 +4,10 @@
 # canonically in ADR-006 §"gh-dash". Imported via the git-multi-identity
 # bundle so it rides on programs.gh and stays off mercury.
 #
-# The theme block is bridged by hand to the Stylix base16 palette because
-# gh-dash has no Stylix target — see ADR-006 §"gh-dash" → Theming.
-{ config, ... }:
-let
-  # Same accessor + semantic mapping the multiplexer/prompt use, so the
-  # whole TUI reads from one palette. base05 fg / base04 dim-fg / base03
-  # muted / base02 selection-bg / base01 faint-line;
-  # base08 red / base0B green / base0D focus-accent (base16 primary; also
-  # niri's active-window border).
-  c = config.lib.stylix.colors;
-  hex = slot: "#${c."${slot}-hex"}";
-  tokens = import ../../lib/theme-tokens.nix { inherit config; };
-in
-{
+# The theme block maps to ANSI-16 index strings so gh-dash follows the
+# terminal palette on a conductor flip (ADR-041); gh-dash has no Stylix
+# target — see ADR-006 §"gh-dash" → Theming.
+_: {
   programs.gh-dash = {
     enable = true;
 
@@ -25,25 +15,23 @@ in
     # is left at gh-dash's own defaults. Each colour field is individually
     # optional and falls back to a gh-dash default if unset — the full set
     # is given here purely for complete palette coverage.
+    # gh-dash 4.24.1 accepts bare ANSI index strings "0"–"255"; lipgloss v2
+    # emits classic SGR for 0–15, so these are palette-relative (ADR-041).
     settings.theme.colors = {
       text = {
-        primary = hex "base05"; # default foreground
-        secondary = hex "base04"; # dimmer metadata text
-        inverted = hex "base01"; # dark text on label/status backgrounds (≈ upstream #303030 default)
-        faint = hex "base03"; # comments / muted
-        warning = hex "base08"; # red
-        success = hex "base0B"; # green
+        primary = "15"; # bright-white — default foreground (base05)
+        secondary = "8"; # bright-black — dim text (base04, collapses onto muted)
+        inverted = "0"; # black — label/status backgrounds (base01, structural)
+        faint = "8"; # bright-black — comments / muted (base03)
+        warning = "1"; # red — base08
+        success = "2"; # green — base0B
       };
-      background.selected = hex "base02"; # selection background
-      # primary/secondary use the focus/muted roles (via theme-tokens); faint is
-      # a structural hairline, not a role, so it stays on the hex helper — as
-      # does text.faint (base03) above, which reaches the same slot structurally,
-      # not as the muted *role*. Labelling both paths keeps the split deliberate
-      # (the drift class #369 targets).
+      background.selected = "0"; # black — selection bg (base02, first pass)
+      # focus → 4 (blue), muted → 8 (bright-black), structural → 0 (black).
       border = {
-        primary = hex tokens.color.role.focus.slot; # focused section (focus role)
-        secondary = hex tokens.color.role.muted.slot; # unfocused section (muted role)
-        faint = hex "base01"; # hairline separators (structural)
+        primary = "4"; # blue — focus role (base0D)
+        secondary = "8"; # bright-black — muted role (base03)
+        faint = "0"; # black — hairline separators (base01, structural)
       };
     };
   };

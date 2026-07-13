@@ -20,7 +20,7 @@ NOW=$(date +%s)
 hostname=$(hostname -s)
 
 # Palette-driven colour bindings (BLUE/GREEN/YELLOW/RED/MAUVE/ORANGE/TEAL/
-# MUTED, truecolor SGR from config.lib.stylix.colors) and the account →
+# MUTED, classic ANSI-16 SGR following the terminal palette) and the account →
 # label map, both Nix-generated — mappings live in home/shared/agent-clis.nix.
 # The shared rendering lib is static. See ADR-024 §Implementation, ADR-028
 # slice 6, and #339.

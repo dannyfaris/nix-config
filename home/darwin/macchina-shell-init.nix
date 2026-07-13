@@ -28,46 +28,52 @@
 # simply absent. The `command -q macchina` guard prevents a startup
 # error if macchina is transiently missing from PATH.
 #
-# Apple-logo ASCII uses the same Stylix true-colour mechanism as
-# `home/nixos/macchina-shell-init.nix`: 24-bit ANSI escapes from
-# config.lib.stylix.colors (base0D/base0C), applied at eval time.
-# Two-tone: stem+leaf = base0D, body = base0C. Parity with #310.
-{ config, lib, ... }:
+# Apple-logo ASCII carries raw ANSI colour escapes — macchina parses
+# custom ascii with ansi-to-tui and re-emits palette-relative SGR, so
+# the stripes follow the terminal's live palette (ADR-041 / #411).
+# Stripe order (green leaf, then yellow / red / magenta / blue bands)
+# matches macchina's own compiled-in Apple variant — verify against
+# src/ascii.rs when bumping macchina.
+{ lib, ... }:
 let
   esc = builtins.fromJSON ''"\u001b"''; # JSON parses \uXXXX; Nix strings do not
-  # Per-host two-tone Apple logo from the Stylix palette (ADR-028).
-  # base0D = primary accent; base0C = secondary accent. Mirrors the
-  # colour roles used by the NixOS sibling for the NixOS snowflake.
-  c = config.lib.stylix.colors;
-  dark = "${esc}[38;2;${c."base0D-rgb-r"};${c."base0D-rgb-g"};${c."base0D-rgb-b"}m";
-  light = "${esc}[38;2;${c."base0C-rgb-r"};${c."base0C-rgb-g"};${c."base0C-rgb-b"}m";
+  # Classic rainbow stripes as direct ANSI slot literals — logo
+  # iconography, not UI accent roles: each scheme renders its own
+  # rainbow (ANSI-16 has no orange, so the six historical bands
+  # compress to five).
+  green = "${esc}[32m";
+  yellow = "${esc}[33m";
+  red = "${esc}[31m";
+  magenta = "${esc}[35m";
+  blue = "${esc}[34m";
   reset = "${esc}[0m";
 in
 {
-  # Apple logo — two-tone pure-ASCII art, stem+leaf in dark (base0D),
-  # body in light (base0C). Art is macchina's built-in macOS big
-  # variant (credit: Dylan Araps / Neofetch, MIT), with $N palette-
-  # index markers removed and alignment corrected; all characters are
-  # 7-bit ASCII, so JetBrainsMono Nerd Font never needs a fallback
-  # (sidesteps issue #161). Colour escapes applied here at eval time.
+  # Apple logo — five-stripe pure-ASCII art. Art is macchina's built-in
+  # macOS big variant (credit: Dylan Araps / Neofetch, MIT), markers
+  # stripped and alignment corrected; all characters are 7-bit ASCII,
+  # so JetBrainsMono Nerd Font never needs a fallback (sidesteps issue
+  # #161). Every line restates its stripe's escape — cross-line SGR
+  # carry through ansi-to-tui is unverified; per-line needs no such
+  # assumption. Concatenation style mirrors the NixOS sibling.
   xdg.configFile."macchina/ascii.txt".text =
-    "${dark}                     ..'\n"
-    + "${dark}                 ,xNMM.\n"
-    + "${dark}               .OMMMMo\n"
-    + "${dark}               lMM\"\n"
-    + "${light}     .;loddo:.  .olloddol;.\n"
-    + "${light}   cKMMMMMMMMMMNWMMMMMMMMMM0:\n"
-    + "${light} .KMMMMMMMMMMMMMMMMMMMMMMMWd.\n"
-    + "${light} XMMMMMMMMMMMMMMMMMMMMMMMX.\n"
-    + "${light};MMMMMMMMMMMMMMMMMMMMMMMM:\n"
-    + "${light}:MMMMMMMMMMMMMMMMMMMMMMMM:\n"
-    + "${light}.MMMMMMMMMMMMMMMMMMMMMMMMX.\n"
-    + "${light} kMMMMMMMMMMMMMMMMMMMMMMMMWd.\n"
-    + "${light} 'XMMMMMMMMMMMMMMMMMMMMMMMMMMk\n"
-    + "${light}  'XMMMMMMMMMMMMMMMMMMMMMMMMK.\n"
-    + "${light}    kMMMMMMMMMMMMMMMMMMMMMMd\n"
-    + "${light}     ;KMMMMMMMWXXWMMMMMMMk.\n"
-    + "${light}       \"cooc*\"    \"*coo'\"${reset}\n";
+    "${green}                     ..'\n"
+    + "${green}                 ,xNMM.\n"
+    + "${green}               .OMMMMo\n"
+    + "${green}               lMM\"\n"
+    + "${yellow}     .;loddo:.  .olloddol;.\n"
+    + "${yellow}   cKMMMMMMMMMMNWMMMMMMMMMM0:\n"
+    + "${yellow} .KMMMMMMMMMMMMMMMMMMMMMMMWd.\n"
+    + "${red} XMMMMMMMMMMMMMMMMMMMMMMMX.\n"
+    + "${red};MMMMMMMMMMMMMMMMMMMMMMMM:\n"
+    + "${red}:MMMMMMMMMMMMMMMMMMMMMMMM:\n"
+    + "${magenta}.MMMMMMMMMMMMMMMMMMMMMMMMX.\n"
+    + "${magenta} kMMMMMMMMMMMMMMMMMMMMMMMMWd.\n"
+    + "${magenta} 'XMMMMMMMMMMMMMMMMMMMMMMMMMMk\n"
+    + "${blue}  'XMMMMMMMMMMMMMMMMMMMMMMMMK.\n"
+    + "${blue}    kMMMMMMMMMMMMMMMMMMMMMMd\n"
+    + "${blue}     ;KMMMMMMMWXXWMMMMMMMk.\n"
+    + "${blue}       \"cooc*\"    \"*coo'\"${reset}\n";
 
   programs.fish.interactiveShellInit = lib.mkBefore ''
     if command -q macchina
