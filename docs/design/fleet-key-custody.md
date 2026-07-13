@@ -1,6 +1,6 @@
 # Fleet key custody — one key, one role, one lifecycle
 
-**Status:** Proposed — design note (`docs/design/`). Not built. #526 (the identity-architecture hub its own comments recognize — comment 3, "the hub of the fleet's key-custody architecture"; supersedes its bench sequence with a moved-context revision); consumes ADR-042; imposes a constraint on #557; upstream of #563, #566, #572; adjacent #387, ADR-009, ADR-010, ADR-034. Drafted 2026-07-07; custody calls settled at review 2026-07-13. Expect an ADR on acceptance.
+**Status:** Accepted (2026-07-13) — design note (`docs/design/`). Built — the revised rotation executed and runtime-verified 2026-07-13 (#526). #526 (the identity-architecture hub its own comments recognize — comment 3, "the hub of the fleet's key-custody architecture"; supersedes its bench sequence with a moved-context revision); consumes ADR-042; imposes a constraint on #557; upstream of #563, #566, #572; adjacent #387, ADR-009, ADR-010, ADR-034. Drafted 2026-07-07; custody calls settled at review 2026-07-13; decision frozen in [ADR-043](../decisions/ADR-043-fleet-key-custody.md).
 
 ## Summary
 
