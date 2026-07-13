@@ -54,31 +54,22 @@ aren't earning their keep for a single-OS, single-user desktop.
 
 ## Configuration
 
-**HM module** — `home/nixos/foot.nix` sets the font, `dpi-aware`, and an
-`include` pointing at Noctalia's runtime-written colour theme:
+**HM module** — `home/nixos/foot.nix` sets the font, `dpi-aware`, and an `include` pointing at the theme-menu conductor's per-target resolved symlink (ADR-044, #609):
 
 ```nix
 programs.foot = {
   enable = true;
   settings.main = {
-    font = "${config.stylix.fonts.monospace.name}:size=${toString profile.fonts.terminal}";
+    font = "monospace:size=${toString profile.fonts.terminal}";
     "dpi-aware" = "no";
-    include = "~/.config/foot/themes/noctalia";
+    include = "~/.local/state/theme-menu/foot.ini";
   };
 };
 ```
 
-**Theming is Noctalia's, not Stylix's** (ADR-036, #385). The Stylix `foot`
-target was removed; foot's colours come from `~/.config/foot/themes/noctalia`,
-which Noctalia writes at runtime and refreshes on a scheme/polarity change.
-We declare the `include` ourselves rather than relying on Noctalia's post-hook,
-which can't edit foot.ini while it's a read-only home-manager symlink — and a
-competing Stylix `[colors-dark]` block in foot.ini was exactly what shadowed
-the include before the target came off. The font face still resolves from the
-mono slot (`stylix.fonts.monospace.name`, retained under E1) and the size from
-the active display profile (`lib/display-profiles.nix` — size 8 at metis's 2×);
-`dpi-aware = "no"` is set here to preserve pt-based sizing. See
-[noctalia.md](./noctalia.md) §Configuration and §Sharp edges.
+**Theming is the theme-menu conductor's** (ADR-044, #609 — replacing Noctalia per ADR-036). The Stylix `foot` target remains removed; foot's colours come from `~/.local/state/theme-menu/foot.ini`, a symlink managed by `home/nixos/theme-menu.nix`'s seed activation and the `theme` CLI. We declare the `include` ourselves — the seed guarantees the path exists before any foot window can spawn (foot exits 230 on a missing include). The font face resolves via the `monospace` fontconfig generic (the runtime font conductor, #390); the size comes from the active display profile (`lib/display-profiles.nix` — size 8 at metis's 2×); `dpi-aware = "no"` is set here to preserve pt-based sizing.
+
+**[colors-dark] convention:** the theme-menu renders BOTH polarities under a `[colors-dark]` section header — foot's active section never flips; the conductor swaps the file content. **Never set `initial-color-theme = light`** anywhere in foot's config: doing so would invert the `[colors-dark]`-header convention and render the wrong polarity's colours. This guard is documented in `home/nixos/foot.nix` (R4 guard comment) and enforced by convention, not a lint gate. See `home/nixos/theme-menu.nix` §renderFoot.
 
 ## Sharp edges
 
