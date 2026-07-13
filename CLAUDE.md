@@ -48,7 +48,7 @@ home/shared/bundles/           # capability bundles (home-level, cross-platform)
 home/shared/                   # cross-platform standalone home-manager modules
 home/nixos/bundles/            # NixOS-specific home-manager bundles
 home/nixos/                    # NixOS-specific home-manager modules (e.g. macchina-shell-init)
-home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, hammerspoon)
+home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, aerospace)
 ```
 
 Composition follows the foundation + bundles model (ADR-027): every host
