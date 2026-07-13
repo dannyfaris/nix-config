@@ -1,7 +1,8 @@
 # AeroSpace window manager on Darwin (ADR-040, superseding ADR-039 §7's
 # pure-Hammerspoon realization). Installs pkgs.aerospace via the
 # `programs.aerospace` home-manager module and owns
-# ~/.config/aerospace/aerospace.toml + the launchd agent.
+# ~/.aerospace.toml (the HM module's home-root target — not the XDG
+# path) + the launchd agent.
 #
 # See docs/design/macos-deterministic-tiling.md for the *why* (the need-vs-means
 # reframe, the settled keymap, the i3-flat/no-scroll limitations) and ADR-040
