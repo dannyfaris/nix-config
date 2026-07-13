@@ -60,15 +60,12 @@
   # hostKeys — one user key PER HOST (#524), each labelled with its origin:
   # generated on that host, private key never moves; a compromised host
   # revokes by deleting its one line. Per-host keys are passphrase-less
-  # (operator-endorsed carve-out, ADR-010 §History). Exception: the
-  # neptune key predates this model — it is also GitHub-registered and
-  # the sops age-identity source; rotation onto a fresh fleet-only key
-  # is tracked in #526 (see ADR-010 §History 2026-07-03). A backup key
+  # (operator-endorsed carve-out, ADR-010 §History). A backup key
   # (e.g. on a YubiKey) would append here rather than becoming parallel
   # state. Only enrolled hosts appear (neptune, metis today); the rest
   # enrol at their bootstrap events.
   hostKeys = {
-    neptune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNUroaa0Z3VyMJVnnQWTtuaosFL30E6xDsSUEAuS8MI dbf@neptune";
+    neptune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEG7lLmu/lPjyPp1dW3QdA1UcPWi4+e/YEDxvj2UZaHW dbf@neptune";
     metis = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis";
   };
 
