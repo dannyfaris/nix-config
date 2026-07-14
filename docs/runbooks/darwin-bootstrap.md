@@ -22,6 +22,24 @@ Run once per fresh clone of this repo on the operator machine:
   exports `SOPS_AGE_KEY_FILE` so `sops --decrypt` works in-repo
   without env-var ceremony.
 - Vault access (1Password) from the new Mac or a neighbouring signed-in device. Nothing key-shaped is carried between machines: the Mac's sops identity is populated from the vault in pre-bootstrap step 1, and its fleet SSH key is minted on-box at §Fleet SSH enrolment and lands via a normal PR (docs/design/fleet-key-custody.md).
+- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md
+  §Private flake inputs). Nix fetches *all* inputs at eval, so every
+  machine that evaluates this flake — this Mac, once it rebuilds
+  itself — needs GitHub auth for the private inputs or the rebuild
+  dies at fetch with an HTTP 404. One-time per machine, after
+  `gh auth login` (gh arrives with the first activation; run this
+  before the *second* rebuild, or on first 404):
+
+  ```
+  install -d -m 700 ~/.config/nix && umask 077 && printf 'access-tokens = github.com=%s\n' "$(gh auth token)" > ~/.config/nix/nix.conf
+  ```
+
+  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the
+  file is unmanaged and holds only this line. `gh auth token` returns a
+  session-lifetime OAuth token: a later rebuild 404-ing on the input is
+  the refresh signal (re-run the line). CI's equivalent, the PAT
+  behind it, and the declarative fleet-wide alternative are in
+  docs/ci.md §Private flake inputs.
 
 ## Pre-bootstrap (operator-side, on the Mac)
 

@@ -47,6 +47,23 @@ Run once per fresh clone of this repo on the operator machine:
   you'll SSH as `dbf` from your Mac afterwards). You can leave the
   entry in place or remove it post-bootstrap — either is fine.
 - The new host's `sshEdges` entry in `lib/operator.nix` names the source hosts you'll SSH from, with their `hostKeys` entries current (ADR-042 — `modules/nixos/users.nix` derives each host's authorized keys from these). Once `nixos-anywhere` completes, those edge-derived keys are the sole inbound credentials — get them right before, not after.
+- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md
+  §Private flake inputs). Nix fetches *all* inputs at eval, so both
+  ends need it or eval dies at fetch with an HTTP 404: the operator
+  machine (the bootstrap's `--flake .#<host>` evals locally), and the
+  new host itself before its first on-host rebuild. One-time per
+  machine, after `gh auth login`:
+
+  ```
+  install -d -m 700 ~/.config/nix && umask 077 && printf 'access-tokens = github.com=%s\n' "$(gh auth token)" > ~/.config/nix/nix.conf
+  ```
+
+  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the
+  file is unmanaged and holds only this line. `gh auth token` returns a
+  session-lifetime OAuth token: a later rebuild 404-ing on the input is
+  the refresh signal (re-run the line). CI's equivalent, the PAT
+  behind it, and the declarative fleet-wide alternative are in
+  docs/ci.md §Private flake inputs.
 
 ## Per-host preconditions
 
