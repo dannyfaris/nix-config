@@ -50,6 +50,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # wiki-infra — deployment packaging for the wiki (the estate's one
+    # always-on personal knowledge system; metis is its ruled log host).
+    # Exports nixosModules.{wiki-pipeline,wiki-offsite,backup-exclusions};
+    # zero inputs of its own, so no follows and no lock churn. Module shape
+    # is governed by the wiki repo's design process (deployment-packaging.md
+    # there); this repo composes it per-host. PRIVATE remote: every host's
+    # eval fetches all inputs, so each rebuilding host needs user-scoped
+    # fetch auth (access-tokens in ~/.config/nix/nix.conf, the gh-credential
+    # class) — the packaging note's fork-2 ruling; sops-managed netrc is the
+    # declarative fleet-wide alternative if per-host wiring proves friction.
+    wiki-infra.url = "github:dannyfaris/wiki-infra";
+
     nixos-anywhere = {
       url = "github:nix-community/nixos-anywhere";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -39,6 +39,12 @@ jobs:
 
       - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
+          # `nix flake update` fetches every input, private ones included
+          # (wiki-infra) — same token, same reason as ci.yaml. Without it
+          # the weekly bump 404s. GH_PAT_FLAKE_LOCK below cannot serve
+          # here: it is scoped to this repo only (PR open), not the
+          # private inputs. See docs/ci.md §Private flake inputs.
+          github_access_token: ${{ secrets.GH_PAT_PRIVATE_INPUTS || secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = false
