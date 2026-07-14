@@ -33,9 +33,20 @@
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
     ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199).
     ../../modules/nixos/ntfy-server.nix # Self-hosted ntfy receiver for the fleet's failure notifications (#199).
+    inputs.wiki-infra.nixosModules.wiki-pipeline # Wiki timer family, state dir, R1 exclusion record (wiki repo: deployment-packaging.md).
   ];
 
   networking.hostName = "metis";
+
+  # Wiki pipeline (log-host role) — metis is the ruled log host (wiki repo:
+  # deployment-topology.md, decisions.md 021). Every other option defaults
+  # to the ruled topology; expectedHost is asserted against hostName at
+  # eval, and the units carry WIKI_EXPECTED_* for the wiki's own runtime
+  # drift guard against deploy/topology.toml.
+  services.wiki-pipeline = {
+    enable = true;
+    expectedHost = "metis";
+  };
 
   # Set once at install; never change, even after upgrading.
   system.stateVersion = "25.11";
