@@ -55,12 +55,13 @@ jobs:
 
       - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
-          # Explicit GH token for Nix's github.com fetches.
-          # install-nix-action v31's docs say `GITHUB_TOKEN` is picked
-          # up automatically when this input is empty; setting it
-          # explicitly is defense-in-depth (makes auth deterministic
-          # and surfaces in the action's logs).
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          # GH token for Nix's github.com fetches. GH_PAT_PRIVATE_INPUTS
+          # (fine-grained, read-only on the private flake inputs — today
+          # wiki-infra) because the default GITHUB_TOKEN is scoped to THIS
+          # repo and 404s on any private input. Falls back to GITHUB_TOKEN
+          # where the secret is absent (forks). See docs/ci.md §Private
+          # flake inputs.
+          github_access_token: ${{ secrets.GH_PAT_PRIVATE_INPUTS || secrets.GITHUB_TOKEN }}
 
           # accept-flake-config = false carries the whitelist stance into
           # CI (no transitive input can add a substituter). niri.cachix.org
