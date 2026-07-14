@@ -101,7 +101,7 @@ The standing price once chosen: **store size scales with the declared variants**
 
 Remaining after the stage-1 build (2026-07-02 — the runtime verification and the working-theory items landed as designed; the fish assumption inverted, see §Design and §De-risk evidence):
 
-- The CLI switcher (SLS helper) — shipped via #618: `theme dark | theme light` polarity-only forms and `theme <family> [dark|light]` combined form, with the SLS helper as a Nix-built package private to `home/darwin/theme-menu.nix`. Runtime verification on neptune is the next step (set ≠ enforced; tracked on the issue).
+- The CLI switcher (SLS helper) — shipped via #618: `theme dark | theme light` polarity-only forms and `theme <family> [dark|light]` combined form, with the SLS helper as a Nix-built package private to `home/darwin/theme-menu.nix`. Runtime-verified on neptune 2026-07-14 (evidence on #618): all CLI forms through the production path; notification posting machine-proven via an independent on-box listener (6/6 flips, both directions); the one-code-path invariant held — the verification exposed one pre-existing defect unrelated to #618: the dark-mode-notify watcher's notification receipt is intermittent when idle (~50% loss; every entry point affected, including the native toggle), tracked in #620.
 - fish/bat polish: resolved by [ADR-041](../decisions/ADR-041-terminal-authority-tui-theming.md)'s terminal-authority conversion (bat `base16`, whole TUI surface ANSI); dual `[light]/[dark]` fish theme sections remain the recorded fallback only if fish-specific colours are ever missed.
 
 Stage 2 (designed and built 2026-07-13, #605):
