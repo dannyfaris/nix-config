@@ -1,7 +1,8 @@
 # dark-mode-notify — the macOS appearance watcher and the fan-out it
 # drives (#499). Owns the `appearance.onChange` hook option, the runner
-# that executes the hooks, and the launchd user agent that invokes the
-# runner on every appearance change.
+# that executes the hooks, and two launchd user agents: the watcher
+# (immediate delivery when notifications arrive) and a periodic sweep
+# (bounds staleness when they don't).
 #
 # This is the Class-2 half of runtime theme switching: surfaces with no
 # native ear on the appearance signal (JankyBorders, wallpaper)
@@ -11,10 +12,18 @@
 #
 # HM-level (not nix-darwin) because everything involved is user-session:
 # distributed notifications are delivered per-user, and the hooks talk
-# to the user's borders instance and desktop. The watcher also runs the
-# hooks once at agent startup and again on wake from sleep (upstream
+# to the user's borders instance and desktop. The watcher runs the hooks
+# once at agent startup and again on wake from sleep (upstream
 # behaviour), so the fan-out self-heals at login and catches flips that
 # happen while the machine sleeps.
+#
+# The watcher alone is insufficient: distributed-notification delivery
+# to long-idle clients is empirically unreliable on this macOS build —
+# receiver-side mitigations (.deliverImmediately, ProcessType=Interactive,
+# beginActivity App-Nap opt-out) were all A/B-soaked and failed at the
+# same ~50% rate (#620). The sweep is the belt-and-braces fallback: it
+# unconditionally re-applies current polarity every 300 s, bounding
+# visible staleness regardless of watcher delivery.
 {
   config,
   lib,
@@ -38,6 +47,18 @@ let
       '') cfg.onChange
     )
   );
+  # Computes current polarity from the defaults database and execs the
+  # runner — same DARKMODE=1|0 contract used by the watcher and the
+  # theme CLI. Unconditional execution is correct because hooks are
+  # idempotent: re-applying current state is a no-op in effect.
+  selfHealScript = pkgs.writeShellScript "appearance-self-heal" ''
+    if defaults read -g AppleInterfaceStyle 2>/dev/null | grep -q Dark; then
+      export DARKMODE=1
+    else
+      export DARKMODE=0
+    fi
+    exec ${runner}
+  '';
 in
 {
   # Typed-option pattern per ADR-019 (hostContext precedent) — the
@@ -62,22 +83,40 @@ in
     description = "The assembled appearance.onChange runner script.";
   };
 
-  config.appearance.runner = runner;
+  config = {
+    appearance.runner = runner;
 
-  config.launchd.agents.dark-mode-notify = {
-    enable = true;
-    config = {
-      ProgramArguments = [
-        "${pkgs.dark-mode-notify}/bin/dark-mode-notify"
-        "${runner}"
-      ];
-      # The watcher is a long-lived observer process; KeepAlive restarts
-      # it if it dies, RunAtLoad starts it at login (which also fires the
-      # hooks once — the self-heal).
-      KeepAlive = true;
-      RunAtLoad = true;
-      StandardOutPath = "${config.home.homeDirectory}/Library/Logs/dark-mode-notify.out.log";
-      StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/dark-mode-notify.err.log";
+    launchd.agents.dark-mode-notify = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "${pkgs.dark-mode-notify}/bin/dark-mode-notify"
+          "${runner}"
+        ];
+        # The watcher is a long-lived observer process; KeepAlive restarts
+        # it if it dies, RunAtLoad starts it at login (which also fires the
+        # hooks once — the self-heal).
+        KeepAlive = true;
+        RunAtLoad = true;
+        StandardOutPath = "${config.home.homeDirectory}/Library/Logs/dark-mode-notify.out.log";
+        StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/dark-mode-notify.err.log";
+      };
+    };
+
+    launchd.agents.appearance-self-heal = {
+      enable = true;
+      config = {
+        ProgramArguments = [ "${selfHealScript}" ];
+        # 300 s: bounds visible staleness to ≤5 min — noticeable but not
+        # disruptive — while keeping sweep noise low. No KeepAlive or
+        # RunAtLoad: this is a periodic correction, not a persistent observer.
+        StartInterval = 300;
+        # Separate logs: sweep runs are frequent and independent of watcher
+        # events; keeping them apart makes each mechanism independently
+        # observable without one drowning out the other.
+        StandardOutPath = "${config.home.homeDirectory}/Library/Logs/appearance-self-heal.out.log";
+        StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/appearance-self-heal.err.log";
+      };
     };
   };
 }
