@@ -49,9 +49,9 @@ in
     # Translucent background + compositor blur, matched to Ghostty's
     # background-opacity/blur on macOS for cross-terminal parity. blur needs
     # alpha < 1 and a compositor implementing ext-background-effect-v1
-    # (niri ≥ 26.04). Set here in the HM-owned [colors] block, not the
+    # (niri ≥ 26.04). Set here in the HM-owned [colors-dark] block, not the
     # Noctalia include, so the palette refresh doesn't clobber them.
-    settings.colors = {
+    settings."colors-dark" = {
       alpha = "0.9";
       blur = "yes";
     };
