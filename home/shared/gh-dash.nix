@@ -13,8 +13,12 @@ _: {
 
     # Only the theme is set; everything else (sections, keybindings, pager)
     # is left at gh-dash's own defaults. Each colour field is individually
-    # optional and falls back to a gh-dash default if unset — the full set
-    # is given here purely for complete palette coverage.
+    # optional and falls back to a gh-dash default if unset.
+    # background.selected is intentionally omitted (Refs #615): ANSI slot 0 is
+    # the terminal background in both dark and light polarities, so any explicit
+    # value makes the selection highlight invisible. Omitting it falls through to
+    # gh-dash's upstream polarity-adaptive default (lipgloss AdaptiveColor, set
+    # at startup via OSC-11 background detection — works under foot+zellij).
     # gh-dash 4.24.1 accepts bare ANSI index strings "0"–"255"; lipgloss v2
     # emits classic SGR for 0–15, so these are palette-relative (ADR-041).
     settings.theme.colors = {
@@ -26,7 +30,6 @@ _: {
         warning = "1"; # red — base08
         success = "2"; # green — base0B
       };
-      background.selected = "0"; # black — selection bg (base02, first pass)
       # focus → 4 (blue), muted → 8 (bright-black), structural → 0 (black).
       border = {
         primary = "4"; # blue — focus role (base0D)
