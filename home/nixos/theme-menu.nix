@@ -416,12 +416,17 @@ let
       }
 
       # ---------- list ----------
+      # Advertise polarity state and forms so bare `theme` is self-documenting
+      # (#609 operator-requested discoverability).
       if [ $# -eq 0 ]; then
         current=$(readlink "$state/current" 2>/dev/null || true)
         current=''${current##*/}
         for f in ${lib.concatStringsSep " " families}; do
           if [ "$f" = "$current" ]; then echo "* $f"; else echo "  $f"; fi
         done
+        echo ""
+        echo "polarity: $(current_polarity)   (theme dark | theme light)"
+        echo "usage: theme [<family>] [dark|light]"
         exit 0
       fi
 
