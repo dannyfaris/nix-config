@@ -57,8 +57,21 @@ in
     shopt -s nullglob
     pool=("$dir"/*)
     shopt -u nullglob
+    # Pool-identity stamp: random variety on genuine pool change (polarity flip,
+    # family switch, pool edit); no-op on self-heal re-applies. #620
+    # Empty pool skips both desktoppr and the stamp — no apply means no
+    # success to record; next run retries in case a rebuild fills the pool.
     if [ ''${#pool[@]} -gt 0 ]; then
-      ${desktoppr} "''${pool[RANDOM % ''${#pool[@]}]}"
+      stamp_dir=${config.xdg.stateHome}/wallpaper
+      stamp_file=$stamp_dir/last-pool
+      pool_id=$(realpath "$dir")
+      if [ -f "$stamp_file" ] && [ "$(cat "$stamp_file")" = "$pool_id" ]; then
+        exit 0
+      fi
+      if ${desktoppr} "''${pool[RANDOM % ''${#pool[@]}]}"; then
+        mkdir -p "$stamp_dir"
+        printf '%s' "$pool_id" > "$stamp_file"
+      fi
     fi
   '';
 
