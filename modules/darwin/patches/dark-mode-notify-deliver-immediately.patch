@@ -1,0 +1,44 @@
+--- a/main.swift
++++ b/main.swift
+@@ -22,20 +22,36 @@
+     return task.terminationStatus
+ }
+
++// NSObject subclass required for the selector-based DistributedNotificationCenter
++// registration, which is the only API that accepts suspensionBehavior.
++class AppearanceWatcher: NSObject {
++    let args: [String]
++    init(args: [String]) { self.args = args }
++
++    @objc func themeChanged(_: Notification) { shell(args) }
++}
++
+ let args = Array(CommandLine.arguments.suffix(from: 1))
+ shell(args)
+
+-DistributedNotificationCenter.default.addObserver(
+-    forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
++let watcher = AppearanceWatcher(args: args)
++
++// .deliverImmediately prevents the system from coalescing or holding this
++// notification when the process is idle — the block-based API has no such
++// parameter and defaults to .hold/.coalesce, causing ~50% miss rate under
++// App Nap.
++DistributedNotificationCenter.default().addObserver(
++    watcher,
++    selector: #selector(AppearanceWatcher.themeChanged(_:)),
++    name: NSNotification.Name("AppleInterfaceThemeChangedNotification"),
+     object: nil,
+-    queue: nil) { (notification) in
+-        shell(args)
+-}
++    suspensionBehavior: .deliverImmediately
++)
+
+ NSWorkspace.shared.notificationCenter.addObserver(
+     forName: NSWorkspace.didWakeNotification,
+     object: nil,
+-    queue: nil) { (notification) in
++    queue: nil) { (_) in
+     shell(args)
+ }

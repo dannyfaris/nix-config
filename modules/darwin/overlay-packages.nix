@@ -1,12 +1,13 @@
-# Darwin overlay: AeroSpace 0.21.2-Beta ahead of the nixpkgs pin (0.20.3-Beta).
+# Darwin overlay: AeroSpace 0.21.2-Beta ahead of the nixpkgs pin (0.20.3-Beta),
+# and dark-mode-notify patched to use .deliverImmediately notification suspension.
 #
-# WHY: upstream AeroSpace shipped 0.21.2-Beta (focus-follows-mouse, shell
-# operators, scriptability improvements); nixpkgs-unstable still carries
+# WHY (AeroSpace): upstream AeroSpace shipped 0.21.2-Beta (focus-follows-mouse,
+# shell operators, scriptability improvements); nixpkgs-unstable still carries
 # 0.20.3-Beta as of 2026-07-13. The operator wants the newer binary now
 # rather than waiting for the channel to catch up.
 #
-# RETIREMENT CONTRACT: the versionGate call inside the overlay body throws
-# at eval time once nixpkgs reaches 0.21.2-Beta — a failing `nix flake
+# RETIREMENT CONTRACT (AeroSpace): the versionGate call inside the overlay body
+# throws at eval time once nixpkgs reaches 0.21.2-Beta — a failing `nix flake
 # check` (and any host build) signals retirement. Action: drop the
 # overrideAttrs block in this file and remove this module's import from
 # hosts/neptune/default.nix and hosts/saturn/default.nix.
@@ -16,6 +17,13 @@
 # `nh darwin switch` the operator must re-grant Accessibility in System
 # Settings > Privacy & Security > Accessibility before tiling resumes.
 # See docs/runbooks/darwin-bootstrap.md §AeroSpace for the full procedure.
+#
+# WHY (dark-mode-notify): the upstream 2022-07-18 build registers the
+# AppleInterfaceThemeChangedNotification via the block-based Cocoa API, which
+# has no suspensionBehavior parameter and defaults to .hold/.coalesce. An idle
+# launchd agent is App Nap eligible; the OS holds notifications, causing ~50%
+# miss rate under sustained idle. The patch switches to the selector-based API
+# with .deliverImmediately so the OS cannot defer delivery. See issue #620.
 { lib, ... }:
 let
   versionGate = import ../../lib/version-gate.nix { inherit lib; };
@@ -45,6 +53,10 @@ in
             };
           })
         );
+
+      dark-mode-notify = prev.dark-mode-notify.overrideAttrs (_old: {
+        patches = [ ./patches/dark-mode-notify-deliver-immediately.patch ];
+      });
     })
   ];
 }
