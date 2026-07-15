@@ -48,5 +48,6 @@
       "claude-code"
       "cursor"
       "cursor-cli"
+      "obsidian" # Obsidian PKM / notes GUI on metis (#506). See docs/desktop/obsidian.md
     ];
 }
