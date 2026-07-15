@@ -62,6 +62,11 @@
     ../firefox.nix
     ../thunderbird.nix
     ../cursor-ide.nix
+    # obsidian.nix — home.packages addition for pkgs.obsidian (the PKM /
+    # notes GUI; unfree, whitelisted in modules/shared/nix-daemon.nix).
+    # GUI only; the git-synced ~/wiki vault is separate. See
+    # docs/desktop/obsidian.md and docs/design/wiki.md (#506).
+    ../obsidian.nix
     ../theme-menu.nix
     ../portal-color-scheme.nix
     ../polkit-agent.nix

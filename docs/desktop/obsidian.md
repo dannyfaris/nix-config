@@ -17,6 +17,16 @@ Electron-style in-app path). No
 `CustomUserPreferences` keys; suppression fallback is an in-app
 toggle, not a `defaults` key — see §Update behaviour.
 
+### NixOS desktop adoption (metis)
+
+NixOS (metis): `pkgs.obsidian` on `home.packages`, in the standalone `home/nixos/obsidian.nix` imported by the home desktop-env bundle. `obsidian` is unfree — a deliberate `allowUnfreePredicate` whitelist entry in `modules/shared/nix-daemon.nix`, per the whitelist-not-blanket stance. This lands the GUI on the niri desktop; it is the viewer half of the wiki design ([docs/design/wiki.md](../design/wiki.md), #506). The git-synced `~/wiki` vault and its `services.git-sync` service are separate infrastructure (`home/shared/wiki.nix`) and not part of this slice.
+
+No `programs.obsidian` HM module: its source was read in full and rejected (store-symlink vault settings inside the git-carried `.obsidian/`, plus a forced `updateDisabled = true`) — see [docs/design/wiki.md](../design/wiki.md) De-risk evidence. So on NixOS Obsidian is a plain package; vault settings are runtime/git-managed, not nix-managed.
+
+Update stance on NixOS: **flake-cadence** — the store bundle is immutable, so Obsidian's in-app updater is inert; updates land when the flake bumps `nixpkgs`. This is the degradation the Darwin cask carve-out avoids on macOS (§Rationale), accepted on NixOS where the cask isn't an option.
+
+Wayland: `NIXOS_OZONE_WL=1` is set host-wide (`modules/nixos/electron-wayland.nix`) and Obsidian is Electron, so native Wayland rendering under niri is expected but is an **open runtime probe** (docs/design/wiki.md De-risk §"pkgs.obsidian on metis under niri") — verify via `niri msg windows`; the lever if it falls back to XWayland is an explicit `--ozone-platform-hint=auto` wrapper.
+
 ## Rationale
 
 **MAS unavailable — vendor-disrecommended.** Obsidian's
