@@ -10,6 +10,7 @@
 #   - greetd.nix           — display manager (tuigreet on tty1).
 #   - desktop-fonts.nix    — Stylix font selections (mono/sans/emoji) + install wiring.
 #   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
+#   - xdg-portal-gtk.nix   — the gtk portal backend niri's config names but niri-flake omits (FileChooser/Access/Notification).
 #   - libsecret.nix        — secret-tool CLI for the (transitively-enabled) Secret Service.
 #   - removable-media.nix  — udisks2 + filesystem helpers (auto-mount is home-side udiskie). See docs/desktop/removable-media.md (#105).
 #   - onepassword-gui.nix  — 1Password desktop password manager (GUI only). See docs/desktop/1password.md (#112).
@@ -25,6 +26,7 @@
     ../greetd.nix
     ../desktop-fonts.nix
     ../electron-wayland.nix
+    ../xdg-portal-gtk.nix
     ../libsecret.nix
     ../removable-media.nix
     ../onepassword-gui.nix
