@@ -100,6 +100,17 @@
       url = "github:noctalia-dev/noctalia-shell/legacy-v4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Claude Desktop for Linux — Anthropic's official beta, repackaged by
+    # aaddrick (the .deb is not published for Nix). Consumed on metis via
+    # modules/nixos/claude-desktop.nix: its `overlays.default` surfaces
+    # `claude-desktop{,-fhs}` into pkgs; we install the FHS variant for MCP
+    # server support. Follows our nixpkgs (the input exposes one) so no
+    # second nixpkgs is pulled into the closure.
+    claude-desktop = {
+      url = "github:aaddrick/claude-desktop-debian";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

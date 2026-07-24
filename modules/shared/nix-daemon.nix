@@ -46,6 +46,7 @@
       "1password" # 1Password desktop GUI on metis (lib.getName of _1password-gui; #112). See docs/desktop/1password.md
       "antigravity-cli" # Google Antigravity CLI (`agy`), replaced Gemini CLI in the agent-clis extras; ADR-008 (#433)
       "claude-code"
+      "claude-desktop" # Claude Desktop for Linux (Anthropic beta, repackaged) on metis. See modules/nixos/claude-desktop.nix
       "cursor"
       "cursor-cli"
       "obsidian" # Obsidian PKM / notes GUI on metis (#506). See docs/desktop/obsidian.md
