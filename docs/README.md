@@ -92,7 +92,7 @@ host sees it. See CLAUDE.md §"Agent memory lives in git, not local state".
   [headless-bootstrap.md](./runbooks/headless-bootstrap.md) —
   bringing up a new headless NixOS host (AWS or bare-metal) from
   clean OS to `nh os switch` via `nixos-anywhere` + `disko`. And
-  [darwin-bootstrap.md](./runbooks/darwin-bootstrap.md) — bringing up a new macOS host from clean state to `nh darwin switch` via the NixOS official installer + `nix run nix-darwin -- switch`.
+  [darwin-bootstrap.md](./runbooks/darwin-bootstrap.md) — bringing up a new macOS host from clean state to `nh darwin switch` via the NixOS official installer + `nix run nix-darwin -- switch`. And [ephemeral-root-recovery.md](./runbooks/ephemeral-root-recovery.md) — recovering state from archived roots on ephemeral-root hosts (browse / reflink-extract / promote, degraded-boot triage, the kill-switch).
 
 ## Reading order
 

@@ -309,6 +309,41 @@ pkgs.testers.runNixOSTest {
               )
           toplevel_umount(main)
 
+      with subtest("k: a long-uptime root's archive survives the purge (mv-mtime refresh bites)"):
+          # A renamed subvolume keeps its old top-dir mtime — set when
+          # activation populated / at the root's CREATION boot, not advanced
+          # since. `mv` preserves it, and the purge's find -mmin selects on
+          # exactly that. Without the module's post-mv `touch "$DEST"`, a root
+          # whose uptime exceeds retentionDays is archived already-stale and
+          # reaped at the very next purge. Prove the touch bites: back-date the
+          # LIVE root's top-dir mtime far past retention (30 days on this node),
+          # reboot (the rollback archives the back-dated root), run the purge
+          # once, and require the just-created archive to STILL EXIST — its
+          # mtime having been refreshed to archiving-time by the module.
+          #
+          # `touch -d` sets the mounted @root subvolume's top-dir mtime, the
+          # same knob the retention-zero test drives on an archive entry; here
+          # we drive it on the live root pre-archive so the inherited mtime the
+          # purge sees is 90 days old.
+          main.succeed("touch -d '90 days ago' /")
+          main.succeed("sync")
+          main.shutdown()
+          main.start()
+          main.wait_for_unit("multi-user.target")
+          # Identify the archive this boot just created (newest by sort).
+          toplevel_mount(main)
+          archived = sorted(main.succeed("ls /tl/roots-archive").split())[-1]
+          toplevel_umount(main)
+          # Run the purge once (this node's retentionDays=30 => MMIN=43200).
+          main.succeed("systemctl start ephemeral-root-purge.service")
+          toplevel_mount(main)
+          # The just-created archive survives: its mtime was refreshed to
+          # archiving-time, so it is NOT older than the 30-day window despite
+          # the root's 90-day-back-dated top-dir mtime. On the touch-less
+          # mutant it inherits the 90-day mtime and the purge reaps it here.
+          main.succeed(f"test -e /tl/roots-archive/{archived}")
+          toplevel_umount(main)
+
       # ---------------------------------------------------------------
       # killswitch: assertion e
       # ---------------------------------------------------------------
@@ -443,16 +478,37 @@ pkgs.testers.runNixOSTest {
           # archive.
           promote.fail("test -e /promote-marker")
 
-          # Promote by snapshot: move the current @root aside, snapshot the
-          # archived root into @root's place (never a raw mv — the copy boots,
-          # the archive survives re-promotable). Then boot once with the
+          # Promote by snapshot, verbatim per the recovery runbook §Promote
+          # (docs/runbooks/ephemeral-root-recovery.md): choose the SOURCE
+          # archive first, then DISPLACE the current @root INTO roots-archive/
+          # under a fresh stamp and `touch` it (a renamed subvolume keeps its
+          # old top-dir mtime; the touch is the same mv-mtime invariant the
+          # module enforces, so the displaced root survives the retention
+          # window instead of aging-out stale), then SNAPSHOT — never raw mv —
+          # the chosen archive into @root's place (the copy boots, the source
+          # archive survives re-promotable). Then boot once with the
           # kill-switch so the promoted state is not immediately re-archived.
           toplevel_mount(promote)
-          archived = sorted(promote.succeed("ls /tl/roots-archive").split())[-1]
-          promote.succeed(f"test -e /tl/roots-archive/{archived}/promote-marker")
-          promote.succeed("mv /tl/@root /tl/@root.aside")
+          # Chosen source: the newest EXISTING archive (carries promote-marker).
+          # Selected BEFORE displacement so the fresh displaced stamp — newer,
+          # and therefore [-1] after this point — cannot shadow it.
+          chosen = sorted(promote.succeed("ls /tl/roots-archive").split())[-1]
+          promote.succeed(f"test -e /tl/roots-archive/{chosen}/promote-marker")
+          # 1. Displace the live root into the archive under a fresh stamp, and
+          #    refresh its mtime (the mv-mtime invariant).
+          displaced = promote.succeed("date -u +%Y%m%dT%H%M%SZ").strip()
+          promote.succeed(f"mv /tl/@root /tl/roots-archive/{displaced}")
+          promote.succeed(f"touch /tl/roots-archive/{displaced}")
+          # 2. Snapshot the chosen source into @root's place.
           promote.succeed(
-              f"btrfs subvolume snapshot /tl/roots-archive/{archived} /tl/@root"
+              f"btrfs subvolume snapshot /tl/roots-archive/{chosen} /tl/@root"
+          )
+          # The displaced entry now lives in roots-archive/ (newer stamp than
+          # the chosen source), and did NOT clobber the chosen source.
+          promote.succeed(f"test -e /tl/roots-archive/{displaced}")
+          promote.succeed(f"test -e /tl/roots-archive/{chosen}/promote-marker")
+          assert displaced != chosen, (
+              f"displaced stamp collided with chosen source: {displaced}"
           )
           toplevel_umount(promote)
 
