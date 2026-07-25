@@ -1,7 +1,7 @@
 # ADR-038: Celestial host-naming framework — gravitational binding mirrors operational dependency
 
 **Date**: 2026-06-23
-**Status**: Accepted, Implementation pending
+**Status**: Superseded by [ADR-045](./ADR-045-star-host-naming.md) (host naming moves to a flat star pool; the substrate→class thesis is retired — only `neptune` had landed, re-keyed with the rest)
 
 > Replaces the ad-hoc host names ADR-016 grandfathered (`mercury`, a planet; `metis`, a Jovian moon; `mac-mini`, a descriptor; `nixos-vm`, a role) with a single evergreen framework drawn from celestial bodies, where a host's *substrate* — owned metal, rented metal, or a guest VM — picks its celestial class (planet, moon, or a minor body from the open reserve). Amends [ADR-016](./ADR-016-host-identity.md): its stable-per-physical-machine identity rule stands unchanged; this ADR only supplies the naming *source* ADR-016 left ad-hoc, and consciously overturns ADR-016's one blanket clause forbidding in-place directory renames so a one-time themed re-key (via `git mv`, which preserves the history that clause protected) can land. Ratified in [#368](https://github.com/dannyfaris/nix-config/issues/368); rolled out per-host in staged subtasks, the first being [#403](https://github.com/dannyfaris/nix-config/issues/403) (`mac-mini` → `neptune`).
 
