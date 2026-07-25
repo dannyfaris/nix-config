@@ -225,34 +225,61 @@ rule is therefore stricter: not "the most communicative term" but
 
 ---
 
-# Host naming: celestial bodies
+# Host naming
 
-A distinct concern from the module/bundle naming above: that rule names *files*; this one names *hosts* (the `hosts/<name>/` directories and the machines they configure). The decision and its full rationale — including the roads not taken — live in [ADR-038](./decisions/ADR-038-celestial-host-naming.md), amending [ADR-016](./decisions/ADR-016-host-identity.md) (which fixes *when* a name changes); this section is the applied rule.
+A distinct concern from the module/bundle naming above: that rule names *files*; this one names *hosts* (the `hosts/<name>/` directories and the machines they configure). The decision and its full rationale live in [ADR-045](./decisions/ADR-045-star-host-naming.md), which supersedes the earlier celestial-substrate framework of [ADR-038](./decisions/ADR-038-celestial-host-naming.md); it composes with [ADR-016](./decisions/ADR-016-host-identity.md) (which fixes *when* a name changes). This section is the applied rule.
 
 ## The rule
 
-**A host's name is a celestial body, and its *substrate* picks the celestial class.** One principle underneath it: **gravitational binding mirrors operational dependency** — what a machine *is* (owned metal, rented metal, or a guest VM) decides its class.
+**A host's name is a star.** The pool is flat: a star name makes no operational claim about the machine — nothing in it says what the host runs, owns, or depends on. That is the point. The previous framework keyed a host's class on its substrate and made the name *promise* something; the promise hit a ceiling (the planet pool ran dry) and went dishonest (a "moon-capable" laptop that will never anchor a VM). A flat star label dissolves both: nothing to run out of, nothing to be dishonest about.
 
-| Substrate | Celestial class | Why it fits |
-|-----------|-----------------|-------------|
-| Physical machine (metal you own) | major planet, **moon-capable** | a full world with its own gravity; the VMs you pin to it orbit it as moons |
-| VPS / cloud instance (someone else's metal) | major planet, **moonless** | a real standalone host, but on rented metal — barren, nothing of yours orbiting it |
-| VM pinned to an owned host | a **moon** of that host's planet | the strongest gravitational tie in the scheme — it mirrors the VM's total dependence on its host metal |
-| Roaming VM, or any host that fits no class above | a **minor body** — asteroid &c., the open reserve | bound to no single planet; a deliberately loose catch-all |
+**The naming is non-binding taste, not a rule that constrains anything.** Host names drive no config — the only eval-bearing references are the `hosts/<name>/` directory and the handful of keys that move with it — so which star lands on which host is free to change. Everything below the rule is *flavour*: recorded because it is pleasant and coherent, not because anything depends on it. This composes with ADR-016: the name binds to the machine (not its software role) and is stable per physical machine.
 
-Whether a planet carries moons is itself the owned-vs-rented marker: your own metal can anchor pinned VMs — each of which *is* one of its moons, named after one of that host-planet's actual moons — while rented metal stays barren by choice. The minor-body reserve (asteroids, comets, dwarf planets, KBOs) is one deliberately under-specified pool for roaming VMs and any host that fits no class above; it is **not** pre-partitioned — if a reserve category recurs often enough to deserve its own rule, [ADR-038](./decisions/ADR-038-celestial-host-naming.md) is iterated then, not now. Earth is excluded by operator preference. This composes with ADR-016: the name binds to the machine, not its software role — substrate is a machine property, so it sits inside that stability rule.
+### Flavour (non-binding)
+
+- **Southern-hemisphere sky.** Names lean toward stars of the southern sky — the operator's sky. A preference, not a fence; northern stars are fair game.
+- **A grouped site may share a constellation or cluster,** so the grouping reads at a glance. Current groupings: the main homelab as the **Pleiades**, an offsite homelab as **Centaurus**.
+- **Portable devices take unattached stars** — a phone, laptop, or other device that travels with you is a lone bright star, not a member of a grouped cluster.
+- **VMs are just stars,** named ad hoc; no relational rule (ADR-045 dropped ADR-038's moon→planet binding).
+- **Prospect pools** for future growth: Scorpius, Carina, and the southern birds (Grus, Pavo, Phoenix, Tucana, Apus).
+
+The collective fleet is called **Sidera** (Latin, *the stars*) — see ADR-045.
 
 ## The fleet
 
-The framework and every name below are ratified ([#368](https://github.com/dannyfaris/nix-config/issues/368)); the per-host directory renames roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands. The pilot — `mac-mini` → `neptune` ([#403](https://github.com/dannyfaris/nix-config/issues/403)) — has landed; `metis` → Mars is still pending (`nixos-vm`'s rename is mooted — reserve-typed per [#448](https://github.com/dannyfaris/nix-config/issues/448), and the host is retiring).
+The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands. Only `neptune` (the deployed home Mac, from the ADR-038 pilot) carries a celestial name on live hardware, so the re-key is barely-started.
 
-| Target name | Class | Machine | `hosts/` dir today |
-|------|-------|---------|--------------------|
-| **Jupiter** | moon-capable planet | NixOS x86_64 flagship desktop tower | — (not yet onboarded) |
-| **Saturn** | moon-capable planet | darwin MacBook Air daily driver | `saturn` (config landed; deploy pending hardware) |
-| **Mars** | moon-capable planet | NixOS x86_64 work + personal dev (ProDesk) | `metis` |
-| **Neptune** | moon-capable planet | darwin home Mac | `neptune` |
-| **Mercury** | moonless planet | AWS EC2 x86_64 work, headless | `mercury` (name survives) |
-| *(minor-body reserve — no name minted)* | minor body (reserve) | UTM/aarch64 refinement VM on a non-host Mac; retiring | `nixos-vm` |
+### Main homelab — the Pleiades
 
-VPS hosts cap at two — only Mercury and Venus are moonless among the major planets (a deliberate ceiling, per ADR-038). Moon-capable planets and the minor-body reserve both scale freely; per-planet moon budgets do not (Mars has only two named moons).
+| Target name | Machine | `hosts/` dir today |
+|------|---------|--------------------|
+| **Alcyone** | NixOS x86_64 flagship desktop tower | — (not yet onboarded) |
+| **Celaeno** | darwin home Mac (mini) | `neptune` (deployed — the one live re-key) |
+| **Maia** | mini PC (M720q) | — (upcoming) |
+| **Electra** | mini PC (M920q) | — (upcoming) |
+| **Taygeta** | Raspberry Pi 4 | — (upcoming) |
+| **Atlas** | NAS (6-bay) | — (upcoming) |
+
+Reserve sisters: **Merope, Asterope, Pleione**.
+
+### Portable devices
+
+| Target name | Machine | `hosts/` dir today |
+|------|---------|--------------------|
+| **Acrux** | darwin MacBook Air daily driver | `saturn` (config only; deploy pending hardware) |
+| **Alnair** | NixOS laptop | — (upcoming) |
+
+### Offsite homelab — Centaurus
+
+| Target name | Machine | `hosts/` dir today |
+|------|---------|--------------------|
+| **Hadar** | NixOS x86_64 work + personal dev (HP ProDesk) | `metis` |
+
+Reserve: **Toliman, Menkent**.
+
+### Retiring — no star minted
+
+| Machine | `hosts/` dir today | Note |
+|---------|--------------------|------|
+| AWS EC2 x86_64 work, headless | `mercury` | retiring (#634) |
+| UTM/aarch64 refinement VM | `nixos-vm` | retiring |
