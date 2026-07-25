@@ -14,10 +14,8 @@ _: {
     # Foundation — bundle every Darwin host imports by convention.
     ../../modules/darwin/foundation.nix
 
-    # AeroSpace 0.21.2-Beta overlay (ahead of the nixpkgs pin). Carries
-    # an eval-time versionGate that throws once nixpkgs catches up.
-    # See the module header for the retirement contract and the TCC
-    # Accessibility re-grant step required after switching.
+    # dark-mode-notify overlay — .deliverImmediately patch so theme-change
+    # notifications aren't held under App Nap. See the module header (#620).
     ../../modules/darwin/overlay-packages.nix
 
     # Standalone system modules.
