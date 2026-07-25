@@ -85,6 +85,10 @@
   # matches this host.
   hostContext = {
     hostName = "metis";
+    # Guarded idle→suspend (stance change, #644 — retires "no auto-suspend
+    # on a desktop"). The guard skips while caffeine/SSH/agent activity is
+    # present; flip to false at the #387 homelab re-role.
+    idleSuspend = true;
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
       ../../home/shared/bundles/git-multi-identity.nix

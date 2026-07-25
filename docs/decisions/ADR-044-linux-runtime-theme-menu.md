@@ -1,7 +1,7 @@
 # ADR-044: Nix-owned runtime theme menu on Linux
 
 **Date**: 2026-07-14
-**Status**: Accepted, Implemented; runtime-verified on metis 2026-07-14 (#609)
+**Status**: Accepted, Implemented; runtime-verified on metis 2026-07-14 (#609). **Noctalia delivery mechanism amended 2026-07-25 (#644)** — see §Amendment: Noctalia v5 and §History; the copy-into-place delivery and the `colors-{dark,light}.json` artefacts described below are the v4-era mechanism, superseded by the constant-name custom palette.
 
 > Nix (via Stylix's `base16.mkSchemeAttrs` engine) is the **single theming authority** on the Linux desktop. A Nix-declared catalogue of named families is rendered per entry into stable data derivations; a `~/.local/state/theme-menu/current` symlink + per-target resolved symlinks (`foot.ini`, `niri.kdl`, `gtk3.css`, `gtk4.css`, `colors.json`) are the runtime state, plus an atomic copy of `colors.json` delivered into `~/.config/noctalia/` (Noctalia's watchers can't see symlink swaps — see §Explicit triggers); the `theme` CLI switches them atomically with explicit reload fan-out. Noctalia is demoted from colour authority to a **themed-by-Nix shell** — the colour-authority half of ADR-036 is reversed (see §Amendment to ADR-036 below); Noctalia as the cohesive shell (bar, launcher, notifications, lock, OSD, wallpaper, idle) is **unchanged**. Host-identity theming is retired (operator call, landed with the shared core slice #610 — every desktop host offers the full catalogue at runtime, and a host's `defaults` entry is a boot default only). The two-axis persistence model (family = symlink, polarity = dconf `org/gnome/desktop/interface/color-scheme`) and the explicit-trigger rule (no passive file-watch assumed for any surface) are the load-bearing conventions.
 
@@ -58,6 +58,18 @@ The design note's forces — GUI-app relaunch acceptable (force 1), declarativel
 - ⚠ Migration trigger: if `niri msg action load-config-file` is ever replaced by a different niri reload API, update the `theme` CLI.
 - ⚠ Migration trigger: if Noctalia v5 changes how it reads `colors.json` (path, trigger, format), update the seed + CLI accordingly.
 
+## Amendment: Noctalia v5 (2026-07-25, #644)
+
+The migration trigger recorded in §Consequences — "if Noctalia v5 changes how it reads `colors.json` (path, trigger, format), update the seed + CLI accordingly" — fired on all three axes at once: v5 (the native rewrite) has no `colors.json` read path at all, no palette file-watcher, and a different palette schema. The Noctalia seam is re-expressed per the accepted design note [`docs/design/noctalia-v5-migration.md`](../design/noctalia-v5-migration.md):
+
+- **§Decision item 2 (entry-dir contract)**: the two per-polarity `colors-{dark,light}.json` artefacts are replaced by one polarity-independent `noctalia.json` per family (9 artefacts, not 10) — `dark` + `light` objects, each the 16 M3-role keys plus v5's mandatory `terminal` block; v5 selects the mode in-process via `theme.mode`.
+- **§Decision item 3 (per-target symlinks)**: `colors.json → current/colors-<polarity>.json` becomes `noctalia.json → current/noctalia.json`, consumed as the constant-name custom palette `~/.config/noctalia/palettes/theme-menu.json → $stateDir/noctalia.json` — a dereference, never a copy; the family selection lives solely in the conductor's pointer and Noctalia's runtime-overrides file never learns a family name.
+- **§Decision item 4 (CLI fan-out d)**: the atomic copy-into-place is deleted; activation is one explicit IPC call per switch — `noctalia msg theme-mode-set` on polarity changes (which re-resolves and subsumes a simultaneous family change), else `noctalia msg config-reload` — with the socket discovered by glob (the v5 client's `WAYLAND_DISPLAY` fallback misses the live session over SSH). The polarity axis stays on dconf; a declared `[hooks] started` reconcile re-converges Noctalia's persisted `theme.mode` echo to dconf at every shell start.
+- **§Decision item 5 (seed)**: the colors.json copy + `.pre-609` backup logic is replaced by seeding `~/.config/noctalia/palettes/theme-menu.json` as a symlink into the state dir.
+- **§Decision item 7 (demotion recipe)**: the operator step is superseded by declaration — v5's template engine and setup wizard are declared off in `home/nixos/noctalia.nix`'s read-only `config.toml` baseline; the pickers-stay-inert convention continues (in v5 a GUI theme pick would *persist* a shadowing override, so the convention matters more, with a documented one-time recovery).
+
+The §Rationale "explicit triggers, no passive watch" rule is unchanged and did the deciding work here: v4's copy-into-place existed only to appease a watcher v5 no longer has, so the palette joins the same resolved-symlink pattern as every other target. Mechanism details, forces, and the probe plan live in the design note; the adversarial evidence is frozen in `docs/research/noctalia-v5-*.md`.
+
 ## Amendment to ADR-036
 
 **ADR-036's §Decision item 3** ("Noctalia is the sole theming authority over every rendered desktop surface") is **amended by this ADR**: Nix/Stylix is now the theming authority; Noctalia's role is reduced to a themed-by-Nix shell. Every other item of ADR-036 stands: Noctalia as the cohesive shell (item 1), flake input (item 2), Stylix demoted/retained as palette engine (item 4 — now permanent, not E1 interim), ADR-035 superseded (item 5). ADR-036's §Consequences ✗ "Noctalia's config is runtime/GUI state, not in git" now applies only to the shell surface config (bar layout, panel positions) — colour is in git.
@@ -78,5 +90,7 @@ Rollout sequence: (1) activate the new generation (`nh os switch`), (2) operator
 - `docs/research/omarchy-theme-switching.md` + `docs/research/omarchy-theme-switching-validation.md` — per-app reload evidence, foot OSC pty-discovery, symlink-watch blind spot findings that shaped the trigger design.
 
 ## History
+
+**2026-07-25** — the Noctalia v5 migration trigger fired (path, format, and trigger at once); the seam re-expressed per §Amendment: Noctalia v5 above (#644, design note `noctalia-v5-migration.md`). The copy-into-place mechanism this ADR's #609 verification hard-won is retired with the watcher that necessitated it.
 
 **2026-07-14** — runtime-verified on metis via #609 and #614. Two verification-caught fixes landed in #614: (1) absolute-dconf path in the seed (bare `dconf` calls failed silently on the HM activation PATH, leaving the portal key unset on first activation); (2) Noctalia copy-into-place delivery — the earlier source-read conclusion that FileView's parent-directory `watchChanges` fires on a symlink re-point was falsified by on-metis observation; delivery is now an atomic tmp-file copy + `mv -fT` inside `~/.config/noctalia/` (the in-directory replace the upstream watcher anticipates). Both fixes re-proven live post-merge. Evidence on #609.

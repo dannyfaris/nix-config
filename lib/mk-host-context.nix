@@ -37,6 +37,16 @@
           default = [ ];
           description = "Home-manager modules imported on top of the home base.";
         };
+        idleSuspend = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Linux desktop only: enable the guarded idle→suspend behaviour in the
+            Noctalia shell (home/nixos/noctalia.nix). Off by default; a desktop
+            host opts in (docs/design/noctalia-v5-migration.md — one-line exit
+            at the #387 re-role, on for Alcyone).
+          '';
+        };
       };
     };
     description = "Per-host parametrisation forwarded into home-manager modules.";

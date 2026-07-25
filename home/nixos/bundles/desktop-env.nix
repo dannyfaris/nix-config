@@ -8,11 +8,11 @@
 #   - niri.nix — programs.niri.settings.binds (curated essential set;
 #     see docs/desktop/keybinds.md for the full taxonomy).
 #   - foot.nix — programs.foot.enable.
-#   - noctalia-shell.nix — the cohesive Quickshell shell: bar, launcher,
-#     notifications, OSD, lock, wallpaper, idle (ADR-036, #385). Subsumes
-#     the waybar/fuzzel/fnott/swaylock+swayidle surfaces, all decommissioned
-#     in #385 (lock + idle-lock + displays-off are now Noctalia's IdleService;
-#     see the swaylock note in noctalia.md §Sharp edges for the one accepted gap).
+#   - noctalia.nix — the cohesive shell, v5 native rewrite (ADR-036; #644):
+#     bar, launcher, notifications, OSD, lock, wallpaper, clipboard, idle —
+#     including the guarded idle→suspend + the lock-on-sleep user unit.
+#     Subsumes the waybar/fuzzel/fnott/swaylock+swayidle surfaces, all
+#     decommissioned in #385.
 #   - firefox.nix — programs.firefox.enable + stub default profile
 #     + xdg.mimeApps default-handler registration (Gecko engine,
 #     native Wayland; see docs/desktop/firefox.md).
@@ -55,10 +55,10 @@
     # set-font — runtime remap of a fontconfig generic (the conductor's
     # friendly front-end; #390). See docs/desktop/fonts.md §Runtime UX.
     ../set-font.nix
-    # Noctalia Shell — cohesive Wayland shell (ADR-036, #385). waybar, fuzzel,
-    # fnott and (last, once Noctalia's lock + idle were verified) swaylock +
-    # swayidle were all decommissioned in #385; Noctalia owns those surfaces.
-    ../noctalia-shell.nix
+    # Noctalia Shell v5 — cohesive Wayland shell (ADR-036; #644). waybar,
+    # fuzzel, fnott and swaylock + swayidle were all decommissioned in #385;
+    # Noctalia owns those surfaces.
+    ../noctalia.nix
     ../firefox.nix
     ../thunderbird.nix
     ../cursor-ide.nix

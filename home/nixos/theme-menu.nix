@@ -16,17 +16,24 @@
 #   gtk3-{dark,light}.css  — 34 @define-color keys for GTK3 theming
 #   gtk4-{dark,light}.css  — same 34 keys + :root { --*-color } libadwaita
 #                            custom-property block for GTK4
-#   colors-{dark,light}.json — 16 M3-role keys for Noctalia's colors.json
+#   noctalia.json          — Noctalia v5 custom palette: dark + light objects,
+#                            each 16 M3-role keys + the mandatory terminal
+#                            block (polarity-independent — v5 selects the
+#                            mode in-process via theme.mode)
 #
-# Per-target resolved symlinks in $stateDir (stable paths consumers read;
-# colors.json is instead the SOURCE for an atomic copy into
-# ~/.config/noctalia/ — Noctalia's inode-resolving watchers can't see
-# symlink swaps, #609):
+# Per-target resolved symlinks in $stateDir (stable paths consumers read):
 #   foot.ini   → current/foot-<polarity>.ini
 #   niri.kdl   → current/niri-<polarity>.kdl
 #   gtk3.css   → current/gtk3-<polarity>.css
 #   gtk4.css   → current/gtk4-<polarity>.css
-#   colors.json → current/colors-<polarity>.json
+#   noctalia.json → current/noctalia.json   (no polarity axis — see above)
+#
+# Noctalia consumes the palette as ~/.config/noctalia/palettes/theme-menu.json
+# → $stateDir/noctalia.json — a constant-name dereference, never a copy: v5
+# has no palette watcher at all, re-reads the file through the chain on every
+# theme resolve, and is triggered explicitly by the CLI (one IPC call per
+# switch). v4's copy-into-place delivery died with v4's colors.json read path
+# (#644, docs/design/noctalia-v5-migration.md).
 #
 # The pointer is $XDG_STATE_HOME/theme-menu/current → one entry's
 # stable $XDG_DATA_HOME/theme-menu/<family> path. HM seeds the pointer
@@ -34,12 +41,11 @@
 # it at runtime. The polarity axis is the dconf
 # org/gnome/desktop/interface/color-scheme key — the Linux portal signal.
 #
-# Noctalia is demoted from colour authority to themed-by-Nix shell: its
-# activeTemplates are all disabled by the operator at rollout and
-# useWallpaperColors false, so it reads colors.json as its palette source
-# and writes nothing to foot/gtk/niri/helix/starship/yazi (ADR-044). The
-# scheme/polarity picker in Noctalia's control centre becomes inert-by-
-# convention — the conductor owns the selection. See docs/desktop/noctalia.md.
+# Noctalia is a themed-by-Nix shell (ADR-044): its v5 template engine is
+# declared off in home/nixos/noctalia.nix, so it reads the theme-menu palette
+# and writes nothing to foot/gtk/niri. The scheme/polarity pickers in its
+# control centre stay inert-by-convention — the conductor owns the selection.
+# See docs/desktop/noctalia.md.
 {
   config,
   lib,
@@ -308,8 +314,10 @@ let
       }
     '';
 
-  # colors.json — 16 M3-role keys for Noctalia's palette source.
-  # Slot assignments:
+  # noctalia.json — Noctalia v5 custom palette. ONE file per family carrying
+  # BOTH mode objects (v5 selects dark/light in-process via theme.mode, so
+  # this artefact has no polarity axis). Per mode: the 16 M3-role keys, slot
+  # assignments unchanged from the v4 mapping:
   #   mPrimary         = base0D (accent/focus, blue family)
   #   mOnPrimary       = base00 (text on primary — background)
   #   mSecondary       = base0C (cyan, secondary accent)
@@ -324,41 +332,72 @@ let
   #   mOnSurfaceVariant = base04 (muted text on surface variant)
   #   mOutline         = base03 (muted/outline, bright-black)
   #   mShadow          = 000000 (black, fixed)
-  #   mHover           = base0E (magenta-family hover, from live file)
+  #   mHover           = base0E (magenta-family hover)
   #   mOnHover         = base00 (text on hover)
-  renderColors = c: ''
+  # plus the v5-MANDATORY `terminal` block per mode — the parser falls back
+  # to the builtin theme if any provided mode lacks it (#644, design note
+  # §De-risk). ANSI mapping mirrors renderFoot above; cursor = foreground on
+  # background; selection = base02 (matching foot's selection-background).
+  renderNoctaliaMode = c: ''
     {
       "mPrimary": "#${c.base0D}",
       "mOnPrimary": "#${c.base00}",
-
       "mSecondary": "#${c.base0C}",
       "mOnSecondary": "#${c.base00}",
-
       "mTertiary": "#${c.base0E}",
       "mOnTertiary": "#${c.base00}",
-
       "mError": "#${c.base08}",
       "mOnError": "#${c.base00}",
-
       "mSurface": "#${c.base00}",
       "mOnSurface": "#${c.base05}",
-
       "mSurfaceVariant": "#${c.base01}",
       "mOnSurfaceVariant": "#${c.base04}",
-
       "mOutline": "#${c.base03}",
       "mShadow": "#000000",
-
       "mHover": "#${c.base0E}",
-      "mOnHover": "#${c.base00}"
+      "mOnHover": "#${c.base00}",
+      "terminal": {
+        "normal": {
+          "black": "#${c.base00}",
+          "red": "#${c.base08}",
+          "green": "#${c.base0B}",
+          "yellow": "#${c.base0A}",
+          "blue": "#${c.base0D}",
+          "magenta": "#${c.base0E}",
+          "cyan": "#${c.base0C}",
+          "white": "#${c.base05}"
+        },
+        "bright": {
+          "black": "#${c.base03}",
+          "red": "#${c.base08}",
+          "green": "#${c.base0B}",
+          "yellow": "#${c.base0A}",
+          "blue": "#${c.base0D}",
+          "magenta": "#${c.base0E}",
+          "cyan": "#${c.base0C}",
+          "white": "#${c.base07}"
+        },
+        "foreground": "#${c.base05}",
+        "background": "#${c.base00}",
+        "cursor": "#${c.base05}",
+        "cursorText": "#${c.base00}",
+        "selectionFg": "#${c.base05}",
+        "selectionBg": "#${c.base02}"
+      }
+    }
+  '';
+  renderNoctalia = couplet: ''
+    {
+      "dark": ${renderNoctaliaMode couplet.dark},
+      "light": ${renderNoctaliaMode couplet.light}
     }
   '';
 
-  # One runCommand per family: each builds a directory of 10 rendered artefacts
+  # One runCommand per family: each builds a directory of 9 rendered artefacts
   # (foot-dark.ini, foot-light.ini, niri-dark.kdl, niri-light.kdl,
   # gtk3-dark.css, gtk3-light.css, gtk4-dark.css, gtk4-light.css,
-  # colors-dark.json, colors-light.json). Pure Nix string interpolation — no
-  # runtime templating engine. Mirrors darwin/theme-menu.nix's entryFor idiom.
+  # noctalia.json). Pure Nix string interpolation — no runtime templating
+  # engine. Mirrors darwin/theme-menu.nix's entryFor idiom.
   entryFor =
     name: couplet:
     pkgs.runCommand "theme-menu-${name}" { } ''
@@ -371,8 +410,7 @@ let
       cp ${pkgs.writeText "gtk3-light-${name}" (renderGtk3 couplet.light)} $out/gtk3-light.css
       cp ${pkgs.writeText "gtk4-dark-${name}" (renderGtk4 couplet.dark)} $out/gtk4-dark.css
       cp ${pkgs.writeText "gtk4-light-${name}" (renderGtk4 couplet.light)} $out/gtk4-light.css
-      cp ${pkgs.writeText "colors-dark-${name}" (renderColors couplet.dark)} $out/colors-dark.json
-      cp ${pkgs.writeText "colors-light-${name}" (renderColors couplet.light)} $out/colors-light.json
+      cp ${pkgs.writeText "noctalia-${name}" (renderNoctalia couplet)} $out/noctalia.json
     '';
 
   families = lib.attrNames schemePair.menu;
@@ -389,6 +427,7 @@ let
       pkgs.dconf
       pkgs.procps # pgrep, ps
       config.programs.niri.package # niri msg action load-config-file
+      config.programs.noctalia.package # noctalia msg — the explicit palette-activation trigger
     ];
     text = ''
       data=${lib.escapeShellArg dataDir}
@@ -457,6 +496,11 @@ let
         fi
       fi
 
+      # Capture the pre-switch polarity — it decides the single IPC trigger
+      # below (mode change → theme-mode-set re-resolves and subsumes any
+      # family change; family-only → config-reload).
+      old_polarity=$(current_polarity)
+
       mkdir -p "$state"
 
       # ---------- atomic family repoint ----------
@@ -469,19 +513,7 @@ let
       ln -sf "$state/current/niri-''${new_polarity}.kdl" "$state/niri.kdl"
       ln -sf "$state/current/gtk3-''${new_polarity}.css" "$state/gtk3.css"
       ln -sf "$state/current/gtk4-''${new_polarity}.css" "$state/gtk4.css"
-      ln -sf "$state/current/colors-''${new_polarity}.json" "$state/colors.json"
-
-      # ---------- Noctalia palette delivery: atomic copy-into-place ----------
-      # Noctalia's FileView watchers resolve inodes at watch-establishment
-      # time; a state-level symlink swap ($state/colors.json → different store
-      # artefact) never touches the watched inode or ~/.config/noctalia/, so
-      # no reload fires. Atomic replace inside the watched dir (tmp + mv -fT)
-      # is the pattern the upstream source comment anticipates — caught by
-      # #609 runtime verification.
-      mkdir -p "$HOME/.config/noctalia"
-      colors_tmp=$(mktemp "$HOME/.config/noctalia/.colors.XXXXXX")
-      cp "$state/colors.json" "$colors_tmp"
-      mv -fT "$colors_tmp" "$HOME/.config/noctalia/colors.json"
+      ln -sf "$state/current/noctalia.json" "$state/noctalia.json"
 
       # ---------- polarity fan-out: dconf ----------
       # Always write (idempotent) so a fresh machine whose seed ran bus-less
@@ -553,8 +585,39 @@ let
       niri msg action load-config-file 2>/dev/null || \
         echo "theme: niri reload skipped (non-fatal outside session)" >&2
 
-      # colors.json — already delivered by the atomic copy-into-place above;
-      # the in-dir replace is what fires Noctalia's watcher.
+      # ---------- Noctalia palette activation: one explicit IPC call ----------
+      # v5 watches no palette files — activation is an explicit trigger, and
+      # any theme resolve re-reads palettes/theme-menu.json through the
+      # symlink chain (#644, design note §Design). Polarity change →
+      # theme-mode-set (re-resolves, subsuming a simultaneous family change);
+      # family-only → config-reload. Socket discovered by glob: the client's
+      # WAYLAND_DISPLAY fallback guesses wayland-0 and silently misses this
+      # host's wayland-1 over SSH (probe V5).
+      # noctalia-wayland-*: v5 also publishes a dmenu listener as the SIBLING
+      # socket noctalia-dmenu-<display>.sock, which sorts FIRST and silently
+      # swallows IPC (caught live by probe V2 — the switch "succeeded" with no
+      # repaint). The narrower glob matches only the shell's IPC socket.
+      runtime_dir="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+      noctalia_sock=""
+      for s in "$runtime_dir"/noctalia-wayland-*.sock; do
+        if [ -S "$s" ]; then
+          noctalia_sock="$s"
+          break
+        fi
+      done
+      if [ -n "$noctalia_sock" ]; then
+        nd="''${noctalia_sock##*/noctalia-}"
+        nd="''${nd%.sock}"
+        if [ "$new_polarity" != "$old_polarity" ]; then
+          XDG_RUNTIME_DIR="$runtime_dir" WAYLAND_DISPLAY="$nd" noctalia msg theme-mode-set "$new_polarity" >/dev/null 2>&1 || \
+            echo "theme: noctalia theme-mode-set failed (non-fatal)" >&2
+        else
+          XDG_RUNTIME_DIR="$runtime_dir" WAYLAND_DISPLAY="$nd" noctalia msg config-reload >/dev/null 2>&1 || \
+            echo "theme: noctalia config-reload failed (non-fatal)" >&2
+        fi
+      else
+        echo "theme: no noctalia socket found (non-fatal outside session)" >&2
+      fi
 
       echo "theme: switched to ''${new_family}/''${new_polarity}"
     '';
@@ -581,8 +644,7 @@ in
   #      change their polarity/family — the user's runtime selection is sacred).
   #
   # Consumer-side wiring:
-  #   ~/.config/noctalia/colors.json  ← atomic copy of $stateDir/colors.json
-  #                                     (copy, not symlink — see #609 comment)
+  #   ~/.config/noctalia/palettes/theme-menu.json → $stateDir/noctalia.json
   #   ~/.config/gtk-3.0/theme-menu.css → $stateDir/gtk3.css (symlink)
   #   ~/.config/gtk-4.0/theme-menu.css → $stateDir/gtk4.css (symlink)
   home.activation.themeMenuSeed = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -633,27 +695,20 @@ in
     $DRY_RUN_CMD ln -sf "$state/current/niri-$_polarity.kdl" "$state/niri.kdl"
     $DRY_RUN_CMD ln -sf "$state/current/gtk3-$_polarity.css" "$state/gtk3.css"
     $DRY_RUN_CMD ln -sf "$state/current/gtk4-$_polarity.css" "$state/gtk4.css"
-    $DRY_RUN_CMD ln -sf "$state/current/colors-$_polarity.json" "$state/colors.json"
+    $DRY_RUN_CMD ln -sf "$state/current/noctalia.json" "$state/noctalia.json"
 
     # Seed consumer-side files:
 
-    # ~/.config/noctalia/colors.json — atomic copy-into-place, not a symlink:
-    # Noctalia's FileView watchers resolve inodes at watch time, so a
-    # state-level symlink swap is invisible to them; in-dir replace (tmp +
-    # mv -fT) is the pattern its watcher anticipates (#609).
-    # Back up a pre-existing foreign file once (only if .pre-609 doesn't
-    # already exist — our own copies must never clobber the original backup).
-    $DRY_RUN_CMD mkdir -p "$HOME/.config/noctalia"
-    if [ ! -e "$HOME/.config/noctalia/colors.json.pre-609" ] \
-        && [ -f "$HOME/.config/noctalia/colors.json" ] \
-        && [ ! -L "$HOME/.config/noctalia/colors.json" ]; then
-      $DRY_RUN_CMD mv "$HOME/.config/noctalia/colors.json" "$HOME/.config/noctalia/colors.json.pre-609"
-    fi
-    # mktemp -u: a created-but-unused tmp would be left behind on --dry-run
-    # (the guarded cp/mv below don't run); -u is race-safe enough in $HOME.
-    _colors_tmp=$(mktemp -u "$HOME/.config/noctalia/.colors.XXXXXX")
-    $DRY_RUN_CMD cp "$state/colors.json" "$_colors_tmp"
-    $DRY_RUN_CMD mv -fT "$_colors_tmp" "$HOME/.config/noctalia/colors.json"
+    # ~/.config/noctalia/palettes/theme-menu.json → $state/noctalia.json —
+    # the constant-name custom palette Noctalia's declared config names
+    # (theme.source = "custom", custom_palette = "theme-menu" in
+    # home/nixos/noctalia.nix). A dereference, never a copy: v5 has no
+    # palette watcher to appease and re-reads the file through the chain on
+    # every theme resolve (#644 — v4's copy-into-place died with its
+    # colors.json read path; stale ~/.config/noctalia/colors.json{,.pre-609}
+    # are inert leftovers, safe to delete by hand).
+    $DRY_RUN_CMD mkdir -p "$HOME/.config/noctalia/palettes"
+    $DRY_RUN_CMD ln -sf "$state/noctalia.json" "$HOME/.config/noctalia/palettes/theme-menu.json"
 
     # ~/.config/gtk-3.0/theme-menu.css → $stateDir/gtk3.css
     $DRY_RUN_CMD mkdir -p "$HOME/.config/gtk-3.0"
