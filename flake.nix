@@ -102,6 +102,19 @@
       url = "github:noctalia-dev/noctalia/v5.0.0-beta.4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # impermanence — declarative persist-whitelist for the ephemeral-root
+    # mechanism (docs/design/ephemeral-root.md, #553). Supplies the
+    # `environment.persistence."/persist"` bind-mount surface that modules
+    # contribute to independently (module-owns-its-state). Its home-manager
+    # input also follows ours — impermanence only uses it for the HM-module
+    # integration, and a second pinned home-manager in the lock buys nothing.
+    # VM-only this slice — no host imports it yet.
+    impermanence = {
+      url = "github:nix-community/impermanence";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
   };
 
   outputs =

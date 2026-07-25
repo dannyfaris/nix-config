@@ -178,6 +178,20 @@ in
     };
   };
 
+  # The ephemeral-root de-risk gate: a nixosTest booting off a real btrfs
+  # @root/@persist/@nix layout to prove the archive-rollback mechanism before
+  # any host adopts (docs/design/ephemeral-root.md §De-risk, #553). A package,
+  # deliberately NOT a check: `nix flake check` builds checks, and CI runs it
+  # wholesale, so a checks entry would make every hosted runner boot the
+  # six-node KVM suite per PR. As a package it is evaluated by CI (pin bumps
+  # that break its eval still fail) but built only on demand —
+  # `nix build .#ephemeral-root-vm`, the locally-run gate on metis. Moves
+  # into checks when #546 self-hosts the x86_64-linux leg on metis.
+  flake.packages.x86_64-linux.ephemeral-root-vm = import ../tests/ephemeral-root.nix {
+    pkgs = pkgsFor "x86_64-linux";
+    inherit self inputs;
+  };
+
   # Pre-commit hooks. git-hooks.nix lifts these to checks.<system>.pre-commit
   # automatically; the local hook is installed by config.pre-commit.shellHook
   # from parts/dev-shells.nix on `nix develop`.
