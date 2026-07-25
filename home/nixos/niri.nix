@@ -74,10 +74,9 @@ in
     # lib/display-profiles.nix.
     outputs."DP-1".scale = profile.scale;
 
-    # Noctalia Shell — spawned at session start (ADR-036, #385). The binary
-    # is `noctalia-shell` (a wrapper over Quickshell's qs). Non-destructive
-    # bring-up: runs alongside the existing bar/launcher until the cutover.
-    spawn-at-startup = [ { command = [ "noctalia-shell" ]; } ];
+    # Noctalia Shell v5 — spawned at session start (ADR-036; #644). getExe
+    # pins the store path, so session start doesn't depend on PATH ordering.
+    spawn-at-startup = [ { command = [ (lib.getExe config.programs.noctalia.package) ]; } ];
 
     # Input — pointer focus, plus compositor-layer keyboard + mouse ergonomics
     # (#107). Device-layer DPI/buttons/onboard profiles live on the G502
@@ -210,16 +209,15 @@ in
       "Mod+9".action.focus-workspace = 9;
 
       # Spawn — terminal + application launcher. The launcher is
-      # Noctalia's IPC-driven app launcher (ADR-036, #385): `noctalia-shell
-      # ipc call launcher toggle`. Passed as an argv list — niri spawns it
-      # directly (no shell). fuzzel was decommissioned in #385.
+      # Noctalia's IPC-driven app launcher (ADR-036; v5 grammar, #644):
+      # `noctalia msg panel-toggle launcher`. Passed as an argv list — niri
+      # spawns it directly (no shell). fuzzel was decommissioned in #385.
       "Mod+Return".action.spawn = "foot";
       "Mod+Space".action.spawn = [
-        "noctalia-shell"
-        "ipc"
-        "call"
+        "noctalia"
+        "msg"
+        "panel-toggle"
         "launcher"
-        "toggle"
       ];
 
       # Session — quit (niri shows a confirmation dialog by default)

@@ -41,24 +41,31 @@
             'foot follows live; GTK/web on next window; Noctalia on restart.'
         }
 
-        # Restart Noctalia so its Qt-cached surfaces re-resolve fonts. v4-
-        # specific — the ONE place that knows how to bounce the shell; update
-        # this at the v5 migration (ADR-036).
+        # Restart Noctalia so its surfaces re-resolve fonts. v5-specific
+        # (native binary `noctalia`, #644) — the ONE place that knows how to
+        # bounce the shell. Whether v5 still caches fonts at process start is
+        # probe C6 of the migration's validation; the helper is correct
+        # either way (a restart always re-resolves).
         restart_shell() {
-          if ! command -v noctalia-shell >/dev/null 2>&1; then
-            echo "set-font: noctalia-shell not on PATH; restart the shell yourself" >&2
+          if ! command -v noctalia >/dev/null 2>&1; then
+            echo "set-font: noctalia not on PATH; restart the shell yourself" >&2
             return 0
           fi
-          pkill -f "/bin/quickshell" 2>/dev/null || true
+          # -f cmdline match anchored on argv0: the Nix wrapper `exec -a "$0"`s
+          # the real binary, so comm is `.noctalia-wrapp` (15-char cap — `-x
+          # noctalia` never matches) while cmdline is the profile's
+          # …/bin/noctalia. The `$` anchor spares `noctalia msg …` clients,
+          # whose cmdline continues past the binary (probe-verified, #644).
+          pkill -f '/bin/noctalia$' 2>/dev/null || true
           sleep 1
-          setsid -f noctalia-shell >/dev/null 2>&1 || true
+          setsid -f noctalia >/dev/null 2>&1 || true
           echo "set-font: Noctalia restarted"
         }
 
         # Nudge only when a Noctalia is actually running — silent otherwise, so
         # it is not noise on headless/non-Noctalia use.
         hint_shell() {
-          if pgrep -f "/bin/quickshell" >/dev/null 2>&1; then
+          if pgrep -f '/bin/noctalia$' >/dev/null 2>&1; then
             echo "set-font: Noctalia caches fonts — re-run with --reload-shell to apply to its bar/launcher"
           fi
         }

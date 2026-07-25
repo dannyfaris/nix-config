@@ -92,12 +92,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Noctalia Shell (v4 Quickshell line) — cohesive Wayland desktop shell
-    # for the Linux desktop (ADR-036, #385). Pinned to `legacy-v4`: `main`
-    # is the v5 C++ alpha (ADR-036 migration trigger). The input's own
-    # `noctalia-qs` runtime fork follows this nixpkgs, co-locking shell↔runtime.
+    # Noctalia Shell (v5, native C++ rewrite) — cohesive Wayland desktop
+    # shell for the Linux desktop (ADR-036; v5 re-integration #644,
+    # docs/design/noctalia-v5-migration.md). Pinned to the release tag —
+    # v5 is beta and `main` moves daily. Upstream renamed the repo
+    # noctalia-shell → noctalia; v4's co-locked `noctalia-qs` Quickshell
+    # runtime is gone (meson-built binary, no Qt).
     noctalia = {
-      url = "github:noctalia-dev/noctalia-shell/legacy-v4";
+      url = "github:noctalia-dev/noctalia/v5.0.0-beta.4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
