@@ -48,6 +48,8 @@
       "claude-code"
       "cursor"
       "cursor-cli"
+      "nvidia-settings" # NVIDIA control-panel util pulled by the driver on alcyone (#631). See modules/nixos/nvidia.nix
+      "nvidia-x11" # NVIDIA proprietary userspace driver — alcyone's RTX 4060 (#631); the open kernel module is free, userspace is not
       "obsidian" # Obsidian PKM / notes GUI on metis (#506). See docs/desktop/obsidian.md
     ];
 }

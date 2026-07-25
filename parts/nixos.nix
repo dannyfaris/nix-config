@@ -13,5 +13,6 @@ in
     nixos-vm = mkHost { hostname = "nixos-vm"; };
     mercury = mkHost { hostname = "mercury"; };
     metis = mkHost { hostname = "metis"; };
+    alcyone = mkHost { hostname = "alcyone"; };
   };
 }

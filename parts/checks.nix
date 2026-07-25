@@ -140,10 +140,14 @@ in
     x86_64-linux = {
       host-mercury = self.nixosConfigurations.mercury.config.system.build.toplevel;
       host-metis = self.nixosConfigurations.metis.config.system.build.toplevel;
+      host-alcyone = self.nixosConfigurations.alcyone.config.system.build.toplevel;
       stances-mercury =
         mkStanceCheck "x86_64-linux" "nixos" "mercury"
           self.nixosConfigurations.mercury.config;
       stances-metis = mkStanceCheck "x86_64-linux" "nixos" "metis" self.nixosConfigurations.metis.config;
+      stances-alcyone =
+        mkStanceCheck "x86_64-linux" "nixos" "alcyone"
+          self.nixosConfigurations.alcyone.config;
       lib-auto-gen-paths = mkUnitTestCheck "x86_64-linux" "auto-gen-paths" autoGenPathsFailures;
       lib-capabilities = mkUnitTestCheck "x86_64-linux" "capabilities" capabilitiesFailures;
       keybind-collisions =
