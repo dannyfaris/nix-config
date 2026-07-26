@@ -34,9 +34,26 @@
     ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199).
     ../../modules/nixos/ntfy-server.nix # Self-hosted ntfy receiver for the fleet's failure notifications (#199).
     inputs.wiki-infra.nixosModules.wiki-pipeline # Wiki timer family, state dir, R1 exclusion record (wiki repo: deployment-packaging.md).
+    ../../modules/nixos/ephemeral-root.nix # Probe-only for now — see ephemeralRoot below; enforcement flips per docs/design/ephemeral-root.md §Rollout.
+    # impermanence with ZERO declarations: the probe's prune set reads
+    # environment.persistence, which must exist as an option surface even
+    # before any module declares persist paths (design note §Design "The
+    # probe"). Declarations arrive with the whitelist-seeding slice.
+    inputs.impermanence.nixosModules.impermanence
   ];
 
   networking.hostName = "metis";
+
+  # Ephemeral-root PROBE only — report-only drift detection (#633); the
+  # rollback stays off until the whitelist is seeded and the flip happens
+  # with the operator at the console (design note §Rollout). The daily live
+  # scan's reports are the retrofit inventory. `device` names the backing
+  # btrfs filesystem (disko labels it `nixos`); referenced by the script at
+  # build time even while the archive half is gated off.
+  ephemeralRoot = {
+    device = "/dev/disk/by-label/nixos";
+    probe.enable = true;
+  };
 
   # Wiki pipeline (log-host role) — metis is the ruled log host (wiki repo:
   # deployment-topology.md, decisions.md 021). Every other option defaults

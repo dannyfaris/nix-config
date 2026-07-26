@@ -109,7 +109,8 @@
     # contribute to independently (module-owns-its-state). Its home-manager
     # input also follows ours — impermanence only uses it for the HM-module
     # integration, and a second pinned home-manager in the lock buys nothing.
-    # VM-only this slice — no host imports it yet.
+    # metis imports it with zero declarations (probe adoption); persist
+    # declarations arrive with the whitelist-seeding slice.
     impermanence = {
       url = "github:nix-community/impermanence";
       inputs.nixpkgs.follows = "nixpkgs";
