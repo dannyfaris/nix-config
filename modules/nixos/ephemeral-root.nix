@@ -170,6 +170,20 @@ in
             # Atomic O(1) rename — carries nested subvolumes along intact.
             mv "$TOP/@root" "$DEST" || bail "could not archive @root -> $DEST"
 
+            # Archive age must count from archiving, not from the root's birth:
+            # mv preserves the subvolume top-dir mtime (set when activation
+            # populated / at the root's creation boot, rarely advanced since),
+            # and the purge's find -mmin selects on exactly that — without this
+            # refresh, a root with uptime past retentionDays is archived
+            # already-stale and reaped at the next purge. Same restore idiom as
+            # the create failure below; the runbook's manual displacement
+            # (docs/runbooks/ephemeral-root-recovery.md §Promote) carries the
+            # same invariant.
+            if ! touch "$DEST"; then
+              mv "$DEST" "$TOP/@root" 2>/dev/null || true
+              bail "could not refresh archive mtime (restored archived root)"
+            fi
+
             # Fresh empty root. If this fails after the mv, restore the archived
             # root so the host still boots (fail-safe): mv it back into place.
             if ! btrfs subvolume create "$TOP/@root"; then
