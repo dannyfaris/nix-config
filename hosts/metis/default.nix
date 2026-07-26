@@ -35,11 +35,7 @@
     ../../modules/nixos/ntfy-server.nix # Self-hosted ntfy receiver for the fleet's failure notifications (#199).
     inputs.wiki-infra.nixosModules.wiki-pipeline # Wiki timer family, state dir, R1 exclusion record (wiki repo: deployment-packaging.md).
     ../../modules/nixos/ephemeral-root.nix # Probe-only for now — see ephemeralRoot below; enforcement flips per docs/design/ephemeral-root.md §Rollout.
-    # impermanence with ZERO declarations: the probe's prune set reads
-    # environment.persistence, which must exist as an option surface even
-    # before any module declares persist paths (design note §Design "The
-    # probe"). Declarations arrive with the whitelist-seeding slice.
-    inputs.impermanence.nixosModules.impermanence
+    ../../modules/nixos/persist-os-core.nix # OS-core persist whitelist (machine-id, /var/lib/nixos, systemd timers/coredump, /var/log, /var/db/sudo, /root).
   ];
 
   networking.hostName = "metis";
@@ -54,6 +50,17 @@
     device = "/dev/disk/by-label/nixos";
     probe.enable = true;
   };
+
+  # Persist-whitelist staging (pre-flip): the @persist subvolume exists
+  # (created online 2026-07-26, see disko.nix) and the whitelist declarations
+  # are ACTIVE — state migrates onto /persist bind mounts while the root is
+  # still mutable, so the flip changes enforcement, not data location.
+  # ORDERING CONSTRAINT: the @persist subvolume and its pre-populated
+  # content must exist BEFORE this config activates (the neededForBoot
+  # mount fails a boot without it; empty bind mounts would shadow live
+  # service state) — retrofit choreography in PR #658.
+  persist.enable = true;
+  fileSystems."/persist".neededForBoot = true;
 
   # Wiki pipeline (log-host role) — metis is the ruled log host (wiki repo:
   # deployment-topology.md, decisions.md 021). Every other option defaults

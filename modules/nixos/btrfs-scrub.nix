@@ -30,4 +30,12 @@ in
   systemd.services = lib.genAttrs scrubServices (_: {
     onFailure = [ "notify-failure@%n.service" ];
   });
+
+  # Persist whitelist (module-owns-its-state, docs/design/ephemeral-root.md):
+  # scrub progress/history per filesystem UUID — losing it only re-baselines
+  # the next scrub, but the module owns the state, so it declares it. Gated
+  # on persist.enable (adopting hosts only — see modules/nixos/persist.nix).
+  environment.persistence."/persist".directories = lib.mkIf config.persist.enable [
+    "/var/lib/btrfs"
+  ];
 }

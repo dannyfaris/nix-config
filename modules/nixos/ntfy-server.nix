@@ -11,7 +11,8 @@
 # subscribes the ntfy phone/desktop app to
 #   http://metis:8090/fleet-failures
 # over Tailscale.
-_: {
+{ config, lib, ... }:
+{
   services.ntfy-sh = {
     enable = true;
     settings = {
@@ -23,4 +24,22 @@ _: {
       listen-http = ":8090";
     };
   };
+
+  # Persist whitelist (module-owns-its-state, docs/design/ephemeral-root.md):
+  # ntfy is a DynamicUser service — its real state (user.db, message cache,
+  # attachments) lives under /var/lib/private/ntfy-sh, with /var/lib/ntfy-sh
+  # a systemd-managed symlink. The declaration is the PARENT with systemd's
+  # required 0700: impermanence would otherwise create /var/lib/private with
+  # its 0755 default and systemd hard-refuses DynamicUser state under a
+  # non-0700 private dir. Slightly wider than one service — any future
+  # DynamicUser state rides along — accepted and recorded here. Discovered
+  # by the probe's first metis inventory (2026-07-26); the design note's
+  # baseline missed it. Gated on persist.enable (adopting hosts only — see
+  # modules/nixos/persist.nix).
+  environment.persistence."/persist".directories = lib.mkIf config.persist.enable [
+    {
+      directory = "/var/lib/private";
+      mode = "0700";
+    }
+  ];
 }

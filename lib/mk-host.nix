@@ -17,6 +17,15 @@ inputs.nixpkgs.lib.nixosSystem {
   modules = [
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
+    # impermanence fleet-wide: gives every NixOS host the
+    # environment.persistence option surface, so modules can carry their
+    # persist declarations (module-owns-its-state) without breaking eval on
+    # hosts that haven't adopted ephemeral-root. Zero declarations = zero
+    # behaviour (upstream gates everything on a non-empty declaration set).
+    inputs.impermanence.nixosModules.impermanence
+    # The persist.enable gate the whitelist declarations hang from — see
+    # that module's header for why the gate is an option, not a mount test.
+    ../modules/nixos/persist.nix
     ../hosts/${hostname}
   ];
 }

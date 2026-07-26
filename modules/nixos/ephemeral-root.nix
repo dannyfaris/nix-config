@@ -66,7 +66,26 @@ let
   # Ignore skeleton — config-derived at build time. /etc/<name> for each
   # managed etc entry, and the target path (2nd whitespace field) of each
   # tmpfiles rule. These are populated by activation/tmpfiles, not drift.
+  # Known trade: a tmpfiles-created dir is ignored even when its CONTENTS
+  # are state (e.g. /var/db/sudo/lectured) — baseline-list adjudication
+  # still applies over the report; the report is a discovery aid, not the
+  # whitelist's source of truth.
   etcIgnores = map (name: "/etc/${name}") (lib.attrNames config.environment.etc);
+  # Parent-directory chains of managed etc entries: "keyd/default.conf"
+  # ignores /etc/keyd/default.conf above, but the /etc/keyd dir itself is
+  # also activation-created and would otherwise be reported (first metis
+  # inventory: 60+ such lines).
+  etcParentIgnores = lib.concatMap (
+    name:
+    let
+      parents = lib.init (lib.splitString "/" name);
+    in
+    lib.imap1 (i: _: "/etc/" + lib.concatStringsSep "/" (lib.take i parents)) parents
+  ) (lib.attrNames config.environment.etc);
+  # Mount-point stub directories: the mounted filesystems themselves are
+  # outside the scan (-xdev), but their empty mount-point dirs live on the
+  # root subvolume and are recreated by activation.
+  mountIgnores = lib.filter (m: m != "/") (lib.attrNames config.fileSystems);
   tmpfilesPaths = lib.filter (p: p != "") (
     map (
       rule:
@@ -78,18 +97,26 @@ let
   );
 
   # Curated static ignores — pure-runtime trees no config attr enumerates.
+  # /root is deliberately NOT here: root's home is real state on the root
+  # subvolume (wiped under enforcement) — it is whitelisted in
+  # persist-os-core.nix, and hiding it from the probe was a silent-loss
+  # class (first metis inventory review, 2026-07-26).
   staticIgnores = [
     "/dev" # devtmpfs, kernel-populated
     "/proc" # procfs
     "/sys" # sysfs
     "/run" # tmpfs, per-boot
     "/tmp" # scratch, per-boot
-    "/root" # root's home — populated by activation, not drift-tracked here
     "/lost+found" # fsck artifact
     "/etc/NIXOS" # NixOS marker file, activation-created
+    "/var/cache" # caches are definitionally regenerable; wipe-and-rebuild is the desired outcome (6,034 of the first inventory's 6,198 lines)
+    "/bin" # activation-recreated shim (/bin/sh)
+    "/usr" # activation-recreated shim (/usr/bin/env)
   ];
 
-  buildTimeIgnores = lib.unique (etcIgnores ++ tmpfilesPaths ++ staticIgnores);
+  buildTimeIgnores = lib.unique (
+    etcIgnores ++ etcParentIgnores ++ tmpfilesPaths ++ mountIgnores ++ staticIgnores
+  );
 
   # The four build-time-derived path lists, each materialised as its own store
   # file (never a heredoc: an in-source heredoc's terminator would collide with
