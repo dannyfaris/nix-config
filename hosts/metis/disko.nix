@@ -66,6 +66,20 @@
                   "noatime"
                 ];
               };
+              # Persist whitelist backing store (docs/design/ephemeral-root.md).
+              # Retrofitted online 2026-07-26 (`btrfs subvolume create` — disko
+              # only formats at install time, so declaring it here changes
+              # nothing on the running host; it makes future reinstalls and
+              # new-host bootstraps carry it from first boot). neededForBoot
+              # is asserted host-side (impermanence requirement).
+              "@persist" = {
+                mountpoint = "/persist";
+                mountOptions = [
+                  "subvol=@persist"
+                  "compress=zstd:1"
+                  "noatime"
+                ];
+              };
               "@nix" = {
                 mountpoint = "/nix";
                 mountOptions = [
