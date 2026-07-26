@@ -119,7 +119,51 @@ pkgs.testers.runNixOSTest {
   name = "ephemeral-root-vm";
 
   nodes = {
-    main = commonNode;
+    # main carries the probe (#633) in addition to the rollback assertions a–k.
+    # A local python http.server sink stands in for the quiet ntfy topic so the
+    # probe's POSTs SUCCEED and the seen-set / marker update paths (which only
+    # run on a good post) are actually exercised.
+    main =
+      { ... }:
+      {
+        imports = [ commonNode ];
+
+        ephemeralRoot.probe = {
+          enable = true;
+          # Point at the local sink below, not metis. A path the delta scan
+          # can never itself produce, so the sink's own request-log files don't
+          # feed back as drift.
+          ntfyUrl = "http://127.0.0.1:8199/fleet-state";
+          # Glob suppressing a planted random-suffixed residue path (assertion m).
+          extraIgnorePatterns = [ "/var/probe-glob-*" ];
+        };
+
+        # The sink: a trivial always-up HTTP server that 200s every POST (the
+        # stdlib http.server 501s on POST, so a tiny custom handler is needed),
+        # so post_delta succeeds and the probe records its seen-set / marker.
+        systemd.services.probe-sink = {
+          description = "Local HTTP sink standing in for the quiet ntfy topic";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig.ExecStart =
+            let
+              # Each POST's Title header + body are appended to /tmp/sink-log so
+              # the test can inspect exactly what the probe posted (assertion n
+              # distinguishes an empty-delta note from a content rollup).
+              sink = pkgs.writeText "probe-sink.py" ''
+                from http.server import BaseHTTPRequestHandler, HTTPServer
+                class H(BaseHTTPRequestHandler):
+                    def do_POST(self):
+                        body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                        with open("/tmp/sink-log", "ab") as f:
+                            f.write(b"=== " + self.headers.get("Title", "").encode() + b"\n")
+                            f.write(body + b"\n")
+                        self.send_response(200); self.end_headers()
+                HTTPServer(("127.0.0.1", 8199), H).serve_forever()
+              '';
+            in
+            "${pkgs.python3}/bin/python3 ${sink}";
+        };
+      };
 
     killswitch =
       { ... }:
@@ -343,6 +387,109 @@ pkgs.testers.runNixOSTest {
           # mutant it inherits the 90-day mtime and the purge reaps it here.
           main.succeed(f"test -e /tl/roots-archive/{archived}")
           toplevel_umount(main)
+
+      # ---------------------------------------------------------------
+      # main: the drift-detection probe (#633) — assertions l, m, n, o.
+      # The probe posts to a local http sink (probe-sink) so post_delta
+      # succeeds and the seen-set / marker update paths are exercised.
+      # ---------------------------------------------------------------
+      with subtest("probe: sink is up so posts succeed"):
+          main.wait_for_unit("probe-sink.service")
+          main.wait_until_succeeds(
+              "curl -fsS -d probe http://127.0.0.1:8199/fleet-state"
+          )
+
+      with subtest("l: live scan reports an undeclared file; a declared (pruned) path does not"):
+          # Plant an undeclared file on the live root, and confirm the persisted
+          # fixture file is present (it is on the prune set as a `files` entry).
+          main.succeed("echo drift > /probe-undeclared")
+          main.succeed("test -e /var/fixture/persisted-file")
+          main.succeed("systemctl start ephemeral-root-probe-live.service")
+          # The newest live report lists the undeclared file...
+          report = main.succeed(
+              "ls -t /var/lib/ephemeral-root-probe/report-live-* | head -n1"
+          ).strip()
+          main.succeed(f"grep -qxF /probe-undeclared {report}")
+          # ...and NOT the declared (pruned) fixture file — prune bites.
+          main.fail(f"grep -qxF /var/fixture/persisted-file {report}")
+
+      with subtest("m: an extraIgnorePatterns glob suppresses a matching planted path"):
+          # /var/probe-glob-* is on extraIgnorePatterns; a random-suffixed match
+          # must not appear in the report even though it is undeclared.
+          main.succeed("echo glob > /var/probe-glob-abc123")
+          # A control undeclared file that is NOT glob-matched, to prove the run
+          # actually scanned (the glob suppresses, it does not blind the scan).
+          main.succeed("echo control > /probe-glob-control")
+          main.succeed("systemctl start ephemeral-root-probe-live.service")
+          report = main.succeed(
+              "ls -t /var/lib/ephemeral-root-probe/report-live-* | head -n1"
+          ).strip()
+          main.succeed(f"grep -qxF /probe-glob-control {report}")
+          main.fail(f"grep -qxF /var/probe-glob-abc123 {report}")
+
+      with subtest("n: delta discipline — a repeated live run posts an EMPTY delta (seen-set bites)"):
+          # Everything undeclared planted so far (/probe-undeclared,
+          # /probe-glob-control) is now in the shared seen-set. Remove every
+          # unseen planted file so this run has NO new drift, then re-run: the
+          # probe must take the empty-delta branch and post the fixed
+          # "no new undeclared paths" note — NOT a content rollup. (Checking the
+          # seen-set line count cannot distinguish this: re-appending an
+          # already-seen path via `sort -u` is idempotent, so the count would be
+          # unchanged even if the delta were mis-computed as the full report.
+          # The post BODY is the discriminating observable.)
+          main.succeed("grep -qxF /probe-undeclared /var/lib/ephemeral-root-probe/seen")
+          main.succeed("rm -f /probe-glob-control /var/probe-glob-abc123")
+          main.succeed("truncate -s0 /tmp/sink-log")
+          main.succeed("systemctl start ephemeral-root-probe-live.service")
+          post = main.succeed("cat /tmp/sink-log")
+          assert "no new undeclared paths" in post, (
+              f"empty-delta run did not post the no-new-drift note; posted:\n{post}"
+          )
+          # And it did NOT re-post an already-seen path (would appear in the
+          # rollup body). /probe-undeclared must be absent from this post.
+          assert "probe-undeclared" not in post, (
+              f"an already-seen path was re-posted on an empty-delta run:\n{post}"
+          )
+
+      with subtest("o: archive half reports newest-archive drift, advances marker, shares the seen-set"):
+          # A file the live scan NEVER saw, written just before a wipe so it
+          # lands in the newest archive (not on the fresh root). /probe-undeclared
+          # is already in the seen-set from assertion l — the archive half must
+          # NOT re-post it (shared seen-set).
+          marker_before = main.succeed(
+              "cat /var/lib/ephemeral-root-probe/last-scanned-archive 2>/dev/null || echo none"
+          ).strip()
+          main.succeed("echo archive-only > /probe-archive-only")
+          main.succeed("sync")
+          main.shutdown()
+          main.start()
+          main.wait_for_unit("multi-user.target")
+          main.wait_for_unit("probe-sink.service")
+          # The per-boot archive service runs automatically; block on it.
+          main.succeed("systemctl start ephemeral-root-probe-archive.service")
+          # Its report lists the archived undeclared file...
+          report = main.succeed(
+              "ls -t /var/lib/ephemeral-root-probe/report-archive-* | head -n1"
+          ).strip()
+          main.succeed(f"grep -qxF /probe-archive-only {report}")
+          # ...the marker advanced to the just-scanned (newest) archive...
+          toplevel_mount(main)
+          newest = sorted(main.succeed("ls /tl/roots-archive").split())[-1]
+          toplevel_umount(main)
+          marker_after = main.succeed(
+              "cat /var/lib/ephemeral-root-probe/last-scanned-archive"
+          ).strip()
+          assert marker_after == newest, f"marker did not advance: {marker_after} != {newest}"
+          assert marker_after != marker_before, "marker unchanged across the archive scan"
+          # ...and /probe-undeclared (already in the seen-set from the live half)
+          # was NOT re-posted: it is absent from the delta appended to the sink.
+          # Prove via the seen-set: /probe-archive-only was newly added, but the
+          # already-seen /probe-undeclared count stays exactly one.
+          main.succeed("grep -qxF /probe-archive-only /var/lib/ephemeral-root-probe/seen")
+          assert (
+              main.succeed("grep -cxF /probe-undeclared /var/lib/ephemeral-root-probe/seen").strip()
+              == "1"
+          ), "already-seen path duplicated in the seen-set (shared seen-set broken)"
 
       # ---------------------------------------------------------------
       # killswitch: assertion e
