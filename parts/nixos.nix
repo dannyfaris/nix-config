@@ -13,5 +13,8 @@ in
     nixos-vm = mkHost { hostname = "nixos-vm"; };
     mercury = mkHost { hostname = "mercury"; };
     metis = mkHost { hostname = "metis"; };
+    # maia — TEMPORARY desktop bring-up (throwaway branch, never merged; see
+    # hosts/maia/default.nix). Registered so it builds/evals on this branch.
+    maia = mkHost { hostname = "maia"; };
   };
 }

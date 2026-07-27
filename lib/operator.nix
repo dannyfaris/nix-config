@@ -87,6 +87,14 @@
     neptune = [ "metis" ];
     nixos-vm = [ ];
     saturn = [ ];
+    # maia (M720q) — TEMPORARY desktop bring-up on a throwaway branch (never
+    # merged to main; wiped for the headless reprovision). Pure sink: accepts
+    # the two interactive workstations, originates nothing — so no hostKeys
+    # entry is needed (nothing accepts a key FROM maia this phase).
+    maia = [
+      "neptune"
+      "metis"
+    ];
   };
 
   # The operator's git identities — one record per identity, the single
