@@ -72,7 +72,9 @@
 
   hostContext = {
     hostName = "maia";
-    idleSuspend = true; # Mirrors metis (dev-box parity).
+    # Off (operator-endorsed override, unlike metis): Maia runs unattended local
+    # builds + the ephemeral-root VM gate, which a mid-run suspend would kill.
+    idleSuspend = false;
     # Same desktop + dev home set as metis: cli tooling, dual git identity, the
     # desktop bundle, outbound ssh, login info, agent CLIs. flakePath omitted —
     # the host-context default ("/home/dbf/nix-config") matches this host.
