@@ -38,8 +38,10 @@
     # add it only if the on-metal handoff black-screens.
     modesetting.enable = true;
 
-    # Alcyone suspends on idle (#631 Power); the driver's suspend/resume
-    # hooks save and restore VRAM so the session survives a sleep cycle.
+    # Alcyone suspends on idle — Noctalia's guarded idle→suspend, inherited
+    # via the desktop-env bundle (home/nixos/noctalia.nix); the driver's
+    # suspend/resume hooks save and restore VRAM so the session survives a
+    # sleep cycle.
     powerManagement.enable = true;
 
     # 595-branch stable — Ada + open-module capable (see header). The pin

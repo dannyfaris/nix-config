@@ -381,6 +381,16 @@ Run from the new host's `dbf` shell unless noted otherwise.
   no LUKS): pull the power, wait 10 s, plug back in. The box should
   boot unattended and Tailscale should rejoin within a minute or two.
 
+### Encrypted hosts: TPM2 enrollment (alcyone-class)
+
+A LUKS host installs with only the recovery-passphrase keyslot (ADR-043 custody) — the first boot prompts for it at the physical console. Unattended boot requires enrolling the TPM2 keyslot **once, post-install, on-metal**:
+
+```bash
+sudo systemd-cryptenroll --tpm2-device=auto /dev/disk/by-partlabel/disk-main-luks
+```
+
+Then verify the property, not the declaration (#303): reboot — no passphrase prompt means the TPM unseals; the power-loss recovery test above doubles as the unattended-unseal check on these hosts. Never remove the passphrase keyslot — it is the ADR-043 recovery path, and the only unlock if the TPM (or firmware) changes.
+
 ## Break-glass
 
 ### AWS

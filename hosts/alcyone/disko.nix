@@ -1,18 +1,20 @@
 # Disko disk layout for Alcyone (Gigabyte B550 GAMING X V2, Ryzen 7
 # 5700X, bare metal, x86_64). The fleet's first encrypted-at-rest host.
 #
-# UEFI GPT: 2 GiB ESP, rest a LUKS2 container holding btrfs with three
-# flat subvolumes @root / @home / @nix — mirroring metis (the `@` prefix
-# avoids disko#442's mktemp -d collision). Mount options exclude
+# UEFI GPT: 2 GiB ESP, rest a LUKS2 container holding btrfs with four
+# flat subvolumes @root / @home / @persist / @nix — mirroring metis (the
+# `@` prefix avoids disko#442's mktemp -d collision). Mount options exclude
 # `discard=async` and `ssd`: both are auto-applied by Linux 6.2+ on
 # capable devices, so listing them would be noise (NixOS 25.11 ships 6.12).
 #
 # Encryption — Option A (#631 / #557): LUKS2 + systemd-cryptenroll TPM2
 # auto-unseal. Two things are deliberately NOT declarative here:
 #   1. The TPM keyslot is enrolled POST-INSTALL, on-metal
-#      (`systemd-cryptenroll --tpm2-device=auto /dev/nvme0n1p2`) — it
-#      writes a keyslot bound to this physical TPM+device and cannot be
-#      baked into a portable layout.
+#      (`systemd-cryptenroll --tpm2-device=auto
+#      /dev/disk/by-partlabel/disk-main-luks`, the partlabel disko
+#      generates for this partition) — it writes a keyslot bound to this
+#      physical TPM+device and cannot be baked into a portable layout.
+#      Procedure: headless-bootstrap.md §Encrypted hosts.
 #   2. The install-time passphrase IS the ADR-043 recovery passphrase
 #      (1Password vault + offline copy, never in repo/sops). It reaches
 #      disko via nixos-anywhere `--disk-encryption-keys /tmp/disko-password
@@ -91,6 +93,18 @@
                   mountpoint = "/home";
                   mountOptions = [
                     "subvol=@home"
+                    "compress=zstd:1"
+                    "noatime"
+                  ];
+                };
+                # Persist whitelist backing store (docs/design/ephemeral-root.md).
+                # Greenfield host: carried from first boot, no online retrofit
+                # (metis needed one — its disko.nix). neededForBoot is asserted
+                # host-side (impermanence requirement).
+                "@persist" = {
+                  mountpoint = "/persist";
+                  mountOptions = [
+                    "subvol=@persist"
                     "compress=zstd:1"
                     "noatime"
                   ];
