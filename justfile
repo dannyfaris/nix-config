@@ -50,18 +50,28 @@ gen-host-key host:
         echo "  remove manually: rm -rf $tmp" >&2
         exit 1
     fi
+    # Stage the host key at exactly the path the target host's own config reads
+    # its sops identity from. sops.age.sshKeyPaths derives from
+    # services.openssh.hostKeys, so a persist-enforcing host resolves it to
+    # /persist/etc/ssh (survives the ephemeral-root wipe, #553) and every other
+    # host to /etc/ssh — one source, no gen-vs-config drift, and the exact path
+    # `just bootstrap`'s interlock asserts against. Cross-platform eval (a Mac
+    # operator staging a Linux host): pure evaluation, no build.
+    key_path=$(nix eval --raw --apply 'ps: builtins.head ps' \
+        ".#nixosConfigurations.{{host}}.config.sops.age.sshKeyPaths")
+    keyfile="$tmp$key_path"
     # 700, not the 755 from ADR-022's example: this dir holds the private
     # host key. The key file is 600 either way; tightening the parent
     # avoids leaking the key's existence to other users on the operator
     # machine. Functionally equivalent to the ADR's prescribed workflow.
-    install -d -m 700 "$tmp/etc/ssh"
+    install -d -m 700 "$(dirname "$keyfile")"
     ssh-keygen -t ed25519 -N "" -C "{{host}}-host" \
-        -f "$tmp/etc/ssh/ssh_host_ed25519_key" -q
-    chmod 600 "$tmp/etc/ssh/ssh_host_ed25519_key"
+        -f "$keyfile" -q
+    chmod 600 "$keyfile"
     age_recipient=$(nix shell nixpkgs#ssh-to-age -c sh -c \
-        "ssh-to-age < $tmp/etc/ssh/ssh_host_ed25519_key.pub")
+        "ssh-to-age < $keyfile.pub")
     echo
-    echo "Host key generated at $tmp/etc/ssh/ssh_host_ed25519_key"
+    echo "Host key generated at $keyfile"
     echo "(scratch under {{bootstrap-scratch}}; cleaned automatically by 'just bootstrap')"
     echo
     echo "Age recipient for .sops.yaml:"
@@ -103,12 +113,26 @@ bootstrap host target:
     #!/usr/bin/env bash
     set -euo pipefail
     tmp="{{bootstrap-scratch}}/nix-bootstrap-{{host}}"
-    if [[ ! -f "$tmp/etc/ssh/ssh_host_ed25519_key" ]]; then
-        echo "ERROR: no host key at $tmp." >&2
-        echo "  Run 'just gen-host-key {{host}}' first." >&2
+    # Interlock (#553): the staged key must sit at exactly the path {{host}}'s
+    # config reads its sops identity from. gen-host-key stages to this same
+    # resolved path, so a mismatch means the host now reads from somewhere the
+    # staged tree does not populate (e.g. a persist flip since the key was
+    # staged) — nixos-anywhere would then produce a host whose first-boot sops
+    # cannot find its key. Fail loudly, locally, before touching the target.
+    key_path=$(nix eval --raw --apply 'ps: builtins.head ps' \
+        ".#nixosConfigurations.{{host}}.config.sops.age.sshKeyPaths")
+    keyfile="$tmp$key_path"
+    echo "=== Pre-flight 0: staged host key matches {{host}}'s resolved sops identity ==="
+    if [[ ! -f "$keyfile" ]]; then
+        echo "ERROR: no staged host key at $keyfile." >&2
+        echo "  {{host}} resolves sops.age.sshKeyPaths to $key_path;" >&2
+        echo "  the staged tree under $tmp must contain that exact path." >&2
+        echo "  Run 'just gen-host-key {{host}}' first (it stages to the resolved path)." >&2
         exit 1
     fi
-    # Two pre-flights with sharply different purposes:
+    echo "  OK — staged key present at $keyfile"
+    echo
+    # Two further pre-flights with sharply different purposes:
     #   (1) is {{host}}'s recipient encoded in secrets/secrets.yaml? This
     #       catches the "operator forgot step 4" case directly. The age
     #       recipient string appears verbatim in sops's metadata block in
@@ -119,7 +143,7 @@ bootstrap host target:
     #       correct file the operator can't actually update.
     echo "=== Pre-flight 1: {{host}}'s recipient in secrets/secrets.yaml ==="
     new_recipient=$(nix shell nixpkgs#ssh-to-age -c sh -c \
-        "ssh-to-age < $tmp/etc/ssh/ssh_host_ed25519_key.pub")
+        "ssh-to-age < $keyfile.pub")
     if ! grep -qF "$new_recipient" secrets/secrets.yaml; then
         echo "ERROR: {{host}}'s age recipient not found in secrets/secrets.yaml." >&2
         echo "  Either step 4 (.sops.yaml + sops updatekeys) was skipped," >&2

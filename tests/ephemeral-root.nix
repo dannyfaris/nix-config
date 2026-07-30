@@ -40,6 +40,25 @@ let
   diskLabel = "ephroot";
   device = "/dev/disk/by-label/${diskLabel}";
 
+  # Retrofit-node fixtures (tests/fixtures/ephemeral-root/). A canonical test
+  # host key + machine-id go on @persist — what sops MUST read, and what
+  # survives the wipe. An impostor pair goes on @root — cleared by the wipe;
+  # present only to make the @persist-vs-@root divergence explicit, so
+  # assertion (p) cannot pass by coincidentally reading @root. The fixture sops
+  # file is encrypted to the age recipient DERIVED (ssh-to-age) from the
+  # canonical host key, so decrypting it proves sops read the /persist key.
+  # Test-only: the committed age identity protects nothing but this fixture —
+  # see canonical-age-identity.txt's header.
+  fixturesDir = self + "/tests/fixtures/ephemeral-root";
+  canonicalKey = fixturesDir + "/canonical_ssh_host_ed25519_key";
+  canonicalKeyPub = fixturesDir + "/canonical_ssh_host_ed25519_key.pub";
+  impostorKey = fixturesDir + "/impostor_ssh_host_ed25519_key";
+  impostorKeyPub = fixturesDir + "/impostor_ssh_host_ed25519_key.pub";
+  fixtureYaml = fixturesDir + "/fixture.yaml";
+  # 32-hex machine-ids: the canonical persists, the impostor is wiped.
+  canonicalMid = "0123456789abcdef0123456789abcdef";
+  impostorMid = "ffffffffffffffffffffffffffffffff";
+
   # Common config for every node: import the rollback module + impermanence,
   # declare a fixture persist path, and set up the btrfs root layout that the
   # `switch-to-configuration boot` specialisation will target.
@@ -49,6 +68,11 @@ let
       imports = [
         ephemeralRootModule
         "${impermanence}/nixos.nix"
+        # persist.nix defines the persist.enable option ephemeral-root.nix's
+        # machine-id seed leg (leg 2) references. Imported on every node so the
+        # option is in scope wherever the rollback module is; nodes leave it at
+        # its default false unless they opt in (the retrofit node below).
+        (self + "/modules/nixos/persist.nix")
       ];
 
       virtualisation = {
@@ -210,6 +234,58 @@ pkgs.testers.runNixOSTest {
       };
 
     promote = commonNode;
+
+    # retrofit: the #553 auth-path node. Divergent-by-construction — canonical
+    # identity on @persist, impostor on @root — and enforcement-shaped (the
+    # wipe is real, from commonNode's ephemeralRoot.enable). Proves the F1 fix:
+    # sops.age.sshKeyPaths derives from the /persist hostKeys, so a
+    # neededForUsers secret decrypts across the wipe; and the machine-id legs
+    # (assertions r, s) survive the wipe / seed a fresh /persist.
+    retrofit =
+      { ... }:
+      {
+        imports = [
+          commonNode
+          inputs.sops-nix.nixosModules.sops
+        ];
+
+        # Persist-adopting: turns on the machine-id seed leg (leg 2, gated
+        # persist.enable) and marks this a persist host.
+        persist.enable = true;
+
+        # sshd + the /persist hostKeys shape, mirroring modules/nixos/sshd.nix's
+        # persist branch. NOT importing sshd.nix (its AllowGroups/whitelist
+        # surface is irrelevant here and entangles the node). The hostKeys shape
+        # is the load-bearing part: sops.age.sshKeyPaths derives from it (the F1
+        # behaviour under test), so it must resolve to the /persist ed25519 key.
+        services.openssh = {
+          enable = true;
+          hostKeys = [
+            {
+              path = "/persist/etc/ssh/ssh_host_ed25519_key";
+              type = "ed25519";
+            }
+            {
+              bits = 4096;
+              path = "/persist/etc/ssh/ssh_host_rsa_key";
+              type = "rsa";
+            }
+          ];
+        };
+
+        # No explicit sops.age.sshKeyPaths — it MUST derive from hostKeys above
+        # (the /persist path). The fixture secret is neededForUsers so it
+        # decrypts in early boot from the /persist key; had the config resolved
+        # to the wiped @root /etc/ssh, decryption would fail (assertion p).
+        sops.secrets.fixture = {
+          neededForUsers = true;
+          sopsFile = fixtureYaml;
+        };
+
+        # ssh-keygen (fingerprint comparison in assertion q) — the client tools
+        # are not otherwise on PATH from services.openssh.enable alone.
+        environment.systemPackages = [ pkgs.openssh ];
+      };
   };
 
   # Format /dev/vdb with the fleet subvolume layout, populate @root from the
@@ -688,5 +764,100 @@ pkgs.testers.runNixOSTest {
           promote.wait_for_unit("multi-user.target")
           promote.fail("grep -qw ephemeral.skip-rollback /proc/cmdline")
           promote.fail("test -e /promote-marker")
+
+      # ---------------------------------------------------------------
+      # retrofit: the #553 auth-path fix — assertions p, q, r, s.
+      # Divergent-by-construction (canonical identity on @persist, impostor on
+      # @root) and enforcement-shaped (the wipe is real).
+      # ---------------------------------------------------------------
+      with subtest("retrofit: setup divergent btrfs root (canonical @persist, impostor @root)"):
+          retrofit.wait_for_unit("multi-user.target")
+          retrofit.succeed("mkfs.btrfs -f -L ${diskLabel} /dev/vdb")
+          retrofit.succeed("mkdir -p /mnt && mount /dev/vdb /mnt")
+          retrofit.succeed("btrfs subvolume create /mnt/@root")
+          retrofit.succeed("btrfs subvolume create /mnt/@persist")
+          # Canonical identity on @persist — what sops MUST read; survives wipe.
+          retrofit.succeed("mkdir -p /mnt/@persist/etc/ssh")
+          retrofit.succeed("install -m 600 ${canonicalKey} /mnt/@persist/etc/ssh/ssh_host_ed25519_key")
+          retrofit.succeed("install -m 644 ${canonicalKeyPub} /mnt/@persist/etc/ssh/ssh_host_ed25519_key.pub")
+          retrofit.succeed("printf '%s\\n' ${canonicalMid} > /mnt/@persist/etc/machine-id")
+          # Impostor identity on @root — wiped on the first boot; present only as
+          # the divergence marker (so a pass cannot be a coincidental @root read).
+          retrofit.succeed("mkdir -p /mnt/@root/etc/ssh")
+          retrofit.succeed("install -m 600 ${impostorKey} /mnt/@root/etc/ssh/ssh_host_ed25519_key")
+          retrofit.succeed("install -m 644 ${impostorKeyPub} /mnt/@root/etc/ssh/ssh_host_ed25519_key.pub")
+          retrofit.succeed("printf '%s\\n' ${impostorMid} > /mnt/@root/etc/machine-id")
+          retrofit.succeed("umount /mnt")
+          retrofit.succeed("${specOf nodes.retrofit}/bin/switch-to-configuration boot")
+          retrofit.succeed("sync")
+          retrofit.crash()
+          retrofit.wait_for_unit("multi-user.target")
+          retrofit.succeed("mount | grep -E 'on / type btrfs' | grep -q 'subvol=/@root'")
+
+      with subtest("p: neededForUsers fixture decrypted via the /persist key (THE F1 proof)"):
+          # The discriminating assertion. sops derived its age identity from the
+          # /persist ed25519 host key (services.openssh.hostKeys), decrypted the
+          # fixture, and wrote it to /run/secrets-for-users. If the config
+          # resolved to the wiped @root /etc/ssh (the #553 bug, or the m1
+          # mutant that re-adds an explicit /etc/ssh sshKeyPaths), no key is
+          # there across the wipe and this decryption fails.
+          retrofit.succeed("test -e /run/secrets-for-users/fixture")
+          assert "fixture-decrypted-ok" in retrofit.succeed("cat /run/secrets-for-users/fixture")
+
+      with subtest("q: sshd serves the canonical /persist key; exactly two HostKey lines, both /persist"):
+          retrofit.wait_for_unit("sshd.service")
+          retrofit.wait_for_open_port(22)
+          # The key sshd serves from /persist IS the canonical fixture, not the
+          # impostor — sshd started (port open) having loaded the configured
+          # /persist HostKeys, so this fingerprint is what the daemon presents.
+          persist_fp = retrofit.succeed(
+              "ssh-keygen -lf /persist/etc/ssh/ssh_host_ed25519_key.pub"
+          ).split()[1]
+          canonical_fp = retrofit.succeed("ssh-keygen -lf ${canonicalKeyPub}").split()[1]
+          impostor_fp = retrofit.succeed("ssh-keygen -lf ${impostorKeyPub}").split()[1]
+          assert persist_fp == canonical_fp, f"served key is not canonical: {persist_fp} != {canonical_fp}"
+          assert persist_fp != impostor_fp, "served key matches the impostor"
+          # Exactly two HostKey lines, both under /persist.
+          hk = retrofit.succeed("grep -E '^HostKey ' /etc/ssh/sshd_config").strip().splitlines()
+          assert len(hk) == 2, f"expected exactly two HostKey lines, got {hk}"
+          assert all("/persist/" in line for line in hk), f"a HostKey is not under /persist: {hk}"
+
+      with subtest("r: machine-id equals the canonical id and survives a second wipe (initrd copy leg)"):
+          assert retrofit.succeed("cat /etc/machine-id").strip() == "${canonicalMid}", (
+              "machine-id was not restored from /persist by the initrd copy leg"
+          )
+          assert retrofit.succeed("cat /etc/machine-id").strip() != "${impostorMid}"
+          # A second normal reboot (a real wipe) — the initrd leg re-copies it.
+          retrofit.shutdown()
+          retrofit.start()
+          retrofit.wait_for_unit("multi-user.target")
+          assert retrofit.succeed("cat /etc/machine-id").strip() == "${canonicalMid}", (
+              "machine-id did not survive the second wipe (initrd copy leg regressed)"
+          )
+
+      with subtest("s: seed leg mints+seeds a fresh id when /persist has none, and it survives the next wipe"):
+          # Remove the persisted id: the initrd copy leg (leg 1) now finds
+          # nothing, stage-2 mints a fresh id, and the seed leg (leg 2,
+          # ConditionPathExists=!/persist/etc/machine-id) captures it to /persist.
+          retrofit.succeed("rm -f /persist/etc/machine-id")
+          retrofit.succeed("sync")
+          retrofit.shutdown()
+          retrofit.start()
+          retrofit.wait_for_unit("multi-user.target")
+          # The seed oneshot populated /persist (wait — it is ordered only
+          # after local-fs.target, so it may land just after multi-user).
+          retrofit.wait_until_succeeds("test -e /persist/etc/machine-id")
+          minted = retrofit.succeed("cat /etc/machine-id").strip()
+          assert minted != "${canonicalMid}", f"expected a fresh mint, got the canonical id {minted}"
+          seeded = retrofit.succeed("cat /persist/etc/machine-id").strip()
+          assert seeded == minted, f"seed leg did not persist the minted id: persist={seeded} live={minted}"
+          # The seeded id now survives the NEXT wipe: the initrd copy leg carries
+          # it over, and the ConditionPathExists leg has bitten (won't re-fire).
+          retrofit.shutdown()
+          retrofit.start()
+          retrofit.wait_for_unit("multi-user.target")
+          assert retrofit.succeed("cat /etc/machine-id").strip() == minted, (
+              "seeded machine-id did not survive the subsequent wipe"
+          )
     '';
 }

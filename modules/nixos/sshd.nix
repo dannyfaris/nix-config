@@ -36,16 +36,29 @@
     };
   };
 
-  # Persist whitelist (module-owns-its-state, docs/design/ephemeral-root.md):
-  # host identity keys — regenerating them breaks every peer's known_hosts
-  # and the sops-nix age-key derivation. Explicit key files, not the /etc/ssh
-  # dir: the dir also holds activation-managed config symlinks that must not
-  # be shadowed by a bind mount. Gated on persist.enable (adopting hosts
-  # only — see modules/nixos/persist.nix).
-  environment.persistence."/persist".files = lib.mkIf config.persist.enable [
-    "/etc/ssh/ssh_host_ed25519_key"
-    "/etc/ssh/ssh_host_ed25519_key.pub"
-    "/etc/ssh/ssh_host_rsa_key"
-    "/etc/ssh/ssh_host_rsa_key.pub"
+  # Under persist enforcement the host identity keys live PHYSICALLY on the
+  # neededForBoot /persist filesystem — not bind-mounted onto /etc/ssh from an
+  # impermanence FILE entry. Nothing read before the stage-2 mount units may
+  # ride a bind mount, and sops-nix derives its age identity from these paths
+  # (see modules/nixos/sops.nix) to decrypt neededForUsers secrets in early
+  # boot; a key reachable only after a bind mount is the #553 auth-lockout
+  # class, killed here by moving the keys off the auth path entirely. Mirrors
+  # the upstream default's two-key shape, so persist hosts get exactly these
+  # (option defaults never merge with definitions) and every other host keeps
+  # the stock /etc/ssh default. On a fresh persist host sshd-keygen (multi-user,
+  # after sops) generates these into /persist; first-boot sops instead depends
+  # on the bootstrap key INJECTION staged by `just gen-host-key`/`bootstrap`
+  # (the justfile interlock asserts the staged tree matches these paths). Gated
+  # on persist.enable (adopting hosts only — see modules/nixos/persist.nix).
+  services.openssh.hostKeys = lib.mkIf config.persist.enable [
+    {
+      path = "/persist/etc/ssh/ssh_host_ed25519_key";
+      type = "ed25519";
+    }
+    {
+      bits = 4096;
+      path = "/persist/etc/ssh/ssh_host_rsa_key";
+      type = "rsa";
+    }
   ];
 }
