@@ -212,6 +212,19 @@ Substitute `<user>`:
 - AWS: the AMI's default sudo-capable user (e.g. `ubuntu`).
 - Bare metal: `nixos` (live USB default) or `root`.
 
+For an encrypted host (alcyone-class), pass a third argument — the local file holding the LUKS passphrase:
+
+```bash
+just bootstrap <host> <user>@<target> <keyfile>
+```
+
+The keyfile holds the ADR-043 recovery passphrase (1Password vault + offline copy). Stage it in a short-lived file the operator removes right after the run — RAM-backed on Linux; on macOS `/tmp` is disk-backed (no default tmpfs), bounded by FileVault, so removal is the guard. Never commit it. Use `printf %s` (not `echo`) so no trailing newline is appended to the passphrase:
+
+- macOS operator (no `/dev/shm`, so `/tmp` — matching the recipe's own `bootstrap-scratch` fallback): `printf %s "$(pbpaste)" > /tmp/<host>-luks`
+- Linux operator: `printf %s "$(wl-paste)" > /dev/shm/<host>-luks`
+
+It is the SAME recovery passphrase disko enrolls as the keyslot at install, which then remains as the fallback once you enroll the TPM2 keyslot post-install (§Encrypted hosts). The recipe derives the on-installer path (`--disk-encryption-keys`) from the host's own disko `passwordFile` and refuses to proceed if an encrypted host is missing its keyfile, or a keyfile is passed for an unencrypted host.
+
 The recipe:
 1. Pre-flight 1: confirms the new host's age recipient is in
    `secrets/secrets.yaml` (catches forgotten step 2 directly).

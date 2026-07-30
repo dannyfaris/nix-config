@@ -107,9 +107,13 @@ gen-host-key host:
 # invoking nixos-anywhere so that a forgotten sops update fails fast
 # (loudly, locally) rather than producing a host with an empty
 # hashedPasswordFile and broken sudo.
+#
+# `keyfile` (optional) is the local LUKS passphrase file for encrypted
+# hosts (alcyone-class); omit it for unencrypted hosts. Pre-flight 3
+# enforces the match either way.
 
 # Run nixos-anywhere with the staged host key (bootstrap step 2).
-bootstrap host target:
+bootstrap host target keyfile="":
     #!/usr/bin/env bash
     set -euo pipefail
     tmp="{{bootstrap-scratch}}/nix-bootstrap-{{host}}"
@@ -161,6 +165,49 @@ bootstrap host target:
     fi
     echo "  OK — operator decrypts cleanly"
     echo
+    # Pre-flight 3 (#631): an encrypted host needs its LUKS passphrase placed
+    # on the installer at format time. Derive the REMOTE path from {{host}}'s
+    # own disko config (the luks passwordFile) rather than hardcoding it; the
+    # bounded walk touches only layout keys (disk/content/partitions), never
+    # module internals that throw. Guarding `config ? disko` keeps a non-disko
+    # host (no disko module) from raising a raw missing-attribute nix error — it
+    # yields the NO_DISKO sentinel, which the recipe turns into a clean error
+    # below. Empty ⇒ disko host with no LUKS container; a lone passwordFile ⇒
+    # that path; >1 distinct ⇒ a throw (the recipe stages one container only).
+    # Whitelist > blanket: keyfile required iff encrypted, forbidden otherwise —
+    # both ways error, loudly and locally, before nixos-anywhere touches
+    # {{target}}.
+    echo "=== Pre-flight 3: LUKS keyfile matches {{host}}'s encryption declaration ==="
+    luks_remote=$(nix eval --raw --apply 'config: if !(config ? disko) then "NO_DISKO" else let devices = config.disko.devices; ok = x: let r = builtins.tryEval x; in if r.success then r.value else null; fromContent = c: if !builtins.isAttrs c then [] else (if (ok (c.type or null)) == "luks" then [ c.passwordFile ] else []) ++ (if c ? content then fromContent c.content else []) ++ (if c ? partitions then builtins.concatMap (p: fromContent (p.content or {})) (builtins.attrValues c.partitions) else []); paths = builtins.concatMap (d: fromContent (d.content or {})) (builtins.attrValues (devices.disk or {})); distinct = builtins.foldl'"'"' (acc: x: if builtins.elem x acc then acc else acc ++ [ x ]) [] paths; in if distinct == [] then "" else if builtins.length distinct > 1 then throw "multiple LUKS passwordFiles — recipe supports one container; extend deliberately" else builtins.head distinct' \
+        ".#nixosConfigurations.{{host}}.config")
+    if [[ "$luks_remote" == "NO_DISKO" ]]; then
+        echo "ERROR: {{host}} declares no disko layout — not a nixos-anywhere/disko bootstrap target." >&2
+        exit 1
+    fi
+    disk_encryption_args=()
+    if [[ -n "$luks_remote" ]]; then
+        if [[ -z "{{keyfile}}" ]]; then
+            echo "ERROR: {{host}} declares a LUKS passphrase file ($luks_remote) but no keyfile was supplied." >&2
+            echo "  Pass the local passphrase file as the third argument:" >&2
+            echo "    just bootstrap {{host}} {{target}} <keyfile>" >&2
+            echo "  It holds the ADR-043 recovery passphrase (RAM-backed local file)" >&2
+            echo "  — see docs/runbooks/headless-bootstrap.md \"Encrypted hosts\"." >&2
+            exit 1
+        fi
+        if [[ ! -f "{{keyfile}}" ]]; then
+            echo "ERROR: keyfile '{{keyfile}}' not found (or not a regular file)." >&2
+            exit 1
+        fi
+        disk_encryption_args=(--disk-encryption-keys "$luks_remote" "{{keyfile}}")
+        echo "  OK — {{host}} encrypted; keyfile → $luks_remote on the installer"
+    elif [[ -n "{{keyfile}}" ]]; then
+        echo "ERROR: a keyfile was supplied but {{host}} declares no LUKS passphrase file." >&2
+        echo "  This host is unencrypted — drop the keyfile argument." >&2
+        exit 1
+    else
+        echo "  OK — {{host}} unencrypted; no keyfile expected"
+    fi
+    echo
     echo "=== Running nixos-anywhere against {{target}} for host '{{host}}' ==="
     # Pinned to 1.13.0 (the release ADR-022 was validated against).
     # Bump deliberately when reviewing release notes — this is the
@@ -180,10 +227,14 @@ bootstrap host target:
     # memory-constrained target (t3.medium-class), see
     # docs/runbooks/headless-bootstrap.md "Troubleshooting" for the
     # disk-backed-swap workaround.
+    # ${arr[@]+…} guard: empty-array expansion trips `set -u` on bash 3.2
+    # (macOS operators), so only expand when non-empty. Unencrypted hosts pass
+    # no --disk-encryption-keys; encrypted hosts pass the remote path + keyfile.
     nix run github:nix-community/nixos-anywhere/1.13.0 -- \
         --flake ".#{{host}}" \
         --target-host {{target}} \
         --extra-files "$tmp" \
+        ${disk_encryption_args[@]+"${disk_encryption_args[@]}"} \
         --kexec-extra-flags --kexec-syscall \
         --generate-hardware-config nixos-generate-config \
                                    "hosts/{{host}}/hardware-configuration.nix"
