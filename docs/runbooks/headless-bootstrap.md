@@ -147,9 +147,16 @@ just gen-host-key <host>
 ```
 
 This:
-- Stages an ed25519 host key in `/dev/shm/nix-bootstrap-<host>/etc/ssh/`
-  (in-memory tmpfs on Linux; disk-backed but unlinked on cleanup on
-  macOS).
+- Stages an ed25519 host key in `/dev/shm/nix-bootstrap-<host>/etc/ssh/` —
+  or `…/persist/etc/ssh/` for a host whose config sets `persist.enable`,
+  where the key's canonical home is `/persist` (sshd's configured key
+  paths; the #553 auth-path relocation). The `just bootstrap` pre-flight
+  asserts the staged tree contains the exact path the target host's
+  `sops.age.sshKeyPaths` evaluates to — staging to the wrong location is
+  a first-boot auth lockout (sops warns-and-continues on a missing key),
+  so the interlock refuses to install rather than let it boot.
+  (In-memory tmpfs on Linux; disk-backed but unlinked on cleanup on
+  macOS.)
 - Prints the age recipient (e.g. `age1abc…`) for adding to
   `.sops.yaml`.
 - Prints the YAML snippet to merge into `.sops.yaml`.
@@ -283,7 +290,9 @@ Fleet SSH trust is a declared edge whitelist (ADR-042): `lib/operator.nix` holds
 4. **Host identity → declared trust (#517).** Commit the host's public host key and pin it fleet-wide.
 
    ```bash
-   scp dbf@<host>:/etc/ssh/ssh_host_ed25519_key.pub hosts/<host>/ssh_host_ed25519_key.pub
+   # persist.enable hosts serve their keys from /persist/etc/ssh/ (the
+   # #553 auth-path relocation); others from /etc/ssh/ as stock.
+   scp dbf@<host>:/persist/etc/ssh/ssh_host_ed25519_key.pub hosts/<host>/ssh_host_ed25519_key.pub
    # then add one entry to modules/shared/ssh-known-hosts.nix and a
    # fleet block to home/shared/ssh.nix
    ```

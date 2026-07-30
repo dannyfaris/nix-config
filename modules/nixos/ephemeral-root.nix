@@ -514,6 +514,96 @@ in
       };
     })
 
+    # ---- machine-id, leg 1/2: stage-1 restore over the wipe --------------
+    #
+    # machine-id is read in the initrd (before any stage-2 impermanence bind
+    # mount exists), so it cannot ride a FILE bind — it must sit physically on
+    # the fresh root by switch-root time. This copies the canonical id from the
+    # neededForBoot /persist (mounted under /sysroot in stage 1 as
+    # sysroot-persist.mount) onto the freshly-wiped @root (/sysroot). Without it
+    # an enforced host mints a NEW id every boot: the rollback wipes
+    # /etc/machine-id, and the stage-2 mint runs after this point. The seed leg
+    # (leg 2, below) is what first populates /persist. Fail-safe direction: any
+    # failure logs and exits 0 — a missing/uncopyable id degrades to a fresh
+    # mint, never a blocked boot (same structural exit-0 discipline as the
+    # rollback service). Its own mkMerge block (not merged into the rollback
+    # block above) so no attrset literal repeats the systemd.services key.
+    (lib.mkIf cfg.enable {
+      boot.initrd.systemd.services.ephemeral-root-machine-id = {
+        description = "Restore /etc/machine-id from /persist onto the fresh root";
+
+        # Ordering only: after the fresh root and the persist store are both
+        # mounted under /sysroot, strictly before switch-root hands off to
+        # stage 2. DefaultDependencies off for the same reason as the rollback
+        # service — a boot-path unit must not inherit the ordering that could
+        # sequence it after switch-root.
+        unitConfig.DefaultDependencies = false;
+        after = [
+          "sysroot.mount"
+          "sysroot-persist.mount"
+        ];
+        before = [ "initrd-switch-root.target" ];
+        wantedBy = [ "initrd-switch-root.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+
+        # `set -u` (typo guard); no `set -e` — every failure is handled
+        # explicitly and routes to exit 0 so the boot always proceeds.
+        script = ''
+          set -u
+          SRC=/sysroot/persist/etc/machine-id
+          DST=/sysroot/etc/machine-id
+
+          if [ ! -f "$SRC" ]; then
+            echo "ephemeral-root: no persisted machine-id at $SRC — leaving the stage-2 mint to run" >&2
+            exit 0
+          fi
+          # Fresh wiped @root has no /etc yet.
+          mkdir -p /sysroot/etc || {
+            echo "ephemeral-root: could not create /sysroot/etc — degrading to a fresh mint" >&2
+            exit 0
+          }
+          if cp "$SRC" "$DST" && chmod 0444 "$DST"; then
+            :
+          else
+            echo "ephemeral-root: could not restore machine-id — degrading to a fresh mint" >&2
+            exit 0
+          fi
+        '';
+      };
+    })
+
+    # ---- machine-id, leg 2/2: stage-2 fresh-host seed -------------------
+    #
+    # Gated on persist.enable (not cfg.enable): the seed must populate
+    # /persist even while enforcement (the rollback) is still off, so the id
+    # is already there when the flip happens. Without this leg an enforced
+    # host with an empty /persist/etc/machine-id mints a new identity every
+    # boot forever — the initrd copy (leg 1) finds nothing to restore, the
+    # stage-2 mint makes a fresh one, and the wipe discards it before the next
+    # boot. ConditionPathExists=!… makes it self-extinguishing: it runs once
+    # on a fresh host, seeds /persist, and never fires again. /persist is a
+    # neededForBoot mount, so it is present by local-fs.target.
+    #
+    # NOTE (test wiring): this reference to config.persist.enable is why
+    # tests/ephemeral-root.nix imports modules/nixos/persist.nix on its nodes
+    # — the option must be in scope wherever this module is imported.
+    (lib.mkIf config.persist.enable {
+      systemd.services.ephemeral-root-machine-id-seed = {
+        description = "Seed /persist/etc/machine-id from the running machine-id (fresh-host bootstrap)";
+        unitConfig.ConditionPathExists = "!/persist/etc/machine-id";
+        after = [ "local-fs.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${pkgs.coreutils}/bin/install -D -m 0444 /etc/machine-id /persist/etc/machine-id";
+        };
+      };
+    })
+
     (lib.mkIf cfg.enable {
       # ---- 2. The normal-boot purge timer -------------------------------
       #

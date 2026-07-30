@@ -1,0 +1,25 @@
+# Gitleaks config — extends the default ruleset; exists ONLY to allowlist
+# the ephemeral-root VM test's committed fixture identities (#553). These
+# are deliberately public test-only keys: they protect a VM fixture secret
+# and nothing else, appear nowhere outside tests/fixtures/ (verified in the
+# landing review of the auth-path relocation), and the divergent retrofit
+# test NEEDS stable committed key material (the sops fixture is encrypted
+# to the canonical key's derived age recipient at authoring time).
+#
+# Allowlist by EXACT path, never by directory — a dir-wide allowlist would
+# let a future real secret hide in fixtures unscanned (whitelist > blanket).
+# The ^…$ anchors are load-bearing: gitleaks paths are UNANCHORED Go
+# regexes (substring match), so without them a future
+# …_key_v2 or prefixed copy would silently ride the allowlist. Adding a
+# fixture key later means adding its anchored path here, deliberately.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "ephemeral-root test-only fixture identities (#553) — public by design"
+paths = [
+  '''^tests/fixtures/ephemeral-root/canonical_ssh_host_ed25519_key$''',
+  '''^tests/fixtures/ephemeral-root/impostor_ssh_host_ed25519_key$''',
+  '''^tests/fixtures/ephemeral-root/canonical-age-identity\.txt$''',
+]

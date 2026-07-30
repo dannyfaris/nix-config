@@ -14,15 +14,20 @@
 # (no functional loss), /etc/credstore* (empty systemd scaffolding),
 # /var/lib/{machines,portables} (systemd recreates; nested subvolumes ride
 # archives per the design note).
+#
+# The class rule (learned from #553): nothing read BEFORE the stage-2 mount
+# units may ride an impermanence FILE bind — an impermanence file entry is a
+# bind mount established during stage-2 activation, invisible to anything that
+# runs earlier. Early-boot-read state must therefore live PHYSICALLY on a
+# neededForBoot filesystem, not on a bind. Two such entries left this module's
+# `files` set for that reason: the SSH host keys (sops-nix reads them in early
+# boot to decrypt neededForUsers secrets → modules/nixos/sshd.nix, keys placed
+# directly on /persist) and /etc/machine-id (read in the initrd before any
+# bind → modules/nixos/ephemeral-root.nix, copied by the stage-1 leg and
+# seeded on fresh hosts by a stage-2 oneshot).
 { config, lib, ... }:
 {
   environment.persistence."/persist" = lib.mkIf config.persist.enable {
-    files = [
-      # Journal/dbus identity; a fresh one orphans every prior journal file
-      # and re-keys anything keyed on the machine (research §4 — the single
-      # most-agreed entry in prior art).
-      "/etc/machine-id"
-    ];
     directories = [
       # uid/gid maps for declarative users — losing it renumbers users and
       # orphans file ownership fleet-wide. The one entry impermanence's own

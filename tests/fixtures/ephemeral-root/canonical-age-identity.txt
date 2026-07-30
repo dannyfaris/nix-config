@@ -1,0 +1,5 @@
+# TEST-ONLY age identity — derived via ssh-to-age from the canonical test
+# ed25519 host key in this directory. Protects nothing but the fixture.yaml
+# in this dir (tests/ephemeral-root.nix retrofit node). Committed for
+# reproducibility; NOT a fleet secret. Public: age15x4ud3s927zr8djaf476xhycy0444f9mljj5pe8np0cy549ptgvq9g0crc
+AGE-SECRET-KEY-104ZX3XSELNSA3S555P3863EY08LZVFKMT9CU6UJ0R4JPEU9THN5QMKXQP7

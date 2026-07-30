@@ -12,6 +12,7 @@ The workflows are translated from mature adjacent ecosystems (snapper/openSUSE, 
 - **A file on `/` is gone after a reboot** → it was not on the persist whitelist. It is in the newest archive → §Extract, then declare it in `environment.persistence` in its owning module so it stops happening. This is the expected dominant recovery.
 - **The host booted but the wipe did not run** → §Degraded boot.
 - **Root-wide state loss where file-picking is impractical** → §Promote, the last resort.
+- **Auth or secret lockout after a persist change (login rejected on *every* generation)** → a whitelisted *directory* was bind-mounted over live state before its `@persist` backing was stocked, or a secret-bearing path diverged between `@root` and `@persist` — and generation rollback will **not** help, because every generation re-derives `/etc/shadow` from the same effective path at boot. Identify which copy the early-boot reader actually resolves (pre-bind reads hit the *underlying* `@root` path), fix *that* copy, and reconcile the other (the 2026-07-30 incident, #553 comments). SSH host keys and `/etc/machine-id` are no longer bind-mounted at all — they live physically on `/persist` (sshd's configured key paths; the initrd machine-id copy) — so for those two, `/persist` is always the canonical copy and writes to `@root:/etc/ssh` are read by nothing.
 
 ## The layout
 
