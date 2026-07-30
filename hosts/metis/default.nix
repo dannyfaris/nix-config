@@ -50,7 +50,10 @@
   # ephemeral.skip-rollback on the kernel cmdline at the systemd-boot menu.
   ephemeralRoot = {
     enable = true;
-    device = "/dev/disk/by-label/nixos";
+    # by-partlabel, matching the root fileSystems entry disko generates —
+    # the initrd orders against this device's unit, and the by-label alias
+    # is never queued on this host (first-enforcing-boot finding, #553).
+    device = "/dev/disk/by-partlabel/disk-main-root";
     probe.enable = true;
   };
 
