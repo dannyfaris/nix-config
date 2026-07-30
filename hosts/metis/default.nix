@@ -40,13 +40,16 @@
 
   networking.hostName = "metis";
 
-  # Ephemeral-root PROBE only — report-only drift detection (#633); the
-  # rollback stays off until the whitelist is seeded and the flip happens
-  # with the operator at the console (design note §Rollout). The daily live
-  # scan's reports are the retrofit inventory. `device` names the backing
-  # btrfs filesystem (disko labels it `nixos`); referenced by the script at
-  # build time even while the archive half is gated off.
+  # Ephemeral root ENFORCED (flipped 2026-07-30, operator at console —
+  # design note §Rollout): every boot archives @root into roots-archive/
+  # (30-day retention, purged daily) and boots a fresh empty root; only the
+  # persist whitelist survives, /home and /nix untouched. The probe runs
+  # both halves — daily live scan (pre-loss warning) and per-boot archive
+  # scan (what the whitelist missed). Recovery:
+  # docs/runbooks/ephemeral-root-recovery.md; one-boot kill-switch:
+  # ephemeral.skip-rollback on the kernel cmdline at the systemd-boot menu.
   ephemeralRoot = {
+    enable = true;
     device = "/dev/disk/by-label/nixos";
     probe.enable = true;
   };
