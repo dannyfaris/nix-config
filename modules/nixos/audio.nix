@@ -1,16 +1,7 @@
-# Audio — PipeWire sound server + rtkit realtime scheduling.
-#
-# System-level plumbing for the niri desktop's sound stack; the home-side
-# control surfaces (media keys, waybar readout, GUI mixer) are a separate
-# concern. See docs/desktop/audio.md §Configuration for the full stack and
-# the rationale behind each toggle.
-#
-# nixpkgs' services.graphical-desktop enables services.pipewire via
-# `lib.mkDefault` for any Wayland desktop, so pipewire is *present* on metis
-# already — but no repo module asserts it, and that baseline leaves rtkit off.
-# This module makes the sound server an explicit, owned guarantee: a
-# normal-priority `enable = true` that merges over the mkDefault and survives
-# an upstream default change, plus the rtkit companion pipewire needs.
+# Audio — PipeWire sound server + rtkit realtime scheduling. System-level
+# plumbing only; the home-side control surfaces are #668's remit. Why an
+# explicit module when nixpkgs' graphical-desktop baseline already lights
+# PipeWire up: docs/desktop/audio.md §Rationale.
 {
   # PipeWire needs rtkit to request realtime scheduling; without it PipeWire
   # loses scheduling priority and logs warnings every session start. PulseAudio
