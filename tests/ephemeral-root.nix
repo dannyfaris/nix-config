@@ -299,14 +299,11 @@ pkgs.testers.runNixOSTest {
       specOf = node: node.specialisation.on-btrfs.configuration.system.build.toplevel;
 
       # (t) Structural, eval-time: the rollback must order after
-      # initrd-root-device.target — the only member of its `after` list that
-      # is GUARANTEED to be in the boot transaction. The cfg.device unit
-      # alone is vacuous when nothing else queues it (ordering-only `after`
-      # against a never-queued unit orders nothing): metis's first enforcing
-      # boot fired the service before udev settled any symlinks and the
-      # fail-safe bailed the wipe (2026-07-30, #553). Device timing is not
-      # reproducible in the VM, so the ordering is asserted structurally;
-      # the mutant (dropping the target) fails this eval, aborting the suite.
+      # initrd-root-device.target — the only member of its `after` list
+      # guaranteed to be in the boot transaction (#553's vacuous-after
+      # finding). Device timing is not reproducible in the VM, so the
+      # ordering is asserted structurally; the mutant (dropping the target)
+      # fails this eval, aborting the suite.
       rollbackAfter =
         nodes.main.specialisation.on-btrfs.configuration.boot.initrd.systemd.services.ephemeral-root-rollback.after;
       assertRollbackOrdering =
