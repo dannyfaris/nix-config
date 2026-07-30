@@ -95,9 +95,12 @@
   # dark/light signal (Stylix's third value "either" is intentionally
   # not used — leaving polarity unset is precisely the bug #123 fixed).
   #
-  # Future host jupiter (celestial name per ADR-038) gets its entry here
-  # at bring-up.
+  # New hosts get their boot-default entry here at bring-up.
   defaults = {
+    alcyone = {
+      family = "tokyo-night";
+      polarity = "dark";
+    };
     nixos-vm = {
       family = "catppuccin";
       polarity = "dark";

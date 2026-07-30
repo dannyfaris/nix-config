@@ -87,6 +87,13 @@
     neptune = [ "metis" ];
     nixos-vm = [ ];
     saturn = [ ];
+    # Alcyone (#631, ADR-042) — new pure sink: accepts neptune only for
+    # now (saturn joins at its destination flip; no mercury edge — retiring
+    # work host). Alcyone becomes a *source* into metis/neptune only after
+    # its outbound key is generated on-host post-install and added to
+    # hostKeys above (fleet-enrolment step, headless-bootstrap.md); until
+    # then it is not listed in any other host's source set.
+    alcyone = [ "neptune" ];
   };
 
   # The operator's git identities — one record per identity, the single

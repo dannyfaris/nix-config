@@ -367,9 +367,7 @@ Run from the new host's `dbf` shell unless noted otherwise.
   `which claude cursor-agent codex agy`.
 - `which gh` resolves (Metis imports `gh.nix`).
 - Tailscale up: `tailscale status` lists `metis` and its peers.
-- btrfs layout: `findmnt -t btrfs` shows exactly three mounts (`/`,
-  `/home`, `/nix`), each with `subvol=@<name>` and `compress=zstd:1`
-  in the options column.
+- btrfs layout: `findmnt -t btrfs` shows exactly the host's declared subvolume mounts — `/`, `/home`, `/nix`, plus `/persist` on `persist.enable` hosts — each with `subvol=@<name>` and `compress=zstd:1` in the options column.
 - zram: `swapon --show` lists `/dev/zram0` (no disk swap entries);
   `zramctl` reports the device's algorithm and disksize.
 - Periodic scrub: `systemctl list-timers btrfs-scrub-*` shows the
@@ -377,9 +375,17 @@ Run from the new host's `dbf` shell unless noted otherwise.
 - Macchina login banner shows the Tailscale interface (per the
   interface-detection logic in `home/nixos/macchina-shell-init.nix`,
   shipped to all hosts by `modules/nixos/home-manager.nix`).
-- Power-loss recovery test (do this once — it's the reason there's
-  no LUKS): pull the power, wait 10 s, plug back in. The box should
-  boot unattended and Tailscale should rejoin within a minute or two.
+- Power-loss recovery test (do this once — unattended boot after power loss is a fleet requirement): pull the power, wait 10 s, plug back in. The box should boot unattended and Tailscale should rejoin within a minute or two. On unencrypted hosts this exercises the plain boot chain; on encrypted hosts it additionally proves the TPM2 unseal (§Encrypted hosts below).
+
+### Encrypted hosts: TPM2 enrollment (alcyone-class)
+
+A LUKS host installs with only the recovery-passphrase keyslot (ADR-043 custody) — the first boot prompts for it at the physical console. Unattended boot requires enrolling the TPM2 keyslot **once, post-install, on-metal**:
+
+```bash
+sudo systemd-cryptenroll --tpm2-device=auto /dev/disk/by-partlabel/disk-main-luks
+```
+
+Then verify the property, not the declaration (#303): reboot — no passphrase prompt means the TPM unseals; the power-loss recovery test above doubles as the unattended-unseal check on these hosts. Never remove the passphrase keyslot — it is the ADR-043 recovery path, and the only unlock if the TPM (or firmware) changes.
 
 ## Break-glass
 
