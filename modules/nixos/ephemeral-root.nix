@@ -339,9 +339,13 @@ in
       description = ''
         The backing btrfs block device (the whole filesystem, any subvolume).
         Mounted at subvolid=5 in the initrd to rename @root and create a
-        fresh one. Match the device disko formats (e.g. by /dev/disk/by-label).
+        fresh one. Use the SAME path family the host's root fileSystems
+        entry uses (disko generates /dev/disk/by-partlabel/…): the initrd
+        orders against this device's unit, and an alias no other unit pulls
+        in orders nothing — a by-label path bailed metis's first enforcing
+        boot when the root mounted by-partlabel (2026-07-30, #553).
       '';
-      example = "/dev/disk/by-label/nixos";
+      example = "/dev/disk/by-partlabel/disk-main-root";
     };
 
     retentionDays = lib.mkOption {
@@ -418,7 +422,21 @@ in
           # bails on the mount, letting boot proceed — the fail-safe direction.
           wantedBy = [ "initrd-root-fs.target" ];
           before = [ "sysroot.mount" ];
-          after = [ deviceUnit ];
+          # initrd-root-device.target is the load-bearing member: it is always
+          # part of the boot transaction and guarantees the root filesystem's
+          # device — the same btrfs whose top level we mount — is up before we
+          # run. The cfg.device unit alone is vacuous when no other unit pulls
+          # it in (ordering-only `after` against a never-queued unit orders
+          # nothing): metis's first enforcing boot proved it on metal — the
+          # root mounts by-partlabel, the by-label unit was never queued, the
+          # service fired before udev settled any symlinks, and the fail-safe
+          # bailed the wipe (2026-07-30, #553). Still ordering-only, never
+          # wants — pulling the device in inverts the fail-safe into an
+          # initrd hang when the device is absent (VM-verified).
+          after = [
+            deviceUnit
+            "initrd-root-device.target"
+          ];
           unitConfig.DefaultDependencies = false;
 
           serviceConfig = {
