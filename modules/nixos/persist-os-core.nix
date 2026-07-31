@@ -9,9 +9,9 @@
 #
 # Deliberately NOT persisted (adjudicated against the first metis inventory,
 # 2026-07-26): /var/cache (regenerates), /var/lib/systemd/{catalog,random-seed,
-# timesync,rfkill,linger} (regenerate or re-derive; linger becomes declarative
-# via users.users.<name>.linger if ever relied on), logrotate/lastlog status
-# (no functional loss), /etc/credstore* (empty systemd scaffolding),
+# timesync,rfkill,linger} (regenerate or re-derive; linger IS relied on and
+# is declarative — modules/nixos/docker.nix), lastlog status (no functional
+# loss), /etc/credstore* (empty systemd scaffolding),
 # /var/lib/{machines,portables} (systemd recreates; nested subvolumes ride
 # archives per the design note).
 #
@@ -25,6 +25,13 @@
 # directly on /persist) and /etc/machine-id (read in the initrd before any
 # bind → modules/nixos/ephemeral-root.nix, copied by the stage-1 leg and
 # seeded on fresh hosts by a stage-2 oneshot).
+#
+# A second class rule (learned adjudicating alcyone's first drift report):
+# state whose owner writes it temp-file-then-rename(2) may not ride a FILE
+# bind either — rename onto a bind mountpoint fails EBUSY, so the persisted
+# copy freezes and the writer errors on every run. Such state likewise lives
+# physically on /persist: logrotate's rotation ledger (third entry, below)
+# is repointed there via --state rather than bind-mounted.
 { config, lib, ... }:
 {
   environment.persistence."/persist" = lib.mkIf config.persist.enable {
@@ -54,4 +61,14 @@
       }
     ];
   };
+
+  # Rotation-time ledger, physically on /persist per the second class rule
+  # (logrotate writes it temp-file-then-rename — a file bind would EBUSY).
+  # /var/log persists above, so the ledger deciding its rotation must share
+  # its lifetime: wiped, the rotation clock resets every boot and surviving
+  # logs never rotate on hosts that reboot inside the rotation window.
+  services.logrotate.extraArgs = lib.mkIf config.persist.enable [
+    "--state"
+    "/persist/var/lib/logrotate.status"
+  ];
 }
