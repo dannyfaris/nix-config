@@ -67,6 +67,7 @@
   hostKeys = {
     neptune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEG7lLmu/lPjyPp1dW3QdA1UcPWi4+e/YEDxvj2UZaHW dbf@neptune";
     metis = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis";
+    alcyone = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICO05VMXeuyBNwKjN73V9zk81q9RYglnyLCLVg+aC+P5 dbf@alcyone";
   };
 
   # sshEdges — destination host → the source hosts whose keys it accepts.
@@ -83,16 +84,20 @@
       "neptune"
       "metis"
     ];
-    metis = [ "neptune" ];
-    neptune = [ "metis" ];
+    metis = [
+      "neptune"
+      "alcyone"
+    ];
+    neptune = [
+      "metis"
+      "alcyone"
+    ];
     nixos-vm = [ ];
     saturn = [ ];
-    # Alcyone (#631, ADR-042) — new pure sink: accepts neptune only for
-    # now (saturn joins at its destination flip; no mercury edge — retiring
-    # work host). Alcyone becomes a *source* into metis/neptune only after
-    # its outbound key is generated on-host post-install and added to
-    # hostKeys above (fleet-enrolment step, headless-bootstrap.md); until
-    # then it is not listed in any other host's source set.
+    # Alcyone (#631, ADR-042) — accepts neptune only for now (saturn
+    # joins at its destination flip; no mercury edge — retiring work
+    # host); a workstation *source* into metis and neptune since its
+    # 2026-07-31 fleet enrolment.
     alcyone = [ "neptune" ];
   };
 

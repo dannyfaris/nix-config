@@ -99,6 +99,7 @@ in
       neptune = fleetHost;
       mercury = fleetHost;
       metis = fleetHost;
+      alcyone = fleetHost;
 
       # Baseline stance for every destination, declared rather than
       # inherited from defaults (explicit > implicit). No option overlap
