@@ -26,5 +26,6 @@
     mercury.publicKeyFile = ../../hosts/mercury/ssh_host_ed25519_key.pub;
     metis.publicKeyFile = ../../hosts/metis/ssh_host_ed25519_key.pub;
     alcyone.publicKeyFile = ../../hosts/alcyone/ssh_host_ed25519_key.pub;
+    alnair.publicKeyFile = ../../hosts/alnair/ssh_host_ed25519_key.pub;
   };
 }

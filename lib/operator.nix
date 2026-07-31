@@ -62,12 +62,13 @@
   # revokes by deleting its one line. Per-host keys are passphrase-less
   # (operator-endorsed carve-out, ADR-010 §History). A backup key
   # (e.g. on a YubiKey) would append here rather than becoming parallel
-  # state. Only enrolled hosts appear (neptune, metis today); the rest
+  # state. Only enrolled hosts appear; the rest
   # enrol at their bootstrap events.
   hostKeys = {
     neptune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEG7lLmu/lPjyPp1dW3QdA1UcPWi4+e/YEDxvj2UZaHW dbf@neptune";
     metis = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis";
     alcyone = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICO05VMXeuyBNwKjN73V9zk81q9RYglnyLCLVg+aC+P5 dbf@alcyone";
+    alnair = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJO5+tWeSk9j/1OZoa9x8Rvy5QuFt9Zso0kNcjbs5FKk dbf@alnair";
   };
 
   # sshEdges — destination host → the source hosts whose keys it accepts.
@@ -87,22 +88,26 @@
     metis = [
       "neptune"
       "alcyone"
+      "alnair"
     ];
     neptune = [
       "metis"
       "alcyone"
+      "alnair"
     ];
     nixos-vm = [ ];
     saturn = [ ];
-    # Alcyone (#631, ADR-042) — accepts neptune only for now (saturn
-    # joins at its destination flip; no mercury edge — retiring work
-    # host); a workstation *source* into metis and neptune since its
-    # 2026-07-31 fleet enrolment.
-    alcyone = [ "neptune" ];
-    # Alnair (#636, ADR-042) — roaming laptop, a new pure sink accepting
-    # the operator's workstation sources alcyone + neptune (operator call at
-    # scaffold; no metis edge); becomes a SOURCE only at post-install fleet
-    # enrolment when its outbound key joins hostKeys.
+    # Alcyone (#631, ADR-042) — accepts neptune + alnair (saturn joins at
+    # its destination flip; no mercury edge — retiring work host); a
+    # workstation *source* into metis and neptune since its fleet enrolment.
+    alcyone = [
+      "neptune"
+      "alnair"
+    ];
+    # Alnair (#636, ADR-042) — roaming laptop: accepts the operator's
+    # workstation sources alcyone + neptune (no metis edge, operator call);
+    # a source into every active host since its fleet enrolment (operator
+    # call — the laptop reaches the whole fleet from the road).
     alnair = [
       "alcyone"
       "neptune"
