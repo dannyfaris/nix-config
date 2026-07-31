@@ -105,6 +105,10 @@
       family = "solarized";
       polarity = "dark";
     };
+    electra = {
+      family = "catppuccin";
+      polarity = "dark";
+    };
     nixos-vm = {
       family = "catppuccin";
       polarity = "dark";
