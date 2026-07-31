@@ -31,6 +31,11 @@ let
   profile = import ../../lib/display-profiles.nix; # active display profile — output scale
   caps = import ../../lib/capabilities.nix { inherit lib; }; # single-source keybind registry (#384)
 
+  # Store-pinned noctalia binary for the hardware media/volume/brightness
+  # spawns below — same idiom as spawn-at-startup, so these don't depend on
+  # session PATH.
+  noctalia = lib.getExe config.programs.noctalia.package;
+
   # Merge the registry-generated binds with the hand-authored remainder,
   # asserting no hand-authored chord silently shadows a generated one via `//`
   # (right-hand wins). The registry's collision lint cannot see this file, so
@@ -248,6 +253,68 @@ in
       "Print".action.screenshot = { };
       "Ctrl+Print".action.screenshot-screen = { };
       "Alt+Print".action.screenshot-window = { };
+
+      # Hardware media/volume/brightness keys — XF86* keys are their own
+      # namespace (not registry chords), routed to Noctalia's IPC so its native
+      # OSD owns presentation. allow-when-locked on the volume trio only.
+      # Rationale: docs/desktop/audio.md.
+      "XF86AudioRaiseVolume" = {
+        allow-when-locked = true;
+        action.spawn = [
+          noctalia
+          "msg"
+          "volume-up"
+        ];
+      };
+      "XF86AudioLowerVolume" = {
+        allow-when-locked = true;
+        action.spawn = [
+          noctalia
+          "msg"
+          "volume-down"
+        ];
+      };
+      "XF86AudioMute" = {
+        allow-when-locked = true;
+        action.spawn = [
+          noctalia
+          "msg"
+          "volume-mute"
+        ];
+      };
+      "XF86AudioMicMute".action.spawn = [
+        noctalia
+        "msg"
+        "mic-mute"
+      ];
+      "XF86AudioPlay".action.spawn = [
+        noctalia
+        "msg"
+        "media"
+        "toggle"
+      ];
+      "XF86AudioNext".action.spawn = [
+        noctalia
+        "msg"
+        "media"
+        "next"
+      ];
+      "XF86AudioPrev".action.spawn = [
+        noctalia
+        "msg"
+        "media"
+        "previous"
+      ];
+      "XF86MonBrightnessUp".action.spawn = [
+        noctalia
+        "msg"
+        "brightness-up"
+      ];
+      "XF86MonBrightnessDown".action.spawn = [
+        noctalia
+        "msg"
+        "brightness-down"
+      ];
     };
   };
 
