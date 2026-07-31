@@ -112,6 +112,15 @@
       "alcyone"
       "neptune"
     ];
+    # Electra (#637, ADR-042) — service-tier PURE sink: accepts the
+    # operator's workstation sources (no metis edge, mirroring alnair's
+    # call — metis exits via #387/#641), and never becomes a source — no
+    # outbound key exists on the host at all (hosts/electra/default.nix).
+    electra = [
+      "alcyone"
+      "alnair"
+      "neptune"
+    ];
   };
 
   # The operator's git identities — one record per identity, the single

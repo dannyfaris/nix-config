@@ -100,6 +100,8 @@ Run once per fresh clone of this repo on the operator machine:
 
 - Latest NixOS 25.11 minimal ISO flashed to a ≥4 GiB USB stick.
   (Wi-Fi-only targets may need the unfree-firmware ISO build.)
+  - Lenovo business firmware (ThinkCentre-class) with CSM disabled can enumerate **no UEFI boot entry** from the official ISO's `dd`-style isohybrid layout — the image is MBR with a ~3 MB FAT12 EFI partition the firmware won't read, so the F12 menu shows an empty device list while the same stick still boots fine in Legacy mode. Re-`dd`-ing any NixOS ISO reproduces the identical layout; the remedy is a Ventoy stick installed GPT (`ventoy -i -g /dev/sdX`) with the ISO copied onto its data partition, then the VTOYEFI partition retyped to EFI System (`sfdisk --part-type /dev/sdX 2 C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) so the pickiest firmware scans it.
+  - nixpkgs' `ventoy` is both unfree- and insecure-flagged; a one-off `NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ALLOW_INSECURE=1 nix build --impure` is an acceptable carve-out for throwaway install media only — it never joins a host config or the `allowUnfreePredicate` whitelist.
 - Target booted from USB to a `nixos@nixos` shell. Enable sshd
   (`sudo systemctl start sshd`) and set a temporary `nixos` password
   (`sudo passwd nixos`). The live USB's `nixos` user has passwordless
@@ -129,6 +131,8 @@ Run once per fresh clone of this repo on the operator machine:
   Power Loss: On" (or "Previous State") for unattended reboot,
   Wake-on-LAN optional. Update BIOS firmware while you're here — much
   easier from the pre-OS HP updater than from Linux later.
+  - Encrypted-at-rest host (the fleet default, §Encrypted hosts): verify the security chip is TPM **2.0** and **enabled** — Intel PTT can ship disabled on business boxes, and the TPM2 auto-unseal keyslot depends on it (#637 decision 9). Verify, don't clear.
+  - Out-of-band-management candidate (vPro-class, e.g. the M920q): record the AMT/vPro SKU (CPU model, or MEBx via Ctrl+P) while at the firmware — it feeds the enable-and-harden-vs-leave-disabled decision (#637); leave AMT unprovisioned/off here, never "Permanently Disabled" (irreversible).
 - `hosts/<host>/disko.nix` device path verified with `lsblk` from the
   live USB. The HP ProDesk 600 G3 Desktop Mini ships in multiple storage
   variants — `/dev/nvme0n1` is most common but not universal.
@@ -391,6 +395,8 @@ Run from the new host's `dbf` shell unless noted otherwise.
 - Power-loss recovery test (do this once — unattended boot after power loss is a fleet requirement): pull the power, wait 10 s, plug back in. The box should boot unattended and Tailscale should rejoin within a minute or two. On unencrypted hosts this exercises the plain boot chain; on encrypted hosts it additionally proves the TPM2 unseal (§Encrypted hosts below).
 
 ### Encrypted hosts: TPM2 enrollment (alcyone-class)
+
+**Fleet default (decided 2026-07-31, #637 decision 1):** the alcyone-shape disk posture — UEFI GPT + 2 GiB ESP, LUKS2 + TPM2 auto-unseal, btrfs `@root/@home/@persist/@nix`, ephemeral root enforced from first boot — is the default for every *new* host from here on. Deviations are deliberate per-host decisions recorded in the host's disko header; the unencrypted metis-shape is that host's install era, not a template.
 
 A LUKS host installs with only the recovery-passphrase keyslot (ADR-043 custody) — the first boot prompts for it at the physical console. Unattended boot requires enrolling the TPM2 keyslot **once, post-install, on-metal**:
 
