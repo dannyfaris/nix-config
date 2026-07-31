@@ -27,6 +27,7 @@
 keys:
   - &metis    age1fum23dvym045wsc0g85lgtpvhjgekj66nkg9krslx0fa8ahmyffsu5nj2t
   - &alcyone  age1uxca973fzxtxljv3zqttyrushl64kwrdysz78lrzxs6es350f9yqtdfdu6
+  - &alnair   age1mzlkncpz9la5yax2s4gapdu8ztter6hukgrj9cardwdwgtfmydrslzgl7k
   - &operator age12dv25pjp7xccjagz2mmpg0pcwutee8eut34tuaqzaqn9wvqmvysqumvgx8
 
 creation_rules:
@@ -35,4 +36,5 @@ creation_rules:
       - age:
           - *metis
           - *alcyone
+          - *alnair
           - *operator
