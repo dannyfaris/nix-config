@@ -100,6 +100,8 @@ Run once per fresh clone of this repo on the operator machine:
 
 - Latest NixOS 25.11 minimal ISO flashed to a ≥4 GiB USB stick.
   (Wi-Fi-only targets may need the unfree-firmware ISO build.)
+  - Lenovo business firmware (ThinkCentre-class) with CSM disabled can enumerate **no UEFI boot entry** from the official ISO's `dd`-style isohybrid layout — the image is MBR with a ~3 MB FAT12 EFI partition the firmware won't read, so the F12 menu shows an empty device list while the same stick still boots fine in Legacy mode. Re-`dd`-ing any NixOS ISO reproduces the identical layout; the remedy is a Ventoy stick installed GPT (`ventoy -i -g /dev/sdX`) with the ISO copied onto its data partition, then the VTOYEFI partition retyped to EFI System (`sfdisk --part-type /dev/sdX 2 C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) so the pickiest firmware scans it.
+  - nixpkgs' `ventoy` is both unfree- and insecure-flagged; a one-off `NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ALLOW_INSECURE=1 nix build --impure` is an acceptable carve-out for throwaway install media only — it never joins a host config or the `allowUnfreePredicate` whitelist.
 - Target booted from USB to a `nixos@nixos` shell. Enable sshd
   (`sudo systemctl start sshd`) and set a temporary `nixos` password
   (`sudo passwd nixos`). The live USB's `nixos` user has passwordless
