@@ -101,6 +101,7 @@ in
       metis = fleetHost;
       alcyone = fleetHost;
       alnair = fleetHost;
+      electra = fleetHost;
 
       # Baseline stance for every destination, declared rather than
       # inherited from defaults (explicit > implicit). No option overlap
