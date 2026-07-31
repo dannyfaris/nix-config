@@ -259,10 +259,13 @@ bootstrap-clean:
     @echo "Cleaned {{bootstrap-scratch}}/nix-bootstrap-*"
 
 # One-time-per-clone operator setup. Derives ~/.config/sops/age/keys.txt
-# from an SSH private key — defaults to /etc/ssh/ssh_host_ed25519_key
-# (the local host's SSH key — on a NixOS secret-holder like metis this
-# is the repo's sops decryption identity, the same key sops-nix uses at
-# activation time as root). NixOS hosts only: operator Macs do NOT
+# from an SSH private key — by default the path the local host's OWN
+# flake config declares (sops.age.sshKeyPaths, the gen-host-key pattern
+# pointed at self: /persist/etc/ssh under persist enforcement, /etc/ssh
+# otherwise — one source, no drift; #671). Pass a path to override.
+# On a NixOS secret-holder like metis this host key is the repo's sops
+# decryption identity, the same key sops-nix uses at activation time as
+# root. NixOS hosts only: operator Macs do NOT
 # derive keys.txt from any SSH key — they populate it from the vault
 # (docs/runbooks/darwin-bootstrap.md pre-bootstrap step 1;
 # docs/design/fleet-key-custody.md).
@@ -299,7 +302,7 @@ bootstrap-clean:
 # matched any of the recipients."
 
 # Set up ~/.config/sops/age/keys.txt from an SSH private key (one-time).
-setup-sops-identity key-path='/etc/ssh/ssh_host_ed25519_key':
+setup-sops-identity key-path='':
     #!/usr/bin/env bash
     set -euo pipefail
     target=~/.config/sops/age/keys.txt
@@ -309,12 +312,44 @@ setup-sops-identity key-path='/etc/ssh/ssh_host_ed25519_key':
         exit 0
     fi
     key='{{key-path}}'
+    if [[ -z "$key" ]]; then
+        # Ask the running host's own config where sshd (and thus sops-nix)
+        # reads the identity — the exact eval gen-host-key does for a
+        # TARGET host, pointed at self (#671). Attr MEMBERSHIP gates the
+        # stock-path fallback (non-fleet clones only); on a fleet host a
+        # broken eval stays loud (the gen-host-key idiom), never a silent
+        # wrong-path guess that would resurrect the ssh-keygen -A hint.
+        host=$(hostname -s)
+        # Guarded separately: a failed membership eval (broken flake) must
+        # abort loudly, never read as "not a fleet host" via empty stdout.
+        if ! member=$(nix eval --json ".#nixosConfigurations" \
+            --apply "cfgs: cfgs ? \"${host}\""); then
+            echo "ERROR: could not evaluate .#nixosConfigurations in this flake." >&2
+            echo "  Fix the flake, or pass a key path explicitly." >&2
+            exit 1
+        fi
+        if [[ "$member" == "true" ]]; then
+            key=$(nix eval --raw --apply 'ps: builtins.head ps' \
+                ".#nixosConfigurations.${host}.config.sops.age.sshKeyPaths")
+            echo "Key path from ${host}'s own config: $key"
+        else
+            key=/etc/ssh/ssh_host_ed25519_key
+            echo "NOTE: '${host}' is not a nixosConfiguration in this flake;"
+            echo "  falling back to $key (pass a path to override)."
+        fi
+    fi
     if ! sudo test -f "$key"; then
         echo "ERROR: $key not found." >&2
-        case "$(uname -s)" in
-            Darwin*) echo "  macOS may not have host keys yet — enable Remote Login (System Settings → Sharing) once, or run 'sudo ssh-keygen -A'." >&2 ;;
-            Linux*)  echo "  Run 'sudo ssh-keygen -A' to generate host keys." >&2 ;;
-        esac
+        if [[ "$key" == /persist/* ]]; then
+            echo "  This host serves its identity from /persist (#553). A missing key" >&2
+            echo "  there means the host identity is GONE — do NOT mint new keys with" >&2
+            echo "  ssh-keygen; recover per docs/runbooks/ephemeral-root-recovery.md." >&2
+        else
+            case "$(uname -s)" in
+                Darwin*) echo "  macOS may not have host keys yet — enable Remote Login (System Settings → Sharing) once, or run 'sudo ssh-keygen -A'." >&2 ;;
+                Linux*)  echo "  Run 'sudo ssh-keygen -A' to generate host keys." >&2 ;;
+            esac
+        fi
         exit 1
     fi
     # Tmpfs scratch dir on Linux (/dev/shm); macOS falls back to mktemp's
