@@ -141,6 +141,7 @@ in
       host-mercury = self.nixosConfigurations.mercury.config.system.build.toplevel;
       host-metis = self.nixosConfigurations.metis.config.system.build.toplevel;
       host-alcyone = self.nixosConfigurations.alcyone.config.system.build.toplevel;
+      host-alnair = self.nixosConfigurations.alnair.config.system.build.toplevel;
       stances-mercury =
         mkStanceCheck "x86_64-linux" "nixos" "mercury"
           self.nixosConfigurations.mercury.config;
@@ -148,6 +149,9 @@ in
       stances-alcyone =
         mkStanceCheck "x86_64-linux" "nixos" "alcyone"
           self.nixosConfigurations.alcyone.config;
+      stances-alnair =
+        mkStanceCheck "x86_64-linux" "nixos" "alnair"
+          self.nixosConfigurations.alnair.config;
       lib-auto-gen-paths = mkUnitTestCheck "x86_64-linux" "auto-gen-paths" autoGenPathsFailures;
       lib-capabilities = mkUnitTestCheck "x86_64-linux" "capabilities" capabilitiesFailures;
       keybind-collisions =

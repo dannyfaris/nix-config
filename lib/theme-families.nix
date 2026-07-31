@@ -101,6 +101,10 @@
       family = "tokyo-night";
       polarity = "dark";
     };
+    alnair = {
+      family = "solarized";
+      polarity = "dark";
+    };
     nixos-vm = {
       family = "catppuccin";
       polarity = "dark";

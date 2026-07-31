@@ -99,6 +99,14 @@
     # host); a workstation *source* into metis and neptune since its
     # 2026-07-31 fleet enrolment.
     alcyone = [ "neptune" ];
+    # Alnair (#636, ADR-042) — roaming laptop, a new pure sink accepting
+    # the operator's workstation sources alcyone + neptune (operator call at
+    # scaffold; no metis edge); becomes a SOURCE only at post-install fleet
+    # enrolment when its outbound key joins hostKeys.
+    alnair = [
+      "alcyone"
+      "neptune"
+    ];
   };
 
   # The operator's git identities — one record per identity, the single

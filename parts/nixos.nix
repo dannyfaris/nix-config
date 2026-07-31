@@ -14,5 +14,6 @@ in
     mercury = mkHost { hostname = "mercury"; };
     metis = mkHost { hostname = "metis"; };
     alcyone = mkHost { hostname = "alcyone"; };
+    alnair = mkHost { hostname = "alnair"; };
   };
 }
