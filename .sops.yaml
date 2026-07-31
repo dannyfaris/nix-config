@@ -1,7 +1,8 @@
 # Recipients.
 #
-# Host recipients (metis): age keys derived from each NixOS
-# secret-holder's /etc/ssh/ssh_host_ed25519_key. Used at activation
+# Host recipients (metis, alcyone): age keys derived from each NixOS
+# secret-holder's ssh_host_ed25519_key (under /persist/etc/ssh/ on
+# persist-enforcing hosts, /etc/ssh/ otherwise). Used at activation
 # time by sops-nix to decrypt secrets for the running host. One per
 # NixOS host that holds a secret — the identity reproduces with the
 # host on reprovision, so it needs no backup of its own
@@ -25,6 +26,7 @@
 # print the `operator` public key below.
 keys:
   - &metis    age1fum23dvym045wsc0g85lgtpvhjgekj66nkg9krslx0fa8ahmyffsu5nj2t
+  - &alcyone  age1uxca973fzxtxljv3zqttyrushl64kwrdysz78lrzxs6es350f9yqtdfdu6
   - &operator age12dv25pjp7xccjagz2mmpg0pcwutee8eut34tuaqzaqn9wvqmvysqumvgx8
 
 creation_rules:
@@ -32,4 +34,5 @@ creation_rules:
     key_groups:
       - age:
           - *metis
+          - *alcyone
           - *operator
