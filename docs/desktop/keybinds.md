@@ -263,8 +263,21 @@ Mirrors macOS's native screenshot chords on the `Super` (Cmd-parity) modifier,
 
 ## Hardware & media keys
 
-`XF86Audio*` (volume), `XF86MonBrightness*` (brightness) — their own namespace,
-unbound pending tooling. The `Print` family is bound to screenshots (above).
+`XF86Audio*` (volume/media), `XF86MonBrightness*` (brightness) — their own namespace, bound in niri to Noctalia's IPC verbs. Why `noctalia msg` over `wpctl`/`playerctl`, and the `allow-when-locked` and keyboard-backlight scope calls: docs/desktop/audio.md.
+
+| Key | Target |
+|---|---|
+| `XF86AudioRaiseVolume` | `noctalia msg volume-up` (allow-when-locked) |
+| `XF86AudioLowerVolume` | `noctalia msg volume-down` (allow-when-locked) |
+| `XF86AudioMute` | `noctalia msg volume-mute` (allow-when-locked) |
+| `XF86AudioMicMute` | `noctalia msg mic-mute` |
+| `XF86AudioPlay` | `noctalia msg media toggle` |
+| `XF86AudioNext` | `noctalia msg media next` |
+| `XF86AudioPrev` | `noctalia msg media previous` |
+| `XF86MonBrightnessUp` | `noctalia msg brightness-up` |
+| `XF86MonBrightnessDown` | `noctalia msg brightness-down` |
+
+The `Print` family is bound to screenshots (above).
 
 ## Inherited reservations — not ours, always live
 
