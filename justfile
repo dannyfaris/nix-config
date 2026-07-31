@@ -338,6 +338,15 @@ setup-sops-identity key-path='':
             echo "  falling back to $key (pass a path to override)."
         fi
     fi
+    # Authenticate sudo BEFORE the key-existence test: `sudo test -f` conflates
+    # "sudo couldn't authenticate" (no TTY) with "key missing", and the /persist
+    # branch below then mis-diagnoses a live host identity as GONE.
+    if ! sudo -v; then
+        echo "ERROR: sudo could not authenticate — the key check below needs root." >&2
+        echo "  Run this recipe from an interactive terminal (sudo must be able to" >&2
+        echo "  prompt for your password); the host key itself was NOT checked." >&2
+        exit 1
+    fi
     if ! sudo test -f "$key"; then
         echo "ERROR: $key not found." >&2
         if [[ "$key" == /persist/* ]]; then
