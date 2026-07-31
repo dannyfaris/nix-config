@@ -62,7 +62,11 @@ in
   boot = {
     # SAM chain in the initrd: the built-in keyboard MUST work at the LUKS
     # recovery-passphrase prompt (the TPM2 auto-unseal fallback path).
-    initrd.kernelModules = samChain;
+    # pinctrl_tigerlake leads: the SSAM probe's wake IRQ is a GPIO on the
+    # Tiger Lake pinctrl — without it in stage-1 the probe fails -EINVAL
+    # (not -EPROBE_DEFER, so it is never retried; #636 on-metal finding,
+    # the linux-surface#1645 signature).
+    initrd.kernelModules = [ "pinctrl_tigerlake" ] ++ samChain;
 
     # Runtime: the SAM chain plus the battery/charger/platform-profile
     # drivers. These live here (silicon) because they make the battery
