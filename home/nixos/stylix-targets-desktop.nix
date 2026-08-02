@@ -26,11 +26,11 @@
 # Done as a prerequisite for the mac-mini onboarding work (#11).
 { config, lib, ... }:
 let
-  # `programs.foot.enable` is true only on desktop hosts (currently just
-  # metis). Used as the desktop-session proxy to gate the toolkit-level
-  # `gtk` target — Stylix's per-app targets above already gate on their own
-  # `programs.<X>.enable`, but `gtk` has no per-app gate upstream. (The `qt`
-  # target was dropped in #103 — see below.)
+  # `programs.foot.enable` is true only on the hosts that import the
+  # desktop-env home bundle. Used as the desktop-session proxy to gate the
+  # toolkit-level `gtk` target — Stylix's per-app `firefox` target below
+  # already gates on its own `programs.firefox.enable`, but `gtk` has no
+  # per-app gate upstream. (The `qt` target was dropped in #103 — see below.)
   desktopSession = config.programs.foot.enable or false;
 in
 {

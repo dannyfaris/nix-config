@@ -122,7 +122,7 @@
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
       ../../home/shared/bundles/git-multi-identity.nix
-      # No stylix-targets.nix here — historically because Noctalia owns
+      # No stylix-targets.nix here — historically because Noctalia owned
       # the terminal palette on the Linux desktop (ADR-036, #385, E1);
       # now moot fleet-wide, since the whitelist is empty (ADR-041: TUIs
       # follow the terminal palette). The shared per-tool ANSI config

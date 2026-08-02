@@ -129,8 +129,8 @@ in
   # Per-host toplevel derivations. Defined at the top-level flake namespace
   # (rather than inside perSystem) because flake-parts deliberately scrubs
   # `self` out of perSystem args. The system in the attribute path scopes
-  # each check to the right runner — aarch64-linux builds nixos-vm;
-  # x86_64-linux builds mercury + metis; aarch64-darwin builds neptune.
+  # each check to the right runner — each leg below builds the toplevels of
+  # the hosts on that system.
   # For NixOS hosts the derivation is `nixosConfigurations.<name>.config
   # .system.build.toplevel`; for Darwin it's the nix-darwin convenience
   # alias `darwinConfigurations.<name>.system` (same derivation as
