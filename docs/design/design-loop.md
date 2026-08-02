@@ -1,6 +1,6 @@
 # The design loop — a disciplined, self-correcting loop for design work
 
-**Status:** Proposed — design note (`docs/design/`). Enforcement partly encoded (the design-note template, the `/design` skill + peer-review checklist, and the `design-note-structure` presence lint; the size gate and a claims-audit are still open). Describes how design work *should* move through this repo, especially in human + AI-agent collaboration; mutable by design. Its first-contact test is the colour-conductor design note (§De-risk evidence).
+**Status:** Proposed — design note (`docs/design/`). Enforcement partly encoded (the design-note template, the `/design` skill + peer-review checklist, the dialogue contract, and the `design-note-structure` presence lint; the size gate and a claims-audit are still open). Describes how design work *should* move through this repo, especially in human + AI-agent collaboration; mutable by design. Its first-contact test is the colour-conductor design note (§De-risk evidence).
 
 ## Summary
 
@@ -42,6 +42,8 @@ The spine for the AI-collaborative version is **co-locate a rule with its enforc
 
 **The reconcile hypothesis.** Reconcile (stage 7) is the loop's least-established rung, so it carries its own hypothesis. It has a *direction* — code → reference: the living reference follows what the product does, never the reverse (Diátaxis "reference led by the product"); a *timing* — same-change: the reference update ships in the commit that changes the behaviour, not in arrears; and an *enforcement ladder*, strongest-first: **generate** the reference from the source where possible (the keybinds table generated from the registry, #457, is the live precedent), else a **claims-audit** that checks the reference against reality, else **review** remembering to update the doc. The falsifiable claim is *review-only reconcile drifts* — the repo's recurring "reconcile to reality" commits are the evidence that the weakest rung is insufficient where the stakes warrant a stronger one.
 
+**The dialogue contract.** The loop runs as an operator *dialogue*, not a solo run: its medium is a working conversation, and the note records what the conversation settled. Every stage boundary from intent through the start of build is an operator gate — advancing takes the operator's stated agreement, never assumed on their behalf — and within those design stages the repo's usual propose-order-and-proceed autonomy (workflow.md §"Propose order; don't multi-question") deliberately inverts: forks are put as numbered questions each with a stated lean, one subject per turn, because eliciting the ruling *is* the work, not stalled momentum. The contract's boundary is design decisions only; once a slice is agreed, implementation, subagent orchestration, and fix cycles keep their normal momentum, since per-step check-ins there would be the very ceremony the loop warns against. Like intent-first and weigh-alternatives before it, it is a stated-but-unenforced step whose skip showed only in operator evidence — the account is in §De-risk evidence.
+
 ## De-risk evidence
 
 The load-bearing assumption is the human+AI thesis: **every unenforced step is skipped by the agent and leans on the human to catch it.** The loop's first real run — the [colour-conductor design note](./colour-conductor.md) — tested it. Scorecard:
@@ -50,7 +52,9 @@ The load-bearing assumption is the human+AI thesis: **every unenforced step is s
 - **Broke:** intent-first and weigh-alternatives — the agent wrote the design solution-first, with no problem statement and no options weighed; caught only by the operator.
 - **The validated lesson:** the steps that broke were the *stated-but-unenforced* ones — direct evidence for *co-locate-rule-with-enforcement*, and for the thesis above. The organic fix (the `docs/design/README` conventions + a peer-review that checks for intent and options) is that principle applied.
 
-**Still unverified:** the encoded enforcement now *exists* (template + `/design` skill + structure lint), but whether it actually stops the skip is untested — the skill is user-invoked, so its first real run is the next test of the spine. Encoding is not efficacy.
+**Cross-repo evidence — the dialogue step.** The loop's first cross-repo adoption (a personal wiki repo, imported ~2026-07) instrumented each run. An operator-commissioned transcript review on 2026-07-19 found the encoded steps held, but that every run the operator rated well had the collaboration mode installed *by hand* mid-session, while the one solo run was interrupted mid-run and needed repeated register corrections. The unencoded step was the *collaboration mode itself* — so it joins the contract here (§Design, The dialogue contract) at the source, alongside intent-first, weigh-alternatives, and de-risk-first as a standing instruction.
+
+**Still unverified:** the encoded enforcement now *exists* (template + `/design` skill + structure lint + the dialogue contract), but whether it actually stops the skip is untested — the skill is user-invoked, so its first real run is the next test of the spine. Encoding is not efficacy.
 
 ## Drawbacks
 

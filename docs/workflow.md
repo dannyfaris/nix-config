@@ -269,12 +269,7 @@ those too?") before execution.
 
 ## Propose order; don't multi-question
 
-**Rule.** When the next steps are non-exclusive and clearly
-beneficial — that is, when each step stands on its own and they
-don't trade off against each other — propose an order and
-proceed. Reserve multi-select questioning (AskUserQuestion or
-chat-level multi-option prompts) for genuine tradeoffs where the
-operator needs to pick one path over another.
+**Rule.** When the next steps are non-exclusive and clearly beneficial — that is, when each step stands on its own and they don't trade off against each other — propose an order and proceed. Reserve multi-select questioning (AskUserQuestion or chat-level multi-option prompts) for genuine tradeoffs where the operator needs to pick one path over another. One deliberate exception: within the `/design` loop's design stages (intent through the start of build), this autonomy inverts — advancing takes the operator's stated agreement, and eliciting rulings *is* the work, not stalled momentum ([docs/design/design-loop.md](./design/design-loop.md) §"The dialogue contract").
 
 **Why.** Treating additive next steps as a multi-select question
 imposes decision overhead for no payoff: each step would land
