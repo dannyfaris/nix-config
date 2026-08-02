@@ -134,11 +134,11 @@ in
       always-center-single-column = true;
 
       # Window decorations — border on, focus-ring off (Stylix used to assert
-      # both via its niri target; re-asserted here now that Noctalia owns the
-      # colour via the runtime include above). Border width from the geometry
-      # token (Carbon spacing-01; crisp on 4K/2× — rationale in theme-tokens.nix
-      # and docs/desktop/niri.md §Window decorations); the active/inactive
-      # colours come from Noctalia's noctalia.kdl.
+      # both via its niri target; re-asserted here now that the theme-menu
+      # conductor owns the colour via the runtime include above). Border width
+      # from the geometry token (Carbon spacing-01; crisp on 4K/2× — rationale in
+      # theme-tokens.nix and docs/desktop/niri.md §Window decorations); the
+      # active/inactive colours come from the conductor's niri.kdl.
       border.enable = true;
       border.width = tokens.geometry.borderWidth;
       focus-ring.enable = false;

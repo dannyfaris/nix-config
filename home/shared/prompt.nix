@@ -18,7 +18,7 @@ let
   # Glyphs decoded from codepoints via fromJSON `"\uXXXX"` escapes —
   # ASCII-safe in source (some editors strip raw PUA UTF-8 bytes) and
   # eval-time-decoded to literal UTF-8 in the rendered config. Pattern
-  # matches the macchina recolour at home/nixos/macchina.nix:8.
+  # matches the macchina recolour in home/nixos/macchina-shell-init.nix.
   desktopGlyph = builtins.fromJSON ''"\uf108"''; # nf-fa-desktop — local
   sshGlyph = builtins.fromJSON ''"\uf489"''; # nf-mdi-console_network — SSH
   snowGlyph = builtins.fromJSON ''"\uf2dc"''; # nf-fa-snowflake — nix-shell

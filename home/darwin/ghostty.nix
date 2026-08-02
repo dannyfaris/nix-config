@@ -60,9 +60,8 @@ let
   };
 in
 {
-  # Bring Ghostty under Stylix theming, the macOS parallel of foot on
-  # metis (home/nixos/stylix-targets-desktop.nix). The target writes
-  # the base16 palette into Ghostty's 16 ANSI slots (theme = "stylix"
+  # Bring Ghostty under Stylix theming. The target writes the base16
+  # palette into Ghostty's 16 ANSI slots (theme = "stylix"
   # + themes.stylix), plus background/foreground/cursor/selection, and
   # tracks polarity automatically (#256). It also sets font-family
   # (MonaspiceAr Nerd Font + Noto Color Emoji, the faces #209
