@@ -106,20 +106,21 @@ jobs:
       # Build-output cache (actions/cache-shaped storage, NOT a
       # substituter) to amortise cold-run rebuilds of the desktop closure.
       # Why cache-nix-action over Cachix/Attic, the cache-key semantics,
-      # and the per-arch size ceilings: docs/ci.md §Cache.
+      # and the save-time GC sweep: docs/ci.md §Cache.
       #
-      # Skipped on the docs-only path as a cost saving: a ~1.4 GB restore plus
-      # a GC pass on a leg that cannot save anything useful anyway (a PR run's
-      # save no-ops — see docs/ci.md §Cache).
+      # Skipped on the docs-only path as a cost saving: a full-store restore
+      # plus a GC pass on a leg that cannot save anything useful anyway (a PR
+      # run's save no-ops — see docs/ci.md §Cache).
       - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         if: steps.changed.outputs.code != 'false'
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
           gc-max-store-size-linux: 5G
-          # 8G holds the ~7.3 GiB Darwin closure with headroom; a lower
+          # 8G holds the ~8.0 GiB Darwin closure with headroom; a lower
           # ceiling forces save-time eviction and warm-cache re-fetch.
-          # See docs/ci.md §Cache.
+          # Nothing on this leg is rooted, so the ceiling is still purely an
+          # eviction dial. See docs/ci.md §"Cache sweep".
           gc-max-store-size-macos: 8G
           purge: true
           purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
@@ -169,3 +170,21 @@ jobs:
             exit 1
           done
           exit 1
+
+      # Root the packages no substituter can supply, before the cache step's
+      # post-phase GC. `nix flake check` leaves no GC roots, so `nix store gc`
+      # deletes in directory-read order and has been discarding noctalia — a
+      # ~23 min C++ build with no binary cache anywhere — from the x86_64
+      # entry on every save (#712). Everything else in the store is cheaper to
+      # re-substitute than to keep, so it is deliberately left unrooted and the
+      # ceilings above are unchanged. The two legs with nothing to root build
+      # an empty farm, which keeps this one command under one condition.
+      #
+      # The `if:` must stay byte-identical to the cache step's. Diverging is
+      # not an abstract hazard: on the docs-only path `nix flake check` never
+      # realises noctalia, so this step running there would *build* it — 23
+      # minutes on a leg whose whole point is being cheap.
+      # See docs/ci.md §"Cache sweep".
+      - name: root the unsubstitutable outputs
+        if: steps.changed.outputs.code != 'false'
+        run: nix build --out-link "$RUNNER_TEMP/ci-gc-root" '.#ci-gc-root'
