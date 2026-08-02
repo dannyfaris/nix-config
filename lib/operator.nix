@@ -78,13 +78,8 @@
   # is a loud build failure, never a quietly keyless host). This is the
   # interim edge map toward the target topology (ADR-042; design note
   # §target shape) — self-edges are deliberately absent (no host SSHes
-  # itself); nixos-vm is a keyless sink (retiring, break-glass is the UTM
-  # console); saturn is empty until its destination flip (no sshd today).
+  # itself); saturn is empty until its destination flip (no sshd today).
   sshEdges = {
-    mercury = [
-      "neptune"
-      "metis"
-    ];
     metis = [
       "neptune"
       "alcyone"
@@ -95,11 +90,10 @@
       "alcyone"
       "alnair"
     ];
-    nixos-vm = [ ];
     saturn = [ ];
     # Alcyone (#631, ADR-042) — accepts neptune + alnair (saturn joins at
-    # its destination flip; no mercury edge — retiring work host); a
-    # workstation *source* into metis and neptune since its fleet enrolment.
+    # its destination flip); a workstation *source* into metis and
+    # neptune since its fleet enrolment.
     alcyone = [
       "neptune"
       "alnair"

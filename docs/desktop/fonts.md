@@ -22,7 +22,7 @@ Stylix is no longer the font source of truth on the desktop. Its model is to har
 | `serif` | DejaVu Serif (uncurated) | — (NixOS base) | rare serif-requesting web pages; resolves to the base face, not a curated pick |
 | `emoji` | Noto Color Emoji | `pkgs.noto-fonts-color-emoji` | colour-emoji glyphs (web, notifications) |
 
-Only the faces something actually consumes are installed (whitelist > blanket): the NixOS desktop set is **Monaspace + Inter + Noto emoji**. Serif is *not* installed as a desktop selection — it resolves to the DejaVu the NixOS base set already ships (§Installation model). Headless hosts (mercury, nixos-vm) render no fonts and install none.
+Only the faces something actually consumes are installed (whitelist > blanket): the NixOS desktop set is **Monaspace + Inter + Noto emoji**. Serif is *not* installed as a desktop selection — it resolves to the DejaVu the NixOS base set already ships (§Installation model). Headless hosts (electra) render no fonts and install none.
 
 **Mono — Monaspace Argon Nerd Font.** GitHub's humanist monospace superfamily; the Nerd Font variant carries the powerline/devicon/file-type glyphs starship/zellij/lazygit rely on. Backs the terminal and the TUIs inside it. The fontconfig name is the family's abbreviation, `MonaspiceAr Nerd Font`.
 
@@ -97,7 +97,7 @@ neptune keeps Stylix (it is not Stylix-severed) and installs **Monaspace only** 
 - **The override seam wins by include-order, not filename.** A user `~/.config/fontconfig/conf.d/*.conf` beats the system baseline because user `conf.d` is included early (`50-user.conf`) and `<prefer>` prepends — not because of its number. Don't reason about "higher number = higher priority."
 - **Firefox doesn't follow the runtime knob (E1).** Face-swap-only — see §Installation model. It joins the conductor at E2 / Part B.
 - **foot's `dpi-aware = no`.** foot 1.15.0's default, adopted via Stylix's foot target; `:size=N` is scaled by output factor, letting the display profile own terminal sizing. See §Sizing. Original landing: PR #63.
-- **No universal monospace.** The mono face lives on *GUI* hosts only — desktop NixOS hosts (via the desktop-env bundle) and Darwin hosts (via foundation). Headless NixOS hosts (mercury, nixos-vm) render nothing and install nothing.
+- **No universal monospace.** The mono face lives on *GUI* hosts only — desktop NixOS hosts (via the desktop-env bundle) and Darwin hosts (via foundation). Headless NixOS hosts (electra) render nothing and install nothing.
 
 ## Cadence
 

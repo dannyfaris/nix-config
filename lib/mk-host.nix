@@ -3,10 +3,10 @@
 # sops-nix). Called from parts/nixos.nix.
 #
 # Usage:
-#   (import ./lib/mk-host.nix { inherit inputs; }) { hostname = "nixos-vm"; }
+#   (import ./lib/mk-host.nix { inherit inputs; }) { hostname = "metis"; }
 #
-# Platform: the host's `hardware-configuration.nix` (or `hardware.nix` on
-# nixos-vm) sets `nixpkgs.hostPlatform` per ADR-023 — that is the single
+# Platform: the host's `hardware-configuration.nix` sets
+# `nixpkgs.hostPlatform` per ADR-023 — that is the single
 # source of truth. nixosSystem accepts being called without `system` and
 # derives it from the module-set's hostPlatform.
 { inputs }:

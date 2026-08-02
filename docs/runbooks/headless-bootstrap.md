@@ -36,10 +36,10 @@ Run once per fresh clone of this repo on the operator machine:
   home-manager owns). Example for an AWS host:
 
   ```
-  Host mercury
+  Host <host>
     User ubuntu
     HostName ec2-x-x-x-x.<region>.compute.amazonaws.com
-    IdentityFile ~/.ssh/mercury.pem
+    IdentityFile ~/.ssh/<host>.pem
   ```
 
   The matchBlock is needed only during bootstrap (the `ubuntu` /
@@ -67,7 +67,7 @@ Run once per fresh clone of this repo on the operator machine:
 
 ## Per-host preconditions
 
-### AWS host (Mercury, future AWS instances)
+### AWS host
 
 - A running Linux instance (Ubuntu, Debian, Amazon Linux — any modern
   kernel that supports kexec). Ubuntu 26.04 LTS or similar tested.
@@ -109,16 +109,7 @@ Run once per fresh clone of this repo on the operator machine:
   step 3.
 - Two SSH public keys appended to `/home/nixos/.ssh/authorized_keys`
   (or `/root/.ssh/authorized_keys` if connecting as root):
-  1. **The operator machine's public key** — whatever machine will
-     run `just bootstrap` (any host holding a sops decryption
-     identity — see §Operator prerequisites). On that machine,
-     `cat ~/.ssh/id_ed25519.pub`. `nixos-anywhere`'s `ssh-copy-id`
-     runs non-interactively from the operator, so without an
-     already-authorized operator key it will exhaust `MaxAuthTries`
-     and fail with `Too many authentication failures`. Cloud hosts
-     (Mercury-class) sidestep this via an AMI keypair (`mercury.pem`)
-     referenced from `~/.ssh/config.local`; bare metal has no
-     equivalent and the operator key must be seeded by hand.
+  1. **The operator machine's public key** — whatever machine will run `just bootstrap` (any host holding a sops decryption identity — see §Operator prerequisites). On that machine, `cat ~/.ssh/id_ed25519.pub`. `nixos-anywhere`'s `ssh-copy-id` runs non-interactively from the operator, so without an already-authorized operator key it will exhaust `MaxAuthTries` and fail with `Too many authentication failures`. Cloud hosts sidestep this via an AMI keypair (`<host>.pem`) referenced from `~/.ssh/config.local`; bare metal has no equivalent and the operator key must be seeded by hand.
   2. **The source-host keys from the new host's `sshEdges` entry** (`lib/operator.nix`, ADR-042). These are the *post-install* credentials — once `nixos-anywhere` completes and `users.mutableUsers = false` activates, the edge-derived keys become `dbf`'s sole inbound credentials. The operator key from (1) is discarded with the live USB and never authorized for `dbf`.
 
   Smoke-test both *before* kicking off step 3: from the operator
@@ -347,33 +338,6 @@ Run from the new host's `dbf` shell unless noted otherwise.
     respond.
 
 ### Per-host divergences
-
-**Mercury (work-only):**
-- `git config user.email` → `daniel.faris@gotaxi.co.nz` (single work
-  identity per `git-identity-work.nix`).
-- `~/grey-st/` exists; `~/personal/` does not (ADR-020).
-- `which gh` → nothing (Mercury doesn't import `gh.nix`).
-- `which codex` and `which agy` → nothing (no `agent-clis-extras`).
-- `glab auth login` interactively works; token persists to
-  `~/.config/glab-cli/`.
-- `boot.growPartition` filled the EBS volume:
-  `df -h /` shows ~the full EBS size.
-- Tailscale (interim posture pre-Twingate; Mercury joins the personal
-  tailnet):
-  - First activation: `sudo tailscale up` over SSH (or EC2 Instance
-    Connect if SSH is wedged). The CLI prints a browser auth URL —
-    open it from the operator machine and complete the flow.
-  - Then: `tailscale status` lists `mercury` and its peers; the
-    macchina login banner shows the `tailscale0` interface (same
-    detection logic as Metis, in
-    `home/nixos/macchina-shell-init.nix`).
-  - No AWS Security Group change required. Tailscale falls back to
-    DERP relays when inbound UDP 41641 is blocked — adds latency but
-    is functionally correct. Open UDP 41641 inbound on the SG only
-    if direct peer-to-peer latency becomes a felt problem.
-  - Tailscale SSH (`tailscale up --ssh`) intentionally left **off** —
-    Mercury's SSH access continues to flow through OpenSSH (key-only,
-    no root per ADR-010), not through Tailscale identity.
 
 **Metis (personal dev box):**
 - Dual git identity:

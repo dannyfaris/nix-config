@@ -109,14 +109,6 @@
       family = "catppuccin";
       polarity = "dark";
     };
-    nixos-vm = {
-      family = "catppuccin";
-      polarity = "dark";
-    };
-    mercury = {
-      family = "tokyo-night";
-      polarity = "dark";
-    };
     metis = {
       family = "rose-pine";
       polarity = "dark";

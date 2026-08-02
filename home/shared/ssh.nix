@@ -63,8 +63,7 @@ _:
 let
   operator = import ../../lib/operator.nix;
   # One block shape for every fleet destination; a host's own entry is
-  # harmless (self-SSH is rare but valid). nixos-vm deliberately absent
-  # (excluded as a destination, #517).
+  # harmless (self-SSH is rare but valid).
   fleetHost = {
     User = operator.name;
   };
@@ -89,7 +88,7 @@ in
     # Include renders BEFORE the blocks below and ssh takes the first
     # value per option — so a config.local block naming a fleet host
     # would shadow the declared one. The operator keeps config.local to
-    # break-glass-only entries (metis-lan, mercury-aws) for exactly this
+    # break-glass-only entries (e.g. metis-lan) for exactly this
     # reason.
     includes = [ "~/.ssh/config.local" ];
 
@@ -97,7 +96,6 @@ in
     # regardless of sort; upstream ssh_config directive names).
     settings = {
       neptune = fleetHost;
-      mercury = fleetHost;
       metis = fleetHost;
       alcyone = fleetHost;
       alnair = fleetHost;
@@ -116,9 +114,6 @@ in
         # passphrase-free; the day passphrases arrive, prompting is the
         # deliberate default and caching the opt-in.
         AddKeysToAgent = "no";
-        # Text-heavy interactive traffic compresses well over the WAN
-        # path (mercury); negligible CPU.
-        Compression = true;
         # Explicit default-restatement: connection multiplexing off — a
         # control socket grants connection hijacking to anything running
         # as this user, for milliseconds of saving over the tailnet.

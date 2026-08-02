@@ -8,10 +8,9 @@ Mesh-VPN baseline on every host the operator uses interactively.
 `modules/nixos/tailscale.nix` (see that file for the daemon /
 firewall configuration; out of scope for #13's cask work).
 Imported per-host by `hosts/metis/default.nix`,
-`hosts/nixos-vm/default.nix`, and `hosts/mercury/default.nix`
-(mercury joined the personal tailnet since #205 so the operator can
-reach it without the public EC2 endpoint; first activation needs an
-interactive `sudo tailscale up`).
+`hosts/alcyone/default.nix`, `hosts/alnair/default.nix`, and
+`hosts/electra/default.nix` (first activation needs an interactive
+`sudo tailscale up`).
 
 **Darwin hosts** — Homebrew cask `tailscale-app` (the Standalone
 variant, NOT the MAS sandboxed build), declared in

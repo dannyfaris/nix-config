@@ -22,7 +22,7 @@ keyd remaps at the **evdev layer**, below libinput and the compositor, so the mo
 
 **Evdev-level, and recoverable.** Because keyd sits below the compositor, the modifier works at the greeter and in TTYs too, and niri needs no special config. keyd is resilient rather than fail-closed: a syntactically bad binding is logged and skipped rather than aborting the daemon, and if a config ever does wedge input, keyd ships an in-kernel escape — the `backspace+escape+enter` chord terminates keyd and restores raw input. Combined with this change touching only `caps_lock`, the exposure is bounded and recoverable at the physical console.
 
-**Desktop-only by placement.** Wiring keyd through the system desktop-env bundle means only desktop hosts get the remap; headless hosts (mercury) — which import no desktop bundle — are untouched. A future Linux desktop host (mothership) inherits it for free.
+**Desktop-only by placement.** Wiring keyd through the system desktop-env bundle means only desktop hosts get the remap; headless hosts (electra) — which import no desktop bundle — are untouched. A future Linux desktop host (mothership) inherits it for free.
 
 ## Alternatives considered
 

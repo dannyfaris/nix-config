@@ -29,12 +29,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64-linux, aarch64-linux, aarch64-darwin]
+        arch: [x86_64-linux, aarch64-darwin]
         include:
           - arch: x86_64-linux
             runner: ubuntu-24.04
-          - arch: aarch64-linux
-            runner: ubuntu-24.04-arm
           # Darwin runner pinned to macos-15 (current Apple-Silicon line,
           # billed-free on public repos; -large/-xlarge/-intel are not,
           # and *-latest moves under us). nix flake check realises the

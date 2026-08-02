@@ -221,7 +221,7 @@ Blast radius (one unlocked-vault key authenticating everywhere vs. per-host isol
 With 1Password's agent rejected (Decision 2), metis's outbound SSH uses a per-host key — the mechanism ADR-010 already prescribes:
 
 1. Generate a fresh passphrase-protected ed25519 on metis (`ssh-keygen -t ed25519`), per ADR-010.
-2. Add its **public** key to `lib/operator.nix` `hostKeys` and metis to the relevant `sshEdges` entries (the single source of truth that each host renders its authorized_keys from; ADR-042). After `nh os switch` fleet-wide, mercury and neptune accept metis.
+2. Add its **public** key to `lib/operator.nix` `hostKeys` and metis to the relevant `sshEdges` entries (the single source of truth that each host renders its authorized_keys from; ADR-042). After `nh os switch` fleet-wide, the destination hosts accept metis.
 3. The same pattern repeats for any future NixOS desktop host: one key per box, one new authorized line.
 
 `gcr-ssh-agent` (incumbent) loads the key on first use and should cache the passphrase via gnome-keyring (smoke-test on first use); no new SSH agent tooling is required. Plain `ssh-agent` is the fallback if gcr-ssh-agent proves unsatisfactory.

@@ -126,7 +126,6 @@
       # the Darwin host is Apple Silicon, so x86_64-darwin is intentionally
       # omitted until a real x86_64 Mac arrives.
       systems = [
-        "aarch64-linux"
         "x86_64-linux"
         "aarch64-darwin"
       ];

@@ -113,8 +113,8 @@ let
   # What the CI cache must carry because nothing else can supply it. The
   # Actions pool is capped at 10 GB and is worth spending only on bytes no
   # substituter serves; anything else is cheaper to re-fetch than to hoard —
-  # the union of the five x86_64 host closures does not fit the pool at all
-  # (measured 2026-08-02). See docs/ci.md §"Cache sweep".
+  # the union of the x86_64 host closures does not fit the pool at all
+  # (measured 2026-08-02, then five hosts). See docs/ci.md §"Cache sweep".
   unsubstitutable = {
     x86_64-linux = {
       # The same attribute home/nixos/noctalia.nix reads, so this is the
@@ -124,10 +124,7 @@ let
       # niri.cachix.org and so stays out.
       noctalia = inputs.noctalia.packages.x86_64-linux.default;
     };
-    # nixos-vm carries no desktop bundle (UTM/AVF cannot render Wayland),
-    # so this leg has no source-only build.
-    aarch64-linux = { };
-    # Neither does the Darwin closure.
+    # The Darwin closure has no source-only build.
     aarch64-darwin = { };
   };
 
@@ -180,21 +177,11 @@ in
   # The lib unit tests are pure eval and platform-independent, so they run
   # once on the x86_64-linux runner rather than redundantly on each.
   flake.checks = {
-    aarch64-linux = {
-      host-nixos-vm = self.nixosConfigurations.nixos-vm.config.system.build.toplevel;
-      stances-nixos-vm =
-        mkStanceCheck "aarch64-linux" "nixos" "nixos-vm"
-          self.nixosConfigurations.nixos-vm.config;
-    };
     x86_64-linux = {
-      host-mercury = self.nixosConfigurations.mercury.config.system.build.toplevel;
       host-metis = self.nixosConfigurations.metis.config.system.build.toplevel;
       host-alcyone = self.nixosConfigurations.alcyone.config.system.build.toplevel;
       host-alnair = self.nixosConfigurations.alnair.config.system.build.toplevel;
       host-electra = self.nixosConfigurations.electra.config.system.build.toplevel;
-      stances-mercury =
-        mkStanceCheck "x86_64-linux" "nixos" "mercury"
-          self.nixosConfigurations.mercury.config;
       stances-metis = mkStanceCheck "x86_64-linux" "nixos" "metis" self.nixosConfigurations.metis.config;
       stances-alcyone =
         mkStanceCheck "x86_64-linux" "nixos" "alcyone"
@@ -266,8 +253,6 @@ in
       # verdict — it exists only to be built with `--out-link` in CI.
       ci-gc-root = mkCiGcRoot "x86_64-linux";
     };
-    aarch64-linux.checks-without-hosts = mkChecksWithoutHosts "aarch64-linux";
-    aarch64-linux.ci-gc-root = mkCiGcRoot "aarch64-linux";
     aarch64-darwin.checks-without-hosts = mkChecksWithoutHosts "aarch64-darwin";
     aarch64-darwin.ci-gc-root = mkCiGcRoot "aarch64-darwin";
   };
@@ -293,8 +278,7 @@ in
         let
           # Auto-generated hardware-configuration.nix files (per ADR-023) have
           # inherent statix/deadnix violations that can't be refactored
-          # without breaking the regenerate-via-nixos-anywhere contract. The
-          # nixos-vm legacy two-file shape (hardware.nix) is the same story.
+          # without breaking the regenerate-via-nixos-anywhere contract.
           # Deadnix consumes this as its per-file filter. Statix runs
           # whole-tree (pass_filenames = false in git-hooks.nix) and reads
           # statix.toml at run-time for its own ignore set; this list only
@@ -344,8 +328,7 @@ in
           };
 
           # Enforces ADR-023's "do not hand-edit hardware-configuration.nix"
-          # rule. Regex excludes hosts/nixos-vm/hardware.nix (legacy two-file
-          # shape) — intentional carve-out per ADR-023.
+          # rule.
           hardware-config-banner = {
             enable = true;
             name = "hardware-config-banner";
