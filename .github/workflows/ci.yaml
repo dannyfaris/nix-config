@@ -17,9 +17,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Permissions pinned to the minimum (whitelist > blanket). actions: write
-# is needed for cache-nix-action's cache DELETE on resave — without it the
-# resave silently no-ops and the cache never refreshes. See docs/ci.md
-# §Permissions.
+# is what lets cache-nix-action's DELETE succeed on the push-to-main run,
+# so main's resave lands; PR runs restore only. See docs/ci.md §Permissions.
 permissions:
   contents: read
   actions: write
@@ -109,9 +108,9 @@ jobs:
       # Why cache-nix-action over Cachix/Attic, the cache-key semantics,
       # and the per-arch size ceilings: docs/ci.md §Cache.
       #
-      # Skipped on the docs-only path — not an optimisation: `purge-primary-key:
-      # always` + the gc ceiling would resave a docs-only store over the warm
-      # cache. See docs/ci.md §Cache.
+      # Skipped on the docs-only path as a cost saving: a ~1.4 GB restore plus
+      # a GC pass on a leg that cannot save anything useful anyway (a PR run's
+      # save no-ops — see docs/ci.md §Cache).
       - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         if: steps.changed.outputs.code != 'false'
         with:
@@ -126,9 +125,9 @@ jobs:
           purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
           purge-created: 0 # no created-age gate; last-accessed is the real filter
           purge-last-accessed: 604800
-          # always: without it the primary-key hit makes the resave a
-          # no-op, cementing a stale cache even after the closure grows.
-          # Needs the actions: write scope above. See docs/ci.md §Cache.
+          # always: on push-to-main, without it the primary-key hit makes the
+          # resave a no-op and a stale cache is cemented. Inert on PR runs —
+          # the DELETE is ref-scoped. See docs/ci.md §Cache.
           purge-primary-key: always
 
       # Bounded blind retry (3x, 30s backoff): fetchGit eval-fetches
