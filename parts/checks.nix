@@ -415,6 +415,47 @@ in
             pass_filenames = false;
           };
 
+          # CLAUDE.md's host census must name exactly the directories under
+          # hosts/ (#583). The lint reads the index itself, so `files`
+          # matches everything and no filenames are passed — the same
+          # posture as case-collisions. Enumerating the two sides instead
+          # cannot work: pre-commit's staged-file list excludes deletions
+          # (`--diff-filter=ACMRTUXB`), so a retire-a-host commit — which
+          # only removes hosts/<name>/ — would present no matching path and
+          # the hook would skip the very ghost-bullet direction it exists to
+          # catch. git is injected explicitly for the same reason
+          # case-collisions does: the git-hooks.nix `run` derivation scrubs
+          # PATH. Lint, not generation: the census's per-host clauses are
+          # hardware/role prose with no machine-readable source (ADR-032
+          # Rule 1; ADR-037 adopts generation only on evidence, after the
+          # lints land).
+          host-census = {
+            enable = true;
+            name = "host-census";
+            entry = "bash ${../scripts/lint-host-census.sh}";
+            files = "^.*$";
+            language = "system";
+            pass_filenames = false;
+            extraPackages = [ pkgs.git ];
+          };
+
+          # Regression coverage for the host-census linter, mirroring
+          # test-shared-purity (#193). Region extraction plus a two-way set
+          # diff has enough logic to break silently — a change that made it
+          # pass everything would let the entry-point doc rot unnoticed,
+          # which is the exact failure #583 exists to stop. Gated to the
+          # linter at commit-time; always runs in CI. The fixtures are
+          # throwaway git repos, so git is injected here too.
+          test-host-census = {
+            enable = true;
+            name = "test-host-census";
+            entry = "env LINT_SCRIPT=${../scripts/lint-host-census.sh} bash ${../scripts/test-lint-host-census.sh}";
+            files = "^scripts/lint-host-census\\.sh$";
+            language = "system";
+            pass_filenames = false;
+            extraPackages = [ pkgs.git ];
+          };
+
           # Guards against two tracked paths differing only by case, which
           # cannot coexist in a checkout on a case-insensitive filesystem
           # (APFS: neptune, saturn, the macos-15 CI leg) — one silently

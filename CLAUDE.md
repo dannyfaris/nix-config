@@ -2,11 +2,20 @@
 
 ## Purpose
 
-Evergreen NixOS + nix-darwin configuration. Five hosts: `nixos-vm` (UTM/aarch64 refinement target, retiring), `mercury` (AWS EC2/x86_64 work-only headless, retiring), `metis` (HP ProDesk/x86_64 shared work + personal dev box), `neptune` (Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02), and `saturn` (Apple Silicon MacBook Air, first laptop, client-only — no inbound sshd). Metis is
-the first desktop host, running niri per
-[ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends
-[ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)).
-The Stylix-foundation + bundle-composition basis from ADR-028 stands.
+Evergreen NixOS + nix-darwin configuration. Hosts:
+
+<!-- BEGIN CENSUS: hosts — bound to hosts/ by scripts/lint-host-census.sh (#583) -->
+- `alcyone` — Gigabyte B550 GAMING X V2 / x86_64 bare metal, flagship desktop; first discrete GPU (RTX 4060) + first encrypted-at-rest host.
+- `alnair` — Surface Laptop 4 / x86_64 bare metal, the fleet's first Linux laptop.
+- `electra` — Lenovo ThinkCentre M920q Tiny / x86_64 bare metal, genuinely headless always-on service-tier node, role deliberately open.
+- `mercury` — AWS EC2 / x86_64 work-only headless. Retiring.
+- `metis` — HP ProDesk / x86_64 shared work + personal dev box.
+- `neptune` — Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02.
+- `nixos-vm` — UTM / aarch64 refinement target. Retiring.
+- `saturn` — Apple Silicon MacBook Air, first laptop, client-only — no inbound sshd.
+<!-- END CENSUS: hosts -->
+
+Metis is the first desktop host, running niri per [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)). The Stylix-foundation + bundle-composition basis from ADR-028 stands.
 
 ## Reference documentation
 
@@ -74,7 +83,7 @@ Implement exactly the change requested — nothing more. Do not add unrequested 
 | Stance | Rationale |
 |--------|-----------|
 | `users.mutableUsers = false` | This file is the sole source of truth for user state. `passwd` changes do not persist. |
-| SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (neptune) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Fleet SSH trust (which host may reach which) is a declared edge whitelist per [ADR-042](./docs/decisions/ADR-042-fleet-ssh-declared-edges.md). Break-glass is host-specific: UTM console for nixos-vm (retiring); AWS EC2 Instance Connect for mercury (retiring); greetd or physical console for metis; Apple keyboard at the local login for neptune and saturn. |
+| SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (neptune) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Fleet SSH trust (which host may reach which) is a declared edge whitelist per [ADR-042](./docs/decisions/ADR-042-fleet-ssh-declared-edges.md). Break-glass is host-specific — see §Break-glass. |
 | `allowUnfreePredicate` whitelist | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`. |
 | `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
 | `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
@@ -85,11 +94,16 @@ These stances are asserted as eval-only CI checks (`lib/stances.nix`, wired in `
 
 If SSH wedges or keys go wrong, recovery is host-specific:
 
-- **nixos-vm** (retiring): UTM console window accepts the user password directly.
+<!-- BEGIN CENSUS: break-glass — bound to hosts/ by scripts/lint-host-census.sh (#583) -->
+- **alcyone**: physical console (monitor + keyboard) or the greetd login.
+- **alnair**: physical console (built-in keyboard + display) or the greetd login.
+- **electra**: physical console (monitor + keyboard) — headless, so there is no greetd login.
 - **mercury** (retiring): AWS EC2 Instance Connect from the AWS console.
 - **metis**: physical console (monitor + keyboard) or the greetd login.
 - **neptune**: Apple keyboard + display at the local login.
+- **nixos-vm** (retiring): UTM console window accepts the user password directly.
 - **saturn**: Apple keyboard + display at the local login.
+<!-- END CENSUS: break-glass -->
 
 In all cases: log in, fix the config, and re-activate — `nh os switch`
 on NixOS, `nh darwin switch` on neptune (or the underlying
