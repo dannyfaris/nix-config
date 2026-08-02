@@ -126,7 +126,6 @@
   # employer, Grey St) for work. Consumers:
   #   - home/shared/git-identity-dual.nix — personal default + the
   #     ~/grey-st/ gitdir-include (name + email of both).
-  #   - home/shared/git-identity-work.nix — work identity (name + email).
   #   - home/shared/agent-clis.nix — generates the email→label map the
   #     Claude statusline sources (statusline-identities.sh).
   # The personal `name` is the GitHub handle (attribution is email-based, so
