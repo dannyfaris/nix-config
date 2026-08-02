@@ -152,7 +152,6 @@ See `modules/nixos/niri.nix:7-32` for the inline rationale.
   niri-only baseline close-out (all five acceptance criteria met).
 - [keybinds.md](./keybinds.md) — bind taxonomy that depends on niri's
   no-merge-with-defaults behaviour.
-- [fonts.md](./fonts.md) — font installation model; niri's chrome
-  participates in the Stylix flow.
+- [fonts.md](./fonts.md) — font installation model; the desktop's fonts are conducted by fontconfig, not Stylix (#390).
 - niri upstream — https://github.com/niri-wm/niri
 - niri-flake — https://github.com/sodiboo/niri-flake

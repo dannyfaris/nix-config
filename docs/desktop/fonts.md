@@ -4,7 +4,7 @@ Font selections and the runtime font model for the desktop. Living document — 
 
 ## Model — fontconfig owns fonts at runtime
 
-The desktop's fonts are **conducted by fontconfig**, not pinned per-app by Stylix. Every surface that can asks for a *generic* family (`monospace`, `sans-serif`, `serif`); fontconfig resolves each generic to a concrete face through one mapping; changing that mapping re-themes every generic-consuming surface at once. This is the font analogue of how Noctalia owns colour at runtime (ADR-036): theming is mutable, user-space, and not re-stamped by `nh os switch`.
+The desktop's fonts are **conducted by fontconfig**, not pinned per-app by Stylix. Every surface that can asks for a *generic* family (`monospace`, `sans-serif`, `serif`); fontconfig resolves each generic to a concrete face through one mapping; changing that mapping re-themes every generic-consuming surface at once. This is the font analogue of how the theme-menu conductor owns colour at runtime (ADR-044): the live selection is mutable, user-space, and not re-stamped by `nh os switch`.
 
 Two consequences fall out, and both are deliberate goals (#390):
 
