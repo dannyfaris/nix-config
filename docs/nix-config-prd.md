@@ -431,7 +431,7 @@ Enforcement runs at three points of increasing cost and coverage (per [ADR-025](
 |---|---|---|
 | `pre-commit` hook | Formatter (`nixfmt` + `shfmt`, via treefmt) and linters (`statix`, `deadnix`, `actionlint`, `shellcheck`) plus the structural scripts (`hardware-config-banner`, `shared-purity`, `bundle-purity`) — no Nix evaluation | under 10 seconds |
 | `nix flake check` | The full set: every `pre-commit` hook (git-hooks.nix lifts them to `checks.<system>.pre-commit`) **plus** the per-host `system.build.toplevel` build for each host the current machine can build natively | seconds to minutes |
-| CI (GitHub Actions) | `nix flake check` across the `x86_64-linux` / `aarch64-linux` / `aarch64-darwin` matrix, on every push and pull request | minutes |
+| CI (GitHub Actions) | `nix flake check` across the `x86_64-linux` / `aarch64-linux` / `aarch64-darwin` matrix, on every push and pull request — except on documentation-only pull requests, which build every check *but* the host toplevels (see [ci.md](./ci.md) §"Docs-only short-circuit") | minutes |
 
 There is a single git hook — `pre-commit` — declared inside the flake using `git-hooks.nix` and installed by the dev-shell's `shellHook` on `nix develop` (no separate install step, no `pre-push` stage). It stays fast: formatter + linters + path-based structural scripts only, no Nix evaluation, so `--no-verify` remains an emergency tool rather than a routine bypass.
 
@@ -477,7 +477,7 @@ The `pre-commit` hook is declared inside the flake using `git-hooks.nix` and ins
 
 ### 9.5 Continuous integration
 
-Continuous integration is live (per [ADR-025](./decisions/ADR-025-ci-in-flake.md)). GitHub Actions runs `nix flake check` on every push and pull request across the `x86_64-linux`, `aarch64-linux`, and `aarch64-darwin` matrix — building every host on its native runner — defined in `.github/workflows/ci.yaml`. A weekly `flake-lock.yaml` job opens a lockfile-bump PR that merges manually after green CI. PRs land via squash auto-merge once required checks pass. CI is thin YAML; every check is a flake output, so local `nix flake check` and CI verify the identical set.
+Continuous integration is live (per [ADR-025](./decisions/ADR-025-ci-in-flake.md)). GitHub Actions runs `nix flake check` on every push and pull request across the `x86_64-linux`, `aarch64-linux`, and `aarch64-darwin` matrix — building every host on its native runner, except on documentation-only pull requests, which build every check *but* the host toplevels (see [ci.md](./ci.md) §"Docs-only short-circuit") — defined in `.github/workflows/ci.yaml`. A weekly `flake-lock.yaml` job opens a lockfile-bump PR that merges manually after green CI. PRs land via squash auto-merge once required checks pass. CI is thin YAML; every check is a flake output, so local `nix flake check` and CI verify the identical set.
 
 ### 9.6 AI agent integration
 
@@ -492,7 +492,7 @@ The design-level workflow for routine changes:
 1. **Edit** the relevant module, foundation, bundle, or host file.
 2. **Commit.** Pre-commit runs fast structural checks only (formatter, linters, path-based lint scripts). Any failure aborts the commit with a rule-named error message.
 3. **(Optional) Verify locally** with `nix flake check` if making non-trivial changes — one command runs the full set (format, lint, structural, and every buildable host) without waiting for CI.
-4. **Push and open a PR.** CI runs `nix flake check` across the matrix (every host builds); a failure blocks the PR. PRs land via squash auto-merge once required checks pass.
+4. **Push and open a PR.** CI runs `nix flake check` across the matrix (every host builds, unless the PR is documentation-only — see [ci.md](./ci.md) §"Docs-only short-circuit"); a failure blocks the PR. PRs land via squash auto-merge once required checks pass.
 5. **Rebuild** the machine (`darwin-rebuild switch` or `nixos-rebuild switch` against the flake) to apply the change.
 6. **Verify** the change behaves as expected.
 

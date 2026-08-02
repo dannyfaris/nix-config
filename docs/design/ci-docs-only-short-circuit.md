@@ -1,0 +1,117 @@
+# Docs-only CI short-circuit — substitute the command, never skip the check
+
+**Status:** Accepted (2026-08-02) — design note (`docs/design/`). Built in the same change. #412 · retires the `paths-ignore` non-goal in [ADR-025](../decisions/ADR-025-ci-in-flake.md) §77 (retirement recorded in its §History).
+
+## Summary
+
+A pull request that changes only documentation currently rebuilds every host closure in the fleet — five of them on the x86_64-linux leg alone, at a measured median of 31.8 minutes. This note proposes making the *command* conditional instead of the *job*: the `flake-check` job, its matrix, and all three required check names stay exactly as they are and always report, but on a docs-only PR the job builds a new `checks-without-hosts` flake output — every check except the per-host `system.build.toplevel` builds — and skips the cache step entirely, restore as well as save, so the cheap leg runs against a cold store. Everything that leg needs is substitutable from `cache.nixos.org`, so the path stays cheap regardless. Nothing is ever skipped, so the required-status-checks hang that ADR-025 rejected `paths-ignore` for cannot occur. Landing alongside it is a second, independent guard from the same issue: a `case-collisions` pre-commit hook that fails when two tracked paths differ only by case, which composes with this design precisely because the cheap path still runs the whole pre-commit set.
+
+## Motivation
+
+ADR-025 §77 recorded "`paths-ignore` for docs-only changes" as an explicit non-goal with a conjunctive re-evaluation trigger: *per-arch CI runtime crosses ~20 min **and** docs-only PR cadence becomes material*. The figure that decision rested on — ADR-025's own recorded runtime of ~5–8 min per arch, which pre-dates both the build cache and the fleet's growth — was taken when the x86_64-linux leg built two host toplevels. It builds five today. The economics were computed on a repo that no longer exists, so the first question this note has to answer is measurement, not mechanism — see De-risk evidence.
+
+The forces any design must satisfy, in priority order:
+
+1. **F1 — The merge gate must not weaken.** The GitHub ruleset (`16950997`) is the only real enforcer and is out-of-band. Any candidate is judged first on what it does to the four required context names.
+2. **F2 — No silent hang.** PRs land via squash auto-merge ([docs/workflow.md](../workflow.md)). A required check left in `expected` does not fail loudly; it blocks forever, quietly. That failure mode is worse than the cost it would save.
+3. **F3 — No silent green.** Nothing may make a *failing* build indistinguishable from a *correctly-skipped* one at the gate.
+4. **F4 — Policy stays in the flake.** ADR-025 §Rationale: every check CI runs is a flake output; CI is mechanism, the flake is policy, and `nix flake check` locally reproduces CI.
+5. **F5 — No maintained exception list.** Several `docs/` files legitimately gate code (`docs/desktop/keybinds.md` via the `keybinds-table` check, `docs/design/*.md` via `design-note-structure`). A design that needs carve-outs for them will rot.
+6. **F6 — Proportionate.** [ADR-032](../decisions/ADR-032-proportionate-enforcement-and-rationale.md) Rule 1: the lightest mechanism that holds the guarantee, and when unsure, the lighter one.
+7. **F7 — Reversible.** The change should revert as ordinary diff hunks, with no out-of-band state to unwind.
+
+## Design
+
+**The mechanism, in one sentence: never skip a job or a workflow — only change the command it runs.**
+
+The `flake-check` job always runs and always reports `flake-check (x86_64-linux)`, `flake-check (aarch64-linux)`, and `flake-check (aarch64-darwin)` under their existing names. Five things change:
+
+1. **Checkout gains `fetch-depth: 0`**, so the detector can diff against the PR base (precedent: `gitleaks.yaml` already does this).
+2. **A `changed` step**, gated on `github.event_name == 'pull_request'`, diffs `<base.sha>...HEAD` and emits one output, `code`. Every changed path must match the skippable whitelist — `docs/**/*.md`, root-level `*.md`, `.github/*.md`, `LICENSE` — for `code=false`; anything else, an empty diff, or a failed `git diff` yields `code=true`. `docs/design/_template.md` is explicitly excluded from the whitelist: the design-note lint reads the template as its prompt source, so an edit there changes what that gate accepts.
+3. **The cache step gains `if: steps.changed.outputs.code != 'false'`.** This is a correctness requirement, not an optimisation — see Cost.
+4. **The `nix flake check` step selects its command** from `CODE`, passed as an `env:` value rather than interpolated into the script body (`${{ }}` interpolation into a `run:` body is the classic workflow script-injection surface, and what static workflow analysers flag). The docs-only branch runs `nix flake check --no-build`, keeping flake-output schema validity, then `nix build --no-link .#checks-without-hosts`. The step keeps its name, its 3× blind retry, and its `::group::` framing; the retry wraps both commands.
+5. **`parts/checks.nix` gains `packages.<system>.checks-without-hosts`**, a `linkFarm` over `filterAttrs (n: _: !hasPrefix "host-" n) self.checks.<system>`. Derivation *by exclusion* is the structural point: a check added next month is in the cheap set automatically, with no allowlist to remember (F5). It is a package, not a check, because it re-aggregates checks the flake already exposes.
+
+`push: main` never short-circuits — the detector is gated on the `pull_request` event, so `code` is unset there and the full path runs. Main pushes seed the cache prefix that every PR branch restores from, and are the last full-fleet build before a commit is on `main`.
+
+**How the forces are met.** F1 and F2 hold trivially: nothing about naming, matrix, job identity, or triggers changes, so the ruleset is untouched and no check run is ever skipped — `skipped == success` is never relied upon at all. F3 cannot arise, because there is no aggregate gate job whose `if:` could mis-report. F4 holds: the cheap set is a flake output, and `nix build .#checks-without-hosts` reproduces the docs-only CI path locally. F5 holds by construction: `checks-without-hosts` contains the top-level `keybinds-table` check and — via the `pre-commit` check — `design-note-structure` and the other lint hooks, so every doc-reading gate still runs and no carve-outs exist. F7 holds: two `if:`/`env:` hunks and one flake output.
+
+### The case-collision guard, and why it composes
+
+#412's second half is a guard against two tracked paths differing only by ASCII case. Such a pair cannot both exist in a checkout on a case-insensitive filesystem — APFS on neptune, saturn, and the `macos-15` CI leg — where one silently clobbers the other, and the Linux machine that authored the pair cannot see the breakage. That asymmetry is the whole argument for mechanising rather than leaving it to attention.
+
+It ships as `scripts/lint-case-collisions.sh` wired into `pre-commit.settings.hooks` — the fourth instance of a settled pattern (`shared-purity`, `bundle-purity`, `design-note-structure`), not a new mechanism. A hook rather than a `run:` step in `ci.yaml` for three reasons: policy belongs in the flake (F4); one declaration buys three enforcement points (commit-time on every host, `checks.<sys>.pre-commit` on all three CI legs, and the operator's local `nix build`); and a hook shipped as `scripts/*.sh` is automatically shellcheck-gated and shfmt-formatted, which inline YAML bash is not.
+
+The composition is the point. A docs-only PR is *exactly* where a case collision is likely to be introduced (`docs/CI.md` beside `docs/ci.md`), and under this design the docs-only path still builds `checks-without-hosts`, which contains `pre-commit`, which contains the guard. Under a job-skipping or path-filtering design the guard would be skipped on precisely the PRs most likely to trip it. That is an independent argument for this mechanism over the alternatives below.
+
+The lint is deliberately ASCII-only (`tr` is byte-oriented, so Unicode case pairs and NFC/NFD variants are not folded) and whole-tree (it reads the git index, which excludes `.direnv/`, `result*` symlinks, and sibling worktrees). It under-approximates — false negatives, never false positives — which is the right direction for an ASCII-path repo.
+
+## De-risk evidence
+
+**The trigger measurement (2026-08-02).** ADR-025 §77's trigger is conjunctive, and the honest possibility going in was that it had not fired — in which case the correct outcome was to land the collision guard alone and record the re-examination. Measured over the ten most recent successful `pull_request` runs:
+
+| Leg | Median | Notes |
+|---|---|---|
+| x86_64-linux | **31.8 min** | range 26.0–34.8; **all ten** above the 20-min trigger; cache restore 30–48s, so the remainder is build time (five host toplevels) |
+| aarch64-darwin | 5.1 min | |
+| aarch64-linux | 1.9 min | |
+
+Docs-only PRs were **4 of the last 30 merged (13.3%)**. The runtime half of the trigger fired decisively; the cadence half is below the 25% figure this note's own default proposed, and the adjudication was that 13.3% of merges each paying a half-hour leg to rebuild five closures against a markdown edit is material. Recorded as a judgement on the measured numbers, not as a threshold that was met.
+
+**The detector regex, probed directly (2026-08-02).** The detector body was extracted from `ci.yaml` and run under bash against 24 representative path lists. All fail-safe cases yield `code=true`: empty diff, `.gitignore`, a non-markdown asset under `docs/`, a script under `docs/`, `docs/design/_template.md` alone *and* alongside real docs, `.github/workflows/ci.yaml`, `.github/ISSUE_TEMPLATE/bug.md` (only `.github/*.md` is skippable), a `.nix` module, both orderings of a mixed docs+code list, an `.md` outside the whitelisted trees, `flake.lock`, and `LICENSE.txt`. All skippable cases yield `code=false`: single and nested docs, root-level `*.md`, `.github/pull_request_template.md`, `LICENSE`, a multi-file docs list, `docs/desktop/keybinds.md`, and a design note. The step was then run end-to-end against a synthetic three-commit repository: docs-only branch → `code=false`, the same branch after one `.nix` commit → `code=true`, empty diff → `code=true`.
+
+**The collision lint, probed positive and negative (2026-08-02).** Run against this checkout at `a14ec2f`: exit 0, 350 tracked files, zero quoted paths — the guard starts green and is non-breaking. Run against a synthetic repository containing `docs/ci.md` and `docs/CI.md`: exit 1, naming both offending paths. A second fixture confirmed paths containing spaces and a three-way collision (`a dir/MY FILE.md`, `My File.md`, `my file.md`) are reported correctly, and that removing the collisions returns exit 0.
+
+**What is not verified here, and must be at review or in CI.** Nix is not available in the authoring container, so `parts/checks.nix` was written but never evaluated: the `checks-without-hosts` attribute path, the `self.checks.<system>` reference resolving to the *merged* check set (top-level `flake.checks` plus the perSystem `pre-commit`/`treefmt` entries), and nixfmt formatting are all eval-time claims confirmed only by `nix flake check`. The hook uses `files = "^.*$"` with `pass_filenames = false` rather than `always_run = true`, because git-hooks.nix's option surface could not be read from the container — `files` is used by every other hook in the file, so it is the option guaranteed to exist. The runtime assertions — that all three contexts report success on a docs-only PR, that the cache step is skipped, that the ruleset query returns an identical context set, and that a genuine docs-only PR auto-merges unattended — are runtime properties in the sense of [CLAUDE.md](../../CLAUDE.md) §"Claims about runtime behaviour need runtime verification", and none of them is substituted for by eval, lint, or review.
+
+## Drawbacks
+
+**The savings are bounded, and smaller than the headline suggests.** The leg still pays runner provisioning, checkout, `install-nix-action`, the flake-input fetch, and a full evaluation of every host configuration (the `stances-*` checks force it). Only the closure *builds* go away. This is worth stating plainly rather than claiming near-zero.
+
+**It adds a second code path through the merge gate**, and the cheap one is the one that runs least often — so a defect in it is discovered late. The mitigation is that the fail-safe direction is toward building, and that the expensive path remains the default for every unrecognised input.
+
+**The cache guard is a sharp edge.** Omit it, or invert it, and the docs-only run evicts the warm cache. The failure is not visible on the PR that causes it — only on the *next* code PR, as a cold rebuild. That is a genuinely bad observability property, and the only reason it is acceptable is that the guard is one `if:` on one step.
+
+**Doing nothing was a live option.** ADR-032's tie-breaker points at the lighter mechanism, and "keep paying 31.8 minutes" is lighter than any diff. What defeats it is the measurement, not a preference.
+
+## Cost
+
+The `if:` on the cache step is a standing correctness obligation, not a tuning knob. `purge-primary-key: always` deletes the primary key before the save, and `gc-max-store-size-*` garbage-collects the store down to what is reachable from *this run's* gcroots. A docs-only run has no host-closure gcroots, so an unguarded save would evict the warm cache and replace it with a near-empty store — making the next code PR a cold rebuild, which on Darwin has historically meant 30–40 minutes (ADR-025 §History). Any future edit to the cache step inherits this obligation: a docs-only short-circuit that is not save-gated is net-negative.
+
+## Rationale & alternatives
+
+**`paths:` / `paths-ignore:` on the workflow — rejected.** GitHub's own documentation is explicit that a workflow skipped by path filtering leaves its required checks in `expected`: *"Associated checks stay in a 'Pending' state and block merging."* Under `gh pr merge --auto --squash` that is not a failure, it is a silent permanent hang. This violates F2 outright, and is precisely the gotcha ADR-025 §60 named when it rejected `paths-ignore`.
+
+**A twin stub workflow with a name-collided job — rejected.** GitHub removed this pattern from its own documentation and replaced it with "avoid requiring workflows that can be skipped". Two independent killers: the real job is a `strategy.matrix`, so its contexts are `flake-check (<arch>)` while a stub emits a bare `flake-check` — the three required names are never satisfied (F1); and the intuitive filter ordering double-fires on mixed PRs, producing two same-named check runs whose branch-protection resolution is undocumented. A merge gate is not a place to build on undocumented behaviour.
+
+**A top-level `if:` on the `flake-check` job — rejected.** Job-level skipping happens *before* matrix expansion, so the per-leg check runs are never created at all. Identical hang to `paths-ignore`; `skipped == success` only helps when the check run exists.
+
+**A `changes` job plus a `ci-required` aggregate gate — rejected as over-built.** This is the standard, correct shape: a cheap detector job, `if:` on the expensive job, and an aggregate job with `if: always()` that inspects `needs.*.result`, which becomes the single required context. It is rejected for three reasons weighed against the forces. First, it requires *ruleset surgery on the only enforcer*, in an order-sensitive sequence: push, observe the new context report, add it to ruleset `16950997`, then remove the three `flake-check (<arch>)` contexts — three out-of-band mutations of the merge gate (F1, F7). Second, it introduces the one failure mode in this design space that can *merge broken code*: omit `if: always()`, or write it without inspecting `needs.*.result`, and the gate reports success when `flake-check` fails. That is the documented number-one real-world bug in this pattern, and it violates F3 by construction — the chosen design cannot fail that way, while this one fails that way whenever it is written imperfectly. Third, `needs:` is a manual allowlist that rots silently: any job added later and forgotten is invisible to the gate (F5). It also pulls in `dorny/paths-filter` or equivalent and the `pull-requests: read` scope, widening permissions against the repo's whitelist stance. It buys perhaps 60–90 seconds more than the chosen design.
+
+**Doing nothing — rejected on the measurement.** ADR-025's own trigger, taken seriously, is the argument: it fired. Had it not, the correct outcome would have been to land the collision guard alone and record the re-examination and the numbers in ADR-025 §History.
+
+## Prior art
+
+ADR-025 §60 and §77 are the repo's own prior art, and this note's mechanism is best read as reversing their *outcome* without re-entering their *hazard* — the objection they raised remains true, which is why nothing here is skipped.
+
+The `checks-without-hosts` output follows `packages.x86_64-linux.ephemeral-root-vm` (`parts/checks.nix`, [ephemeral-root.md](./ephemeral-root.md) §De-risk): a deliberately-package-not-check output, for the same class of reason — a check would make CI build it wholesale on every leg. The naming follows [docs/taxonomy.md](../taxonomy.md)'s most-communicative-term rule: it names what the thing *is*, not what it is *for*.
+
+The collision guard follows `shared-purity`, `bundle-purity`, and `design-note-structure`: a `language = "system"` bash hook over a `scripts/lint-*.sh`, the lightest rung on ADR-032's ladder that still holds a correctness-severity guarantee. It ships without a paired self-test, following ADR-032 item 3's retirement of `bundle-purity`'s — that linter parses a Nix AST and is materially more complex than this ten-line pipeline.
+
+In the wider ecosystem, the aggregate-gate pattern rejected above is what most large repositories converge on, for the good reason that they have many more jobs than this one. The relevant difference is that they are paying a coordination cost this repo does not have, and inheriting a silent-green failure mode this repo can simply decline.
+
+## Unresolved questions
+
+**Resolved at review, not here:** whether git-hooks.nix exposes `always_run` (the hook uses the guaranteed-to-exist `files = "^.*$"` fallback; switching is a one-line change if the option is confirmed), and whether `extraPackages = [ pkgs.git ]` is strictly needed given the `run` derivation's own git usage — it is injected regardless, since it is free and the failure without it is a confusing "git: command not found" visible only in CI.
+
+**Resolved at implementation-verification, not here:** the runtime assertions listed at the end of De-risk evidence, in particular the cache-hit probe on the *next* code PR after a docs-only PR — the only observation that tests the eviction hazard, and one that is only available a PR later.
+
+**Explicitly out of scope:** fork PRs (they already fail on the private `wiki-infra` input, so fork support is not a live property of this repo — the detector happens to work there anyway, needing only `base.sha` and `fetch-depth: 0`); merge queues (none in use — `merge_group` carries no `pull_request.base.sha`, so the detector would not run and the job would fall through to the full path, which is correct-by-default); and adding "no case-only path collisions" to the PRD §8.1 invariants table, which stays a filesystem-portability guard rather than a structural property of the configuration.
+
+## Future possibilities
+
+Widening the skippable whitelist is one regex edit, and the obvious candidates are non-markdown assets under `docs/` (images) once something needs them. The asymmetry that governs any such change is stated in the mechanism: widening is cheap to do and cheap to revert; a wrongly-skipped build is a broken `main`.
+
+If the x86_64-linux leg's runtime stays where it is, the interesting lever is not further short-circuiting but the two ADR-025 non-goals adjacent to it — sharded check runs (§87) and a self-hosted runner on metis (§76, tracked in #546) — both of which attack the *full* path rather than carving exceptions out of it. This note deliberately does not re-adjudicate either.
+
+The collision guard's stated limits (Unicode case-folding, macOS NFD normalisation) are the natural extension if the repo ever grows non-ASCII paths; today it under-approximates on purpose.

@@ -10,6 +10,8 @@ The job sets an explicit `name: flake-check (${{ matrix.arch }})`. This is load-
 
 The required-checks set is configured out-of-band on GitHub (a ruleset), recorded in ADR-025 §Implementation and its §History. It is the three `flake-check (<arch>)` contexts **plus `gitleaks`** — so a secret-leaking PR can no longer auto-merge green. The `gitleaks` context is the gitleaks job's explicit `name:`; keep that name stable, since the ruleset matches on it. Adding a required check is **order-sensitive**: push the workflow so a run reports the context *first*, then add it to the ruleset — a context required before any run has reported it shows as "Expected — waiting" and blocks every PR indefinitely. If you add or rename a matrix arch (or the gitleaks job), update the ruleset in the same change or the new check won't gate (and a renamed one will leave an unmatchable required check blocking every PR).
 
+The required-context set is **deliberately unchanged** by the docs-only short-circuit (§"Docs-only short-circuit"): name stability *is* the mechanism there — the job and its matrix always run and always report all three contexts, only the command they run changes.
+
 ## Permissions
 
 Pinned to the minimum (whitelist > blanket, per [CLAUDE.md](../CLAUDE.md)):
@@ -25,11 +27,27 @@ The matrix pins concrete runner labels via `include:` rather than `*-latest`:
 
 - `ubuntu-24.04` (x86_64-linux), `ubuntu-24.04-arm` (aarch64-linux), `macos-15` (aarch64-darwin).
 - `macos-15` is pinned rather than `macos-latest` — the floating label moves under us (it migrated to macos-15 in Aug 2025), which would silently change the build environment. The choice of the standard label over the metered `-large` / `-xlarge` / `-intel` variants, and the billing reasoning behind it, are in ADR-025 §History (PR #218) — not repeated here.
-- `aarch64-darwin` matches neptune's real arch — no Rosetta cross-arch surprises.
+- `aarch64-darwin` matches the real arch of both Darwin hosts (neptune, saturn) — no Rosetta cross-arch surprises.
 
-`nix flake check` on the macOS runner realises `flake.checks.aarch64-darwin.host-neptune` but does **not** run nix-darwin activation — no `brew bundle`, `mas install`, `launchctl load`, or admin prompts fire at build time. CI is therefore side-effect-free on Darwin. The decision to add the Darwin matrix entry, and its cold-cache cost history, are in ADR-025 §History (2026-06-04).
+`nix flake check` on the macOS runner realises the Darwin host derivations (`flake.checks.aarch64-darwin.host-neptune`, `host-saturn`) but does **not** run nix-darwin activation — no `brew bundle`, `mas install`, `launchctl load`, or admin prompts fire at build time. CI is therefore side-effect-free on Darwin. The decision to add the Darwin matrix entry, and its cold-cache cost history, are in ADR-025 §History (2026-06-04).
 
 Actions are SHA-pinned with a trailing `# vN` comment; the rationale and the trigger that prompted it are in ADR-025 §History (2026-06-05). Refresh a pin when you want a newer release; the trailing tag comment is the human-readable anchor.
+
+## Docs-only short-circuit
+
+A pull request that touches nothing but documentation still has to satisfy every required check, but it does not have to rebuild every host closure to do it. The `changed` step diffs the PR against its base commit (`git diff --name-only <base>...HEAD`, which is why the checkout sets `fetch-depth: 0`) and sets one output, `code`. When every changed path is in the skippable whitelist, `code=false` and the job builds the flake's `checks-without-hosts` package — every check except the per-host `system.build.toplevel` builds — after a `nix flake check --no-build` for flake-output schema validity. Otherwise `code=true` and the job runs the full `nix flake check` exactly as before.
+
+**The whitelist, and its direction.** Skippable: `docs/**/*.md`, root-level `*.md`, `.github/*.md`, and `LICENSE` — with `docs/design/_template.md` explicitly excluded, since the design-note lint reads the template as its prompt source and an edit there changes what that gate accepts. Everything else forces the full run: non-markdown assets under `docs/`, anything under `.github/workflows/`, and every path outside those trees. The match is a whitelist, so the fail-safe direction is *toward* building: an unrecognised path, an empty diff, or a failed `git diff` all yield `code=true`. A mixed docs-and-code PR is handled by construction — one unmatched path is enough to force the full run. Widening the whitelist is one regex edit; a wrongly-skipped build is a broken `main`.
+
+**Nothing is ever skipped — only substituted.** The job always runs, its matrix always expands, and all three `flake-check (<arch>)` check runs always report under their existing names (see §"Display name and branch protection"). This is the whole mechanism: GitHub leaves a *skipped* required check in `expected` forever, which under squash auto-merge is a silent, permanent hang, and it is why `paths:` / `paths-ignore:` on this workflow, a job-level `if:`, and a name-collided stub workflow are all unusable here. Substituting the command dodges that class entirely rather than managing it.
+
+**`push: main` never short-circuits.** The `changed` step is gated on `github.event_name == 'pull_request'`, so a push to `main` leaves `code` unset and falls through to the full check. Main pushes are what seed the cache prefix every PR branch restores from, and they are the last full-fleet build before a commit is on `main`.
+
+**No doc carve-outs are needed.** Documentation that legitimately gates code — `docs/desktop/keybinds.md` (diffed by the top-level `keybinds-table` check), `docs/design/*.md` (the `design-note-structure` lint, one of the hooks inside the `pre-commit` check), and any doc lint added later (ADR-037 §2 contemplates cited-path and link checks) — is still fully covered, because `checks-without-hosts` is derived by exclusion and so contains both the `keybinds-table` check and the `pre-commit` check that carries the lint hooks. A path-filter design would have to enumerate and maintain those exceptions; this one does not have any.
+
+**Policy stays in the flake.** `checks-without-hosts` is a flake output (`parts/checks.nix`), derived by *excluding* the `host-*` prefix rather than by listing what to include, so a check added later is picked up with nothing to remember. The YAML says only "build the cheap set", and `nix build .#checks-without-hosts` reproduces the docs-only CI path locally — the same property ADR-025 §Rationale claims for `nix flake check`.
+
+**Expect minutes, not zero.** The leg still pays runner provisioning, checkout, `install-nix-action`, the flake-input fetch, a full evaluation of every host configuration (the `stances-*` checks force it), and a cold re-substitution of the whole `checks-without-hosts` closure from `cache.nixos.org`, since the cache step is skipped on this path (restore as well as save, see §Cache). The saving is the host closure *builds*, which is the expensive half on x86_64-linux; budget a few minutes per leg rather than near-zero.
 
 ## Substituters
 
@@ -59,11 +77,13 @@ The flake takes `wiki-infra` (github:dannyfaris/wiki-infra, **private** — the 
 
 **`purge-primary-key: always`** is the non-obvious one. `cache-nix-action` wraps `actions/cache`'s "primary-key hit → save is a no-op" semantic. Without `always`, every run after the first hits the existing primary key and skips the save, so the original cache contents are cemented in the pool *even after the closure grows or the ceiling is raised*. With `always`, the action purges the primary key before the save-step's existence check, the lookup misses, GC runs against the current closure under the cap, and a fresh full cache is saved — each run refreshes its own key with no manual bump. This is the knob that needs `actions: write` (see §Permissions). Root-cause history: ADR-025 §History (#225).
 
+This is also why the cache step is **skipped entirely** on the docs-only path (§"Docs-only short-circuit"): a docs-only run has no host-closure gcroots, so `purge-primary-key: always` plus the `gc-max-store-size-*` sweep would evict the warm cache and resave a near-empty store in its place — making the *next* code PR a cold rebuild.
+
 ## Retry
 
 The `nix flake check` step wraps itself in a bounded retry (3 attempts, 30s backoff). Some eval-time fetches reach third-party forges — e.g. niri's pipewire-rs from gitlab.freedesktop.org via `builtins.fetchGit` — which are **not** covered by Nix's own `download-attempts` (that retries the HTTP downloader / binary-cache fetches, left at its default of 5). A transient blip on such a forge would otherwise red `main` for a non-issue.
 
-The retry is **blind, not regex-gated**: an earlier version matched a 19-branch stderr signature to classify transient-vs-real, brittle both ways (it can mask a real failure whose log happens to match, and miss a transient signature it didn't enumerate). Per [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) Rule 1 (proportionate enforcement) the lighter mechanism wins, and the cost is small: the Nix store persists across attempts within a job, so a retry re-runs only the failed derivation and its un-built dependents (an eval error re-evals in seconds), not the whole closure — and a real, deterministic error still goes red, just after the retries are spent. The step's `if`-wrapped `nix flake check` is exempt from the default `-e` errexit because GitHub's `run:` shell is `bash --noprofile --norc -eo pipefail` (a failing command in an `if` condition doesn't trip errexit).
+The retry is **blind, not regex-gated**: an earlier version matched a 19-branch stderr signature to classify transient-vs-real, brittle both ways (it can mask a real failure whose log happens to match, and miss a transient signature it didn't enumerate). Per [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) Rule 1 (proportionate enforcement) the lighter mechanism wins, and the cost is small: the Nix store persists across attempts within a job, so a retry re-runs only the failed derivation and its un-built dependents (an eval error re-evals in seconds), not the whole closure — and a real, deterministic error still goes red, just after the retries are spent. The step's `if`-wrapped `run_checks` — the function that selects between the full `nix flake check` and the docs-only command pair (§"Docs-only short-circuit") — is exempt from the default `-e` errexit because GitHub's `run:` shell is `bash --noprofile --norc -eo pipefail`, and bash suppresses errexit for the whole body of a function invoked in an `if` condition.
 
 ## Timeouts
 

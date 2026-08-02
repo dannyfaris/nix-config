@@ -91,6 +91,25 @@ let
       fi
     '';
 
+  # Every check for a system except the per-host toplevel builds — the set a
+  # docs-only PR still must satisfy (the pre-commit hooks, treefmt, the stance
+  # and lib eval checks, the keybind gates, the keybinds-table doc diff).
+  # Derived by exclusion from the merged check set, so a future check is picked
+  # up with no allowlist to rot. Built by ci.yaml's docs-only path instead of
+  # `nix flake check`, and reproducible off-CI with
+  # `nix build .#checks-without-hosts` — see docs/ci.md §"Docs-only
+  # short-circuit".
+  mkChecksWithoutHosts =
+    system:
+    let
+      pkgs = pkgsFor system;
+    in
+    pkgs.linkFarm "checks-without-hosts" (
+      lib.mapAttrsToList (name: path: { inherit name path; }) (
+        lib.filterAttrs (n: _: !(lib.hasPrefix "host-" n)) self.checks.${system}
+      )
+    );
+
   # lib.runTests returns records { name; expected; result; }; flatten each
   # to a legible one-liner for the report.
   mkUnitTestCheck =
@@ -190,18 +209,30 @@ in
     };
   };
 
-  # The ephemeral-root de-risk gate: a nixosTest booting off a real btrfs
-  # @root/@persist/@nix layout to prove the archive-rollback mechanism before
-  # any host adopts (docs/design/ephemeral-root.md §De-risk, #553). A package,
-  # deliberately NOT a check: `nix flake check` builds checks, and CI runs it
-  # wholesale, so a checks entry would make every hosted runner boot the
-  # six-node KVM suite per PR. As a package it is evaluated by CI (pin bumps
-  # that break its eval still fail) but built only on demand —
-  # `nix build .#ephemeral-root-vm`, the locally-run gate on metis. Moves
-  # into checks when #546 self-hosts the x86_64-linux leg on metis.
-  flake.packages.x86_64-linux.ephemeral-root-vm = import ../tests/ephemeral-root.nix {
-    pkgs = pkgsFor "x86_64-linux";
-    inherit self inputs;
+  flake.packages = {
+    x86_64-linux = {
+      # The ephemeral-root de-risk gate: a nixosTest booting off a real btrfs
+      # @root/@persist/@nix layout to prove the archive-rollback mechanism before
+      # any host adopts (docs/design/ephemeral-root.md §De-risk, #553). A package,
+      # deliberately NOT a check: `nix flake check` builds checks, and CI runs it
+      # wholesale, so a checks entry would make every hosted runner boot the
+      # six-node KVM suite per PR. As a package it is evaluated by CI (pin bumps
+      # that break its eval still fail) but built only on demand —
+      # `nix build .#ephemeral-root-vm`, the locally-run gate on metis. Moves
+      # into checks when #546 self-hosts the x86_64-linux leg on metis.
+      ephemeral-root-vm = import ../tests/ephemeral-root.nix {
+        pkgs = pkgsFor "x86_64-linux";
+        inherit self inputs;
+      };
+
+      # The docs-only CI path's build target, one per matrix leg (see
+      # mkChecksWithoutHosts above). A package rather than a check: it is a
+      # re-aggregation of checks this flake already exposes, so making it a check
+      # would double every one of them under `nix flake check`.
+      checks-without-hosts = mkChecksWithoutHosts "x86_64-linux";
+    };
+    aarch64-linux.checks-without-hosts = mkChecksWithoutHosts "aarch64-linux";
+    aarch64-darwin.checks-without-hosts = mkChecksWithoutHosts "aarch64-darwin";
   };
 
   # Pre-commit hooks. git-hooks.nix lifts these to checks.<system>.pre-commit
@@ -382,6 +413,26 @@ in
             files = "^scripts/lint-design-note\\.sh$";
             language = "system";
             pass_filenames = false;
+          };
+
+          # Guards against two tracked paths differing only by case, which
+          # cannot coexist in a checkout on a case-insensitive filesystem
+          # (APFS: neptune, saturn, the macos-15 CI leg) — one silently
+          # clobbers the other, and the Linux box that authored the pair
+          # cannot see the breakage. The lint reads the index itself, so
+          # `files` matches everything and no filenames are passed. git is
+          # injected explicitly: the git-hooks.nix `run` derivation scrubs
+          # PATH (same reason bundle-purity injects pkgs.nix). No paired
+          # self-test, deliberately — ADR-032 item 3 retired bundle-purity's,
+          # and this pipeline is far simpler than that one.
+          case-collisions = {
+            enable = true;
+            name = "case-collisions";
+            entry = "bash ${../scripts/lint-case-collisions.sh}";
+            files = "^.*$";
+            language = "system";
+            pass_filenames = false;
+            extraPackages = [ pkgs.git ];
           };
         };
     };
