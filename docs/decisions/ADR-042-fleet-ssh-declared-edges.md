@@ -37,3 +37,7 @@ Single-sourced in the design note's Rationale & alternatives; the three decisive
 ## Implementation
 
 #524 re-scopes to "complete enrolment under the declared-edge shape": the edge map, the `users.nix` derivation, and the stance land as one change; the runbooks' §Fleet SSH enrolment gains the edge step; saturn's sshd lands with the tailnet-bound listener evaluated at that commit; metis moves source → sink at #387's re-role as a data change.
+
+## History
+
+- 2026-08-03 (#634) — mercury and nixos-vm decommissioned; their `sshEdges` entries removed from `lib/operator.nix`.

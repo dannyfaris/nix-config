@@ -311,7 +311,7 @@ vs operator-maintained boundary:
 # live so they survive `nh darwin switch` without being clobbered.
 # See docs/decisions/ADR-010-ssh.md.
 #
-# Fleet hosts (mercury, metis, neptune) are declared in git since #517
+# Fleet hosts (metis, neptune, ...) are declared in git since #517
 # — do NOT re-add them here: this file renders BEFORE the declared
 # blocks and would silently shadow them. Break-glass fallbacks only.
 
@@ -319,8 +319,6 @@ Host metis-lan
   HostName <metis's LAN IP>
   User dbf
 ```
-
-(neptune's own `config.local` also carries a `mercury-aws` EC2 entry — neptune-era break-glass for a retiring host; new hosts don't add it.)
 
 Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares
 them by bare MagicDNS name (#517), resolvable once the Mac is signed
@@ -421,7 +419,7 @@ Run from the new Mac's user shell.
 
 ### Phase 2 — SSH-context stack into the fleet
 
-Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `metis` (and `neptune`, Mac-to-Mac). `mercury` and `nixos-vm` are retiring — mercury never learns a new host's key, and nixos-vm is a keyless sink (break-glass only, ADR-042).
+Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `metis` (and `neptune`, Mac-to-Mac).
 
 For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not** expect a terminal palette shift: ADR-041 deliberately retired the per-host palette repaint (TUIs follow the local terminal's palette; the Stylix fish target that emitted the OSC escapes was removed fleet-wide).
 
@@ -440,14 +438,11 @@ plist `org.nixos.linux-builder.plist` is registered and
 activation. The VM image expands on first invocation.
 
 ```bash
-nix build .#nixosConfigurations.nixos-vm.config.system.build.toplevel \
+nix build nixpkgs#legacyPackages.aarch64-linux.hello --rebuild \
   --no-link --print-out-paths --print-build-logs 2>&1 | tee /tmp/phase3.log
 ```
 
-Expected: succeeds and produces a closure path in `/nix/store/`.
-**First-build baseline on a fresh aarch64-darwin host: ~30 minutes**
-from a substitute-cache-warm starting point. Subsequent builds are
-much faster (cache reuse).
+Expected: succeeds and produces a store path built on the builder — `--rebuild` forces a real build even though `hello` is substitutable, so a green result proves offload rather than a `cache.nixos.org` substitution. No in-repo aarch64-linux target exists since nixos-vm decommissioned (#634) — the smoke build above rides a stock nixpkgs package; re-point it at the then-current aarch64-linux host closure if one returns to the fleet.
 
 The failure mode that's invisible without active verification is
 **silent local fallback** — if `trusted-users` isn't wired correctly,
@@ -472,11 +467,11 @@ The VM listens on `:31022` for SSH. IPv4 may return
 nc -zv localhost 31022
 ```
 
-`x86_64` hosts (mercury, metis) need a follow-up that adds the
+`x86_64` hosts (metis) need a follow-up that adds the
 second builder system to `nix.linux-builder.systems` — today only
 `aarch64-linux` is declared.
 
-Two calibration notes: the build target above rides `nixos-vm`, a retiring host — re-point this check at the then-current aarch64-linux target once it decommissions; and the ~30-minute first-build baseline was measured on an actively-cooled Mac mini — expect longer on a fanless MacBook Air.
+One calibration note: the historical ~30-minute first-build baseline was measured against the since-removed nixos-vm closure on an actively-cooled Mac mini — expect longer for a comparable closure on a fanless MacBook Air.
 
 ## Subsequent updates
 

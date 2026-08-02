@@ -8,10 +8,8 @@ Evergreen NixOS + nix-darwin configuration. Hosts:
 - `alcyone` — Gigabyte B550 GAMING X V2 / x86_64 bare metal, flagship desktop; first discrete GPU (RTX 4060) + first encrypted-at-rest host.
 - `alnair` — Surface Laptop 4 / x86_64 bare metal, the fleet's first Linux laptop.
 - `electra` — Lenovo ThinkCentre M920q Tiny / x86_64 bare metal, genuinely headless always-on service-tier node, role deliberately open.
-- `mercury` — AWS EC2 / x86_64 work-only headless. Retiring.
 - `metis` — HP ProDesk / x86_64 shared work + personal dev box.
 - `neptune` — Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02.
-- `nixos-vm` — UTM / aarch64 refinement target. Retiring.
 - `saturn` — Apple Silicon MacBook Air, first laptop, client-only — no inbound sshd.
 <!-- END CENSUS: hosts -->
 
@@ -98,10 +96,8 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 - **alcyone**: physical console (monitor + keyboard) or the greetd login.
 - **alnair**: physical console (built-in keyboard + display) or the greetd login.
 - **electra**: physical console (monitor + keyboard) — headless, so there is no greetd login.
-- **mercury** (retiring): AWS EC2 Instance Connect from the AWS console.
 - **metis**: physical console (monitor + keyboard) or the greetd login.
 - **neptune**: Apple keyboard + display at the local login.
-- **nixos-vm** (retiring): UTM console window accepts the user password directly.
 - **saturn**: Apple keyboard + display at the local login.
 <!-- END CENSUS: break-glass -->
 
@@ -173,9 +169,7 @@ Gotcha: `sudo nix store delete <paths>` always fails "still alive" — sudo puts
   are now the chosen status bar and launcher; fnott (not mako) is
   the chosen notification daemon. Living documents under
   [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each
-  per-tool selection. Desktop modules are not installed on nixos-vm
-  — UTM's Apple Virtualization Framework lacks `EGL_EXT_device_drm`
-  and cannot render Wayland compositors.
+  per-tool selection.
 
 ## Open work
 

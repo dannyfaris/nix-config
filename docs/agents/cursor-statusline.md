@@ -216,13 +216,7 @@ the bundle), and `timeoutMs` (script execution bound). The right
 values depend on observed render output and are settled when the
 script lands; documented here as known knobs.
 
-**Hosts.** `agent-clis.nix` is imported by every host (base
-agent-CLI set). The script lands on neptune, metis, mercury,
-nixos-vm uniformly — but `cursor-cli` is only on hosts whitelisted
-in `modules/shared/nix-daemon.nix`'s `allowUnfreePredicate`.
-Verification of the rendered statusline requires `cursor-agent` on
-PATH; mercury is the verification gap (work-only host, no cursor in
-base for that host's posture).
+**Hosts.** `agent-clis.nix` is imported by every host (base agent-CLI set). The script lands on every host uniformly — but `cursor-cli` is only on hosts whitelisted in `modules/shared/nix-daemon.nix`'s `allowUnfreePredicate`. Verification of the rendered statusline requires `cursor-agent` on PATH.
 
 ## Sharp edges
 

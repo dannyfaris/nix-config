@@ -1,12 +1,6 @@
 # UTM
 
-Type-2 virtualisation platform — runs Linux / Windows / other-OS
-VMs on macOS via Apple Virtualization.framework or QEMU
-(host-side via JIT). Picked because it's the host for the
-[`nixos-vm`](../../hosts/nixos-vm) fleet member — the
-aarch64-Linux refinement target referenced in
-[`CLAUDE.md`](../../CLAUDE.md)'s fleet list. Without UTM, there's
-no way to drive the nixos-vm host on this Mac.
+Type-2 virtualisation platform — runs Linux / Windows / other-OS VMs on macOS via Apple Virtualization.framework or QEMU (host-side via JIT). Picked because it was the host for the `nixos-vm` fleet member — the aarch64-Linux refinement target, decommissioned 2026-08-03 (#634). Without UTM, there was no way to drive the nixos-vm host on this Mac.
 
 ## Selection
 
@@ -131,14 +125,14 @@ utmctl snapshot save <vm-name> <tag> # create a snapshot
 utmctl snapshot restore <vm-name> <tag>
 ```
 
-For the `nixos-vm` host's typical lifecycle:
+For the `nixos-vm` host, the typical lifecycle was:
 
 ```bash
 utmctl start "NixOS VM"              # start the VM
 utmctl stop "NixOS VM"               # when done
 ```
 
-Fleet SSH into the VM ended with ADR-042's edge narrowing (nixos-vm is a keyless sink, retiring); the entry points are the UTM console window for a shell in the guest and `utmctl` for lifecycle control.
+Fleet SSH into the VM ended with ADR-042's edge narrowing (nixos-vm was a keyless sink); the entry points were the UTM console window for a shell in the guest and `utmctl` for lifecycle control.
 
 (The VM's display name in UTM is whatever the operator named it
 during creation — check `utmctl list` for the exact string.)
@@ -198,5 +192,5 @@ would need to land alongside.
   no cask).
 - UTM upstream — https://github.com/utmapp/UTM
 - `utmctl` reference — https://docs.getutm.app/scripting/scripting/
-- [`hosts/nixos-vm/`](../../hosts/nixos-vm) — the load-bearing
-  VM workload this Mac runs UTM for.
+- `hosts/nixos-vm/` (removed 2026-08-03, #634) — the load-bearing
+  VM workload this Mac ran UTM for.

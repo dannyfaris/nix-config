@@ -17,13 +17,11 @@
 # (~/.ssh/config.local per ADR-010), the EC2 name is dynamic, and the
 # operator chose not to commit fleet IPs.
 #
-# nixos-vm is deliberately absent (excluded as a destination, #517).
 # A new fleet host adds its committed pubkey + one entry here at
 # bring-up.
 {
   programs.ssh.knownHosts = {
     neptune.publicKeyFile = ../../hosts/neptune/ssh_host_ed25519_key.pub;
-    mercury.publicKeyFile = ../../hosts/mercury/ssh_host_ed25519_key.pub;
     metis.publicKeyFile = ../../hosts/metis/ssh_host_ed25519_key.pub;
     alcyone.publicKeyFile = ../../hosts/alcyone/ssh_host_ed25519_key.pub;
     alnair.publicKeyFile = ../../hosts/alnair/ssh_host_ed25519_key.pub;

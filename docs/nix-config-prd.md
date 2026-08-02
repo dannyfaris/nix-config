@@ -285,8 +285,6 @@ For NixOS hosts installed via `nixos-anywhere` (ADR-022), the per-host directory
 **Hosts:** stable per physical machine. The host directory's name refers to a specific machine, not to its current purpose. A machine's software composition may change without renaming. Hardware-platform changes (e.g., MacBook Air → MacBook Pro, motherboard replacement, new cloud infrastructure) are treated as a different host: a new `hosts/<name>/` directory is created with a fresh name, and the prior host directory may be retired. Existing host directories are not renamed in place. The rule is recorded in ADR-016.
 
 Examples drawn from the current and planned set of hosts:
-- `nixos-vm` — UTM refinement VM (aarch64-linux)
-- `mercury` — work-only headless dev host on AWS EC2 (x86_64-linux)
 - `metis` — personal x86_64 dev box, transitioning from headless to the first desktop host (ADR-028)
 - `jupiter` — NixOS x86_64 flagship desktop tower (planned; pending hardware; celestial name per ADR-038)
 - `saturn` — MacBook Air, darwin daily driver (planned via nix-darwin; celestial name per ADR-038)

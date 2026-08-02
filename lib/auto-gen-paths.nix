@@ -1,6 +1,6 @@
 # Single source of truth for ADR-023's "auto-generated, do not hand-edit"
-# carve-out — the set of files (per-host `hardware-configuration.nix` plus
-# the legacy `nixos-vm/hardware.nix` two-file exception) that:
+# carve-out — the set of files (per-host `hardware-configuration.nix`)
+# that:
 #
 #   - statix must ignore (its own structural warnings on
 #     nixos-generate-config's output shape can't be fixed without

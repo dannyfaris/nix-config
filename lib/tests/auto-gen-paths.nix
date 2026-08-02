@@ -33,8 +33,8 @@ lib.runTests {
 
   # A literal path (no `*`) round-trips with only the dot escaped.
   testLiteralPathNoStar = {
-    expr = globToRegex "hosts/nixos-vm/hardware.nix";
-    expected = "^hosts/nixos-vm/hardware\\.nix$";
+    expr = globToRegex "lib/tests/fixture.nix";
+    expected = "^lib/tests/fixture\\.nix$";
   };
 
   # Multiple `*` each expand independently.
