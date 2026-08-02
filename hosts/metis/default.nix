@@ -127,7 +127,7 @@
       # now moot fleet-wide, since the whitelist is empty (ADR-041: TUIs
       # follow the terminal palette). The shared per-tool ANSI config
       # (bat/helix/fzf/zellij/...) reaches metis through cli-tooling and
-      # follows foot's Noctalia-templated palette — coherent with the
+      # follows foot's theme-menu palette — coherent with the
       # runtime-conductor model. stylix.enable stays on (the four
       # eval-time statuslines still read the colour table).
       ../../home/nixos/bundles/desktop-env.nix

@@ -14,20 +14,18 @@
 # under bundles/ at birth (PR #30, pre-lint) and reclassified here per
 # #65 — see ADR-027 §History for the rationale.
 #
-# Desktop targets (firefox, foot, niri, gtk) live in
-# `home/nixos/stylix-targets-desktop.nix` because their option paths only
-# exist on hosts that import the desktop-env home bundle. Splitting them out
-# keeps this file evaluable on Darwin (where none of those options exist) —
-# required for mac-mini onboarding (#11). The desktop file is imported via
-# `home/nixos/bundles/desktop-env.nix` so desktop hosts pick it up
-# transitively.
+# Desktop-only targets live in `home/nixos/stylix-targets-desktop.nix`,
+# imported transitively via `home/nixos/bundles/desktop-env.nix`.
+# Why the split: see that file's header — architectural co-location,
+# not Darwin evaluability.
 #
 # The one terminal-emulator target that *does* run on Darwin — Ghostty
 # — is enabled in `home/darwin/ghostty.nix`, colocated with the rest of
-# that module rather than listed here. This whitelist stays
-# terminal-free by design: foot's target is desktop-env-only (above),
-# and Ghostty is a single Darwin-only module that owns its own theming
-# toggle (#256).
+# that module rather than listed here. This whitelist stays terminal-free
+# by design: foot has carried no Stylix target since #385 (its palette
+# comes from the theme-menu conductor — see `home/nixos/foot.nix`), and
+# Ghostty is a single Darwin-only module that owns its own
+# theming toggle (#256).
 #
 # Foundation sets autoEnable = false at the system layer (whitelist
 # stance per CLAUDE.md), and that propagates to HM, so each target

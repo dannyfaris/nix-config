@@ -1,12 +1,11 @@
 # Stylix HM-side target enables for the **desktop** stack — the
-# targets whose option paths only exist on hosts that import the
+# targets that are only enabled on hosts that import the
 # desktop-env home bundle. Companion to `home/shared/stylix-targets.nix`
 # (which carries the cross-platform-safe TUI targets).
 #
 # Lives under `home/nixos/` because every entry here is driven by a
-# module that's Linux-only today (foot via Wayland; firefox via the
-# launcher integration in `home/nixos/`;
-# gtk/qt theming as part of the niri session). Imported by
+# module that's Linux-only today (firefox via the launcher integration
+# in `home/nixos/`; gtk theming as part of the niri session). Imported by
 # `home/nixos/bundles/desktop-env.nix` so desktop hosts pick it up
 # transitively without needing a separate import line.
 #
@@ -36,11 +35,12 @@ let
 in
 {
   stylix.targets = {
-    # foot + niri targets were removed in #385 — Noctalia owns both the
-    # terminal palette (foot.nix declares the include) and niri's window-border
-    # colour (niri.nix appends a runtime include; border on / focus-ring off
-    # are re-asserted there since Stylix used to set them). See
-    # docs/desktop/noctalia.md §Theming and docs/desktop/niri.md §Window decorations.
+    # foot + niri targets were removed in #385 — the theme-menu conductor
+    # (ADR-044, #609) owns both the terminal palette (foot.nix declares the
+    # include) and niri's window-border colour (niri.nix appends a runtime
+    # include; border on / focus-ring off are re-asserted there since Stylix
+    # used to set them). See docs/desktop/noctalia.md §Theming and
+    # docs/desktop/niri.md §Window decorations.
     # fuzzel/fnott/waybar targets were removed in #385 alongside their
     # modules — Noctalia now owns the launcher, notifications and bar.
     # swaylock's target was removed in #385 — swaylock + swayidle were
@@ -62,8 +62,8 @@ in
       profileNames = [ "default" ];
     };
     # gtk — toolkit-level theming, no per-app gating upstream (unlike
-    # foot/firefox above, which gate on
-    # `programs.<X>.enable` and become inert on non-desktop hosts).
+    # `firefox` above, which gates on `programs.firefox.enable` and becomes
+    # inert on non-desktop hosts).
     # Gated locally on `desktopSession` so a future desktop-less host
     # importing this file (unlikely under the desktop-env bundle) won't
     # pull adw-gtk3 / gtk+3 (~42 MiB) for theming it can't render. On

@@ -93,8 +93,8 @@ homebrew.casks = [ "ghostty" ];
 **Stylix theming** — `home/darwin/ghostty.nix`:
 
 ```nix
-# palette (base16 ANSI slots) + Nerd Font family, the macOS parallel
-# of foot on metis. Tracks polarity automatically.
+# palette (base16 ANSI slots) + Nerd Font family. Tracks polarity
+# automatically.
 stylix.targets.ghostty.enable = true;
 
 # ...but keep Ghostty's own macOS default size, not Stylix's scaled one
@@ -117,13 +117,7 @@ than Ghostty's own macOS default. We adopt the palette and font
 *family* but keep the established size, so `lib.mkForce 13` overrides
 the target's value (13 is Ghostty's documented macOS default).
 
-**Placement.** The `enable` lives in `home/darwin/ghostty.nix`,
-colocated with the rest of the Ghostty config, rather than in a
-stylix-targets file. The cross-platform TUI whitelist
-(`home/shared/stylix-targets.nix`) is deliberately terminal-free, and
-the NixOS terminal target (foot) lives in the desktop-env home bundle
-— which Darwin has no analogue of. One terminal, one Darwin-only
-module: the toggle belongs with it.
+**Placement.** The `enable` lives in `home/darwin/ghostty.nix`, colocated with the rest of the Ghostty config, rather than in a stylix-targets file. The cross-platform TUI whitelist (`home/shared/stylix-targets.nix`) is deliberately terminal-free, and there is no NixOS terminal target to sit alongside — foot's palette comes from the theme-menu conductor, not Stylix (ADR-044, #609). One terminal, one Darwin-only module: the toggle belongs with it.
 
 **Sparkle silent-update keys (belt-and-braces, inert today)** —
 `modules/darwin/homebrew.nix`:

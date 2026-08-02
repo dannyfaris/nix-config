@@ -6,9 +6,7 @@ terminal.
 
 ## Selection
 
-**foot** on metis. Enabled via `home/nixos/foot.nix` (HM module
-`programs.foot.enable = true`). Colours come from Noctalia, not Stylix
-(ADR-036, #385) — see Configuration.
+**foot** on metis. Enabled via `home/nixos/foot.nix` (HM module `programs.foot.enable = true`). Colours come from the theme-menu conductor, not Stylix (ADR-044, #609 — replacing Noctalia per ADR-036) — see Configuration.
 
 The terminfo entry `xterm-ghostty` ships on every NixOS host via
 `modules/nixos/ghostty-terminfo.nix` so SSH'ing from a Ghostty-on-Mac
@@ -121,8 +119,7 @@ ship the entry from nixpkgs (see #167 for the move rationale).
 - [`modules/nixos/ghostty-terminfo.nix`](../../modules/nixos/ghostty-terminfo.nix)
   — terminfo for the Ghostty-on-Mac → NixOS SSH path. (NixOS-only;
   Darwin hosts use Ghostty's client-side ssh-terminfo push instead.)
-- [noctalia.md](./noctalia.md) — Noctalia owns foot's colours (ADR-036,
-  #385); the Stylix `foot` target was removed.
+- [noctalia.md](./noctalia.md) — the desktop shell, themed from the same theme-menu conductor palette that owns foot's colours (ADR-044, #609); the Stylix `foot` target was removed in #385.
 - [fonts.md](./fonts.md) — font configuration that affects foot's
   appearance + the DejaVu fallback warning that surfaced + the
   dpi-aware nuance.
