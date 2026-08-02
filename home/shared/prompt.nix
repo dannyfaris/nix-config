@@ -22,7 +22,7 @@ let
   desktopGlyph = builtins.fromJSON ''"\uf108"''; # nf-fa-desktop — local
   sshGlyph = builtins.fromJSON ''"\uf489"''; # nf-mdi-console_network — SSH
   snowGlyph = builtins.fromJSON ''"\uf2dc"''; # nf-fa-snowflake — nix-shell
-  chev = builtins.fromJSON ''"❯"''; # ❯ — reading-flow separator
+  chev = builtins.fromJSON ''"\u276f"''; # ❯ — reading-flow separator
 
   # Host-marker connection detection (local vs SSH) — delegates to the
   # shared `session-type` command (home/shared/session-type.nix). Inside
