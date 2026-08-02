@@ -51,8 +51,9 @@ jobs:
     # See docs/ci.md §Timeouts.
     timeout-minutes: 60
     steps:
-      # fetch-depth: 0 so the `changed` step below can diff against the PR
-      # base commit. See docs/ci.md §"Docs-only short-circuit".
+      # fetch-depth: 0 fetches with the all-heads refspec, which is what puts
+      # `origin/<base>` in the clone for the `changed` step's diff basis.
+      # See docs/ci.md §"Docs-only short-circuit".
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
@@ -63,12 +64,13 @@ jobs:
       - name: classify changed paths
         id: changed
         if: github.event_name == 'pull_request'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          # Diff basis is the base branch's current tip (origin/<base>), not the
+          # PR's frozen base.sha — a stale base.sha folds main's newer commits
+          # into the diff. See docs/ci.md §"Docs-only short-circuit".
           # --no-renames: rename detection reports only the destination, so
           # `git mv code.nix docs/x.md` would otherwise class as docs-only.
-          files=$(git diff --no-renames --name-only "$BASE_SHA"...HEAD || true)
+          files=$(git diff --no-renames --name-only "origin/$GITHUB_BASE_REF"...HEAD || true)
           skippable='^(docs/.*\.md|[^/]*\.md|\.github/[^/]*\.md|LICENSE)$'
           # Deliberately never skippable: the design-note lint reads the
           # template as its prompt source, so editing it changes a gate.
