@@ -24,3 +24,5 @@ result-*
 # Agent git-worktrees — per-session sibling checkouts, never content of
 # this tree (statix.toml carries the matching lint-side exclusion).
 .claude/worktrees/
+
+# probe: #412 fail-safe classifier check (unlisted path); this PR is never merged
