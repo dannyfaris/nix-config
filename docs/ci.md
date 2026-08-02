@@ -108,3 +108,5 @@ A job that hits its cap fails the run, which — for `flake-check` and `gitleaks
 - [ADR-025](./decisions/ADR-025-ci-in-flake.md) — the framework decision and the dated history this doc points back to.
 - [ADR-028](./decisions/ADR-028-stylix-foundation-and-desktop-env.md) — desktop closure + the niri cache (slice 3b.5); `modules/nixos/niri.nix` is the single source for the niri substituter + key.
 - [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) — proportionate enforcement (the blind-retry choice) and single-sourced rationale (why this doc points rather than restates).
+
+<!-- probe 3: fresh PR, current base.sha — cheap-path proof; never merged -->
