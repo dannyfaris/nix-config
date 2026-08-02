@@ -127,6 +127,8 @@ sudo nixos-rebuild switch --flake .#<hostname>
 
 Gotcha: `sudo nix store delete <paths>` always fails "still alive" — sudo puts the paths into the child's environment via `SUDO_COMMAND`, and the GC's `/proc` liveness scan reads them as live roots. Run store deletions from a root shell (`sudo -i`) instead, keeping the paths off the sudo command line.
 
+In a nix-less agent/cloud session, run `scripts/fetch-lint-toolchain.sh` once, then lint staged work with the fetched set before pushing — CI runs the same linters at the same pins. See [docs/design/cloud-session-lint-toolchain.md](./docs/design/cloud-session-lint-toolchain.md).
+
 ## Conventions
 
 - **home-manager** is integrated as a NixOS module (single `nixos-rebuild`
