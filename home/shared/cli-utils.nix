@@ -31,8 +31,8 @@
       enable = true;
       # Respect .gitignore + faster than find. fd is in home.packages below.
       defaultCommand = "fd --type f --hidden --exclude .git";
-      fileWidgetCommand = "fd --type f --hidden --exclude .git"; # Ctrl-T
-      changeDirWidgetCommand = "fd --type d --hidden --exclude .git"; # Alt-C
+      fileWidget.command = "fd --type f --hidden --exclude .git"; # Ctrl-T
+      changeDirWidget.command = "fd --type d --hidden --exclude .git"; # Alt-C
       # `--color=16` base scheme: render from the terminal's 16-colour
       # palette (terminal-authority — follows polarity flips + SSH;
       # replaces the Stylix fzf target's baked hex).
