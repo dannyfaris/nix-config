@@ -67,6 +67,11 @@
     # GUI only; the git-synced ~/wiki vault is separate. See
     # docs/desktop/obsidian.md and docs/design/wiki.md (#506).
     ../obsidian.nix
+    # typora.nix — home.packages addition for pkgs.typora (the operator's
+    # daily-driver markdown editor; unfree, whitelisted in
+    # modules/shared/nix-daemon.nix) plus the xdg.mimeApps default-handler
+    # registration for markdown files. See docs/desktop/typora.md.
+    ../typora.nix
     ../theme-menu.nix
     ../portal-color-scheme.nix
     ../polkit-agent.nix
