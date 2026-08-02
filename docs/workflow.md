@@ -151,6 +151,21 @@ reviewer's.
 - Root or auth/boot-path surface is review-mandatory: there is no "too small to review" carve-out, and an active incident tightens the gate rather than relaxing it.
 - Boot- or auth-path changes are rehearsed on a VM — an actual reboot, not just a build — before they run on hardware, and the rehearsal outcome is reported alongside the peer-review verdict.
 
+## Runtime claims are probe-verified
+
+**Rule.** A change asserting runtime, security, network-posture, or CI behaviour is done when that behaviour has been observed live, not when it merges. The probe is designed *before* the change lands: name in advance the observation that would falsify the claim, and the result that would abort rather than confirm it. The record then separates observation from projection, so an unverified assertion stays labelled as one, not promoted to fact. [CLAUDE.md](../CLAUDE.md) §"Claims about runtime behaviour need runtime verification" owns the rule and the set ≠ enforced gap it closes ([#303](https://github.com/dannyfaris/nix-config/issues/303)); this is the choreography that discharges it.
+
+**Why.** Design review, implementation review, and adversarial verification all read the *declared* state; only a probe reads the enforced one. One CI campaign ran every change through all three; its probes still caught two defects all three had passed: a cheap-path pre-step that could not evaluate against its own cold store (#699), and a classifier whose diff basis froze at PR-creation time, so its short-circuit stopped firing once `main` advanced (#703). The same pass surfaced a third case — a documented per-run cache refresh that PR runs are structurally incapable of performing, so the declaration and the enforcement had to be re-scoped to match ([#702](https://github.com/dannyfaris/nix-config/issues/702)).
+
+**How it shows up.**
+- Probes ride throwaway pull requests: drafts titled `probe(#N): … — DO NOT MERGE`, the scope mapping a stray branch back to its issue, closed unmerged. Undeletable branches are named in the verification comment for an operator sweep.
+- An ordering-sensitive probe is re-triggered by an empty commit, forcing GitHub to recompute the merge ref against the *current* base — never `gh run rerun`, which replays the SHA already recorded. The before/after claim is banked as a counterfactual pair: frozen basis versus live, against identical SHAs.
+- Assertions are designed for retrievability: the log tooling may only tail, so assert where the record is readable — log *ends*, short logs — and state the coverage window, not an implied end-to-end read.
+- A state-machine change — a cache, a save/restore cycle — is verified over **cycle pairs**: two complete cycles, untouched legs as controls, expectations pre-stated as in-band ranges, an abort threshold and its revert cost fixed before cycle 1, and, where the design inverts what a healthy run looks like, the inverted assertions — which lines must now be *absent*, which deletions are expected.
+- Anything needing a real `nix` or an authed `gh` becomes an operator gate: an exact command block, adversarially reviewed before it executes (§"Peer review binds to what executes, not what's committed"), carrying up front the observation that means abort, and gated on the numbers reported back.
+
+**Worked examples** as history, not rationale: the #412 probe series and its two caught defects on PR #695; the stale-base choreography on PR #706; the cycle pairs and pre-declared threshold that stopped a first attempt on [#712](https://github.com/dannyfaris/nix-config/issues/712).
+
 ## Sense-check `main` before implementing a planned slice
 
 **Rule.** Before implementing a planned slice — especially when
