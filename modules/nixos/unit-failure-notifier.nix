@@ -1,6 +1,6 @@
 # NixOS systemd unit-failure surfacing (#199). Darwin parallel: modules/darwin/launchd-failure-notifier.nix (#346).
 #
-# Headless hosts (mercury, nixos-vm) have no human watching
+# Headless hosts (electra) have no human watching
 # `systemctl --failed`, so a failed nix-gc or btrfs scrub is invisible
 # until something downstream breaks. This module defines a generic
 # OnFailure notifier: any unit opts in with

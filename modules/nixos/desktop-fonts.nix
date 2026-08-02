@@ -1,7 +1,7 @@
 # desktop-fonts — the NixOS-side font wiring for desktop hosts: install the
 # faces and define the fontconfig generic→face map. Imported only by desktop
-# hosts (via the desktop-env bundle), so headless hosts (mercury, nixos-vm)
-# pay no font-package closure.
+# hosts (via the desktop-env bundle), so headless hosts (electra) pay no
+# font-package closure.
 #
 # Fonts are conducted by fontconfig, not Stylix (ADR-036 Amendment; #390):
 # surfaces ask for a generic (monospace / sans-serif), this map resolves it,

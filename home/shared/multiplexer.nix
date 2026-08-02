@@ -340,8 +340,8 @@ in
   # dir is fixed for a session's life, so it barely needs re-polling) and
   # rendermode "static" — it emits plain text, coloured by the leading
   # `#[fg=…]` in format_left. The clock is the native
-  # `{datetime}` widget, timezone-pinned so it reads NZ time even on
-  # mercury (EC2, non-NZ region).
+  # `{datetime}` widget, timezone-pinned to NZ so the reading doesn't
+  # depend on any host's system timezone.
   #
   # Bottom bar unchanged: the stock `zellij:status-bar` is a single WASM
   # rendering two rows (mode-indicator + keybind hints on top, rotating

@@ -1,8 +1,8 @@
 # AI coding agents — opt-in extras: Codex (OpenAI) + Antigravity CLI (Google).
 # Companion to agent-clis.nix (the always-on base). Imported via
-# hostContext.extraHomeModules on hosts that want the broader set; the
-# work-only Mercury host keeps only the base. See ADR-020 for the
-# import-split convention.
+# hostContext.extraHomeModules on hosts that want the broader set — today
+# the four NixOS hosts; Darwin hosts import home/darwin/agent-clis-extras.nix
+# instead. See ADR-020 for the import-split convention.
 #
 # Both tools authenticate via OAuth login flows on first run: codex's
 # "Sign in with ChatGPT" and antigravity's "Sign in with Google" (the `agy`

@@ -1,7 +1,6 @@
-# Single personal git identity — used on personal-only hosts (alcyone)
-# where no employer code is expected. Companion to git-identity-work.nix
-# (single work identity, e.g. mercury) and git-identity-dual.nix (both,
-# work under ~/grey-st/ via gitdir-include).
+# Single personal git identity — used on personal-only hosts where no
+# employer code is expected. Companion to git-identity-dual.nix (both
+# identities, work under ~/grey-st/ via gitdir-include).
 #
 # No gitdir-include: every repository on this host gets the personal
 # identity by default. ~/grey-st/ is intentionally not created — work and

@@ -18,7 +18,7 @@
 # every Electron-based app benefits and pinning it per-tool would be
 # repetitive. Imported by the desktop-env bundle, so it only fires on
 # desktop hosts (where Electron apps are usable). Inert on headless
-# hosts like mercury that never import the desktop-env bundle.
+# hosts like electra that never import the desktop-env bundle.
 #
 # Wayland still works for non-Electron Wayland-native apps regardless
 # of this var; this only governs how Electron's Chromium runtime picks

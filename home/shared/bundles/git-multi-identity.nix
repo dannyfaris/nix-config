@@ -15,11 +15,10 @@
 # hadn't opened the file. Renamed in #246; see git history for the
 # pre-rename name if chasing old references.
 #
-# Imported by hosts that do both personal and work development
-# (nixos-vm, metis, neptune, saturn). Work-only hosts (mercury) import the
-# sibling git-work.nix bundle instead. Both bundles include the base
-# git.nix module; Nix module merging deduplicates if both are ever
-# imported on the same host (no host does this today).
+# Imported by hosts that do both personal and work development. The base
+# git.nix module is also imported standalone on single-identity hosts;
+# Nix module merging would deduplicate if both paths ever met on one host
+# (no host does this today).
 {
   imports = [
     ../git.nix

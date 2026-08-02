@@ -1,7 +1,6 @@
 # Rootless Docker — per-user dockerd for the operator. Imported per-host
-# (Mercury and Metis); NOT in the headless role because the UTM VM
-# doesn't run containers and pulling docker into its closure for nothing
-# would be wasteful.
+# (alcyone and metis); NOT in foundation — hosts that don't run
+# containers (alnair, electra) shouldn't pay the closure for nothing.
 #
 # Resolves the deferred decision in ADR-006 § "Tool-vs-runtime split"
 # ("docker daemon: deferred until the first project needs it"). See

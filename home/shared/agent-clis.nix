@@ -2,9 +2,10 @@
 # See docs/decisions/ADR-008-agent-clis.md for rationale.
 #
 # Imported by every host via the standard home-manager imports list.
-# Hosts that also want Codex + Antigravity CLI add agent-clis-extras.nix via
+# Hosts add Codex + Antigravity CLI via an agent-clis-extras module in
 # hostContext.extraHomeModules — split per ADR-020's host-divergences-via-
-# import-splits convention. Work-only hosts (Mercury) keep only the base.
+# import-splits convention. Today every host imports an extras variant; the
+# split's live seam is the Darwin codex override (home/darwin/agent-clis-extras.nix).
 #
 # Both tools authenticate via OAuth login flows on first run:
 # `claude login` and cursor-agent's login flow. No sops-managed API keys

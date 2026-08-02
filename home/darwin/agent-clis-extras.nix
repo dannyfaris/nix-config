@@ -25,7 +25,7 @@
 # `sourceProvenance = [ binaryNativeCode ]`; vendor-published Mach-O
 # binary downloaded via `fetchurl`, no source build).
 #
-# Linux hosts (mercury, metis, nixos-vm) are unaffected — they continue
+# Linux hosts (alcyone, alnair, electra, metis) are unaffected — they continue
 # to import home/shared/agent-clis-extras.nix and use pkgs.codex
 # unchanged. cache.nixos.org has aarch64-linux / x86_64-linux substitutes
 # for codex, so Linux pays no cold-rebuild cost. This override is purely

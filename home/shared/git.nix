@@ -1,7 +1,7 @@
 # Version control — base configuration shared by every host: git itself,
 # glab as both a package and a gitlab.com credential helper. Per-host
 # identity (single vs dual) and gh enablement live in companion files
-# (git-identity-dual.nix, git-identity-work.nix, gh.nix) imported via
+# (git-identity.nix, git-identity-dual.nix, gh.nix) imported via
 # hostContext.extraHomeModules. See ADR-009 for the auth-model rationale
 # and ADR-020 for the import-split convention.
 #

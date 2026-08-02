@@ -2,7 +2,8 @@
 # extension. This file is the implementation; the decision (host gate,
 # Stylix base16 bridge, "ENHANCE" companion skipped) is recorded
 # canonically in ADR-006 §"gh-dash". Imported via the git-multi-identity
-# bundle so it rides on programs.gh and stays off mercury.
+# bundle so it rides on programs.gh; hosts importing gh.nix individually
+# don't pull it in.
 #
 # The theme block maps to ANSI-16 index strings so gh-dash follows the
 # terminal palette on a conductor flip (ADR-041); gh-dash has no Stylix

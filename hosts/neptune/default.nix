@@ -1,6 +1,6 @@
 # Host-specific configuration for neptune (Apple Silicon Mac mini,
 # aarch64-darwin). First Darwin host in the fleet; the operator's
-# primary SSH client into the Linux hosts (nixos-vm, mercury, metis)
+# primary SSH client into the NixOS hosts (per lib/operator.nix sshEdges)
 # and a cross-platform NixOS-builder via linux-builder (PRD §10, §11.6).
 #
 # Composes the Darwin foundation + remote-access bundle + linux-builder
@@ -44,7 +44,9 @@ _: {
     ../../modules/darwin/colima.nix
 
     # UTM — virtualisation platform; second Darwin nixpkgs-installed
-    # runtime after colima. Hosts the nixos-vm fleet member. Adds
+    # runtime after colima. Originally imported to host the nixos-vm fleet
+    # member (decommissioned 2026-08-03, #634); retention is an open
+    # question — see #726. Adds
     # pkgs.utm to PATH which surfaces both UTM.app (via nix-darwin's
     # system-applications symlink) and `utmctl` (the CLI control tool,
     # via the derivation's makeWrapper loop). See docs/desktop/utm.md

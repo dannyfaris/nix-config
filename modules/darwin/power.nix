@@ -7,10 +7,10 @@
 #     blip during operator-elsewhere hours leaves the host off until
 #     someone walks to it and presses the power button.
 #
-#   - `power.sleep.computer = "never";` — host never sleeps. The
-#     fleet's other hosts (mercury, metis, nixos-vm) SSH into
-#     neptune for shared-state work; computer sleep would break those
-#     flows. nix-darwin's `power.sleep.computer` type accepts either
+#   - `power.sleep.computer = "never";` — host never sleeps. Other
+#     fleet hosts SSH into neptune for shared-state work (the inbound
+#     set is lib/operator.nix sshEdges.neptune); computer sleep would
+#     break those flows. nix-darwin's `power.sleep.computer` type accepts either
 #     a positive integer (minutes) or the literal "never" — verified
 #     against the pinned input.
 #

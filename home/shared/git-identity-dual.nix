@@ -1,8 +1,7 @@
 # Dual git identity — personal default everywhere, work identity under
 # ~/grey-st/ via gitdir-include. Used on hosts where the same user works on
-# both personal and employer code (the UTM VM today). Companion to
-# git-identity-work.nix which is the single-work alternative used on
-# work-only hosts (Mercury). See ADR-009 § "Dual identity" and ADR-020.
+# both personal and employer code — reached via the git-multi-identity
+# bundle. See ADR-009 § "Dual identity" and ADR-020.
 { lib, ... }:
 let
   inherit (import ../../lib/operator.nix) identities;
