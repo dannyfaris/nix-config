@@ -27,7 +27,7 @@ export LC_ALL=C
 # would split a newline-containing path into fragments and report them as
 # collisions with unrelated files.
 dupes=$(git -c core.quotePath=false ls-files |
-  tr 'A-Z' 'a-z' |
+  tr '[:upper:]' '[:lower:]' |
   sort |
   uniq -d)
 
