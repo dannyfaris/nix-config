@@ -47,7 +47,7 @@ For a contributor reading the repo cold:
 
 ## Status
 
-CI builds every host on every PR via `nix flake check` (see [`.github/workflows/ci.yaml`](./.github/workflows/ci.yaml)). Lockfile bumps come via a weekly automated PR (Mondays 04:00 UTC) and merge manually after green CI. PRs land via squash auto-merge after required checks pass. Substantive decisions are recorded as ADRs before they affect `main`.
+CI builds every host on every PR via `nix flake check` (see [`.github/workflows/ci.yaml`](./.github/workflows/ci.yaml)) — documentation-only PRs run every check except the host builds ([`docs/ci.md`](./docs/ci.md)). Lockfile bumps come via a weekly automated PR (Mondays 04:00 UTC) and merge manually after green CI. PRs land via squash auto-merge after required checks pass. Substantive decisions are recorded as ADRs before they affect `main`.
 
 ## License
 

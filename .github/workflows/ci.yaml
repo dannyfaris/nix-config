@@ -51,7 +51,35 @@ jobs:
     # See docs/ci.md §Timeouts.
     timeout-minutes: 60
     steps:
+      # fetch-depth: 0 so the `changed` step below can diff against the PR
+      # base commit. See docs/ci.md §"Docs-only short-circuit".
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      # Docs-only short-circuit: a whitelist of paths that cannot affect any
+      # host closure; any unmatched path forces the full run (fail-safe
+      # toward building). See docs/ci.md §"Docs-only short-circuit".
+      - name: classify changed paths
+        id: changed
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # --no-renames: rename detection reports only the destination, so
+          # `git mv code.nix docs/x.md` would otherwise class as docs-only.
+          files=$(git diff --no-renames --name-only "$BASE_SHA"...HEAD || true)
+          skippable='^(docs/.*\.md|[^/]*\.md|\.github/[^/]*\.md|LICENSE)$'
+          # Deliberately never skippable: the design-note lint reads the
+          # template as its prompt source, so editing it changes a gate.
+          never='^docs/design/_template\.md$'
+          code=true
+          if [ -n "$files" ] &&
+            ! grep -qE "$never" <<<"$files" &&
+            ! grep -qvE "$skippable" <<<"$files"; then
+            code=false
+          fi
+          echo "code=$code" >>"$GITHUB_OUTPUT"
 
       - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
@@ -78,7 +106,12 @@ jobs:
       # substituter) to amortise cold-run rebuilds of the desktop closure.
       # Why cache-nix-action over Cachix/Attic, the cache-key semantics,
       # and the per-arch size ceilings: docs/ci.md §Cache.
+      #
+      # Skipped on the docs-only path — not an optimisation: `purge-primary-key:
+      # always` + the gc ceiling would resave a docs-only store over the warm
+      # cache. See docs/ci.md §Cache.
       - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        if: steps.changed.outputs.code != 'false'
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
@@ -101,12 +134,25 @@ jobs:
       # so a transient forge blip would red main. Blind, not regex-gated,
       # per ADR-032 Rule 1. See docs/ci.md §Retry.
       - name: nix flake check
+        env:
+          # Empty unless the `changed` step ran (push: main never sets it),
+          # which falls through to the full check. See docs/ci.md
+          # §"Docs-only short-circuit".
+          CODE: ${{ steps.changed.outputs.code }}
         run: |
+          run_checks() {
+            if [ "$CODE" = "false" ]; then
+              nix flake check --no-build &&
+                nix build --no-link --print-build-logs '.#checks-without-hosts'
+            else
+              nix flake check --print-build-logs
+            fi
+          }
           attempts=3
           delay=30
           for attempt in $(seq 1 "$attempts"); do
             echo "::group::nix flake check (attempt $attempt/$attempts)"
-            if nix flake check --print-build-logs 2>&1; then
+            if run_checks 2>&1; then
               echo "::endgroup::"
               exit 0
             fi
