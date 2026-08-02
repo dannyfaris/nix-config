@@ -59,7 +59,7 @@ rather than creating a new artifact.
 | [chrome.md](./chrome.md) | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone | #11 |
 | [microsoft-365.md](./microsoft-365.md) | Microsoft 365 — Word, Excel, PowerPoint, Outlook; MAS via `homebrew.masApps`. Teams excluded — runs in Chrome at teams.microsoft.com, see doc §Sharp edges | #11 |
 | [amphetamine.md](./amphetamine.md) | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution) | #11 |
-| [typora.md](./typora.md) | Typora markdown editor; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
+| [typora.md](./typora.md) | Typora markdown editor (cross-platform) — macOS Homebrew cask + Sparkle silent (clause-2 carve-out); NixOS `pkgs.typora` + default markdown handler | #11 |
 | [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | #11 |
 | [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | #11 |
 | [colima.md](./colima.md) | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021. | #11 |
