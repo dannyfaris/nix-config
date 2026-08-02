@@ -115,6 +115,8 @@ nix flake check
 sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
+Gotcha: `sudo nix store delete <paths>` always fails "still alive" — sudo puts the paths into the child's environment via `SUDO_COMMAND`, and the GC's `/proc` liveness scan reads them as live roots. Run store deletions from a root shell (`sudo -i`) instead, keeping the paths off the sudo command line.
+
 ## Conventions
 
 - **home-manager** is integrated as a NixOS module (single `nixos-rebuild`
