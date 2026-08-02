@@ -34,11 +34,19 @@
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
     ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to metis's ntfy over the tailnet (#199) — client only; alcyone runs no ntfy server.
     ../../modules/nixos/nvidia.nix # RTX 4060 (Ada) — open kernel module + proprietary userspace. Alcyone-only; never the shared desktop-env bundle (metis is Intel iGPU).
+    ../../modules/nixos/wake-on-lan-target.nix # Arm WoL on enp5s0 (target side, #632) — interface set via wakeOnLan.interfaces below. Emitter lives on electra.
     ../../modules/nixos/ephemeral-root.nix # Enforced from first boot — see ephemeralRoot below; docs/design/ephemeral-root.md.
     ../../modules/nixos/persist-os-core.nix # OS-core persist whitelist (machine-id, /var/lib/nixos, systemd timers/coredump, /var/log, /var/db/sudo, /root).
   ];
 
   networking.hostName = "alcyone";
+
+  # Arm Wake-on-LAN on the wired NIC (target side, #632). enp5s0 verified
+  # on-metal; wakes from a broadcast magic packet emitted by always-on
+  # electra (same /24). Firmware WoL/S3 dependency is out of Nix's control
+  # — see modules/nixos/wake-on-lan-target.nix header. This arms the OS
+  # side only; end-to-end wake from idle-suspend is proven under #691.
+  wakeOnLan.interfaces = [ "enp5s0" ];
 
   # Set once at install; never change, even after upgrading. 26.11 = the
   # release Alcyone installs against (system.nixos.release); greenfield box,

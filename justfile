@@ -388,3 +388,15 @@ setup-sops-identity key-path='':
 # keybinds-table CI check fails if the committed table drifts. See #457.
 gen-keybinds:
     bash scripts/gen-keybinds-table.sh
+
+# Wake Alcyone via a magic packet broadcast from always-on Electra (#632).
+# Reaches Electra by MagicDNS over the tailnet, then runs the emitter that
+# broadcasts to Alcyone's armed NIC on the shared /24 (Electra sources a
+# LAN broadcast, not an SSH edge — ADR-042 sink posture intact). The
+# absolute /run/current-system/sw/bin path sidesteps non-login-shell PATH
+# ambiguity for the remote command. Fire-and-forget UDP: a clean exit
+# means the packet was broadcast, not that Alcyone actually woke.
+
+# Broadcast a WoL magic packet to Alcyone from Electra.
+wake-alcyone:
+    ssh electra /run/current-system/sw/bin/wake-alcyone
