@@ -55,6 +55,7 @@ bullets() {
   local markup=$1 n
   shift
   for n in "$@"; do
+    # shellcheck disable=SC2016 # the backticks are literal markdown markup being emitted, not a substitution
     case $markup in
     code) printf -- '- `%s` — a fixture host.\n' "$n" ;;
     bold) printf -- '- **%s**: a fixture console.\n' "$n" ;;

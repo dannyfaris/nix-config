@@ -71,6 +71,7 @@ region() {
 # substring matching — a `metis` / `metis-2` prefix pair must not mask a miss
 # (which any `grep -w` approach would, since `-w` treats `-` as a boundary).
 names() {
+  # shellcheck disable=SC2016 # the backticks are literal markdown markup being matched, not a substitution
   region "$1" | { grep -oE '^- (`|\*\*)[a-z0-9][a-z0-9-]*(`|\*\*)' || true; } |
     tr -d '`*' | sed 's/^- //' | sort -u
 }
