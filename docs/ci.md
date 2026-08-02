@@ -106,3 +106,4 @@ A job that hits its cap fails the run, which — for `flake-check` and `gitleaks
 - [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) — proportionate enforcement (the blind-retry choice) and single-sourced rationale (why this doc points rather than restates).
 
 <!-- probe: #412 docs-only fast-path verification; this PR is never merged -->
+<!-- probe re-run against the merged #699 fix -->
