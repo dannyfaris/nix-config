@@ -110,6 +110,36 @@ let
       )
     );
 
+  # What the CI cache must carry because nothing else can supply it. The
+  # Actions pool is capped at 10 GB and is worth spending only on bytes no
+  # substituter serves; anything else is cheaper to re-fetch than to hoard —
+  # the union of the five x86_64 host closures does not fit the pool at all
+  # (measured 2026-08-02). See docs/ci.md §"Cache sweep".
+  unsubstitutable = {
+    x86_64-linux = {
+      # The same attribute home/nixos/noctalia.nix reads, so this is the
+      # derivation the three desktop hosts build rather than a parallel one.
+      # v5 has no binary cache anywhere (docs/design/noctalia-v5-migration.md
+      # §Cost). niri, the other source-built desktop dependency, is served by
+      # niri.cachix.org and so stays out.
+      noctalia = inputs.noctalia.packages.x86_64-linux.default;
+    };
+    # nixos-vm carries no desktop bundle (UTM/AVF cannot render Wayland),
+    # so this leg has no source-only build.
+    aarch64-linux = { };
+    # Neither does the Darwin closure.
+    aarch64-darwin = { };
+  };
+
+  # Built with `--out-link` in CI so the save-time `nix store gc` cannot take
+  # the set above. An empty farm on the legs that root nothing, so the
+  # workflow keeps one command under one condition across the matrix.
+  mkCiGcRoot =
+    system:
+    (pkgsFor system).linkFarm "ci-gc-root" (
+      lib.mapAttrsToList (name: path: { inherit name path; }) unsubstitutable.${system}
+    );
+
   # lib.runTests returns records { name; expected; result; }; flatten each
   # to a legible one-liner for the report.
   mkUnitTestCheck =
@@ -230,9 +260,16 @@ in
       # re-aggregation of checks this flake already exposes, so making it a check
       # would double every one of them under `nix flake check`.
       checks-without-hosts = mkChecksWithoutHosts "x86_64-linux";
+
+      # The save-time GC root, one per matrix leg (see `unsubstitutable`
+      # above). A package rather than a check: it gates nothing and returns no
+      # verdict — it exists only to be built with `--out-link` in CI.
+      ci-gc-root = mkCiGcRoot "x86_64-linux";
     };
     aarch64-linux.checks-without-hosts = mkChecksWithoutHosts "aarch64-linux";
+    aarch64-linux.ci-gc-root = mkCiGcRoot "aarch64-linux";
     aarch64-darwin.checks-without-hosts = mkChecksWithoutHosts "aarch64-darwin";
+    aarch64-darwin.ci-gc-root = mkCiGcRoot "aarch64-darwin";
   };
 
   # Pre-commit hooks. git-hooks.nix lifts these to checks.<system>.pre-commit
