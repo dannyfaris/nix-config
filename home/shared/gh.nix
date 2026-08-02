@@ -1,8 +1,7 @@
-# GitHub CLI — programs.gh + its HTTPS credential helper. Imported only
-# on hosts that touch GitHub (the UTM VM). Work-only hosts (Mercury)
-# skip this; they have no GitHub workflow. See ADR-009 § "Why
-# git_protocol" and ADR-020 (work-vs-personal divergences via import
-# splits, not host-keyed flags).
+# GitHub CLI — programs.gh + its HTTPS credential helper. Imported on
+# every host, either via the git-multi-identity bundle or an individual
+# extraHomeModules entry. See ADR-009 § "Why git_protocol" and ADR-020
+# (host divergences via import splits, not host-keyed flags).
 _: {
   programs.gh = {
     enable = true;

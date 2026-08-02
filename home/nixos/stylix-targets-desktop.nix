@@ -19,9 +19,9 @@
 # include?" answerable by the import graph alone, rather than by
 # tracing per-target gates inside a cross-platform file. The split is
 # closure-identical for every NixOS host (verified pre/post; mercury
-# and nixos-vm never imported the desktop bundle, so their targets
-# were inert by construction; metis picks up the same set via the
-# desktop-env bundle).
+# and nixos-vm — both since decommissioned, #634 — never imported the
+# desktop bundle, so their targets were inert by construction; metis
+# picks up the same set via the desktop-env bundle).
 #
 # Done as a prerequisite for the mac-mini onboarding work (#11).
 { config, lib, ... }:

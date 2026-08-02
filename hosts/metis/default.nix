@@ -3,8 +3,7 @@
 #
 # Composes foundation + capability bundles + standalone modules directly
 # (per ADR-027), no longer adopts the `headless` role. Personal dev box:
-# dual git identity (personal + work) + full agent-CLI set, mirroring
-# nixos-vm.
+# dual git identity (personal + work) + full agent-CLI set.
 #
 # Bootstrap via nixos-anywhere + disko (ADR-022); per-host files follow the
 # three-file convention (ADR-023). Host key is pre-generated on the operator
@@ -93,8 +92,8 @@
 
   # systemd-oomd: kills the heaviest descendant in user.slice at 80 %
   # memory-pressure (systemd default duration). 32 GiB makes
-  # thrash-to-hang rarer than on Mercury, but Docker builds + agent
-  # CLIs can still saturate zram — same failure mode, same mitigation.
+  # thrash-to-hang rare, but Docker builds + agent CLIs can still
+  # saturate zram, so the mitigation stays.
   # system/root slices excluded so oomd can't kill sshd (break-glass
   # via LAN SSH).
   systemd.oomd.enableUserSlices = true;
@@ -108,8 +107,7 @@
   # extraHomeModules is the full HM imports list for this host — capability
   # bundles plus standalone modules, per ADR-027's bundle model. Personal
   # dev box: cli tooling + dual git identity + GitHub CLI + agent CLI
-  # extras + login info display + base agent CLIs + outbound SSH. Mirrors
-  # nixos-vm.
+  # extras + login info display + base agent CLIs + outbound SSH.
   #
   # flakePath omitted — the host-context default ("/home/dbf/nix-config")
   # matches this host.

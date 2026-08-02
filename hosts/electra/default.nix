@@ -131,7 +131,7 @@
       ../../home/shared/git.nix
       ../../home/shared/git-identity.nix
       ../../home/shared/gh.nix
-      ../../home/shared/stylix-targets.nix # Headless TUI theming (mercury pattern) — desktop hosts get this via Noctalia instead.
+      ../../home/shared/stylix-targets.nix # Headless TUI theming — desktop hosts get this via Noctalia instead.
       ../../home/shared/macchina.nix
       ../../home/nixos/macchina-shell-init.nix
       ../../home/shared/agent-clis.nix

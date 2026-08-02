@@ -21,7 +21,7 @@
 # (TUI in shared, desktop in nixos).
 #
 # No font configuration here — there is no universal font intent. Headless
-# hosts (mercury, nixos-vm) don't render fonts; SSH clients use their own.
+# hosts (electra) don't render fonts; SSH clients use their own.
 # Desktop-side font selections + install wiring live in
 # modules/nixos/desktop-fonts.nix. See docs/desktop/fonts.md.
 #
