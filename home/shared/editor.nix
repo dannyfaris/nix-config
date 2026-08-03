@@ -87,10 +87,10 @@ in
       }
       {
         name = "markdown";
-        # Repo markdown is authored soft-wrapped (one line per paragraph)
-        # per docs/workflow.md §"Markdown is soft-wrapped"; without
-        # display-side soft-wrap those long lines need horizontal scroll
-        # to read in helix.
+        # Repo markdown is soft-wrapped (one line per paragraph) —
+        # formatter-enforced via dprint per docs/workflow.md §"Markdown is
+        # soft-wrapped" (ADR-046); without display-side soft-wrap those long
+        # lines need horizontal scroll to read in helix.
         # Display-only — does not alter file content. See #266.
         soft-wrap.enable = true;
       }

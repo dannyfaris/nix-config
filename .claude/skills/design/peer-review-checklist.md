@@ -1,10 +1,6 @@
 # Design-note peer-review checklist
 
-For the independent reviewer (stage 6). The structure lint already gates
-*presence* — sections present, ordered, non-empty. Your job is the half a
-grep cannot judge: **whether the thinking is honest**. Be adversarial; the
-loop exists because these are the steps that get skipped under momentum, and
-review is their backstop.
+For the independent reviewer (stage 6). The structure lint already gates *presence* — sections present, ordered, non-empty. Your job is the half a grep cannot judge: **whether the thinking is honest**. Be adversarial; the loop exists because these are the steps that get skipped under momentum, and review is their backstop.
 
 ## The judgment checks (what the lint can't see)
 
@@ -24,12 +20,9 @@ review is their backstop.
 
 ## Convention fit
 
-- **Soft-wrapped** (one line per paragraph), one subject, issue-linked.
+- **Soft-wrapped** (one line per paragraph — formatter-enforced once dprint is wired, #435 PR B; no longer a hand-check), one subject, issue-linked.
 - **Scope discipline** — does the diff implement *only* what the note designs, with no unrequested extras?
 
 ## Verdict
 
-Tag findings `[BLOCKER]` / `[SHOULD-FIX]` / `[NIT]` with a concrete fix, and
-end with `LAND-AS-IS` / `LAND-WITH-FIXES` / `NEEDS-REWORK`. A note that fails
-intent-first or weigh-alternatives is at least LAND-WITH-FIXES — those are
-the loop's load-bearing steps, not nits.
+Tag findings `[BLOCKER]` / `[SHOULD-FIX]` / `[NIT]` with a concrete fix, and end with `LAND-AS-IS` / `LAND-WITH-FIXES` / `NEEDS-REWORK`. A note that fails intent-first or weigh-alternatives is at least LAND-WITH-FIXES — those are the loop's load-bearing steps, not nits.
