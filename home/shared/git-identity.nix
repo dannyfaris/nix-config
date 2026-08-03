@@ -17,10 +17,10 @@ in
     inherit (identities.personal) name email;
   };
 
-  # ~/personal/ ensured for personal repos — the conventional sibling of
-  # ~/grey-st/ on dual hosts (git-identity-dual.nix). Idempotent mkdir;
-  # existing contents untouched.
+  # ~/dev/ ensured for personal repos — named for its contents, not
+  # contrasted against a work sibling (there is none on this host).
+  # Idempotent mkdir; existing contents untouched. See ADR-009 / identities.md.
   home.activation.ensureProjectDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "$HOME/personal"
+    run mkdir -p "$HOME/dev"
   '';
 }
