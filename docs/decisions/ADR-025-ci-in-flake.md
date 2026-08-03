@@ -5,10 +5,7 @@ status: Accepted
 
 # ADR-025: Continuous integration in the flake
 
-> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
-> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
-> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
-> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`) per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/` tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
 ## Context
 
@@ -73,20 +70,20 @@ ADR-023's *rule* is unchanged. Its Implementation section gains a forward-pointe
 - ✗ Fine-grained PAT lives in repo secrets and expires after 1 year (GitHub's hard cap). Rotation is operator work, scheduled out-of-band.
 - ✗ `cachix/install-nix-action` is owned by Cachix, a single org. The action is a thin shim over the upstream installer rather than a flavour of nix; risk is the action itself rather than the nix it installs. Migration is one line if the action becomes unmaintained.
 - ⚠ Explicit non-goals — considered and rejected for v1, with re-evaluation triggers documented:
-    - **Binary cache backend.** Subject of ADR-026.
-    - **`nixosTest` for the headless role.** Trigger: role gains anything beyond pure module merges (custom systemd unit, activation script with side-effects).
-    - **Self-hosted runner on Metis.** Triggers: (1) ADR-026 picks attic-on-Metis — shared `/nix/store` makes the pairing compelling; (2) Tier 5 lands and CI wall-clock crosses ~20 min.
-    - **`paths-ignore` for docs-only changes.** Trigger: per-arch CI runtime crosses ~20 min and docs-only PR cadence becomes material.
-    - **SAST / CodeQL.** Wrong threat model for a personal config.
-    - **Dependency vulnerability scanners** (Trivy, Grype, etc.). Same.
-    - **Bootstrap-path verification** (nixos-anywhere in CI). Overkill until `disko.nix` changes non-trivially.
-    - **Closure-size regression gates.** Premature.
-    - **Deploy from CI** (deploy-rs / colmena). Separate ADR, separate decision.
-    - **Required approving review on PRs.** Solo repo; false ceremony.
-    - **SHA-pinned action versions.** `@vN` major-version pins are sufficient for the current threat model; trigger to revisit is if the repo gains automation that touches real secrets or a specific action's maintainer warrants distrust. *(Superseded 2026-06-05 — this trigger fired; see §History, "SHA-pinning adopted".)*
-    - **GitHub App for the lockfile bot.** Trigger: a second bot worth consolidating under one App identity, or PAT rotation becomes a noticeable burden.
-    - **Auto-merge of green `flake.lock` PRs.** Trigger: the manual review consistently surfaces nothing of interest across several months and the friction outweighs the signal.
-    - **Sharded check runs** (e.g. `nix-fast-build`, matrix-of-checks rather than one `nix flake check` invocation). Trigger: per-arch `nix flake check` runtime crosses ~15 min.
+  - **Binary cache backend.** Subject of ADR-026.
+  - **`nixosTest` for the headless role.** Trigger: role gains anything beyond pure module merges (custom systemd unit, activation script with side-effects).
+  - **Self-hosted runner on Metis.** Triggers: (1) ADR-026 picks attic-on-Metis — shared `/nix/store` makes the pairing compelling; (2) Tier 5 lands and CI wall-clock crosses ~20 min.
+  - **`paths-ignore` for docs-only changes.** Trigger: per-arch CI runtime crosses ~20 min and docs-only PR cadence becomes material.
+  - **SAST / CodeQL.** Wrong threat model for a personal config.
+  - **Dependency vulnerability scanners** (Trivy, Grype, etc.). Same.
+  - **Bootstrap-path verification** (nixos-anywhere in CI). Overkill until `disko.nix` changes non-trivially.
+  - **Closure-size regression gates.** Premature.
+  - **Deploy from CI** (deploy-rs / colmena). Separate ADR, separate decision.
+  - **Required approving review on PRs.** Solo repo; false ceremony.
+  - **SHA-pinned action versions.** `@vN` major-version pins are sufficient for the current threat model; trigger to revisit is if the repo gains automation that touches real secrets or a specific action's maintainer warrants distrust. *(Superseded 2026-06-05 — this trigger fired; see §History, "SHA-pinning adopted".)*
+  - **GitHub App for the lockfile bot.** Trigger: a second bot worth consolidating under one App identity, or PAT rotation becomes a noticeable burden.
+  - **Auto-merge of green `flake.lock` PRs.** Trigger: the manual review consistently surfaces nothing of interest across several months and the friction outweighs the signal.
+  - **Sharded check runs** (e.g. `nix-fast-build`, matrix-of-checks rather than one `nix flake check` invocation). Trigger: per-arch `nix flake check` runtime crosses ~15 min.
 
 ## Implementation
 
@@ -138,20 +135,24 @@ then `nix flake check --print-build-logs`. Concurrency group cancels in-progress
 **Branch protection** (configured on GitHub, recorded here for completeness): require the `flake-check (x86_64-linux)` and `flake-check (aarch64-linux)` status checks to merge; no required approving review (solo); linear history enforced (matches existing git history).
 
 **Files removed:**
+
 - `.githooks/pre-commit` (logic moves to `scripts/hardware-config-banner.sh`)
 - `.githooks/` directory
 - `install-hooks` recipe in `justfile`
 
 **Files added:**
+
 - `parts/checks.nix`, `parts/formatter.nix`, `parts/dev-shells.nix`
 - `scripts/hardware-config-banner.sh` (verbatim move with minor adjustments for `git-hooks.nix` entry conventions)
 - `.github/workflows/ci.yaml`, `.github/workflows/flake-lock.yaml`, `.github/workflows/gitleaks.yaml`
 
 **Files amended:**
+
 - `flake.nix` (two new inputs, three new module imports)
 - `docs/decisions/ADR-023-host-config-three-file-structure.md` (Implementation section: pointer to ADR-025; the rule itself unchanged)
 
 **Operator-side one-shot setup** (post-merge, before CI is enabled as a required check):
+
 1. Generate fine-grained PAT on GitHub (Settings → Developer settings → Personal access tokens → Fine-grained; scope: `dannyfaris/nix-config`; permissions: contents r/w, pull-requests r/w, metadata r; expiration: 1 year).
 2. Store as repo secret `GH_PAT_FLAKE_LOCK`.
 3. After first green CI run on a PR, configure branch protection on `main` to require both matrix statuses.

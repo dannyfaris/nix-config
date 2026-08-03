@@ -5,8 +5,7 @@ status: Accepted
 
 # ADR-022: Host install via `nixos-anywhere` + `disko`
 
-**Supersedes**: ADR-017
-**Amends**: ADR-018 (host SSH key acquisition order only)
+**Supersedes**: ADR-017 **Amends**: ADR-018 (host SSH key acquisition order only)
 
 ## Context
 

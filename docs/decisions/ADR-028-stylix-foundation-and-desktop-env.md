@@ -5,10 +5,7 @@ status: Amended by ADR-029 (item 3 retracted; items 1–2 stand and are implemen
 
 # ADR-028: Stylix in foundation; desktop environment arrives on metis
 
-> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
-> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
-> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
-> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`) per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/` tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
 ## Context
 
@@ -43,6 +40,7 @@ The desktop stack is **niri compositor + DMS shell + Foot terminal + greetd sess
 **DMS over waybar/fuzzel/mako is a strict simplification.** Three modules collapse into one cohesive shell. DMS's design language matches the visual coherence Stylix targets — it doesn't fight Stylix, it consumes a palette and presents it. The alternative (waybar + fuzzel + mako, individually Stylix-themed) would deliver less while maintaining more configuration.
 
 **Stylix-canonical DMS theming preserves single-source-of-truth.** Three patterns were considered for Stylix↔DMS:
+
 - Shared image, two derivations — both engines read `stylix.image`; visually divergent palettes, no Nix-side coordination.
 - Stylix seeds matugen — pick a base16 colour as a matugen seed; M3-shaped palette ungrounded in base16's specifics.
 - Stylix-canonical, emit DMS theme directly — `config.lib.stylix.colors → pkgs.writeText JSON → DMS customThemeFile`. Stylix is unambiguously canonical; DMS is a downstream consumer with no parallel theme engine running.
@@ -95,256 +93,97 @@ Decision-only landing; implementation in subsequent slices, each peer-reviewed o
 
 ### Terminal swapped from Ghostty to Foot (2026-05-28)
 
-The original Decision named **Ghostty** as the metis terminal — inherited
-from the `tier3-desktop-deferred` stack and carried unexamined into
-this ADR. Slice 3 scaffolded a `programs.ghostty.enable = true` module
-on metis (PR #55).
+The original Decision named **Ghostty** as the metis terminal — inherited from the `tier3-desktop-deferred` stack and carried unexamined into this ADR. Slice 3 scaffolded a `programs.ghostty.enable = true` module on metis (PR #55).
 
-Caught while drafting a prior-art research prompt for slice 4: the
-operator's actual intent is **Foot** on Linux desktop hosts, with
-Ghostty reserved for macOS clients. The original ADR text propagated
-the wrong terminal through Decision, Implementation, and Consequences.
-Slice 3 had landed but slice 4 had not, so the surgery is bounded:
-replace `ghostty.nix` with `foot.nix`, swap the `Mod+T → ghostty`
-keybind to `Mod+Return → foot` (also taking the moment to use the
-tiling-WM-canonical `Mod+Return` for terminal-launch), and amend the
-ADR + companion docs to match.
+Caught while drafting a prior-art research prompt for slice 4: the operator's actual intent is **Foot** on Linux desktop hosts, with Ghostty reserved for macOS clients. The original ADR text propagated the wrong terminal through Decision, Implementation, and Consequences. Slice 3 had landed but slice 4 had not, so the surgery is bounded: replace `ghostty.nix` with `foot.nix`, swap the `Mod+T → ghostty` keybind to `Mod+Return → foot` (also taking the moment to use the tiling-WM-canonical `Mod+Return` for terminal-launch), and amend the ADR + companion docs to match.
 
 **Rationale for Foot over Ghostty on Linux desktop:**
 
-- Foot is Wayland-native; doesn't carry the GPU-accelerated TUI
-  feature surface Ghostty brings (less of which is needed inside niri,
-  which already does compositor-level GPU work).
-- Foot's closure is meaningfully smaller — no embedded scripting
-  runtime, no platform abstraction layer.
-- Foot is the historical "lightweight first-class Wayland terminal"
-  in the niri/wlroots/sway lineage; aligns with niri's design
-  philosophy. ADR-011's earlier remote-dev-QoL note already
-  anticipated "linux-workstation lands with foot" — that anticipation
-  is now reality.
-- Ghostty is retained on **macOS clients** (operator's Mac) and via
-  the unchanged `modules/nixos/ghostty-terminfo.nix` standalone
-  module, which ships the `xterm-ghostty` terminfo entry on every
-  host so SSH'ing in from a Ghostty-on-Mac terminal renders cleanly.
-  The Ghostty client posture (Mac → SSH → any host) is untouched.
-- A future `home/darwin/` tree (per the mac-mini onboarding
-  epic, #11) will add `programs.ghostty.enable` for Darwin hosts.
-  The Linux/Darwin split is now: Linux desktop uses Foot, macOS uses
-  Ghostty.
+- Foot is Wayland-native; doesn't carry the GPU-accelerated TUI feature surface Ghostty brings (less of which is needed inside niri, which already does compositor-level GPU work).
+- Foot's closure is meaningfully smaller — no embedded scripting runtime, no platform abstraction layer.
+- Foot is the historical "lightweight first-class Wayland terminal" in the niri/wlroots/sway lineage; aligns with niri's design philosophy. ADR-011's earlier remote-dev-QoL note already anticipated "linux-workstation lands with foot" — that anticipation is now reality.
+- Ghostty is retained on **macOS clients** (operator's Mac) and via the unchanged `modules/nixos/ghostty-terminfo.nix` standalone module, which ships the `xterm-ghostty` terminfo entry on every host so SSH'ing in from a Ghostty-on-Mac terminal renders cleanly. The Ghostty client posture (Mac → SSH → any host) is untouched.
+- A future `home/darwin/` tree (per the mac-mini onboarding epic, #11) will add `programs.ghostty.enable` for Darwin hosts. The Linux/Darwin split is now: Linux desktop uses Foot, macOS uses Ghostty.
 
-Files touched: see the amendment commit (`git log --grep "metis terminal"`).
-Note: line 14's reference to the `tier3-desktop-deferred` git tag is preserved
-verbatim because it accurately describes a historical artefact, not the
-current decision. Stylix's `foot` target is enabled centrally in
-`home/shared/bundles/theming.nix` (since reclassified to
-`home/shared/stylix-targets.nix` per ADR-027 §"`theming.nix`
-reclassified", with foot's target later split out to
-`home/nixos/stylix-targets-desktop.nix` per #11) alongside the other
-TUI targets (inert on non-desktop hosts because Stylix gates the target
-on `programs.foot.enable`).
+Files touched: see the amendment commit (`git log --grep "metis terminal"`). Note: line 14's reference to the `tier3-desktop-deferred` git tag is preserved verbatim because it accurately describes a historical artefact, not the current decision. Stylix's `foot` target is enabled centrally in `home/shared/bundles/theming.nix` (since reclassified to `home/shared/stylix-targets.nix` per ADR-027 §"`theming.nix` reclassified", with foot's target later split out to `home/nixos/stylix-targets-desktop.nix` per #11) alongside the other TUI targets (inert on non-desktop hosts because Stylix gates the target on `programs.foot.enable`).
 
 ### DMS theming decoupled from Stylix (2026-05-29)
 
-The original Decision (item 3 above) named **DMS** as a downstream
-Stylix consumer, with slice 4 to deliver a custom-theme JSON bridge
-emitting from `config.lib.stylix.colors`. Slice 3 landed without
-slice 4, and slice 4 itself never started.
+The original Decision (item 3 above) named **DMS** as a downstream Stylix consumer, with slice 4 to deliver a custom-theme JSON bridge emitting from `config.lib.stylix.colors`. Slice 3 landed without slice 4, and slice 4 itself never started.
 
 Deferring slice 4 indefinitely. Rationale:
 
-- **Aesthetic-only payoff, not load-bearing.** The bridge would make
-  the DMS bar/launcher/notification surfaces shift palette with the
-  host's base16 scheme. Useful when there are multiple desktop hosts
-  to distinguish (e.g. tab between metis and mothership); pays off
-  precisely zero today since metis is the only desktop host. The
-  per-host SSH-context signal value (cited in Consequences above)
-  applies at the TUI layer for remote work, not at the DMS-shell
-  layer for local work.
+- **Aesthetic-only payoff, not load-bearing.** The bridge would make the DMS bar/launcher/notification surfaces shift palette with the host's base16 scheme. Useful when there are multiple desktop hosts to distinguish (e.g. tab between metis and mothership); pays off precisely zero today since metis is the only desktop host. The per-host SSH-context signal value (cited in Consequences above) applies at the TUI layer for remote work, not at the DMS-shell layer for local work.
 
-- **Cost was real.** The base16 → M3 mapping is lossy by construction
-  (16 positional slots vs ~20 named semantic tokens); the §Rationale
-  paragraph above documents the lossiness. Each host's palette would
-  need an eyeball pass on the rendered DMS surface. DMS's schema
-  expanded across v1.x — `settings: allow custom json to render all
-  theme options` shipped in v1.4.4 — so the field set is live-mutating
-  and would require tracking.
+- **Cost was real.** The base16 → M3 mapping is lossy by construction (16 positional slots vs ~20 named semantic tokens); the §Rationale paragraph above documents the lossiness. Each host's palette would need an eyeball pass on the rendered DMS surface. DMS's schema expanded across v1.x — `settings: allow custom json to render all
+  theme options` shipped in v1.4.4 — so the field set is live-mutating and would require tracking.
 
-- **Pattern misfit.** Stylix-consumer modules are downstream readers
-  of `config.lib.stylix.colors` (the macchina banner and Claude
-  statusline are precedents). DMS doesn't quite fit: it ships its own
-  theme engine (matugen) that we would have to actively suppress on
-  every host that imports the bundle. The integration is an
-  always-on subtraction, not an additive consumer.
+- **Pattern misfit.** Stylix-consumer modules are downstream readers of `config.lib.stylix.colors` (the macchina banner and Claude statusline are precedents). DMS doesn't quite fit: it ships its own theme engine (matugen) that we would have to actively suppress on every host that imports the bundle. The integration is an always-on subtraction, not an additive consumer.
 
-- **No production-grade prior art at decision time; one reference has
-  since surfaced.** The §Rationale paragraph "No production-grade
-  prior art exists for Stylix→DMS" was accurate when written; the
-  closest public reference (otherdelusions/nixos-config) was found
-  during slice-4 research and its mapping disagrees with the table
-  this ADR sketched in 9 of ~18 token assignments. Choosing among
-  aesthetically-defensible mappings is not the work the operator
-  wants to spend their time on for a single-desktop-host setup.
+- **No production-grade prior art at decision time; one reference has since surfaced.** The §Rationale paragraph "No production-grade prior art exists for Stylix→DMS" was accurate when written; the closest public reference (otherdelusions/nixos-config) was found during slice-4 research and its mapping disagrees with the table this ADR sketched in 9 of ~18 token assignments. Choosing among aesthetically-defensible mappings is not the work the operator wants to spend their time on for a single-desktop-host setup.
 
-**Revised framing.** Stylix is canonical for the TUI surface (helix,
-bat, fzf, starship, zellij, yazi, lazygit, fish), foot terminal,
-GTK/Qt apps, niri focus-ring/cursor, macchina banner, and Claude
-Code statusline. **DMS is self-contained for its shell theme and
-wallpaper.** `programs.dank-material-shell.enableDynamicTheming =
-false` is load-bearing — it's the single gate in DMS's
-`distro/nix/common.nix:19` that prevents matugen from running
-against the wallpaper and writing files
-(`~/.config/gtk-{3,4}.0/dank-colors.css`,
-`~/.config/qt{5,6}ct/colors/matugen.conf`) that would conflict with
-Stylix's GTK/Qt targets.
+**Revised framing.** Stylix is canonical for the TUI surface (helix, bat, fzf, starship, zellij, yazi, lazygit, fish), foot terminal, GTK/Qt apps, niri focus-ring/cursor, macchina banner, and Claude Code statusline. **DMS is self-contained for its shell theme and wallpaper.** `programs.dank-material-shell.enableDynamicTheming =
+false` is load-bearing — it's the single gate in DMS's `distro/nix/common.nix:19` that prevents matugen from running against the wallpaper and writing files (`~/.config/gtk-{3,4}.0/dank-colors.css`, `~/.config/qt{5,6}ct/colors/matugen.conf`) that would conflict with Stylix's GTK/Qt targets.
 
-`stylix.image` is intentionally not set anywhere in the
-configuration. Stylix has no wallpaper consumer on a DMS-driven host
-(DMS provides its own runtime wallpaper picker; tuigreet has no
-graphical background; DMS owns the lock screen). On headless hosts
-(mercury, nixos-vm), `stylix.image` would be dead weight.
+`stylix.image` is intentionally not set anywhere in the configuration. Stylix has no wallpaper consumer on a DMS-driven host (DMS provides its own runtime wallpaper picker; tuigreet has no graphical background; DMS owns the lock screen). On headless hosts (mercury, nixos-vm), `stylix.image` would be dead weight.
 
 **Consequences specific to this amendment.**
 
 - Slice 4 (issue #34) closes as deferred. No bridge module ships.
-- Two original §Consequences become moot: "Closure grows on metis:
-  ... + matugen (buildtime dep even with dynamic theming off)" is no
-  longer relevant because matugen is now suppressed by the
-  `enableDynamicTheming` gate before reaching the closure;
-  "Migration trigger 2 — Stylix→matugen upstream lands" is no longer
-  a trigger because we no longer have a Stylix↔DMS interface to
-  revisit.
-- Migration trigger 1 (DMS schema drift) and trigger 3 (mothership
-  arrives) still stand. Mothership arrival is the natural moment to
-  revisit slice 4 — at two desktop hosts, the per-host signal at the
-  DMS-shell layer starts paying off.
-- ADR-028's "single source of truth for theming" claim becomes
-  **scoped** rather than universal: Stylix is canonical for
-  Stylix-target-bearing surfaces, not for shell engines that own
-  their own theme system.
+- Two original §Consequences become moot: "Closure grows on metis: ... + matugen (buildtime dep even with dynamic theming off)" is no longer relevant because matugen is now suppressed by the `enableDynamicTheming` gate before reaching the closure; "Migration trigger 2 — Stylix→matugen upstream lands" is no longer a trigger because we no longer have a Stylix↔DMS interface to revisit.
+- Migration trigger 1 (DMS schema drift) and trigger 3 (mothership arrives) still stand. Mothership arrival is the natural moment to revisit slice 4 — at two desktop hosts, the per-host signal at the DMS-shell layer starts paying off.
+- ADR-028's "single source of truth for theming" claim becomes **scoped** rather than universal: Stylix is canonical for Stylix-target-bearing surfaces, not for shell engines that own their own theme system.
 
-The corresponding code change (adding
-`programs.dank-material-shell.enableDynamicTheming = false` to
-`home/nixos/dms.nix` plus a header-comment rewrite, alongside
-two other slice-5-readiness hardening edits) lands in a separate
-follow-up PR. This amendment is docs-only.
+The corresponding code change (adding `programs.dank-material-shell.enableDynamicTheming = false` to `home/nixos/dms.nix` plus a header-comment rewrite, alongside two other slice-5-readiness hardening edits) lands in a separate follow-up PR. This amendment is docs-only.
 
 ### DMS retracted; per-tool selection model adopted (2026-05-29)
 
-The Decision (item 3 above) named DMS as the metis shell; the
-amendment immediately above narrowed DMS's role to "Stylix-decoupled
-but still present." This amendment goes further: **DMS is retracted
-from the configuration entirely.** See [ADR-029](./ADR-029-niri-only-desktop.md)
-for the full retraction record.
+The Decision (item 3 above) named DMS as the metis shell; the amendment immediately above narrowed DMS's role to "Stylix-decoupled but still present." This amendment goes further: **DMS is retracted from the configuration entirely.** See [ADR-029](./ADR-029-niri-only-desktop.md) for the full retraction record.
 
-The retraction was triggered by the slice-5 first-activation on
-metis (issue #67), which surfaced two upstream version-skew failures
-that the 2026-05-29 decoupling amendment above had not anticipated:
+The retraction was triggered by the slice-5 first-activation on metis (issue #67), which surfaced two upstream version-skew failures that the 2026-05-29 decoupling amendment above had not anticipated:
 
-1. DMS's `niri.includes.enable = true` generates `include "..."`
-   directives that niri 25.08 does not parse (DMS source explicitly
-   comments this as a HACK pending [sodiboo/niri-flake#1548](https://github.com/sodiboo/niri-flake/pull/1548)
-   — unmerged at the time of writing). niri silently fell back to
-   defaults; no binds, no shell.
-2. DMS 1.5-beta's `shell.qml` uses `pragma AppId com.danklinux.dms`,
-   which the nixpkgs-pinned quickshell 0.2.1 does not recognise. The
-   shell exited 255 × 5 → systemd start-limit-hit.
+1. DMS's `niri.includes.enable = true` generates `include "..."` directives that niri 25.08 does not parse (DMS source explicitly comments this as a HACK pending [sodiboo/niri-flake#1548](https://github.com/sodiboo/niri-flake/pull/1548) — unmerged at the time of writing). niri silently fell back to defaults; no binds, no shell.
+2. DMS 1.5-beta's `shell.qml` uses `pragma AppId com.danklinux.dms`, which the nixpkgs-pinned quickshell 0.2.1 does not recognise. The shell exited 255 × 5 → systemd start-limit-hit.
 
-Both failures are structural — three independently-pinned upstreams
-with different release cadences. The operator's stance after triage:
-retract DMS rather than continue incremental remediation.
+Both failures are structural — three independently-pinned upstreams with different release cadences. The operator's stance after triage: retract DMS rather than continue incremental remediation.
 
 **Retracted from this ADR:**
-- §Decision item 3 ("DMS theming is decoupled from Stylix") —
-  superseded; DMS removed entirely, not merely decoupled.
+
+- §Decision item 3 ("DMS theming is decoupled from Stylix") — superseded; DMS removed entirely, not merely decoupled.
 - §Implementation slice 4 — formally closed.
 
 **Preserved from this ADR:**
-- §Decision items 1 and 2 stand unchanged (Stylix in foundation;
-  metis as the first desktop host via additive bundle composition).
-- The niri compositor + foot terminal + greetd session entry remain
-  the desktop stack. Stylix targets continue to cover the TUI
-  surface, foot, GTK/Qt apps, and niri focus-ring/cursor.
 
-**New direction:** per-tool selection. Each component (application
-launcher, notification daemon, status bar, browser, IDE) lands with
-its own selection rationale in `docs/desktop/<tool>.md`. The first
-two living documents (`docs/desktop/keybinds.md`,
-`docs/desktop/fonts.md`) landed during issue #69's close-out
-(PRs #79 + #80 + #81 + #82). Per-tool follow-on work is tracked in
-issues #72–#77.
+- §Decision items 1 and 2 stand unchanged (Stylix in foundation; metis as the first desktop host via additive bundle composition).
+- The niri compositor + foot terminal + greetd session entry remain the desktop stack. Stylix targets continue to cover the TUI surface, foot, GTK/Qt apps, and niri focus-ring/cursor.
 
-The corresponding code change — deleting `home/nixos/dms.nix`,
-`modules/nixos/dms-home-bridge.nix`, the `dank-material-shell`
-flake input, and the bundle imports from both `desktop-env` bundles
-— ships in a separate follow-up PR under issue #70. This amendment
-is docs-only.
+**New direction:** per-tool selection. Each component (application launcher, notification daemon, status bar, browser, IDE) lands with its own selection rationale in `docs/desktop/<tool>.md`. The first two living documents (`docs/desktop/keybinds.md`, `docs/desktop/fonts.md`) landed during issue #69's close-out (PRs #79 + #80 + #81 + #82). Per-tool follow-on work is tracked in issues #72–#77.
+
+The corresponding code change — deleting `home/nixos/dms.nix`, `modules/nixos/dms-home-bridge.nix`, the `dank-material-shell` flake input, and the bundle imports from both `desktop-env` bundles — ships in a separate follow-up PR under issue #70. This amendment is docs-only.
 
 ### Stylix palette moved from foundation into stylix-palette.nix (2026-05-31)
 
-Decision item 1 above placed Stylix in foundation by importing
-`inputs.stylix.nixosModules.stylix` *and setting the per-host palette
-inline* in `modules/nixos/foundation.nix`. That inline block
-violated ADR-027's `bundle-purity` rule (foundation must be a pure
-`imports` list), a contradiction that surfaced when #54 P5.1 went to
-build the enforcing lint.
+Decision item 1 above placed Stylix in foundation by importing `inputs.stylix.nixosModules.stylix` *and setting the per-host palette inline* in `modules/nixos/foundation.nix`. That inline block violated ADR-027's `bundle-purity` rule (foundation must be a pure `imports` list), a contradiction that surfaced when #54 P5.1 went to build the enforcing lint.
 
-The stylix module import and the per-host `base16Scheme` lookup now live
-in a dedicated `modules/nixos/stylix-palette.nix`, which foundation
-imports. **Decision items 1 and 2 are unchanged in substance** — Stylix
-is still foundation-wide (every host imports foundation, which imports
-stylix-palette.nix), and the per-host base16 palette from
-`lib/host-palettes.nix` is still the single source of truth. Only the
-*placement* of the wiring moved, so foundation stays a uniform
-imports-list aggregator. Full rationale and the alternatives weighed are
-in ADR-027 §History (2026-05-31). This amendment is docs-only; the code
-change ships under #54.
+The stylix module import and the per-host `base16Scheme` lookup now live in a dedicated `modules/nixos/stylix-palette.nix`, which foundation imports. **Decision items 1 and 2 are unchanged in substance** — Stylix is still foundation-wide (every host imports foundation, which imports stylix-palette.nix), and the per-host base16 palette from `lib/host-palettes.nix` is still the single source of truth. Only the *placement* of the wiring moved, so foundation stays a uniform imports-list aggregator. Full rationale and the alternatives weighed are in ADR-027 §History (2026-05-31). This amendment is docs-only; the code change ships under #54.
 
 ### Amendment (2026-05-31, #123) — Per-host polarity added to the palette entry shape
 
-`lib/host-palettes.nix` entries grew from `hostName → "scheme-string"`
-to `hostName → { scheme; polarity; }`. `modules/nixos/stylix-palette.nix`
-now passes `palette.polarity` through to `stylix.polarity`.
+`lib/host-palettes.nix` entries grew from `hostName → "scheme-string"` to `hostName → { scheme; polarity; }`. `modules/nixos/stylix-palette.nix` now passes `palette.polarity` through to `stylix.polarity`.
 
-Before: Stylix's `polarity` was unset, so it defaulted to `"either"` and
-wrote no dark/light signal — no `gtk-application-prefer-dark-theme`,
-no xdg-desktop-portal color-scheme via the GTK/dconf surfaces, no
-adw-gtk3 dark-variant selection. Dark-aware apps (Firefox web content,
-Zen chrome, GTK file pickers, Qt platform theme) rendered in their
-light defaults despite the host's palette being visually dark
-(rose-pine on metis).
+Before: Stylix's `polarity` was unset, so it defaulted to `"either"` and wrote no dark/light signal — no `gtk-application-prefer-dark-theme`, no xdg-desktop-portal color-scheme via the GTK/dconf surfaces, no adw-gtk3 dark-variant selection. Dark-aware apps (Firefox web content, Zen chrome, GTK file pickers, Qt platform theme) rendered in their light defaults despite the host's palette being visually dark (rose-pine on metis).
 
-After: every host declares its polarity explicitly. Per-host > a global
-`polarity = "dark"` in foundation on whitelist-not-blanket grounds
-(matches the `autoEnable = false` stance) — every dark/light
-declaration is explicit at the entry, and a future light-palette host
-gets a knob without retrofitting the foundation. All three current
-hosts declare `polarity = "dark"`. This amendment is docs-only; the
-code change ships under #123.
+After: every host declares its polarity explicitly. Per-host > a global `polarity = "dark"` in foundation on whitelist-not-blanket grounds (matches the `autoEnable = false` stance) — every dark/light declaration is explicit at the entry, and a future light-palette host gets a knob without retrofitting the foundation. All three current hosts declare `polarity = "dark"`. This amendment is docs-only; the code change ships under #123.
 
 ### Amendment (2026-05-31, follow-up to #123) — Paired schemes per host, polarity drives selection
 
-The #123 interim shape (`{ scheme; polarity; }` as co-declared
-fields) carried a fragility — scheme name and polarity could drift
-apart silently (declare `scheme = "rose-pine"` with
-`polarity = "light"` and Stylix happily writes a dark base16 palette
-while telling apps to prefer-light). Two declarations that must stay
-in lockstep is the implicit-coupling anti-pattern the repo's
-"explicit > implicit" / "single source of truth" stances argue
-against.
+The #123 interim shape (`{ scheme; polarity; }` as co-declared fields) carried a fragility — scheme name and polarity could drift apart silently (declare `scheme = "rose-pine"` with `polarity = "light"` and Stylix happily writes a dark base16 palette while telling apps to prefer-light). Two declarations that must stay in lockstep is the implicit-coupling anti-pattern the repo's "explicit > implicit" / "single source of truth" stances argue against.
 
-Restructured to a *theme family* shape:
-`{ polarity; schemes = { dark; light; }; }`. Polarity drives scheme
-selection in `stylix-palette.nix`
-(`palette.schemes.${palette.polarity}`), so flipping polarity is a
-single edit and the scheme follows automatically. Dark-only hosts can
-omit `schemes.light`; eval throws loudly if polarity is later flipped
-to a variant the host hasn't declared.
+Restructured to a *theme family* shape: `{ polarity; schemes = { dark; light; }; }`. Polarity drives scheme selection in `stylix-palette.nix` (`palette.schemes.${palette.polarity}`), so flipping polarity is a single edit and the scheme follows automatically. Dark-only hosts can omit `schemes.light`; eval throws loudly if polarity is later flipped to a variant the host hasn't declared.
 
-All three current hosts declare both variants from the same base16
-family: metis (rose-pine + rose-pine-dawn), mercury (tokyo-night-dark
-+ tokyo-night-light), nixos-vm (catppuccin-mocha + catppuccin-latte).
-This amendment is docs-only; the code change ships under the
-follow-up to #141.
+All three current hosts declare both variants from the same base16 family: metis (rose-pine + rose-pine-dawn), mercury (tokyo-night-dark
+
+- tokyo-night-light), nixos-vm (catppuccin-mocha + catppuccin-latte). This amendment is docs-only; the code change ships under the follow-up to #141.
 
 ### Amendment (2026-06-10, #331) — Ports must render slot intents; per-host slot corrections added to the palette entry shape
 

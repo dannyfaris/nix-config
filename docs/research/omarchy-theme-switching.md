@@ -57,15 +57,15 @@ color0 = "#32344a"   # … color1 … through … color15
 
 Omarchy has empirically derived the exact "make this running app re-read its theme" mechanism per surface. This *is* the conductor's unresolved reload-signal set, ground-truthed. Mapping to our stack:
 
-| Our surface | Omarchy mechanism | Transfers? |
-|---|---|---|
-| **foot** (terminal) | OSC `10/11/12/17/19` + OSC `4;N` written per pty (see §5) | ✅ directly — refines the design's hedged "SIGUSR1/OSC" to **pure OSC** |
-| **helix** | `pkill -USR1 helix` | ✅ confirms the design's USR1 guess |
-| **niri** | `hyprctl reload` (Omarchy's WM) | ✅ analog `niri msg action load-config-file` (already named) |
-| **fnott** (notifications) | `makoctl reload` (Omarchy uses mako) | ✅ pattern → `fnottctl reload` / SIGHUP |
-| **waybar** | `pkill -9 -x waybar; setsid uwsm-app -- waybar &` | ⚠️ **waybar has no live reload — must hard-restart;** the `setsid`-detach matters so the relaunched bar outlives the activate script |
-| btop (if themed) | `pkill -SIGUSR2 btop` | ✅ |
-| (also seen) | alacritty `touch` mtime; kitty `SIGUSR1`; ghostty/opencode `SIGUSR2`; swayosd systemd restart | — not in our stack |
+| Our surface               | Omarchy mechanism                                                                             | Transfers?                                                                                                                          |
+| ------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **foot** (terminal)       | OSC `10/11/12/17/19` + OSC `4;N` written per pty (see §5)                                     | ✅ directly — refines the design's hedged "SIGUSR1/OSC" to **pure OSC**                                                             |
+| **helix**                 | `pkill -USR1 helix`                                                                           | ✅ confirms the design's USR1 guess                                                                                                 |
+| **niri**                  | `hyprctl reload` (Omarchy's WM)                                                               | ✅ analog `niri msg action load-config-file` (already named)                                                                        |
+| **fnott** (notifications) | `makoctl reload` (Omarchy uses mako)                                                          | ✅ pattern → `fnottctl reload` / SIGHUP                                                                                             |
+| **waybar**                | `pkill -9 -x waybar; setsid uwsm-app -- waybar &`                                             | ⚠️ **waybar has no live reload — must hard-restart;** the `setsid`-detach matters so the relaunched bar outlives the activate script |
+| btop (if themed)          | `pkill -SIGUSR2 btop`                                                                         | ✅                                                                                                                                  |
+| (also seen)               | alacritty `touch` mtime; kitty `SIGUSR1`; ghostty/opencode `SIGUSR2`; swayosd systemd restart | — not in our stack                                                                                                                  |
 
 The taxonomy Omarchy encodes: **live-repaint** (foot OSC, mako/fnott, niri/hyprctl, helix, btop) vs **hard-restart** (waybar, swayosd). Our specialisation `activate` script is structurally the same fan-out, each entry gated on `pgrep`.
 

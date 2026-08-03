@@ -15,6 +15,7 @@ This is a high-freedom guide, not a rigid script. Size the ceremony to the chang
 A change that is **cross-cutting, hard to reverse, or introduces a new pattern** — where getting the design wrong is expensive to undo. The design note is the doc-before-code artifact for it.
 
 **When it does not:**
+
 - **Tool/package/service choice** (adopt, swap, keep, compare) — use the `selecting-tooling` skill; it is this loop specialised for that decision, with the verification gotchas that class needs.
 - **Local, reversible, single-file work** — just build it (with peer review). A design note for a one-line default is the over-enforcement the loop itself warns against.
 
@@ -41,7 +42,7 @@ Design progress (run as operator dialogue — every stage boundary through the s
 
 **4 — De-risk.** Identify the assumption the design rests on and *test it* — eval it, prototype it, read the pinned source — recording the result in the note's De-risk evidence section. State what stays unverified rather than implying coverage you do not have. A note is a proposal, not a guarantee. **The abandon exit is first-class:** a de-risk result that kills the design is a real outcome, not a failure — record the negative result in the design note itself, close the driving issue with it, and stop the loop there.
 
-**5 — Build.** The thinnest slice that delivers value. Commit an abstraction only when a real consumer exists (YAGNI). 
+**5 — Build.** The thinnest slice that delivers value. Commit an abstraction only when a real consumer exists (YAGNI).
 
 **6 — Peer-review.** An independent subagent reviews the note and the staged diff before commit — adversarially. Use [`peer-review-checklist.md`](peer-review-checklist.md): it checks the things the structure lint cannot (is the Motivation actually intent-first, are the alternatives genuinely weighed, is the de-risk honest). Findings and verdict reach the operator before any commit; the operator's "land" is the gate.
 

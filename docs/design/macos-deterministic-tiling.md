@@ -49,22 +49,22 @@ On Linux the tiler *owns* the workspace layer (niri today, Hyprland tomorrow) �
 - **Retire the 6 Hammerspoon geometry handlers** (`shrink/grow/snapPresetWidth/center/fullscreen/maximize`); manual geometry is superseded by AeroSpace's tiling. The trial confirmed them redundant.
 - **AeroSpace claims both sets of chords** — those freed by deleting the Karabiner Mission-Control layer *and* those vacated by the retired Hammerspoon handlers — via a new `aerospace-action` realization (immovable force 4), mirroring the `niri-action` bind for the same capability ID. AeroSpace binds are *verbs* in its TOML `[mode.main.binding]` block — the same shape as `niri-action` — and accept `ctrl-alt` (§De-risk), so the Hyper chord maps directly. The trial settled the mapping below; Phase B ([#494](https://github.com/dannyfaris/nix-config/issues/494)) single-sources it through the `aerospace-action` emitter (simple verbs) with two hand-authored complex binds (edge-scroll, maximise-by-isolation):
 
-| Chord | Capability (was) | → AeroSpace realization | Status *(trial-settled)* |
-|---|---|---|---|
-| `Hyper+←/→` | focus-column-left/right | edge-scroll fallthrough — `focus --boundaries-action fail` ` \|\| workspace --wrap-around` + land-far-column (hand-authored) | Remapped — *darwin-specific*, not a faithful `focus-column` mirror |
-| `Hyper+↑/↓` | focus-window-up/down | `focus up/down` | Remapped |
-| `Hyper+Shift+←/→/↑/↓` | move-* | `move left/right/up/down` | Remapped |
-| `Hyper+1‑9` | focus-workspace-N | `workspace N` | Remapped — 1–9, see ¹ |
-| `Hyper+Shift+1‑9` | move-to-workspace-N | `move-node-to-workspace N` | Remapped — 1–9, see ¹ |
-| `Hyper+Tab` | overview | `workspace-back-and-forth` | Repurposed (no AeroSpace overview) |
-| `Hyper+Shift+M` | maximize-column (niri-ism) | maximise-by-isolation — move to first empty workspace (hand-authored) | New — AeroSpace has no stable maximize |
-| `Hyper+,` | — | `layout tiles accordion` (single toggle) | New |
-| `Hyper+Shift+;` | — | `mode service` (modal leader for low-frequency ops) | New |
-| `Hyper+Return` | spawn-terminal (was HS) | `exec-and-forget open -na Ghostty.app` (always a new window — the spike) | Remapped — **HS retired** |
-| `Hyper+B` | spawn-browser (was HS) | `exec-and-forget open -a "Google Chrome"` | Remapped — **HS retired** |
-| `Hyper+F` · `M` · `E` · `S` · `/` | fullscreen · maximize · — · — · — | `open -a` Finder · Messages · Outlook · Slack · 1Password | New — app-launch (reuses the freed geometry keys) |
-| `Hyper+−` / `=` | shrink/grow (was HS) | — | **Dropped** — geometry is auto-tiled |
-| `Hyper+R` · `C` · `Super+↑/↓` | preset-width · center · switch-workspace | — | **Dropped** — darwin N/A (capability IDs kept for Linux) |
+| Chord                             | Capability (was)                         | → AeroSpace realization                                                                                                     | Status *(trial-settled)*                                           |
+| --------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `Hyper+←/→`                       | focus-column-left/right                  | edge-scroll fallthrough — `focus --boundaries-action fail` `\|\| workspace --wrap-around` + land-far-column (hand-authored) | Remapped — *darwin-specific*, not a faithful `focus-column` mirror |
+| `Hyper+↑/↓`                       | focus-window-up/down                     | `focus up/down`                                                                                                             | Remapped                                                           |
+| `Hyper+Shift+←/→/↑/↓`             | move-*                                   | `move left/right/up/down`                                                                                                   | Remapped                                                           |
+| `Hyper+1‑9`                       | focus-workspace-N                        | `workspace N`                                                                                                               | Remapped — 1–9, see ¹                                              |
+| `Hyper+Shift+1‑9`                 | move-to-workspace-N                      | `move-node-to-workspace N`                                                                                                  | Remapped — 1–9, see ¹                                              |
+| `Hyper+Tab`                       | overview                                 | `workspace-back-and-forth`                                                                                                  | Repurposed (no AeroSpace overview)                                 |
+| `Hyper+Shift+M`                   | maximize-column (niri-ism)               | maximise-by-isolation — move to first empty workspace (hand-authored)                                                       | New — AeroSpace has no stable maximize                             |
+| `Hyper+,`                         | —                                        | `layout tiles accordion` (single toggle)                                                                                    | New                                                                |
+| `Hyper+Shift+;`                   | —                                        | `mode service` (modal leader for low-frequency ops)                                                                         | New                                                                |
+| `Hyper+Return`                    | spawn-terminal (was HS)                  | `exec-and-forget open -na Ghostty.app` (always a new window — the spike)                                                    | Remapped — **HS retired**                                          |
+| `Hyper+B`                         | spawn-browser (was HS)                   | `exec-and-forget open -a "Google Chrome"`                                                                                   | Remapped — **HS retired**                                          |
+| `Hyper+F` · `M` · `E` · `S` · `/` | fullscreen · maximize · — · — · —        | `open -a` Finder · Messages · Outlook · Slack · 1Password                                                                   | New — app-launch (reuses the freed geometry keys)                  |
+| `Hyper+−` / `=`                   | shrink/grow (was HS)                     | —                                                                                                                           | **Dropped** — geometry is auto-tiled                               |
+| `Hyper+R` · `C` · `Super+↑/↓`     | preset-width · center · switch-workspace | —                                                                                                                           | **Dropped** — darwin N/A (capability IDs kept for Linux)           |
 
 ¹ The trial exercised workspaces **1–4**; **Phase B binds all nine (1–9)** — an operator decision to extend, not a trial-settled count. The registry already generates the 1–9 workspace capabilities (`focusWorkspaces`/`moveToWorkspaces` over `lib.range 1 9` in `lib/capabilities.nix`), so nine is the natural emitter output.
 

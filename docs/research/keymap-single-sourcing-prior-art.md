@@ -8,16 +8,16 @@ Status: **research note, not a decision.** Captured from a deep-research run (5 
 
 ## 2. The landscape
 
-| Tool | What it is | Single-source → *many* targets? | Collision / availability lint? | Linux **and** macOS? | Licence |
-|---|---|---|---|---|---|
-| [HotkeyClash](https://github.com/Wunderlandmedia/HotkeyClash) | macOS conflict scanner (Karabiner + skhd + system + running apps) | No — emits nothing | **Yes** (collision *and* availability) | macOS only | GPL-2.0 |
-| [PowerToys 0.94](https://devblogs.microsoft.com/commandline/powertoys-0-94-is-here-settings-search-shortcut-conflict-detection-and-more/) | Windows settings-UI conflict detection + OS-reserved labelling | No | **Yes** | Windows only | MIT |
-| [home-manager `sxhkd`](https://github.com/nix-community/home-manager/blob/master/modules/services/sxhkd.nix) | Nix attrs → `sxhkdrc` | No — single target | No | Linux (X11) | MIT |
-| [home-manager `i3-sway`](https://github.com/nix-community/home-manager/blob/master/modules/services/window-managers/i3-sway/lib/options.nix) | shared schema → i3 *or* sway config | No — sibling emitters, each single-target | No | Linux | MIT |
-| [home-manager darwin keybindings](https://github.com/nix-community/home-manager/blob/master/modules/targets/darwin/keybindings.nix) | Nix → `DefaultKeyBinding.dict` (Cocoa) | No — single target | No | macOS only | MIT |
-| [xremap](https://github.com/xremap/xremap) | JSON-compatible config → evdev/uinput remap | No — applies to itself | No | Linux only | MIT |
-| [kanata](https://github.com/jtroo/kanata) | runtime cross-platform remapper | No — runtime interceptor, one keymap | No | Linux/macOS/Win | LGPL-3.0 |
-| [Kinto](https://github.com/rbreaves/kinto) | Mac-style keymap for non-Apple OSes | No — separate per-platform engines | No | Linux/Win (not macOS) | OSS |
+| Tool                                                                                                                                         | What it is                                                        | Single-source → *many* targets?           | Collision / availability lint?         | Linux **and** macOS?  | Licence  |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------- | -------------------------------------- | --------------------- | -------- |
+| [HotkeyClash](https://github.com/Wunderlandmedia/HotkeyClash)                                                                                | macOS conflict scanner (Karabiner + skhd + system + running apps) | No — emits nothing                        | **Yes** (collision *and* availability) | macOS only            | GPL-2.0  |
+| [PowerToys 0.94](https://devblogs.microsoft.com/commandline/powertoys-0-94-is-here-settings-search-shortcut-conflict-detection-and-more/)    | Windows settings-UI conflict detection + OS-reserved labelling    | No                                        | **Yes**                                | Windows only          | MIT      |
+| [home-manager `sxhkd`](https://github.com/nix-community/home-manager/blob/master/modules/services/sxhkd.nix)                                 | Nix attrs → `sxhkdrc`                                             | No — single target                        | No                                     | Linux (X11)           | MIT      |
+| [home-manager `i3-sway`](https://github.com/nix-community/home-manager/blob/master/modules/services/window-managers/i3-sway/lib/options.nix) | shared schema → i3 *or* sway config                               | No — sibling emitters, each single-target | No                                     | Linux                 | MIT      |
+| [home-manager darwin keybindings](https://github.com/nix-community/home-manager/blob/master/modules/targets/darwin/keybindings.nix)          | Nix → `DefaultKeyBinding.dict` (Cocoa)                            | No — single target                        | No                                     | macOS only            | MIT      |
+| [xremap](https://github.com/xremap/xremap)                                                                                                   | JSON-compatible config → evdev/uinput remap                       | No — applies to itself                    | No                                     | Linux only            | MIT      |
+| [kanata](https://github.com/jtroo/kanata)                                                                                                    | runtime cross-platform remapper                                   | No — runtime interceptor, one keymap      | No                                     | Linux/macOS/Win       | LGPL-3.0 |
+| [Kinto](https://github.com/rbreaves/kinto)                                                                                                   | Mac-style keymap for non-Apple OSes                               | No — separate per-platform engines        | No                                     | Linux/Win (not macOS) | OSS      |
 
 ## 3. The two halves, never fused
 

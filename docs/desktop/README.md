@@ -1,117 +1,79 @@
 # Desktop environment selections
 
-Living documents for the operator's desktop tools — primarily the
-Wayland desktop environment on metis (and any future Linux desktop
-host), and also the per-tool selections on macOS clients (neptune
-and any future Mac) where a tool is the operator's daily-driver
-GUI for that platform. Each per-tool document captures a selection,
-the rationale, alternatives considered, configuration choices,
-sharp edges, and references.
+Living documents for the operator's desktop tools — primarily the Wayland desktop environment on metis (and any future Linux desktop host), and also the per-tool selections on macOS clients (neptune and any future Mac) where a tool is the operator's daily-driver GUI for that platform. Each per-tool document captures a selection, the rationale, alternatives considered, configuration choices, sharp edges, and references.
 
-The per-tool doc shape transfers cleanly across the platform line:
-selections that span Linux desktop and macOS (e.g., a terminal where
-one variant ships on each side, or a cross-platform GUI app like
-Tailscale) land here as a single doc covering both platforms.
+The per-tool doc shape transfers cleanly across the platform line: selections that span Linux desktop and macOS (e.g., a terminal where one variant ships on each side, or a cross-platform GUI app like Tailscale) land here as a single doc covering both platforms.
 
-This directory complements `docs/decisions/` (Architecture Decision
-Records). Where ADRs record *decisions at a moment in time* (immutable
-except for §History amendments), the documents here are *living
-selections + rationale*: they update as the desktop evolves. A new
-binding, a new font, a new sharp edge — those amend the doc in-place
-rather than creating a new artifact.
+This directory complements `docs/decisions/` (Architecture Decision Records). Where ADRs record *decisions at a moment in time* (immutable except for §History amendments), the documents here are *living selections + rationale*: they update as the desktop evolves. A new binding, a new font, a new sharp edge — those amend the doc in-place rather than creating a new artifact.
 
 ## Index
 
 ### Linux desktop (metis)
 
-| Doc | Subject | Landed |
-|---|---|---|
-| [keybinds.md](./keybinds.md) | Cross-platform keybind taxonomy (audited target) — `Hyper` command layer + `Super` (Cmd-parity); per-platform realization via keyd / Karabiner / niri / AeroSpace + the registry | #80 |
-| [fonts.md](./fonts.md) | Stylix-driven font selections + two-wires install model | #81 + #82 |
-| [niri.md](./niri.md) | Niri compositor selection rationale | #71 |
-| [foot.md](./foot.md) | Foot terminal selection (Linux); Ghostty retained on macOS clients | #72 |
-| [fuzzel.md](./fuzzel.md) | Fuzzel application launcher (Mod+Space) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #73 |
-| [fnott.md](./fnott.md) | Fnott notification daemon (third dnkl-family member) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #74 |
-| [waybar.md](./waybar.md) | Waybar status bar (top of screen; tray + workspaces + clock + network) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #75 |
-| [noctalia.md](./noctalia.md) | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036 | ADR-036 (#385) |
-| [firefox.md](./firefox.md) | Firefox browser (Gecko engine; native Wayland; default URL handler) | #76 |
-| [thunderbird.md](./thunderbird.md) | Thunderbird email client (personal Gmail + iCloud; Gecko toolkit shared with Firefox; runtime/GUI-managed accounts; polarity-follows/palette-vanilla) | #388 |
-| [gnome-keyring.md](./gnome-keyring.md) | Secret Service / keyring for desktop app credentials (PAM auto-unlock) | #104 |
-| [polkit.md](./polkit.md) | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target | #103 |
-| [popups.md](./popups.md) | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred) | #308 |
-| [screen-sharing.md](./screen-sharing.md) | Screencast backend — keep niri-flake's `xdg-desktop-portal-gnome` driving niri's native `Mutter.ScreenCast` over PipeWire (wiring verified present; RemoteDesktop unsupported upstream) | #101 |
-| [removable-media.md](./removable-media.md) | USB auto-mount — udisks2 + udiskie (tray-less, fnott notifications) + yazi `mount` plugin; exfatprogs/ntfs3g/dosfstools helpers; passwordless (independent of #103) | #105 |
-| [keyd.md](./keyd.md) | keyd caps-lock → Hyper (Super+Ctrl+Alt+Shift) — realizes the keybinds.md Hyper namespace on metis, mirroring the mac's Karabiner | — |
-| [input.md](./input.md) | Input device config — device layer (G502 HERO DPI/buttons/onboard profiles via libratbag/ratbagd + Piper, settings travel on the mouse) + compositor layer (key-repeat/scroll/`accel-profile "flat"` via niri's category `input` block) | #107 |
-| [screen-lock.md](./screen-lock.md) | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) — _decommissioned, replaced by Noctalia (ADR-036, #385)_ | #97 |
-| [power-session.md](./power-session.md) | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) — _mooted (unbuilt), subsumed by Noctalia (ADR-036, #385)_ | #98 |
-| [audio.md](./audio.md) | Audio stack for the niri desktop — PipeWire sound server + volume/mute, media transport, status-bar indicator, graphical mixer; Bluetooth + patchbay routing out of scope | #96 |
-| [clipboard.md](./clipboard.md) | Clipboard persistence + history — _the `clipse` selection was never built; subsumed by Noctalia (ADR-036, #385); session-PATH `wl-clipboard` gap fixed under #360_ | #99 |
-| [visual-identity.md](./visual-identity.md) | The desktop's aesthetic north-star (living doc) — typography / colour / line-weight / radii / spacing / motion / pointer intent the per-surface selection docs implement against | #108 |
-| [zen.md](./zen.md) | Zen browser — _audit-phase parallel install vs Firefox (#127); audit concluded in Firefox's favour, Zen retired_ | #127 |
+| Doc                                        | Subject                                                                                                                                                                                                                                 | Landed         |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| [keybinds.md](./keybinds.md)               | Cross-platform keybind taxonomy (audited target) — `Hyper` command layer + `Super` (Cmd-parity); per-platform realization via keyd / Karabiner / niri / AeroSpace + the registry                                                        | #80            |
+| [fonts.md](./fonts.md)                     | Stylix-driven font selections + two-wires install model                                                                                                                                                                                 | #81 + #82      |
+| [niri.md](./niri.md)                       | Niri compositor selection rationale                                                                                                                                                                                                     | #71            |
+| [foot.md](./foot.md)                       | Foot terminal selection (Linux); Ghostty retained on macOS clients                                                                                                                                                                      | #72            |
+| [fuzzel.md](./fuzzel.md)                   | Fuzzel application launcher (Mod+Space) — *decommissioned, replaced by Noctalia (ADR-036, #385)*                                                                                                                                        | #73            |
+| [fnott.md](./fnott.md)                     | Fnott notification daemon (third dnkl-family member) — *decommissioned, replaced by Noctalia (ADR-036, #385)*                                                                                                                           | #74            |
+| [waybar.md](./waybar.md)                   | Waybar status bar (top of screen; tray + workspaces + clock + network) — *decommissioned, replaced by Noctalia (ADR-036, #385)*                                                                                                         | #75            |
+| [noctalia.md](./noctalia.md)               | Cohesive Quickshell shell + sole theming authority on the Linux desktop (bar/launcher/notifications/lock/OSD/wallpaper/idle); subsumes waybar/fuzzel/fnott/swaylock there. See ADR-036                                                  | ADR-036 (#385) |
+| [firefox.md](./firefox.md)                 | Firefox browser (Gecko engine; native Wayland; default URL handler)                                                                                                                                                                     | #76            |
+| [thunderbird.md](./thunderbird.md)         | Thunderbird email client (personal Gmail + iCloud; Gecko toolkit shared with Firefox; runtime/GUI-managed accounts; polarity-follows/palette-vanilla)                                                                                   | #388           |
+| [gnome-keyring.md](./gnome-keyring.md)     | Secret Service / keyring for desktop app credentials (PAM auto-unlock)                                                                                                                                                                  | #104           |
+| [polkit.md](./polkit.md)                   | Graphical authentication agent — swap niri-flake's KDE agent for mate-polkit (GTK3, base16-themed); drop the now-vestigial Stylix `qt` target                                                                                           | #103           |
+| [popups.md](./popups.md)                   | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred)                                                                                  | #308           |
+| [screen-sharing.md](./screen-sharing.md)   | Screencast backend — keep niri-flake's `xdg-desktop-portal-gnome` driving niri's native `Mutter.ScreenCast` over PipeWire (wiring verified present; RemoteDesktop unsupported upstream)                                                 | #101           |
+| [removable-media.md](./removable-media.md) | USB auto-mount — udisks2 + udiskie (tray-less, fnott notifications) + yazi `mount` plugin; exfatprogs/ntfs3g/dosfstools helpers; passwordless (independent of #103)                                                                     | #105           |
+| [keyd.md](./keyd.md)                       | keyd caps-lock → Hyper (Super+Ctrl+Alt+Shift) — realizes the keybinds.md Hyper namespace on metis, mirroring the mac's Karabiner                                                                                                        | —              |
+| [input.md](./input.md)                     | Input device config — device layer (G502 HERO DPI/buttons/onboard profiles via libratbag/ratbagd + Piper, settings travel on the mouse) + compositor layer (key-repeat/scroll/`accel-profile "flat"` via niri's category `input` block) | #107           |
+| [screen-lock.md](./screen-lock.md)         | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) — *decommissioned, replaced by Noctalia (ADR-036, #385)*                                                                          | #97            |
+| [power-session.md](./power-session.md)     | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) — *mooted (unbuilt), subsumed by Noctalia (ADR-036, #385)*                                                                                          | #98            |
+| [audio.md](./audio.md)                     | Audio stack for the niri desktop — PipeWire sound server + volume/mute, media transport, status-bar indicator, graphical mixer; Bluetooth + patchbay routing out of scope                                                               | #96            |
+| [clipboard.md](./clipboard.md)             | Clipboard persistence + history — *the `clipse` selection was never built; subsumed by Noctalia (ADR-036, #385); session-PATH `wl-clipboard` gap fixed under #360*                                                                      | #99            |
+| [visual-identity.md](./visual-identity.md) | The desktop's aesthetic north-star (living doc) — typography / colour / line-weight / radii / spacing / motion / pointer intent the per-surface selection docs implement against                                                        | #108           |
+| [zen.md](./zen.md)                         | Zen browser — *audit-phase parallel install vs Firefox (#127); audit concluded in Firefox's favour, Zen retired*                                                                                                                        | #127           |
 
 ### macOS clients (neptune)
 
-| Doc | Subject | Landed |
-|---|---|---|
-| [ghostty.md](./ghostty.md) | Ghostty terminal (Mac-only; GPU-accelerated); nix-homebrew cask | #13 |
-| [slack.md](./slack.md) | Slack chat client (work daily-driver); MAS via `homebrew.masApps` — first managed MAS app | #11 |
-| [chrome.md](./chrome.md) | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone | #11 |
-| [microsoft-365.md](./microsoft-365.md) | Microsoft 365 — Word, Excel, PowerPoint, Outlook; MAS via `homebrew.masApps`. Teams excluded — runs in Chrome at teams.microsoft.com, see doc §Sharp edges | #11 |
-| [amphetamine.md](./amphetamine.md) | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution) | #11 |
-| [typora.md](./typora.md) | Typora markdown editor (cross-platform) — macOS Homebrew cask + Sparkle silent (clause-2 carve-out); NixOS `pkgs.typora` + default markdown handler | #11 |
-| [obsidian.md](./obsidian.md) | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out) | #11 |
-| [cursor.md](./cursor.md) | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out) | #11 |
-| [colima.md](./colima.md) | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021. | #11 |
-| [claude-desktop.md](./claude-desktop.md) | Anthropic Claude desktop client; Homebrew cask + custom in-app updater (clause-1) | #11 |
-| [chatgpt.md](./chatgpt.md) | OpenAI ChatGPT desktop client; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
-| [gemini.md](./gemini.md) | Google Gemini desktop client; Homebrew cask + Keystone (clause-1; SHARES Keystone agent with Chrome) | #11 |
-| [fellow.md](./fellow.md) | Fellow meeting agendas / notes / action items; Homebrew cask + Electron-style updater (clause-1) | #11 |
-| [wispr-flow.md](./wispr-flow.md) | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1) | #11 |
-| [alt-tab.md](./alt-tab.md) | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out) | #11 |
-| [utm.md](./utm.md) | UTM virtualisation platform (hosted nixos-vm, decommissioned #634); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline) | #11 |
-| [karabiner.md](./karabiner.md) | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out) | #11 |
-| [hammerspoon.md](./hammerspoon.md) | **Decommissioned (ADR-040, #494)** — retired from the macOS interaction stack; AeroSpace + Karabiner only. Retained as the selection record for the Hammerspoon era | #11 |
-| [macos-window-management.md](./macos-window-management.md) | **Superseded (ADR-040, #494)** — the pure-Hammerspoon / native-fullscreen-Spaces model is replaced by AeroSpace (tiling WM). Retained as the selection record; current design → [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md) | #440 |
+| Doc                                                        | Subject                                                                                                                                                                                                                                                  | Landed |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| [ghostty.md](./ghostty.md)                                 | Ghostty terminal (Mac-only; GPU-accelerated); nix-homebrew cask                                                                                                                                                                                          | #13    |
+| [slack.md](./slack.md)                                     | Slack chat client (work daily-driver); MAS via `homebrew.masApps` — first managed MAS app                                                                                                                                                                | #11    |
+| [chrome.md](./chrome.md)                                   | Google Chrome (daily-driver browser); Homebrew cask + silent-via-Keystone                                                                                                                                                                                | #11    |
+| [microsoft-365.md](./microsoft-365.md)                     | Microsoft 365 — Word, Excel, PowerPoint, Outlook; MAS via `homebrew.masApps`. Teams excluded — runs in Chrome at teams.microsoft.com, see doc §Sharp edges                                                                                               | #11    |
+| [amphetamine.md](./amphetamine.md)                         | Amphetamine keep-awake utility; MAS via `homebrew.masApps` (MAS-only distribution)                                                                                                                                                                       | #11    |
+| [typora.md](./typora.md)                                   | Typora markdown editor (cross-platform) — macOS Homebrew cask + Sparkle silent (clause-2 carve-out); NixOS `pkgs.typora` + default markdown handler                                                                                                      | #11    |
+| [obsidian.md](./obsidian.md)                               | Obsidian PKM / notes; Homebrew cask + in-app updater (clause-2 carve-out)                                                                                                                                                                                | #11    |
+| [cursor.md](./cursor.md)                                   | Cursor IDE Darwin install-path only (IDE-selection rationale stays in module head per "Deliberate no-doc"); Homebrew cask + ToDesktop updater (clause-2 carve-out)                                                                                       | #11    |
+| [colima.md](./colima.md)                                   | colima container runtime (CLI/daemon — not a GUI tool); nixpkgs clause-1 default. Deeper decision in ADR-021.                                                                                                                                            | #11    |
+| [claude-desktop.md](./claude-desktop.md)                   | Anthropic Claude desktop client; Homebrew cask + custom in-app updater (clause-1)                                                                                                                                                                        | #11    |
+| [chatgpt.md](./chatgpt.md)                                 | OpenAI ChatGPT desktop client; Homebrew cask + Sparkle silent (clause-2 carve-out)                                                                                                                                                                       | #11    |
+| [gemini.md](./gemini.md)                                   | Google Gemini desktop client; Homebrew cask + Keystone (clause-1; SHARES Keystone agent with Chrome)                                                                                                                                                     | #11    |
+| [fellow.md](./fellow.md)                                   | Fellow meeting agendas / notes / action items; Homebrew cask + Electron-style updater (clause-1)                                                                                                                                                         | #11    |
+| [wispr-flow.md](./wispr-flow.md)                           | Wispr Flow voice-to-text dictation; Homebrew cask + Electron-style updater (clause-1)                                                                                                                                                                    | #11    |
+| [alt-tab.md](./alt-tab.md)                                 | AltTab window-level alt-tab switcher; Homebrew cask + Sparkle silent (clause-2 carve-out)                                                                                                                                                                | #11    |
+| [utm.md](./utm.md)                                         | UTM virtualisation platform (hosted nixos-vm, decommissioned #634); `pkgs.utm` via nix-darwin (no clause fires — nixpkgs baseline)                                                                                                                       | #11    |
+| [karabiner.md](./karabiner.md)                             | Karabiner-Elements caps-lock → Hyper remap (realizes the keybinds.md Hyper namespace on macOS); Homebrew cask + Sparkle (pkg-enclosure, admin prompt per update) (clause-2 carve-out)                                                                    | #11    |
+| [hammerspoon.md](./hammerspoon.md)                         | **Decommissioned (ADR-040, #494)** — retired from the macOS interaction stack; AeroSpace + Karabiner only. Retained as the selection record for the Hammerspoon era                                                                                      | #11    |
+| [macos-window-management.md](./macos-window-management.md) | **Superseded (ADR-040, #494)** — the pure-Hammerspoon / native-fullscreen-Spaces model is replaced by AeroSpace (tiling WM). Retained as the selection record; current design → [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md) | #440   |
 
-_macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on neptune, not pending._
+*macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on neptune, not pending.*
 
 ### Cross-platform (NixOS desktop + macOS)
 
-| Doc | Subject | Landed |
-|---|---|---|
-| [tailscale.md](./tailscale.md) | Tailscale mesh-VPN (NixOS service + macOS cask) | #13 |
-| [1password.md](./1password.md) | 1Password password manager (macOS cask today; NixOS desktop adoption tracked separately) | #13 |
+| Doc                            | Subject                                                                                  | Landed |
+| ------------------------------ | ---------------------------------------------------------------------------------------- | ------ |
+| [tailscale.md](./tailscale.md) | Tailscale mesh-VPN (NixOS service + macOS cask)                                          | #13    |
+| [1password.md](./1password.md) | 1Password password manager (macOS cask today; NixOS desktop adoption tracked separately) | #13    |
 
-**Naming gotcha — Anthropic's Claude desktop.** The per-tool doc
-is [`claude-desktop.md`](./claude-desktop.md), not `claude.md`,
-because Claude Code (the agentic CLI used to author this repo)
-treats files named `CLAUDE.md` as project-level instructions.
-On case-insensitive macOS filesystems (APFS default), a
-`claude.md` file resolves the same as a `CLAUDE.md` and gets
-loaded as instructions — surprising behaviour for what is meant
-to be a per-tool selection doc. The `-desktop` suffix
-disambiguates. Other docs in this directory can keep their
-short names because none of them collide with Claude Code's
-reserved filenames.
+**Naming gotcha — Anthropic's Claude desktop.** The per-tool doc is [`claude-desktop.md`](./claude-desktop.md), not `claude.md`, because Claude Code (the agentic CLI used to author this repo) treats files named `CLAUDE.md` as project-level instructions. On case-insensitive macOS filesystems (APFS default), a `claude.md` file resolves the same as a `CLAUDE.md` and gets loaded as instructions — surprising behaviour for what is meant to be a per-tool selection doc. The `-desktop` suffix disambiguates. Other docs in this directory can keep their short names because none of them collide with Claude Code's reserved filenames.
 
-**Deliberate no-doc:** #77 (Cursor IDE) landed without a per-tool
-selection doc — Cursor is a foregone install across all the
-operator's hosts, not a selection weighed against alternatives.
-Rationale + Wayland-enablement notes live in the module head
-comments at [`home/nixos/cursor-ide.nix`](../../home/nixos/cursor-ide.nix)
-and [`modules/nixos/electron-wayland.nix`](../../modules/nixos/electron-wayland.nix).
-This is the documented exception to the §"Doc precedes
-implementation" rule in [workflow.md](../workflow.md): it
-applies to *selections*, not to foregone installs where no
-alternative was weighed.
+**Deliberate no-doc:** #77 (Cursor IDE) landed without a per-tool selection doc — Cursor is a foregone install across all the operator's hosts, not a selection weighed against alternatives. Rationale + Wayland-enablement notes live in the module head comments at [`home/nixos/cursor-ide.nix`](../../home/nixos/cursor-ide.nix) and [`modules/nixos/electron-wayland.nix`](../../modules/nixos/electron-wayland.nix). This is the documented exception to the §"Doc precedes implementation" rule in [workflow.md](../workflow.md): it applies to *selections*, not to foregone installs where no alternative was weighed.
 
-The Darwin install-path selection (cask vs. `pkgs.code-cursor`)
-*is* an ADR-031 selection-with-alternatives at a different
-layer, and it lives in [`cursor.md`](./cursor.md) — narrowly
-scoped to the install-path question, with the IDE-selection
-question explicitly out of scope. The "no-doc" precedent for
-IDE-vs-IDE remains intact.
+The Darwin install-path selection (cask vs. `pkgs.code-cursor`) *is* an ADR-031 selection-with-alternatives at a different layer, and it lives in [`cursor.md`](./cursor.md) — narrowly scoped to the install-path question, with the IDE-selection question explicitly out of scope. The "no-doc" precedent for IDE-vs-IDE remains intact.
 
 ## Document structure
 
@@ -126,59 +88,41 @@ Two shapes have emerged so far:
 - **Sharp edges** — known gotchas, version skews, things to revisit.
 - **References** — ADRs, GitHub issues, upstream docs.
 
-**Cross-cutting docs** (e.g., `keybinds.md`, `fonts.md`) don't fit the
-per-tool shape because they span tools. They're structured around the
-topic — for keybinds, that's modifier-namespace philosophy + bind
-tables; for fonts, that's selections + installation model + sharp edges.
+**Cross-cutting docs** (e.g., `keybinds.md`, `fonts.md`) don't fit the per-tool shape because they span tools. They're structured around the topic — for keybinds, that's modifier-namespace philosophy + bind tables; for fonts, that's selections + installation model + sharp edges.
 
 Both shapes share:
+
 - Lead with selections/decisions, not background.
 - Honest sharp-edges section with rationale.
 - See-also or References at the end with cross-links.
 
 ## Conventions for evolution
 
-**Doc precedes implementation.** Every selection (tool, font,
-application, bind) lands its rationale here BEFORE the implementing
-commit. The doc captures *why* at the moment of decision; future
-readers follow the trail from doc → implementation.
+**Doc precedes implementation.** Every selection (tool, font, application, bind) lands its rationale here BEFORE the implementing commit. The doc captures *why* at the moment of decision; future readers follow the trail from doc → implementation.
 
 **Commit-count cadence per PR:**
+
 - Doc-only changes: 1 commit.
 - Selection landing with implementation: 2 commits (doc, then code).
 - Selection landing with a keybind: 3 commits (doc, code, bind manifest update).
 
 The doc commit is always first regardless of count.
 
-**Living documents — small, regular updates.** Add one bind / font /
-configuration toggle at a time. Don't batch up large doc-rewrites — a
-small targeted addition is easier to review than multi-week accretion.
+**Living documents — small, regular updates.** Add one bind / font / configuration toggle at a time. Don't batch up large doc-rewrites — a small targeted addition is easier to review than multi-week accretion.
 
-**No silent additions.** If the codebase has a binding/font/tool not
-represented in the relevant doc here, that's a cadence bug — fix the
-doc.
+**No silent additions.** If the codebase has a binding/font/tool not represented in the relevant doc here, that's a cadence bug — fix the doc.
 
 ## ADR or `docs/desktop/`?
 
 Both kinds of artifact live in `docs/`. They serve different purposes:
 
-- **ADR** — load-bearing project-level decisions with explicit
-  consequences and migration triggers. Immutable historical record.
-  Example: "DMS retracted; niri-only direction"
-  ([ADR-029](../decisions/ADR-029-niri-only-desktop.md)).
-- **`docs/desktop/`** — selection-level decisions for the desktop env.
-  Living, updateable. Example: "niri's scrollable-tiling over
-  sway/river/Hyprland" (see [niri.md](./niri.md)).
+- **ADR** — load-bearing project-level decisions with explicit consequences and migration triggers. Immutable historical record. Example: "DMS retracted; niri-only direction" ([ADR-029](../decisions/ADR-029-niri-only-desktop.md)).
+- **`docs/desktop/`** — selection-level decisions for the desktop env. Living, updateable. Example: "niri's scrollable-tiling over sway/river/Hyprland" (see [niri.md](./niri.md)).
 
-When in doubt, ADR for direction-shaping decisions; `docs/desktop/`
-for tool-level selections. Cross-link freely between them.
+When in doubt, ADR for direction-shaping decisions; `docs/desktop/` for tool-level selections. Cross-link freely between them.
 
 ## See also
 
-- [`docs/decisions/`](../decisions/) — Architecture Decision Records
-  (the immutable history). ADR-028 + ADR-029 frame the desktop's
-  overall posture.
-- [`docs/README.md`](../README.md) — top-level reference-documentation
-  entry point.
-- [`CLAUDE.md`](../../CLAUDE.md) — the AI-entry-point; the desktop-env
-  section references this directory's documents.
+- [`docs/decisions/`](../decisions/) — Architecture Decision Records (the immutable history). ADR-028 + ADR-029 frame the desktop's overall posture.
+- [`docs/README.md`](../README.md) — top-level reference-documentation entry point.
+- [`CLAUDE.md`](../../CLAUDE.md) — the AI-entry-point; the desktop-env section references this directory's documents.

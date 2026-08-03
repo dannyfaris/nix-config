@@ -2,64 +2,31 @@
 
 > **Decommissioned 2026-06-18** ([ADR-036](../decisions/ADR-036-noctalia-shell-linux-desktop.md), #385). Replaced on the Linux desktop by Noctalia Shell's launcher (Mod+Space → `noctalia-shell ipc call launcher toggle`) — see [noctalia.md](./noctalia.md). The `home/nixos/fuzzel.nix` module and its Stylix target were removed; this document is retained as the selection record for the fuzzel era.
 
-Wayland-native application launcher. Same project family as foot
-(dnkl on codeberg); same philosophy — small closure, no runtime
-ballast, built for the wlroots/niri lineage. Bound to Mod+Space per
-the macOS Spotlight pattern.
+Wayland-native application launcher. Same project family as foot (dnkl on codeberg); same philosophy — small closure, no runtime ballast, built for the wlroots/niri lineage. Bound to Mod+Space per the macOS Spotlight pattern.
 
 ## Selection
 
-**fuzzel** on metis. Enabled via `home/nixos/fuzzel.nix` (HM
-module `programs.fuzzel.enable = true`). Bound to `Mod+Space` in
-`home/nixos/niri.nix`. Stylix integration via
-`stylix.targets.fuzzel.enable = true` in
-`home/shared/stylix-targets.nix`.
+**fuzzel** on metis. Enabled via `home/nixos/fuzzel.nix` (HM module `programs.fuzzel.enable = true`). Bound to `Mod+Space` in `home/nixos/niri.nix`. Stylix integration via `stylix.targets.fuzzel.enable = true` in `home/shared/stylix-targets.nix`.
 
 ## Rationale
 
-**Same dnkl family as foot; same architectural fit for niri.** Foot
-and fuzzel are both written by dnkl, share idioms (INI config, signal
-handling, debug output), and are designed for the wlroots/niri/sway
-lineage. We accepted that family for the terminal (#72); fuzzel is
-the consistent extension on the launcher side. Small Wayland-native
-compositor, small Wayland-native terminal, small Wayland-native
-launcher — same posture across the chrome.
+**Same dnkl family as foot; same architectural fit for niri.** Foot and fuzzel are both written by dnkl, share idioms (INI config, signal handling, debug output), and are designed for the wlroots/niri/sway lineage. We accepted that family for the terminal (#72); fuzzel is the consistent extension on the launcher side. Small Wayland-native compositor, small Wayland-native terminal, small Wayland-native launcher — same posture across the chrome.
 
-**Niri community default.** Fuzzel is the launcher most niri configs
-reach for; niri's own docs reference it; sodiboo's niri-flake
-examples include it. Not deterministic, but a strong signal that the
-combination is well-trodden.
+**Niri community default.** Fuzzel is the launcher most niri configs reach for; niri's own docs reference it; sodiboo's niri-flake examples include it. Not deterministic, but a strong signal that the combination is well-trodden.
 
-**Mod+Space matches macOS Spotlight muscle memory.** The operator's
-day-to-day spans Linux desktop + macOS; binding the launcher to the
-same key on both platforms keeps muscle memory consistent without
-forcing either side to adopt the other's conventions.
+**Mod+Space matches macOS Spotlight muscle memory.** The operator's day-to-day spans Linux desktop + macOS; binding the launcher to the same key on both platforms keeps muscle memory consistent without forcing either side to adopt the other's conventions.
 
 ## Alternatives considered
 
-**rofi-wayland** — Wayland fork of the X11-only upstream rofi.
-Mature, lots of themes, dmenu + launcher in one. Passed over: larger
-closure (cairo + GTK dependencies); fork status means it tracks
-upstream rofi rather than being a first-class project; heavier than
-necessary when we don't exercise the theme/plugin breadth.
+**rofi-wayland** — Wayland fork of the X11-only upstream rofi. Mature, lots of themes, dmenu + launcher in one. Passed over: larger closure (cairo + GTK dependencies); fork status means it tracks upstream rofi rather than being a first-class project; heavier than necessary when we don't exercise the theme/plugin breadth.
 
-**anyrun** — Plugin-based Rust launcher. Active. Passed over because
-the plugin model adds complexity we won't exercise for a single-user
-solo setup; closure includes Rust runtime + plugin host overhead.
+**anyrun** — Plugin-based Rust launcher. Active. Passed over because the plugin model adds complexity we won't exercise for a single-user solo setup; closure includes Rust runtime + plugin host overhead.
 
-**walker** — Go-based launcher with plugin support. Active. Passed
-over for similar reasons to anyrun; smaller community + niri-specific
-adoption than fuzzel.
+**walker** — Go-based launcher with plugin support. Active. Passed over for similar reasons to anyrun; smaller community + niri-specific adoption than fuzzel.
 
-**tofi** — Single-binary minimal launcher, similar philosophy to
-fuzzel. The real alternative if fuzzel didn't exist. Passed over
-because fuzzel is the niri-community default and is part of the
-dnkl family alongside foot — project-coherence outweighs tofi's
-narrowly-comparable footprint.
+**tofi** — Single-binary minimal launcher, similar philosophy to fuzzel. The real alternative if fuzzel didn't exist. Passed over because fuzzel is the niri-community default and is part of the dnkl family alongside foot — project-coherence outweighs tofi's narrowly-comparable footprint.
 
-**bemenu** — Wayland-native dmenu clone. Different category (dmenu
-mode only, no `.desktop` app launcher). Could pair with another tool
-to do what fuzzel does in one — extra moving part for no win.
+**bemenu** — Wayland-native dmenu clone. Different category (dmenu mode only, no `.desktop` app launcher). Could pair with another tool to do what fuzzel does in one — extra moving part for no win.
 
 ## Configuration
 
@@ -79,16 +46,9 @@ to do what fuzzel does in one — extra moving part for no win.
 }
 ```
 
-Lives under `home/nixos/` because fuzzel is Wayland-only and
-doesn't compile off Linux — there is no cross-platform variant to
-share. Same placement reasoning as `home/nixos/foot.nix`; the
-shared-purity rule (ADR-027) gates `home/shared/` on packages
-that build on both NixOS and Darwin, which fuzzel doesn't. Imported
-into the desktop-env HM bundle.
+Lives under `home/nixos/` because fuzzel is Wayland-only and doesn't compile off Linux — there is no cross-platform variant to share. Same placement reasoning as `home/nixos/foot.nix`; the shared-purity rule (ADR-027) gates `home/shared/` on packages that build on both NixOS and Darwin, which fuzzel doesn't. Imported into the desktop-env HM bundle.
 
-Visible-line count, width, padding, and other layout values use
-fuzzel's defaults — explicitly not tuned for pixel-Spotlight parity.
-See Sharp edges if visual footprint reads wrong later.
+Visible-line count, width, padding, and other layout values use fuzzel's defaults — explicitly not tuned for pixel-Spotlight parity. See Sharp edges if visual footprint reads wrong later.
 
 **Stylix integration** — `home/shared/stylix-targets.nix`:
 
@@ -97,31 +57,12 @@ stylix.targets.fuzzel.enable = true;
 ```
 
 Stylix writes two sets of `programs.fuzzel.settings`:
-- `colors.*` — full base16 palette mapped to fuzzel's eleven colour
-  slots (background, text, prompt, match, selection, etc.).
-- `main.icon-theme` — picked from `stylix.polarity` via
-  `stylix.icons.{dark,light}`.
 
-`home/nixos/fuzzel.nix` overrides the font and the border. **Font**:
-`main.font` is `lib.mkForce`d to the **mono** face (`Monaspace Argon
-Nerd Font`) — Stylix's fuzzel target writes the sansSerif slot, but
-under the hybrid font model the launcher is *driven* chrome
-(Omarchy-style), so it rides the terminal's mono alongside foot and
-waybar rather than the content sans. Its size is the launcher's own
-**display-profile** value (not a Stylix slot): the launcher is the one
-deliberately-larger focal element (Spotlight-style), so it sits a step
-above the rest of the band — at metis's 2× profile, size 11. **Border**:
-`border.width` and `border.radius` come from the geometry tokens
-(`lib/theme-tokens.nix`, #369), which are display-profile-scaled — at
-metis's 2× profile that renders width 2 / radius 9 (the on-vocab
-reference is 2 / `md` 12; fuzzel previously rode its own default radius
-10, now pinned to the shared token so it matches niri/fnott).
-`colors.border → base0D`, the idiomatic focus accent, matching niri's
-window border. Stylix maps the border to base0E; the two slots are
-equal on metis's palette today, so the colour is a no-op *there* but
-correct by slot for portability. Other colours come from Stylix
-unchanged; the operator-facing settings (layer/anchor/terminal) are
-behaviour, not theming. See the accent map (#108).
+- `colors.*` — full base16 palette mapped to fuzzel's eleven colour slots (background, text, prompt, match, selection, etc.).
+- `main.icon-theme` — picked from `stylix.polarity` via `stylix.icons.{dark,light}`.
+
+`home/nixos/fuzzel.nix` overrides the font and the border. **Font**: `main.font` is `lib.mkForce`d to the **mono** face (`Monaspace Argon
+Nerd Font`) — Stylix's fuzzel target writes the sansSerif slot, but under the hybrid font model the launcher is *driven* chrome (Omarchy-style), so it rides the terminal's mono alongside foot and waybar rather than the content sans. Its size is the launcher's own **display-profile** value (not a Stylix slot): the launcher is the one deliberately-larger focal element (Spotlight-style), so it sits a step above the rest of the band — at metis's 2× profile, size 11. **Border**: `border.width` and `border.radius` come from the geometry tokens (`lib/theme-tokens.nix`, #369), which are display-profile-scaled — at metis's 2× profile that renders width 2 / radius 9 (the on-vocab reference is 2 / `md` 12; fuzzel previously rode its own default radius 10, now pinned to the shared token so it matches niri/fnott). `colors.border → base0D`, the idiomatic focus accent, matching niri's window border. Stylix maps the border to base0E; the two slots are equal on metis's palette today, so the colour is a no-op *there* but correct by slot for portability. Other colours come from Stylix unchanged; the operator-facing settings (layer/anchor/terminal) are behaviour, not theming. See the accent map (#108).
 
 **Keybind** — `home/nixos/niri.nix`:
 
@@ -129,65 +70,25 @@ behaviour, not theming. See the accent map (#108).
 "Mod+Space".action.spawn = "fuzzel";
 ```
 
-Per the macOS Spotlight muscle-memory pattern. This is the
-launcher-side interim deviation flagged in `keybinds.md`'s
-Implementation status table; the philosophical target if a Hyper
-layer is ever realised would be `Hyper+Space`. The keybinds doc
-updates in this PR's third commit.
+Per the macOS Spotlight muscle-memory pattern. This is the launcher-side interim deviation flagged in `keybinds.md`'s Implementation status table; the philosophical target if a Hyper layer is ever realised would be `Hyper+Space`. The keybinds doc updates in this PR's third commit.
 
 ## Sharp edges
 
-**`Mod+Space` is reserved space in the keybinds philosophy.** The
-three-namespace model in `keybinds.md` reserves `Hyper+Space` for
-launcher under a hypothetical Hyper modifier (via keyd or
-equivalent). The Hyper layer isn't implemented; `Mod+Space` is the
-interim home. If Hyper ever lands, this bind migrates to
-`Hyper+Space` cleanly (one line in niri config). Restated here so a
-future contributor reading fuzzel.md alone doesn't wonder why we're
-on `Mod+` instead of `Hyper+`.
+**`Mod+Space` is reserved space in the keybinds philosophy.** The three-namespace model in `keybinds.md` reserves `Hyper+Space` for launcher under a hypothetical Hyper modifier (via keyd or equivalent). The Hyper layer isn't implemented; `Mod+Space` is the interim home. If Hyper ever lands, this bind migrates to `Hyper+Space` cleanly (one line in niri config). Restated here so a future contributor reading fuzzel.md alone doesn't wonder why we're on `Mod+` instead of `Hyper+`.
 
-**Layout values stay at fuzzel's defaults.** Visible-line count
-(15), width (30 chars), padding, and similar layout values are
-fuzzel's defaults — explicitly accepted day-1 rather than tuned
-toward pixel-Spotlight parity. If the visual footprint reads wrong
-in actual use, add `lines = N`, `width = N`, or padding tweaks to
-`settings.main`. The shape is easier to feel than to spec, so we
-defer the tuning until the desktop sees real wear.
+**Layout values stay at fuzzel's defaults.** Visible-line count (15), width (30 chars), padding, and similar layout values are fuzzel's defaults — explicitly accepted day-1 rather than tuned toward pixel-Spotlight parity. If the visual footprint reads wrong in actual use, add `lines = N`, `width = N`, or padding tweaks to `settings.main`. The shape is easier to feel than to spec, so we defer the tuning until the desktop sees real wear.
 
-**`.desktop`-file Terminal=true requires the `terminal` setting.**
-Without `terminal = "foot"`, fuzzel falls back to whatever it
-guesses for CLI apps (often `xterm`, which we don't install) and
-the launch silently fails. The setting above wires it explicitly.
+**`.desktop`-file Terminal=true requires the `terminal` setting.** Without `terminal = "foot"`, fuzzel falls back to whatever it guesses for CLI apps (often `xterm`, which we don't install) and the launch silently fails. The setting above wires it explicitly.
 
-**`icon-theme` not written until `stylix.icons` is configured.**
-The §Configuration claim that Stylix writes
-`programs.fuzzel.settings.main.icon-theme` is conditional on
-`stylix.icons.{dark,light}` being set. We haven't configured those,
-so the generated `fuzzel.ini` carries no `icon-theme=` line and
-fuzzel falls back to whatever icon theme it picks by default. Not a
-launcher-functionality blocker (`.desktop` apps still launch); only
-affects icon glyph rendering inside the launcher overlay. Separate
-follow-up if/when icon-theme integration matters.
+**`icon-theme` not written until `stylix.icons` is configured.** The §Configuration claim that Stylix writes `programs.fuzzel.settings.main.icon-theme` is conditional on `stylix.icons.{dark,light}` being set. We haven't configured those, so the generated `fuzzel.ini` carries no `icon-theme=` line and fuzzel falls back to whatever icon theme it picks by default. Not a launcher-functionality blocker (`.desktop` apps still launch); only affects icon glyph rendering inside the launcher overlay. Separate follow-up if/when icon-theme integration matters.
 
-**Wayland-only; Linux-only build.** Fuzzel doesn't compile off
-Linux — same constraint as foot. Hence the `home/nixos/`
-placement (per Configuration). If a Darwin host ever imports the
-desktop-env HM bundle directly, eval will fail on `pkgs.fuzzel`.
-Mac side gets its own launcher when `home/darwin/` lands
-(per the mac-mini onboarding epic #11) — likely Raycast or
-Alfred via nix-darwin's app management, not a port of fuzzel.
+**Wayland-only; Linux-only build.** Fuzzel doesn't compile off Linux — same constraint as foot. Hence the `home/nixos/` placement (per Configuration). If a Darwin host ever imports the desktop-env HM bundle directly, eval will fail on `pkgs.fuzzel`. Mac side gets its own launcher when `home/darwin/` lands (per the mac-mini onboarding epic #11) — likely Raycast or Alfred via nix-darwin's app management, not a port of fuzzel.
 
 ## References
 
-- [`home/nixos/fuzzel.nix`](../../home/nixos/fuzzel.nix)
-  — the HM module enabling fuzzel.
-- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix)
-  — `stylix.targets.fuzzel.enable = true`.
-- [`home/nixos/niri.nix`](../../home/nixos/niri.nix) —
-  `Mod+Space` → fuzzel bind.
-- [keybinds.md](./keybinds.md) — modifier-namespace philosophy;
-  Implementation status's "interim deviations" section captures the
-  `Mod+Space` → eventual `Hyper+Space` migration story.
-- [foot.md](./foot.md) — sibling dnkl-family project; terminal that
-  fuzzel spawns for `.desktop` files with `Terminal=true`.
+- [`home/nixos/fuzzel.nix`](../../home/nixos/fuzzel.nix) — the HM module enabling fuzzel.
+- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix) — `stylix.targets.fuzzel.enable = true`.
+- [`home/nixos/niri.nix`](../../home/nixos/niri.nix) — `Mod+Space` → fuzzel bind.
+- [keybinds.md](./keybinds.md) — modifier-namespace philosophy; Implementation status's "interim deviations" section captures the `Mod+Space` → eventual `Hyper+Space` migration story.
+- [foot.md](./foot.md) — sibling dnkl-family project; terminal that fuzzel spawns for `.desktop` files with `Terminal=true`.
 - fuzzel upstream — https://codeberg.org/dnkl/fuzzel

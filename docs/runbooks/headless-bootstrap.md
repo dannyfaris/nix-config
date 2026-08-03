@@ -1,39 +1,23 @@
 # Headless bootstrap
 
-Operational procedure for bringing a `headless` role host from clean state
-(running Ubuntu / live USB / fresh hardware) to a fully-managed `nh os
+Operational procedure for bringing a `headless` role host from clean state (running Ubuntu / live USB / fresh hardware) to a fully-managed `nh os
 switch` target.
 
-Single procedure for both AWS and bare metal — the install step is
-identical (`nixos-anywhere` + `disko` with pre-injected SSH host keys);
-only the preconditions differ.
+Single procedure for both AWS and bare metal — the install step is identical (`nixos-anywhere` + `disko` with pre-injected SSH host keys); only the preconditions differ.
 
-See [ADR-022](../decisions/ADR-022-headless-bootstrap-nixos-anywhere.md)
-for the bootstrap decision and [ADR-023](../decisions/ADR-023-host-config-three-file-structure.md)
-for the per-host file layout this runbook assumes.
+See [ADR-022](../decisions/ADR-022-headless-bootstrap-nixos-anywhere.md) for the bootstrap decision and [ADR-023](../decisions/ADR-023-host-config-three-file-structure.md) for the per-host file layout this runbook assumes.
 
-> Two prior host-specific runbooks (`headless-bootstrap-aws.md` and
-> `headless-bootstrap-metis.md`) are superseded by this document. They
-> remain in git history for reference.
+> Two prior host-specific runbooks (`headless-bootstrap-aws.md` and `headless-bootstrap-metis.md`) are superseded by this document. They remain in git history for reference.
 
 ## Operator prerequisites
 
 Run once per fresh clone of this repo on the operator machine:
 
-- `nix` with flakes enabled. `just` available — not yet a home-manager
-  package, so use ad-hoc invocation: `nix shell nixpkgs#just -c just
+- `nix` with flakes enabled. `just` available — not yet a home-manager package, so use ad-hoc invocation: `nix shell nixpkgs#just -c just
   <recipe>` or `nix run nixpkgs#just -- <recipe>`.
-- This repo cloned, with the devShell entered once (`nix develop`, or
-  direnv-reload via the repo's `.envrc`). The devShell's shellHook
-  installs `.git/hooks/pre-commit` and clears any stale `core.hooksPath`
-  setting; the hook enforces ADR-023's "don't hand-edit
-  `hardware-configuration.nix`" rule. See ADR-025 for the framework.
+- This repo cloned, with the devShell entered once (`nix develop`, or direnv-reload via the repo's `.envrc`). The devShell's shellHook installs `.git/hooks/pre-commit` and clears any stale `core.hooksPath` setting; the hook enforces ADR-023's "don't hand-edit `hardware-configuration.nix`" rule. See ADR-025 for the framework.
 - An existing age decryption identity for `secrets/secrets.yaml` — i.e. access to a current `.sops.yaml` recipient (docs/design/fleet-key-custody.md): either the standalone operator key (populated from the vault into `~/.config/sops/age/keys.txt` on the operator's Macs — darwin-bootstrap.md pre-bootstrap step 1) or a NixOS secret-holder's host-key identity (on metis, derive once with `just setup-sops-identity`; one-time-per-fresh-clone, idempotent). `sops updatekeys` (step 2 below) runs wherever such an identity lives. Without one, the bootstrap pre-flight will refuse to proceed.
-- An `~/.ssh/config.local` entry for the host being bootstrapped, so
-  the operator can `ssh <host>` without typing the full target string.
-  `home/shared/ssh.nix` includes this file at file scope; entries
-  there survive `nh os switch` (unlike `~/.ssh/config`, which
-  home-manager owns). Example for an AWS host:
+- An `~/.ssh/config.local` entry for the host being bootstrapped, so the operator can `ssh <host>` without typing the full target string. `home/shared/ssh.nix` includes this file at file scope; entries there survive `nh os switch` (unlike `~/.ssh/config`, which home-manager owns). Example for an AWS host:
 
   ```
   Host <host>
@@ -42,98 +26,51 @@ Run once per fresh clone of this repo on the operator machine:
     IdentityFile ~/.ssh/<host>.pem
   ```
 
-  The matchBlock is needed only during bootstrap (the `ubuntu` /
-  `nixos` account is gone post-install and `root` SSH is disabled;
-  you'll SSH as `dbf` from your Mac afterwards). You can leave the
-  entry in place or remove it post-bootstrap — either is fine.
+  The matchBlock is needed only during bootstrap (the `ubuntu` / `nixos` account is gone post-install and `root` SSH is disabled; you'll SSH as `dbf` from your Mac afterwards). You can leave the entry in place or remove it post-bootstrap — either is fine.
 - The new host's `sshEdges` entry in `lib/operator.nix` names the source hosts you'll SSH from, with their `hostKeys` entries current (ADR-042 — `modules/nixos/users.nix` derives each host's authorized keys from these). Once `nixos-anywhere` completes, those edge-derived keys are the sole inbound credentials — get them right before, not after.
-- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md
-  §Private flake inputs). Nix fetches *all* inputs at eval, so both
-  ends need it or eval dies at fetch with an HTTP 404: the operator
-  machine (the bootstrap's `--flake .#<host>` evals locally), and the
-  new host itself before its first on-host rebuild. One-time per
-  machine, after `gh auth login`:
+- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md §Private flake inputs). Nix fetches *all* inputs at eval, so both ends need it or eval dies at fetch with an HTTP 404: the operator machine (the bootstrap's `--flake .#<host>` evals locally), and the new host itself before its first on-host rebuild. One-time per machine, after `gh auth login`:
 
   ```
   install -d -m 700 ~/.config/nix && umask 077 && printf 'access-tokens = github.com=%s\n' "$(gh auth token)" > ~/.config/nix/nix.conf
   ```
 
-  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the
-  file is unmanaged and holds only this line. `gh auth token` returns a
-  session-lifetime OAuth token: a later rebuild 404-ing on the input is
-  the refresh signal (re-run the line). CI's equivalent, the PAT
-  behind it, and the declarative fleet-wide alternative are in
-  docs/ci.md §Private flake inputs.
+  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the file is unmanaged and holds only this line. `gh auth token` returns a session-lifetime OAuth token: a later rebuild 404-ing on the input is the refresh signal (re-run the line). CI's equivalent, the PAT behind it, and the declarative fleet-wide alternative are in docs/ci.md §Private flake inputs.
 
 ## Per-host preconditions
 
 ### AWS host
 
-- A running Linux instance (Ubuntu, Debian, Amazon Linux — any modern
-  kernel that supports kexec). Ubuntu 26.04 LTS or similar tested.
-- SSH reachable as a sudo-capable user (typically `ubuntu` on Ubuntu
-  AMIs; `admin` on Debian; `ec2-user` on Amazon Linux). The user must
-  have passwordless sudo.
-- Security group: TCP 22 open to the operator's public IP. Restrict;
-  don't use `0.0.0.0/0`.
-- Instance type with at least **1.5 GiB free RAM during install** —
-  `nixos-anywhere` kexecs into a NixOS installer that runs from
-  memory. t3.micro (1 GiB) is borderline; t3.small (2 GiB) is fine;
-  t3.medium (4 GiB) is comfortable.
-- EBS root volume ≥20 GiB (30 GiB comfortable for a dev box). Resize
-  *before* conversion — non-destructive bump in the AWS console.
-- `hosts/<host>/disko.nix` references the correct `/dev` path. On
-  Nitro hypervisor (t3.\*, m5.\*, c5.\* and later) this is
-  `/dev/nvme0n1`. Pre-Nitro instances (t2.\*, m4.\*, c4.\*) use
-  `/dev/xvda` — verify with `lsblk` from the target host and update
-  `disko.nix` if needed.
-- *Optional but recommended:* snapshot the EBS volume **before**
-  invoking `just bootstrap`. `nixos-anywhere` is destructive (wipes
-  the disk); a pre-install snapshot gives you a true rollback option
-  via terminate + relaunch if Instance Connect and Serial Console
-  both fail. See Break-glass below.
+- A running Linux instance (Ubuntu, Debian, Amazon Linux — any modern kernel that supports kexec). Ubuntu 26.04 LTS or similar tested.
+- SSH reachable as a sudo-capable user (typically `ubuntu` on Ubuntu AMIs; `admin` on Debian; `ec2-user` on Amazon Linux). The user must have passwordless sudo.
+- Security group: TCP 22 open to the operator's public IP. Restrict; don't use `0.0.0.0/0`.
+- Instance type with at least **1.5 GiB free RAM during install** — `nixos-anywhere` kexecs into a NixOS installer that runs from memory. t3.micro (1 GiB) is borderline; t3.small (2 GiB) is fine; t3.medium (4 GiB) is comfortable.
+- EBS root volume ≥20 GiB (30 GiB comfortable for a dev box). Resize *before* conversion — non-destructive bump in the AWS console.
+- `hosts/<host>/disko.nix` references the correct `/dev` path. On Nitro hypervisor (t3.\*, m5.\*, c5.\* and later) this is `/dev/nvme0n1`. Pre-Nitro instances (t2.\*, m4.\*, c4.\*) use `/dev/xvda` — verify with `lsblk` from the target host and update `disko.nix` if needed.
+- *Optional but recommended:* snapshot the EBS volume **before** invoking `just bootstrap`. `nixos-anywhere` is destructive (wipes the disk); a pre-install snapshot gives you a true rollback option via terminate + relaunch if Instance Connect and Serial Console both fail. See Break-glass below.
 
 ### Bare-metal host (Metis, future bare-metal hosts)
 
-> **Bare-metal hosts require physical access** until verification
-> completes. Do not attempt to bootstrap remotely.
+> **Bare-metal hosts require physical access** until verification completes. Do not attempt to bootstrap remotely.
 
-- Latest NixOS 25.11 minimal ISO flashed to a ≥4 GiB USB stick.
-  (Wi-Fi-only targets may need the unfree-firmware ISO build.)
+- Latest NixOS 25.11 minimal ISO flashed to a ≥4 GiB USB stick. (Wi-Fi-only targets may need the unfree-firmware ISO build.)
   - Lenovo business firmware (ThinkCentre-class) with CSM disabled can enumerate **no UEFI boot entry** from the official ISO's `dd`-style isohybrid layout — the image is MBR with a ~3 MB FAT12 EFI partition the firmware won't read, so the F12 menu shows an empty device list while the same stick still boots fine in Legacy mode. Re-`dd`-ing any NixOS ISO reproduces the identical layout; the remedy is a Ventoy stick installed GPT (`ventoy -i -g /dev/sdX`) with the ISO copied onto its data partition, then the VTOYEFI partition retyped to EFI System (`sfdisk --part-type /dev/sdX 2 C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) so the pickiest firmware scans it.
   - nixpkgs' `ventoy` is both unfree- and insecure-flagged; a one-off `NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ALLOW_INSECURE=1 nix build --impure` is an acceptable carve-out for throwaway install media only — it never joins a host config or the `allowUnfreePredicate` whitelist.
-- Target booted from USB to a `nixos@nixos` shell. Enable sshd
-  (`sudo systemctl start sshd`) and set a temporary `nixos` password
-  (`sudo passwd nixos`). The live USB's `nixos` user has passwordless
-  sudo by default, so `nixos-anywhere` can elevate as needed during
-  step 3.
-- Two SSH public keys appended to `/home/nixos/.ssh/authorized_keys`
-  (or `/root/.ssh/authorized_keys` if connecting as root):
+- Target booted from USB to a `nixos@nixos` shell. Enable sshd (`sudo systemctl start sshd`) and set a temporary `nixos` password (`sudo passwd nixos`). The live USB's `nixos` user has passwordless sudo by default, so `nixos-anywhere` can elevate as needed during step 3.
+- Two SSH public keys appended to `/home/nixos/.ssh/authorized_keys` (or `/root/.ssh/authorized_keys` if connecting as root):
   1. **The operator machine's public key** — whatever machine will run `just bootstrap` (any host holding a sops decryption identity — see §Operator prerequisites). On that machine, `cat ~/.ssh/id_ed25519.pub`. `nixos-anywhere`'s `ssh-copy-id` runs non-interactively from the operator, so without an already-authorized operator key it will exhaust `MaxAuthTries` and fail with `Too many authentication failures`. Cloud hosts sidestep this via an AMI keypair (`<host>.pem`) referenced from `~/.ssh/config.local`; bare metal has no equivalent and the operator key must be seeded by hand.
   2. **The source-host keys from the new host's `sshEdges` entry** (`lib/operator.nix`, ADR-042). These are the *post-install* credentials — once `nixos-anywhere` completes and `users.mutableUsers = false` activates, the edge-derived keys become `dbf`'s sole inbound credentials. The operator key from (1) is discarded with the live USB and never authorized for `dbf`.
 
-  Smoke-test both *before* kicking off step 3: from the operator
-  machine, `ssh -o BatchMode=yes nixos@<target> 'echo ok'` must
-  succeed without password.
-- Network reachable from operator. Wired ethernet picks up DHCP
-  automatically; Wi-Fi needs `sudo systemctl start wpa_supplicant`
-  then `wpa_cli` (or `nmtui` if present).
-- BIOS prepared: Secure Boot off, UEFI on (Legacy/CSM off), "After
-  Power Loss: On" (or "Previous State") for unattended reboot,
-  Wake-on-LAN optional. Update BIOS firmware while you're here — much
-  easier from the pre-OS HP updater than from Linux later.
+  Smoke-test both *before* kicking off step 3: from the operator machine, `ssh -o BatchMode=yes nixos@<target> 'echo ok'` must succeed without password.
+- Network reachable from operator. Wired ethernet picks up DHCP automatically; Wi-Fi needs `sudo systemctl start wpa_supplicant` then `wpa_cli` (or `nmtui` if present).
+- BIOS prepared: Secure Boot off, UEFI on (Legacy/CSM off), "After Power Loss: On" (or "Previous State") for unattended reboot, Wake-on-LAN optional. Update BIOS firmware while you're here — much easier from the pre-OS HP updater than from Linux later.
   - Encrypted-at-rest host (the fleet default, §Encrypted hosts): verify the security chip is TPM **2.0** and **enabled** — Intel PTT can ship disabled on business boxes, and the TPM2 auto-unseal keyslot depends on it (#637 decision 9). Verify, don't clear.
   - Out-of-band-management candidate (vPro-class, e.g. the M920q): record the AMT/vPro SKU (CPU model, or MEBx via Ctrl+P) while at the firmware — it feeds the enable-and-harden-vs-leave-disabled decision (#637); leave AMT unprovisioned/off here, never "Permanently Disabled" (irreversible).
-- `hosts/<host>/disko.nix` device path verified with `lsblk` from the
-  live USB. The HP ProDesk 600 G3 Desktop Mini ships in multiple storage
-  variants — `/dev/nvme0n1` is most common but not universal.
-- A monitor and USB keyboard physically attached to the target until
-  verification completes — your only console if anything goes wrong.
+- `hosts/<host>/disko.nix` device path verified with `lsblk` from the live USB. The HP ProDesk 600 G3 Desktop Mini ships in multiple storage variants — `/dev/nvme0n1` is most common but not universal.
+- A monitor and USB keyboard physically attached to the target until verification completes — your only console if anything goes wrong.
 
 ## Install (shared procedure)
 
-Run from the operator machine, inside this repo. Steps 1, 2, and 4
-require operator action; step 3 is the `nixos-anywhere` invocation.
+Run from the operator machine, inside this repo. Steps 1, 2, and 4 require operator action; step 3 is the `nixos-anywhere` invocation.
 
 ### Step 1 — Generate the host SSH key
 
@@ -142,31 +79,18 @@ just gen-host-key <host>
 ```
 
 This:
-- Stages an ed25519 host key in `/dev/shm/nix-bootstrap-<host>/etc/ssh/` —
-  or `…/persist/etc/ssh/` for a host whose config sets `persist.enable`,
-  where the key's canonical home is `/persist` (sshd's configured key
-  paths; the #553 auth-path relocation). The `just bootstrap` pre-flight
-  asserts the staged tree contains the exact path the target host's
-  `sops.age.sshKeyPaths` evaluates to — staging to the wrong location is
-  a first-boot auth lockout (sops warns-and-continues on a missing key),
-  so the interlock refuses to install rather than let it boot.
-  (In-memory tmpfs on Linux; disk-backed but unlinked on cleanup on
-  macOS.)
-- Prints the age recipient (e.g. `age1abc…`) for adding to
-  `.sops.yaml`.
+
+- Stages an ed25519 host key in `/dev/shm/nix-bootstrap-<host>/etc/ssh/` — or `…/persist/etc/ssh/` for a host whose config sets `persist.enable`, where the key's canonical home is `/persist` (sshd's configured key paths; the #553 auth-path relocation). The `just bootstrap` pre-flight asserts the staged tree contains the exact path the target host's `sops.age.sshKeyPaths` evaluates to — staging to the wrong location is a first-boot auth lockout (sops warns-and-continues on a missing key), so the interlock refuses to install rather than let it boot. (In-memory tmpfs on Linux; disk-backed but unlinked on cleanup on macOS.)
+- Prints the age recipient (e.g. `age1abc…`) for adding to `.sops.yaml`.
 - Prints the YAML snippet to merge into `.sops.yaml`.
 
-The recipe is idempotent against stale runs — if `/dev/shm/nix-bootstrap-<host>`
-already exists, it errors and tells you to run `just bootstrap-clean`.
+The recipe is idempotent against stale runs — if `/dev/shm/nix-bootstrap-<host>` already exists, it errors and tells you to run `just bootstrap-clean`.
 
 ### Step 2 — Add the host as a sops recipient
 
-Manual; intentionally out-of-band because automated YAML editing is
-fragile.
+Manual; intentionally out-of-band because automated YAML editing is fragile.
 
-1. Edit `.sops.yaml`. Add the new anchor under `keys:` (preserving
-   existing anchors) and reference it in the relevant `key_groups`.
-   Example end state after adding a new host `jupiter`:
+1. Edit `.sops.yaml`. Add the new anchor under `keys:` (preserving existing anchors) and reference it in the relevant `key_groups`. Example end state after adding a new host `jupiter`:
 
    ```yaml
    keys:
@@ -204,6 +128,7 @@ just bootstrap <host> <user>@<target>
 ```
 
 Substitute `<user>`:
+
 - AWS: the AMI's default sudo-capable user (e.g. `ubuntu`).
 - Bare metal: `nixos` (live USB default) or `root`.
 
@@ -221,36 +146,20 @@ The keyfile holds the ADR-043 recovery passphrase (1Password vault + offline cop
 It is the SAME recovery passphrase disko enrolls as the keyslot at install, which then remains as the fallback once you enroll the TPM2 keyslot post-install (§Encrypted hosts). The recipe derives the on-installer path (`--disk-encryption-keys`) from the host's own disko `passwordFile` and refuses to proceed if an encrypted host is missing its keyfile, or a keyfile is passed for an unencrypted host.
 
 The recipe:
-1. Pre-flight 1: confirms the new host's age recipient is in
-   `secrets/secrets.yaml` (catches forgotten step 2 directly).
-2. Pre-flight 2: confirms operator-side sops decryption works (failure
-   here means `just setup-sops-identity` wasn't run — see Operator
-   prerequisites).
+
+1. Pre-flight 1: confirms the new host's age recipient is in `secrets/secrets.yaml` (catches forgotten step 2 directly).
+2. Pre-flight 2: confirms operator-side sops decryption works (failure here means `just setup-sops-identity` wasn't run — see Operator prerequisites).
 3. Invokes `nixos-anywhere` (pinned to 1.13.0) with:
    - `--extra-files` pointing at the staged host key
-   - `--generate-hardware-config` writing the real hardware config back
-     to `hosts/<host>/hardware-configuration.nix`
-   - `--kexec-extra-flags --kexec-syscall` to force the legacy
-     `kexec_load` syscall. Necessary on Ubuntu's `-aws` kernels (which
-     ship with `CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y` and reject NixOS's
-     unsigned bzImage via `kexec_file_load` with `EADDRNOTAVAIL` even
-     when Secure Boot is disabled and lockdown is none). Safe across
-     the x86_64 targets this repo supports — `kexec_load` is universal
-     on modern Linux; we lose kernel-side image relocation flexibility,
-     which we don't need. kexec-tools' option parser is last-wins, so
-     this overrides nixos-anywhere's default `--kexec-syscall-auto`.
+   - `--generate-hardware-config` writing the real hardware config back to `hosts/<host>/hardware-configuration.nix`
+   - `--kexec-extra-flags --kexec-syscall` to force the legacy `kexec_load` syscall. Necessary on Ubuntu's `-aws` kernels (which ship with `CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y` and reject NixOS's unsigned bzImage via `kexec_file_load` with `EADDRNOTAVAIL` even when Secure Boot is disabled and lockdown is none). Safe across the x86_64 targets this repo supports — `kexec_load` is universal on modern Linux; we lose kernel-side image relocation flexibility, which we don't need. kexec-tools' option parser is last-wins, so this overrides nixos-anywhere's default `--kexec-syscall-auto`.
 4. Cleans up `/dev/shm/nix-bootstrap-<host>` on success.
 
-On failure mid-install, the staged key is preserved so you can retry
-`just bootstrap` without regenerating (which would invalidate the
-recipient already committed to `.sops.yaml`). `just bootstrap-clean`
-removes all staged keys if you're abandoning the bootstrap.
+On failure mid-install, the staged key is preserved so you can retry `just bootstrap` without regenerating (which would invalidate the recipient already committed to `.sops.yaml`). `just bootstrap-clean` removes all staged keys if you're abandoning the bootstrap.
 
 ### Step 4 — Review and commit `hardware-configuration.nix`
 
-`nixos-anywhere --generate-hardware-config` overwrites
-`hosts/<host>/hardware-configuration.nix` with the real hardware
-probe output (the stub is gone). Review and commit:
+`nixos-anywhere --generate-hardware-config` overwrites `hosts/<host>/hardware-configuration.nix` with the real hardware probe output (the stub is gone). Review and commit:
 
 ```bash
 git diff hosts/<host>/hardware-configuration.nix
@@ -259,15 +168,11 @@ git commit -m "<host>: real hardware-configuration.nix from nixos-anywhere"
 git push
 ```
 
-The pre-commit hook (installed automatically by the devShell, per
-ADR-025) accepts the new banner from `nixos-generate-config`. Do not
-hand-edit this file — re-run `just bootstrap` to regenerate.
+The pre-commit hook (installed automatically by the devShell, per ADR-025) accepts the new banner from `nixos-generate-config`. Do not hand-edit this file — re-run `just bootstrap` to regenerate.
 
 ## Post-install
 
-SSH in as `dbf` (your Mac key is now the sole inbound credential
-— the original `ubuntu` / `root` / `nixos` user is gone, replaced
-declaratively by `modules/nixos/users.nix`):
+SSH in as `dbf` (your Mac key is now the sole inbound credential — the original `ubuntu` / `root` / `nixos` user is gone, replaced declaratively by `modules/nixos/users.nix`):
 
 ```bash
 ssh dbf@<host>
@@ -276,8 +181,7 @@ cd ~/nix-config   # clone fresh if not already present:
 nh os switch
 ```
 
-`nh` resolves the flake via `NH_FLAKE`, set from `hostContext.flakePath`
-in each host's `default.nix` (ADR-019).
+`nh` resolves the flake via `NH_FLAKE`, set from `hostContext.flakePath` in each host's `default.nix` (ADR-019).
 
 ## Fleet SSH enrolment (#517 / #524 / ADR-042)
 
@@ -325,37 +229,28 @@ Run from the new host's `dbf` shell unless noted otherwise.
 
 - `ssh dbf@<host>` succeeds key-only, no password prompt.
 - `echo $SHELL` → `/run/current-system/sw/bin/fish`.
-- `helix` opens a `.nix` file with `nixd` LSP working — hover over
-  `programs.git` shows the option's type. `:lsp-restart` if uncertain.
-- `which claude` and `which cursor-agent` both resolve — the base
-  agent set is on every host (ADR-008).
+- `helix` opens a `.nix` file with `nixd` LSP working — hover over `programs.git` shows the option's type. `:lsp-restart` if uncertain.
+- `which claude` and `which cursor-agent` both resolve — the base agent set is on every host (ADR-008).
 - Rootless Docker (ADR-021):
   - `systemctl --user status docker` → `active (running)`.
   - `groups` does NOT include `docker` (rootless doesn't need it).
-  - `docker run --rm hello-world` succeeds as `dbf` with no sudo and
-    no `DOCKER_HOST` override.
-  - `docker compose version` and `docker-compose --version` both
-    respond.
+  - `docker run --rm hello-world` succeeds as `dbf` with no sudo and no `DOCKER_HOST` override.
+  - `docker compose version` and `docker-compose --version` both respond.
 
 ### Per-host divergences
 
 **Metis (personal dev box):**
+
 - Dual git identity:
   - `git config user.email` returns the personal address by default.
-  - Inside `~/grey-st/<repo>`, `git config user.email` returns the work
-    address (via `git-identity-dual.nix`'s `gitdir` rules).
-- All four agent CLIs resolve:
-  `which claude cursor-agent codex agy`.
+  - Inside `~/grey-st/<repo>`, `git config user.email` returns the work address (via `git-identity-dual.nix`'s `gitdir` rules).
+- All four agent CLIs resolve: `which claude cursor-agent codex agy`.
 - `which gh` resolves (Metis imports `gh.nix`).
 - Tailscale up: `tailscale status` lists `metis` and its peers.
 - btrfs layout: `findmnt -t btrfs` shows exactly the host's declared subvolume mounts — `/`, `/home`, `/nix`, plus `/persist` on `persist.enable` hosts — each with `subvol=@<name>` and `compress=zstd:1` in the options column.
-- zram: `swapon --show` lists `/dev/zram0` (no disk swap entries);
-  `zramctl` reports the device's algorithm and disksize.
-- Periodic scrub: `systemctl list-timers btrfs-scrub-*` shows the
-  monthly timer armed.
-- Macchina login banner shows the Tailscale interface (per the
-  interface-detection logic in `home/nixos/macchina-shell-init.nix`,
-  shipped to all hosts by `modules/nixos/home-manager.nix`).
+- zram: `swapon --show` lists `/dev/zram0` (no disk swap entries); `zramctl` reports the device's algorithm and disksize.
+- Periodic scrub: `systemctl list-timers btrfs-scrub-*` shows the monthly timer armed.
+- Macchina login banner shows the Tailscale interface (per the interface-detection logic in `home/nixos/macchina-shell-init.nix`, shipped to all hosts by `modules/nixos/home-manager.nix`).
 - Power-loss recovery test (do this once — unattended boot after power loss is a fleet requirement): pull the power, wait 10 s, plug back in. The box should boot unattended and Tailscale should rejoin within a minute or two. On unencrypted hosts this exercises the plain boot chain; on encrypted hosts it additionally proves the TPM2 unseal (§Encrypted hosts below).
 
 ### Encrypted hosts: TPM2 enrollment (alcyone-class)
@@ -376,46 +271,25 @@ Then verify the property, not the declaration (#303): reboot — no passphrase p
 
 If you lose SSH access:
 
-1. **EC2 Instance Connect** — web console "Connect" tab in AWS, or
-   `aws ec2-instance-connect send-ssh-public-key` CLI. Pushes a
-   temporary SSH key via the Instance Connect agent on the instance.
-   Requires the SG to allow TCP 22 from AWS's Instance Connect
-   prefix list and the operator IAM user to have the relevant
-   permissions — pin those *before* you need them, not at 2 AM.
-2. **EC2 Serial Console** — must be enabled at the account level
-   one-time. Direct serial access via the AWS console regardless of
-   network state.
-3. **Terminate + relaunch from a pre-install EBS snapshot** if both
-   Instance Connect and Serial Console fail. Requires having
-   snapshotted the EBS volume *before* `just bootstrap` (see Per-host
-   preconditions above for the recommendation).
+1. **EC2 Instance Connect** — web console "Connect" tab in AWS, or `aws ec2-instance-connect send-ssh-public-key` CLI. Pushes a temporary SSH key via the Instance Connect agent on the instance. Requires the SG to allow TCP 22 from AWS's Instance Connect prefix list and the operator IAM user to have the relevant permissions — pin those *before* you need them, not at 2 AM.
+2. **EC2 Serial Console** — must be enabled at the account level one-time. Direct serial access via the AWS console regardless of network state.
+3. **Terminate + relaunch from a pre-install EBS snapshot** if both Instance Connect and Serial Console fail. Requires having snapshotted the EBS volume *before* `just bootstrap` (see Per-host preconditions above for the recommendation).
 
 ### Bare metal
 
-1. **Physical console** (monitor + USB keyboard) — equivalent to the
-   UTM VM's console window. Always works; pre-attach during install.
-2. **systemd-boot previous-generation entry** — if a bad
-   `hardware-configuration.nix` or other change makes the next
-   generation unbootable, pick the previous generation from
-   systemd-boot's menu at startup.
-3. **Boot from the live USB again** if needed for offline repair
-   (mount the btrfs root, chroot, fix, reboot).
+1. **Physical console** (monitor + USB keyboard) — equivalent to the UTM VM's console window. Always works; pre-attach during install.
+2. **systemd-boot previous-generation entry** — if a bad `hardware-configuration.nix` or other change makes the next generation unbootable, pick the previous generation from systemd-boot's menu at startup.
+3. **Boot from the live USB again** if needed for offline repair (mount the btrfs root, chroot, fix, reboot).
 
 ## Troubleshooting
 
 ### Build OOMs on `sops-install-secrets` (memory-constrained targets)
 
-On small instances (t3.medium with 4 GiB RAM and no default swap, or
-similar), the Go compiler can be OOM-killed while building
-`sops-install-secrets`'s `aws-sdk-go-v2/service/s3` dependency. Visible
-signal: `signal: killed` in the last log lines of the failed build.
+On small instances (t3.medium with 4 GiB RAM and no default swap, or similar), the Go compiler can be OOM-killed while building `sops-install-secrets`'s `aws-sdk-go-v2/service/s3` dependency. Visible signal: `signal: killed` in the last log lines of the failed build.
 
-The kexec installer is still alive after the failure and the disk is
-already partitioned via disko — recover without restarting the whole
-bootstrap:
+The kexec installer is still alive after the failure and the disk is already partitioned via disko — recover without restarting the whole bootstrap:
 
-1. From the operator, add disk-backed swap on the disko-mounted future
-   root (the installer's own `/` is tmpfs, so it can't host swap):
+1. From the operator, add disk-backed swap on the disko-mounted future root (the installer's own `/` is tmpfs, so it can't host swap):
 
    ```bash
    ssh root@<host> 'fallocate -l 4G /mnt/_temp_swap && \
@@ -424,13 +298,9 @@ bootstrap:
      swapon /mnt/_temp_swap'
    ```
 
-   4 GiB headroom is enough for the AWS SDK Go compile (actual peak
-   is ~2.5 GiB). If `/mnt` has limited free space (e.g. a root
-   partition <16 GiB), reduce to `-l 2G`.
+   4 GiB headroom is enough for the AWS SDK Go compile (actual peak is ~2.5 GiB). If `/mnt` has limited free space (e.g. a root partition <16 GiB), reduce to `-l 2G`.
 
-2. Re-run nixos-anywhere with `--phases install,reboot` (skip the
-   already-completed kexec + disko phases). Note the target-host
-   becomes `root@<host>` for the installer:
+2. Re-run nixos-anywhere with `--phases install,reboot` (skip the already-completed kexec + disko phases). Note the target-host becomes `root@<host>` for the installer:
 
    ```bash
    nix run github:nix-community/nixos-anywhere/1.13.0 -- \
@@ -443,9 +313,7 @@ bootstrap:
                                   hosts/<host>/hardware-configuration.nix
    ```
 
-3. After the new system boots and you've SSHed in as `dbf`, the
-   swapfile persists as an orphan at `/_temp_swap` (4 GiB unused on
-   disk). Clean up:
+3. After the new system boots and you've SSHed in as `dbf`, the swapfile persists as an orphan at `/_temp_swap` (4 GiB unused on disk). Clean up:
 
    ```bash
    sudo swapoff /_temp_swap   # may print "Invalid argument" if not
@@ -453,20 +321,11 @@ bootstrap:
    sudo rm /_temp_swap
    ```
 
-Larger instances (t3.large 8 GiB+, m5.large+) won't need this — the
-AWS SDK Go build fits in RAM. The justfile's `bootstrap` recipe doesn't
-add swap by default because most targets won't need it; this section
-is the documented workaround for when they do.
+Larger instances (t3.large 8 GiB+, m5.large+) won't need this — the AWS SDK Go build fits in RAM. The justfile's `bootstrap` recipe doesn't add swap by default because most targets won't need it; this section is the documented workaround for when they do.
 
 ## What this runbook does NOT cover
 
-- BIOS recovery on bare metal if a firmware flash bricks the board
-  (HP's recovery USB procedure — see HP support docs).
-- Disk failure / replacement (single-device btrfs on Metis; no RAID,
-  no backup policy declared in this config yet).
-- Decommissioning a host: remove its anchor from `.sops.yaml`, run
-  `sops updatekeys secrets/secrets.yaml`, remove its entry from
-  `parts/nixos.nix` and its directory under `hosts/`.
-- Moving a bare-metal host to a different physical location (Tailscale
-  survives; ISP / NAT may need attention; static IP if you rely on
-  one).
+- BIOS recovery on bare metal if a firmware flash bricks the board (HP's recovery USB procedure — see HP support docs).
+- Disk failure / replacement (single-device btrfs on Metis; no RAID, no backup policy declared in this config yet).
+- Decommissioning a host: remove its anchor from `.sops.yaml`, run `sops updatekeys secrets/secrets.yaml`, remove its entry from `parts/nixos.nix` and its directory under `hosts/`.
+- Moving a bare-metal host to a different physical location (Tailscale survives; ISP / NAT may need attention; static IP if you rely on one).

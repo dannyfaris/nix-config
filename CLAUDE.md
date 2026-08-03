@@ -5,35 +5,25 @@
 Evergreen NixOS + nix-darwin configuration. Hosts:
 
 <!-- BEGIN CENSUS: hosts — bound to hosts/ by scripts/lint-host-census.sh (#583) -->
+
 - `alcyone` — Gigabyte B550 GAMING X V2 / x86_64 bare metal, flagship desktop; first discrete GPU (RTX 4060) + first encrypted-at-rest host.
 - `alnair` — Surface Laptop 4 / x86_64 bare metal, the fleet's first Linux laptop.
 - `electra` — Lenovo ThinkCentre M920q Tiny / x86_64 bare metal, genuinely headless always-on service-tier node, role deliberately open.
 - `metis` — HP ProDesk / x86_64 shared work + personal dev box.
 - `neptune` — Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02.
 - `saturn` — Apple Silicon MacBook Air, first laptop, client-only — no inbound sshd.
+
 <!-- END CENSUS: hosts -->
 
 Metis is the first desktop host, running niri per [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)). The Stylix-foundation + bundle-composition basis from ADR-028 stands.
 
 ## Reference documentation
 
-`docs/` is the canonical record of the *why* behind every decision in this
-repo: operating philosophy, naming taxonomy, and a series of light-format
-ADRs (one per major decision). Start with [docs/README.md](./docs/README.md).
-This CLAUDE.md is the AI/contributor entry point; `docs/` is the deeper
-companion.
+`docs/` is the canonical record of the *why* behind every decision in this repo: operating philosophy, naming taxonomy, and a series of light-format ADRs (one per major decision). Start with [docs/README.md](./docs/README.md). This CLAUDE.md is the AI/contributor entry point; `docs/` is the deeper companion.
 
 ## Agent memory lives in git, not local state
 
-Work on this repo happens across every live host. Claude Code's file-based
-memory (`~/.claude/projects/.../memory/`) is **per-host and never synced** —
-a fact learned on `metis` is invisible on `neptune`. So anything durable —
-decisions, conventions, gotchas, host quirks — must be committed to the repo
-where every host sees it: this CLAUDE.md for working agreements and
-deliberate stances, `docs/` (ADRs, selection docs) for the *why*, and inline
-module comments for the *why* of a setting. Treat local agent memory as a
-scratchpad for the current session; if it matters tomorrow or on another
-host, write it down in git.
+Work on this repo happens across every live host. Claude Code's file-based memory (`~/.claude/projects/.../memory/`) is **per-host and never synced** — a fact learned on `metis` is invisible on `neptune`. So anything durable — decisions, conventions, gotchas, host quirks — must be committed to the repo where every host sees it: this CLAUDE.md for working agreements and deliberate stances, `docs/` (ADRs, selection docs) for the *why*, and inline module comments for the *why* of a setting. Treat local agent memory as a scratchpad for the current session; if it matters tomorrow or on another host, write it down in git.
 
 ## Structure
 
@@ -58,19 +48,11 @@ home/nixos/                    # NixOS-specific home-manager modules (e.g. macch
 home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, aerospace)
 ```
 
-Composition follows the foundation + bundles model (ADR-027): every host
-imports `foundation.nix` (identity + admin + posture), opts into capability
-bundles for what the host does, and imports standalone modules for
-capabilities that don't yet have a bundle home. A new host is a new
-directory under `hosts/` that composes these directly — no role layer.
-Per-host values (e.g. flake path, hostname for nixd) flow from each host's
-`_module.args.hostContext` into home-manager modules via the wiring in
-`modules/nixos/home-manager.nix`; see ADR-019.
+Composition follows the foundation + bundles model (ADR-027): every host imports `foundation.nix` (identity + admin + posture), opts into capability bundles for what the host does, and imports standalone modules for capabilities that don't yet have a bundle home. A new host is a new directory under `hosts/` that composes these directly — no role layer. Per-host values (e.g. flake path, hostname for nixd) flow from each host's `_module.args.hostContext` into home-manager modules via the wiring in `modules/nixos/home-manager.nix`; see ADR-019.
 
 ## Philosophy
 
-Tight-from-the-start. Prefer explicit > implicit, declarative > imperative,
-whitelist > blanket.
+Tight-from-the-start. Prefer explicit > implicit, declarative > imperative, whitelist > blanket.
 
 ## Scope discipline — implement only what was asked
 
@@ -78,13 +60,13 @@ Implement exactly the change requested — nothing more. Do not add unrequested 
 
 ## Deliberate stances — do not relax without asking
 
-| Stance | Rationale |
-|--------|-----------|
-| `users.mutableUsers = false` | This file is the sole source of truth for user state. `passwd` changes do not persist. |
+| Stance                                                    | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `users.mutableUsers = false`                              | This file is the sole source of truth for user state. `passwd` changes do not persist.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | SSH: key-only, no passwords, no root, account-whitelisted | Hardened from boot one on every host. NixOS sshd pins `AllowGroups [ "wheel" ]`; nix-darwin (neptune) pins `AllowUsers dbf` by name instead — macOS `admin`/`staff` aren't the NixOS `wheel`, and a single-operator box doesn't need the group seam (#233). Either way any non-whitelisted account is locked out by default (whitelist > blanket), plus `MaxAuthTries 3` / `LoginGraceTime 30s` / no TCP+X11 forwarding fleet-wide. Fleet SSH trust (which host may reach which) is a declared edge whitelist per [ADR-042](./docs/decisions/ADR-042-fleet-ssh-declared-edges.md). Break-glass is host-specific — see §Break-glass. |
-| `allowUnfreePredicate` whitelist | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`. |
-| `programs.command-not-found.enable = false` | Flakes don't generate the programs.sqlite index; leaving it on silently fails. |
-| `nix.settings.warn-dirty = false` | Active dev repos are dirty most of the time; the warning is noise. |
+| `allowUnfreePredicate` whitelist                          | Build fails loudly if a new unfree package slips in. Never replace with blanket `allowUnfree = true`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `programs.command-not-found.enable = false`               | Flakes don't generate the programs.sqlite index; leaving it on silently fails.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `nix.settings.warn-dirty = false`                         | Active dev repos are dirty most of the time; the warning is noise.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 These stances are asserted as eval-only CI checks (`lib/stances.nix`, wired in `parts/checks.nix`), so weakening one fails `nix flake check` rather than building green — see [ADR-033](./docs/decisions/ADR-033-eval-checks-stances-and-lib-units.md).
 
@@ -93,18 +75,17 @@ These stances are asserted as eval-only CI checks (`lib/stances.nix`, wired in `
 If SSH wedges or keys go wrong, recovery is host-specific:
 
 <!-- BEGIN CENSUS: break-glass — bound to hosts/ by scripts/lint-host-census.sh (#583) -->
+
 - **alcyone**: physical console (monitor + keyboard) or the greetd login.
 - **alnair**: physical console (built-in keyboard + display) or the greetd login.
 - **electra**: physical console (monitor + keyboard) — headless, so there is no greetd login.
 - **metis**: physical console (monitor + keyboard) or the greetd login.
 - **neptune**: Apple keyboard + display at the local login.
 - **saturn**: Apple keyboard + display at the local login.
+
 <!-- END CENSUS: break-glass -->
 
-In all cases: log in, fix the config, and re-activate — `nh os switch`
-on NixOS, `nh darwin switch` on neptune (or the underlying
-`sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on
-PATH).
+In all cases: log in, fix the config, and re-activate — `nh os switch` on NixOS, `nh darwin switch` on neptune (or the underlying `sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on PATH).
 
 ## Build & deploy
 
@@ -131,47 +112,20 @@ In a nix-less agent/cloud session, run `scripts/fetch-lint-toolchain.sh` once, t
 
 ## Conventions
 
-- **home-manager** is integrated as a NixOS module (single `nixos-rebuild`
-  command for system + home).
+- **home-manager** is integrated as a NixOS module (single `nixos-rebuild` command for system + home).
 - **flake-parts** for flake organisation.
 - One inline comment per non-obvious setting explaining "why", not "what".
 - **Rationale is single-sourced.** An inline comment gives the *why* of one setting in ≤ ~3 lines; anything longer (a decision with alternatives, a multi-item matrix) lives in one canonical home — an ADR or `docs/<area>/` — with a one-line pointer from the code, never restated. Incident provenance (PR-number root causes, dated observations, timings) is history, not rationale — it lives in the PR or an ADR §History, not inline; `git blame` reaches it. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md) and [docs/workflow.md](./docs/workflow.md) §"Rationale lives in one place".
 - **Enforcement is proportionate.** Guardrails are sized to the severity they guard — the lightest mechanism that holds the guarantee (convention → `grep`-lint → bespoke parser), escalating only on repeated evidence; mechanical gates are reserved for correctness-severity issues. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md).
-- Module file naming follows the "most-communicative term" rule. See
-  [docs/taxonomy.md](./docs/taxonomy.md).
+- Module file naming follows the "most-communicative term" rule. See [docs/taxonomy.md](./docs/taxonomy.md).
 - **Platform twin-pairs share a lib constructor only when values-only.** A `modules/{nixos,darwin}` pair whose bodies differ solely in platform-constant values is built from one `lib/mk-*.nix` constructor taking explicit per-platform args (host-context, home-manager; stylix-palette shares its selection logic via `lib/palette-for.nix` but keeps twin shells — its engine import differs). Pairs differing in logic, option surface, or upstream module semantics (firewall, sshd, nix-daemon) stay two files. No central platform record — the args are stated at the two call sites. See #541.
-- **Project workflow conventions** (intent-first issue framing,
-  doc-before-code for selections, peer-review staged diffs before
-  commit, sense-check `main` before implementing, etc.) live in
-  [docs/workflow.md](./docs/workflow.md). Fresh AI sessions and human
-  contributors should read this before opening issues or cutting
-  code.
+- **Project workflow conventions** (intent-first issue framing, doc-before-code for selections, peer-review staged diffs before commit, sense-check `main` before implementing, etc.) live in [docs/workflow.md](./docs/workflow.md). Fresh AI sessions and human contributors should read this before opening issues or cutting code.
 - **Peer review binds to what executes, not what's committed.** Any script, command sequence, or activation/migration step that will run on a host — whether by the operator or by the agent itself — chat one-liners, scratchpad scripts, PR-body steps, commands the agent runs in its own shell — gets the same adversarial subagent review as a staged diff *before* it executes; root or auth/boot-path surface makes this non-waivable regardless of size, and such changes also require a VM reboot rehearsal before hardware. See [docs/workflow.md](./docs/workflow.md) §"Peer review binds to what executes, not what's committed".
 - **Non-trivial design moves through the design loop.** A cross-cutting or hard-to-reverse change is designed before it is coded, run as an operator dialogue agreement-gated at every stage boundary through the start of build — a design note in [docs/design/](./docs/design/) (intent → forces → options → de-risk), peer-reviewed, with the living-reference update landing in the same change. Invoke the `/design` skill for the procedure; [docs/design/design-loop.md](./docs/design/design-loop.md) is the *why*. The `design-note-structure` lint gates note shape (presence, not quality) in CI; tool/package choices use the `selecting-tooling` skill instead.
 - **Claims about runtime behaviour need runtime verification.** `nix flake check`, lints, and peer review confirm the *declared* (eval-time) state, not the *enforced* one — a change can pass all three and still be inert in production ("set ≠ enforced", tracked in [#303](https://github.com/dannyfaris/nix-config/issues/303)). For a change asserting a runtime, security, or network-posture property, confirm the behaviour on a host before calling it done; when it is unclear which layer actually enforces the property, probe it empirically first. Worked example: [#336](https://github.com/dannyfaris/nix-config/issues/336) removed a firewall rule that was never the gate (tailscale's `ts-input` pre-empts the NixOS firewall) — eval and a two-reviewer adversarial pass both missed it, a runtime probe caught it. This is the design loop's de-risk rung applied.
-- **PRs land via squash auto-merge.** After `gh pr create`, run
-  `gh pr merge <num> --auto --squash` to enable auto-merge; the PR
-  squash-merges itself once required checks pass. See
-  [docs/workflow.md](./docs/workflow.md) §"PRs land via squash
-  auto-merge" for rationale.
+- **PRs land via squash auto-merge.** After `gh pr create`, run `gh pr merge <num> --auto --squash` to enable auto-merge; the PR squash-merges itself once required checks pass. See [docs/workflow.md](./docs/workflow.md) §"PRs land via squash auto-merge" for rationale.
 - **Markdown is soft-wrapped** — one line per paragraph (no hard newlines mid-paragraph). Tracked `.md` files are formatted to this shape by dprint via treefmt (`nix fmt`), the mechanism chosen in [ADR-046](./docs/decisions/ADR-046-markdown-formatter.md) and wired in #435 PR B; before that wiring lands, author the shape by hand. Issue/PR *bodies* stay hand-authored soft-wrapped (the formatter cannot reach `gh` descriptions). See [docs/workflow.md](./docs/workflow.md) §"Markdown is soft-wrapped" for rationale.
-- Desktop environment lands on metis (x86_64) per ADR-028
-  (Stylix-foundation + bundle composition), amended by
-  [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only
-  direction; per-tool selections). Stack: niri + foot + greetd, with
-  Stylix as the theme source-of-truth for the TUI surface, foot,
-  fuzzel, fnott, waybar, firefox, and GTK/Qt toolkit theming.
-  Pointer + icon cohesion (`stylix.cursor`, `stylix.icons`, niri
-  focus-ring) is tracked separately under #110 — promised by ADR-028
-  but not yet wired. Per-tool selections (application launcher,
-  notification daemon, status bar, browser, IDE) land deliberately
-  as `docs/desktop/<tool>.md` selection rationale per issue
-  (#72–#77). The previously-recorded "do not resurrect waybar /
-  fuzzel / mako" guidance is inverted by ADR-029 — waybar and fuzzel
-  are now the chosen status bar and launcher; fnott (not mako) is
-  the chosen notification daemon. Living documents under
-  [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each
-  per-tool selection.
+- Desktop environment lands on metis (x86_64) per ADR-028 (Stylix-foundation + bundle composition), amended by [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only direction; per-tool selections). Stack: niri + foot + greetd, with Stylix as the theme source-of-truth for the TUI surface, foot, fuzzel, fnott, waybar, firefox, and GTK/Qt toolkit theming. Pointer + icon cohesion (`stylix.cursor`, `stylix.icons`, niri focus-ring) is tracked separately under #110 — promised by ADR-028 but not yet wired. Per-tool selections (application launcher, notification daemon, status bar, browser, IDE) land deliberately as `docs/desktop/<tool>.md` selection rationale per issue (#72–#77). The previously-recorded "do not resurrect waybar / fuzzel / mako" guidance is inverted by ADR-029 — waybar and fuzzel are now the chosen status bar and launcher; fnott (not mako) is the chosen notification daemon. Living documents under [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each per-tool selection.
 
 ## Open work
 
@@ -179,6 +133,4 @@ Tracked in [GitHub issues](https://github.com/dannyfaris/nix-config/issues), fra
 
 ## License
 
-MIT — see [LICENSE](./LICENSE). Personal NixOS configuration shared
-publicly for transparency and reuse; not maintained as a generalisable
-template (PRD §2.2).
+MIT — see [LICENSE](./LICENSE). Personal NixOS configuration shared publicly for transparency and reuse; not maintained as a generalisable template (PRD §2.2).

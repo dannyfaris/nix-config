@@ -76,12 +76,12 @@ Because the operator uses **Mac-layout keyboards on both machines**, the spare k
 
 ## 13. The shape (summary)
 
-| Tier | Linux chord | macOS chord | Use |
-|---|---|---|---|
-| `Mod` alone | Super | (n/a — macOS owns WM) | niri manipulation |
-| Hyper | `Ctrl+Alt` | `Ctrl+Opt` | cross-platform base |
-| Hyper+Shift | + Shift | + Shift | in-layer reverse / move |
-| Hyper+Mod | + Super | + Cmd | extended (window geometry) |
+| Tier        | Linux chord | macOS chord           | Use                        |
+| ----------- | ----------- | --------------------- | -------------------------- |
+| `Mod` alone | Super       | (n/a — macOS owns WM) | niri manipulation          |
+| Hyper       | `Ctrl+Alt`  | `Ctrl+Opt`            | cross-platform base        |
+| Hyper+Shift | + Shift     | + Shift               | in-layer reverse / move    |
+| Hyper+Mod   | + Super     | + Cmd                 | extended (window geometry) |
 
 ---
 

@@ -4,15 +4,15 @@ Status: **research note, not a decision.** Captured 2026-06-27 from a deep-resea
 
 ## Verdict table
 
-| # | Transfer claim | Verdict | One-line caveat |
-|---|---|---|---|
-| 1 | foot honors OSC 4/10/11/12/17/19 live on an open pane | **CONFIRMED** | RGB specs only (no named X11 colours); foot has *no* config reload — OSC *is* the path |
+| # | Transfer claim                                                               | Verdict                 | One-line caveat                                                                                                                |
+| - | ---------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1 | foot honors OSC 4/10/11/12/17/19 live on an open pane                        | **CONFIRMED**           | RGB specs only (no named X11 colours); foot has *no* config reload — OSC *is* the path                                         |
 | 2 | OSC-4 repaints existing cells referencing slot N ("free" statusline repaint) | **PARTIALLY-CONFIRMED** | Real per foot wiki/issue, but man page is silent and the by-value-vs-by-index mechanism is unsettled — do not assert mechanism |
-| 3 | fnott reload via `fnottctl reload` / SIGHUP (mako analog) | **REFUTED** | No reload command, no signal; only a *destructive* daemon restart that drops live notifications |
-| 4 | niri live-reloads border/focus-ring via `niri msg action load-config-file` | **CONFIRMED** | **NixOS gotcha:** auto-watch is inotify-on-file and misses a swapped store *symlink* — must call the IPC action explicitly |
-| 5 | waybar has no live reload, must hard-restart | **PARTIALLY-CONFIRMED** | "No live reload" is overstated; SIGUSR2 + `reload_style_on_change` work, but tooltip styles and `-s` custom paths don't |
-| 6 | GTK3 named-theme + `gsettings` flip reloads running GTK3 apps live | **UNVERIFIED** | No surviving claim covered it — carries forward open |
-| 7 | base16 16-ANSI + 6-role mapping fidelity | **UNVERIFIED** | No surviving claim covered it — carries forward open |
+| 3 | fnott reload via `fnottctl reload` / SIGHUP (mako analog)                    | **REFUTED**             | No reload command, no signal; only a *destructive* daemon restart that drops live notifications                                |
+| 4 | niri live-reloads border/focus-ring via `niri msg action load-config-file`   | **CONFIRMED**           | **NixOS gotcha:** auto-watch is inotify-on-file and misses a swapped store *symlink* — must call the IPC action explicitly     |
+| 5 | waybar has no live reload, must hard-restart                                 | **PARTIALLY-CONFIRMED** | "No live reload" is overstated; SIGUSR2 + `reload_style_on_change` work, but tooltip styles and `-s` custom paths don't        |
+| 6 | GTK3 named-theme + `gsettings` flip reloads running GTK3 apps live           | **UNVERIFIED**          | No surviving claim covered it — carries forward open                                                                           |
+| 7 | base16 16-ANSI + 6-role mapping fidelity                                     | **UNVERIFIED**          | No surviving claim covered it — carries forward open                                                                           |
 
 ## Findings
 

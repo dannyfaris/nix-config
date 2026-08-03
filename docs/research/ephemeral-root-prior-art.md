@@ -33,21 +33,21 @@ The proposed archive-not-delete stance is **rarer than assumed**. The canonical 
 
 The strongest convergence in the run. Independent sources (module example, wiki, three blogs, two Discourse threads) agree on a baseline, so #553's whitelist can be *seeded* rather than discovered:
 
-| Path | Why | Attestation |
-|---|---|---|
-| `/etc/machine-id` | systemd journal is keyed by it — lose it and `journalctl` can't read prior boots | 3-0 ×3 independent |
-| `/etc/ssh/ssh_host_*_key` | host identity; every client screams on regeneration | 3-0 ×4; module example covers only ed25519+RSA — other algorithms need adding (3-0) |
-| `/etc/NetworkManager/system-connections` | WiFi/VPN credentials | 3-0 ×4 |
-| `/var/lib/NetworkManager` (`secret_key`, leases) | stable RFC7217 IPv6 addresses; DHCP leases | 3-0 (tuxes.uk) |
-| `/var/lib/bluetooth` | pairings | 3-0 ×3 |
-| `/var/lib/nixos` | uid/gid maps | 3-0 ×3 |
-| `/var/lib/systemd/coredump`, `/var/lib/systemd/timers` | crash forensics; `Persistent=true` timers need last-run stamps | 3-0 ×2 |
-| `/var/log` | journal + everything else | 3-0 ×2 |
-| `/var/db/sudo` | sudo lecture/timestamp state | 3-0 (NotAShelf) |
-| `/var/lib/tailscale` | node key — else re-auth every boot | Guekka, **UNVERIFIED** (mechanism obvious) |
-| `/var/lib/docker`, `/var/lib/lxd` | images + volumes | 3-0 (mt-caret); see §2 re bind-mount overhead |
-| ACME certs, WireGuard keys | rate-limited / identity material | 6-0 (grahamc) |
-| `/etc/adjtime`, ALSA state, CUPS, LVM archives, PKI bundle, per-user dconf | long tail, host-dependent | 3-0 (mt-caret) + forum |
+| Path                                                                       | Why                                                                              | Attestation                                                                         |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `/etc/machine-id`                                                          | systemd journal is keyed by it — lose it and `journalctl` can't read prior boots | 3-0 ×3 independent                                                                  |
+| `/etc/ssh/ssh_host_*_key`                                                  | host identity; every client screams on regeneration                              | 3-0 ×4; module example covers only ed25519+RSA — other algorithms need adding (3-0) |
+| `/etc/NetworkManager/system-connections`                                   | WiFi/VPN credentials                                                             | 3-0 ×4                                                                              |
+| `/var/lib/NetworkManager` (`secret_key`, leases)                           | stable RFC7217 IPv6 addresses; DHCP leases                                       | 3-0 (tuxes.uk)                                                                      |
+| `/var/lib/bluetooth`                                                       | pairings                                                                         | 3-0 ×3                                                                              |
+| `/var/lib/nixos`                                                           | uid/gid maps                                                                     | 3-0 ×3                                                                              |
+| `/var/lib/systemd/coredump`, `/var/lib/systemd/timers`                     | crash forensics; `Persistent=true` timers need last-run stamps                   | 3-0 ×2                                                                              |
+| `/var/log`                                                                 | journal + everything else                                                        | 3-0 ×2                                                                              |
+| `/var/db/sudo`                                                             | sudo lecture/timestamp state                                                     | 3-0 (NotAShelf)                                                                     |
+| `/var/lib/tailscale`                                                       | node key — else re-auth every boot                                               | Guekka, **UNVERIFIED** (mechanism obvious)                                          |
+| `/var/lib/docker`, `/var/lib/lxd`                                          | images + volumes                                                                 | 3-0 (mt-caret); see §2 re bind-mount overhead                                       |
+| ACME certs, WireGuard keys                                                 | rate-limited / identity material                                                 | 6-0 (grahamc)                                                                       |
+| `/etc/adjtime`, ALSA state, CUPS, LVM archives, PKI bundle, per-user dconf | long tail, host-dependent                                                        | 3-0 (mt-caret) + forum                                                              |
 
 Secrets directories are persisted with explicit restrictive modes — `.ssh`/`.gnupg` as mode 0700 is the documented convention (3-0 via module example + Discourse).
 

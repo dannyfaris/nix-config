@@ -50,11 +50,11 @@ The lint is deliberately ASCII-only (`tr` is byte-oriented, so Unicode case pair
 
 **The trigger measurement (2026-08-02).** ADR-025 §77's trigger is conjunctive, and the honest possibility going in was that it had not fired — in which case the correct outcome was to land the collision guard alone and record the re-examination. Measured over the ten most recent successful `pull_request` runs:
 
-| Leg | Median | Notes |
-|---|---|---|
-| x86_64-linux | **31.8 min** | range 26.0–34.8; **all ten** above the 20-min trigger; cache restore 30–48s, so the remainder is build time (five host toplevels) |
-| aarch64-darwin | 5.1 min | |
-| aarch64-linux | 1.9 min | |
+| Leg            | Median       | Notes                                                                                                                             |
+| -------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| x86_64-linux   | **31.8 min** | range 26.0–34.8; **all ten** above the 20-min trigger; cache restore 30–48s, so the remainder is build time (five host toplevels) |
+| aarch64-darwin | 5.1 min      |                                                                                                                                   |
+| aarch64-linux  | 1.9 min      |                                                                                                                                   |
 
 Docs-only PRs were **4 of the last 30 merged (13.3%)**. The runtime half of the trigger fired decisively; the cadence half is below the 25% figure this note's own default proposed, and the adjudication was that 13.3% of merges each paying a half-hour leg to rebuild five closures against a markdown edit is material. Recorded as a judgement on the measured numbers, not as a threshold that was met.
 

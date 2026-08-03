@@ -2,9 +2,7 @@
 
 Status: **research note, not a decision.** Captured 2026-07-02 from a three-batch systematic survey of 36 public NixOS / nix-darwin / blended configs, conducted via parallel deep-reads (38 agents, ~2M tokens). Repos were scouted first (flake.nix + tree); only those with novel patterns not already present in this fleet were deep-read. Nothing here is adopted; each item is a pattern to evaluate against our own principles. Feeds the active macOS theme-switching (#499), TUI colour conductor (#411), and any future hardening / CI work.
 
-Batch 1 deep-reads: Misterio77/nix-config, nmasur/dotfiles, NotAShelf/nyx, fufexan/dotfiles, srid/nixos-config, kclejeune/system, ryan4yin/nix-config, malob/nixpkgs, cmacrae/config.
-Batch 2 deep-reads: Aylur/dotfiles, isabelroses/dotfiles, pinpox/nixos, linyinfeng/dotfiles, EmergentMind/nix-config, sei40kr/dotfiles.
-Batch 3 deep-reads: Mic92/dotfiles, viperML/dotfiles, TLATER/dotfiles.
+Batch 1 deep-reads: Misterio77/nix-config, nmasur/dotfiles, NotAShelf/nyx, fufexan/dotfiles, srid/nixos-config, kclejeune/system, ryan4yin/nix-config, malob/nixpkgs, cmacrae/config. Batch 2 deep-reads: Aylur/dotfiles, isabelroses/dotfiles, pinpox/nixos, linyinfeng/dotfiles, EmergentMind/nix-config, sei40kr/dotfiles. Batch 3 deep-reads: Mic92/dotfiles, viperML/dotfiles, TLATER/dotfiles.
 
 Skipped as not novel (scouts): mitchellh/nixos-config, hlissner/dotfiles, LGUG2Z/nixos-config, dustinlyons/nixos-config, gvolpe/nix-config, truxnell/nix-config, sioodmy/dotfiles, berbiche/dotfiles, yuanw/nix-home, spikespaz/dotfiles, donovanglover/nix-config, Ruixi-rebirth/flakes, vimjoyer/nixconf, Frost-Phoenix/nixos-config, IogaMaster/dotfiles, rxyhn/yuki, librephoenix/nixos-config, moni-dz/nix-config.
 

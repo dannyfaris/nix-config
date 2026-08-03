@@ -26,44 +26,44 @@ Twenty-one issues, all labelled `roadmap`, all intent-first, none pre-deciding i
 
 ### Round 1 — operations (#551–#555)
 
-| # | Intent | /design |
-|---|--------|---------|
+| #    | Intent                                                                                                      | /design                                                                  |
+| ---- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | #551 | Stances as executable contracts: one registry generating eval assertions, CI VM tests, and live-host probes | Full note — registry shape is load-bearing for at least six later issues |
-| #552 | Pull-based GitOps convergence: merge-to-main deploys the fleet through rollout rings | Full note — must reconcile with #419 (push model) and gate on #568 |
-| #553 | Ephemeral root with an explicit persist whitelist — reprovision-from-source enforced, not asserted | Mandatory, heaviest — destructive failure mode; audit-first on-ramp |
-| #554 | Scheduled resurrection drill: rehearse the nixos-anywhere bootstrap end-to-end in CI | Light note, scoped to secrets fidelity |
-| #555 | Disposable declarative microVMs as flake outputs — isolation for agents and experiments | Note scoped to the isolation boundary (secrets/identity inside guests) |
+| #552 | Pull-based GitOps convergence: merge-to-main deploys the fleet through rollout rings                        | Full note — must reconcile with #419 (push model) and gate on #568       |
+| #553 | Ephemeral root with an explicit persist whitelist — reprovision-from-source enforced, not asserted          | Mandatory, heaviest — destructive failure mode; audit-first on-ramp      |
+| #554 | Scheduled resurrection drill: rehearse the nixos-anywhere bootstrap end-to-end in CI                        | Light note, scoped to secrets fidelity                                   |
+| #555 | Disposable declarative microVMs as flake outputs — isolation for agents and experiments                     | Note scoped to the isolation boundary (secrets/identity inside guests)   |
 
 ### Round 2 — boundaries (#556–#561)
 
-| # | Intent | /design |
-|---|--------|---------|
-| #556 | Tailnet ACLs as code — the real firewall under version control, stanced and probed | Full note — lockout failure mode; read-only-export on-ramp |
-| #557 | TPM-sealed disk encryption + signed boot, metis first — the trust chain reaches silicon | Full note, heaviest of round 2 — brick risk; rehearse in VM first |
-| #558 | Identity, not key lists — decide SSH CA / Tailscale SSH / static matrix before #524 ships the matrix | Mostly design loop; expect an ADR |
-| #559 | The desktop gets CI — headless compositor tests, capability registry as executable spec | Medium note (registry schema + golden-frame flakiness policy) |
-| #560 | The roaming layer — one policy tier for operator-following mutable state; ADR-006's atuin trigger has fired | Thin note — vocabulary + store inventory + identity semantics |
-| #561 | An agent-operable fleet API — read-first MCP surface over live fleet state | Full note scoped to read/write boundary; sequences after #551/#552 |
+| #    | Intent                                                                                                      | /design                                                            |
+| ---- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| #556 | Tailnet ACLs as code — the real firewall under version control, stanced and probed                          | Full note — lockout failure mode; read-only-export on-ramp         |
+| #557 | TPM-sealed disk encryption + signed boot, metis first — the trust chain reaches silicon                     | Full note, heaviest of round 2 — brick risk; rehearse in VM first  |
+| #558 | Identity, not key lists — decide SSH CA / Tailscale SSH / static matrix before #524 ships the matrix        | Mostly design loop; expect an ADR                                  |
+| #559 | The desktop gets CI — headless compositor tests, capability registry as executable spec                     | Medium note (registry schema + golden-frame flakiness policy)      |
+| #560 | The roaming layer — one policy tier for operator-following mutable state; ADR-006's atuin trigger has fired | Thin note — vocabulary + store inventory + identity semantics      |
+| #561 | An agent-operable fleet API — read-first MCP surface over live fleet state                                  | Full note scoped to read/write boundary; sequences after #551/#552 |
 
 ### Round 3 — metabolism (#562–#566)
 
-| # | Intent | /design |
-|---|--------|---------|
-| #562 | Executable migration triggers — machine-watch the corpus's recorded tripwires | Thin note — classification vocabulary + registry carrier (with #441) |
+| #    | Intent                                                                                     | /design                                                              |
+| ---- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| #562 | Executable migration triggers — machine-watch the corpus's recorded tripwires              | Thin note — classification vocabulary + registry carrier (with #441) |
 | #563 | One logical store — peer substitution, meshed remote builds, nix-native CI; dissolves #418 | Full note — trust topology + the CI-engine decision before #545–#547 |
-| #564 | The bump arrives pre-diagnosed — canary builds, closure/CVE/size deltas in the PR | No standalone note; feeds #552's auto-merge decision |
-| #565 | The repo gains a maintainer — chartered recurring agents, draft-PR output only | Scoped note on containment before the first unattended run |
-| #566 | Rebuild the fleet without the internet — designed, drilled recovery self-sufficiency | Note scoped to dependency-chain analysis + the ADR-034 boundary |
+| #564 | The bump arrives pre-diagnosed — canary builds, closure/CVE/size deltas in the PR          | No standalone note; feeds #552's auto-merge decision                 |
+| #565 | The repo gains a maintainer — chartered recurring agents, draft-PR output only             | Scoped note on containment before the first unattended run           |
+| #566 | Rebuild the fleet without the internet — designed, drilled recovery self-sufficiency       | Note scoped to dependency-chain analysis + the ADR-034 boundary      |
 
 ### Round 4 — reflexive (#568–#572)
 
-| # | Intent | /design |
-|---|--------|---------|
-| #568 | Supply-chain input trust tiers — the counterweight the convergence autopilot needs | Full note, sequenced before #552's auto-merge decision |
-| #569 | The dead-man's layer — every automated loop declares a heartbeat; silence becomes signal | Thin note — registry shape + who watches the watchdog |
-| #570 | The work/personal split gets a threat model — convention to enforced boundary on shared hosts | Full note, threat model first |
-| #571 | Curation by evidence — a local-only, whitelisted usage ledger for tools and capabilities | Thin note, almost entirely the privacy stance |
-| #572 | The bus-factor protocol — escrow + a successor runbook, drilled | Full note — custody/release design before any key material is duplicated |
+| #    | Intent                                                                                        | /design                                                                  |
+| ---- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| #568 | Supply-chain input trust tiers — the counterweight the convergence autopilot needs            | Full note, sequenced before #552's auto-merge decision                   |
+| #569 | The dead-man's layer — every automated loop declares a heartbeat; silence becomes signal      | Thin note — registry shape + who watches the watchdog                    |
+| #570 | The work/personal split gets a threat model — convention to enforced boundary on shared hosts | Full note, threat model first                                            |
+| #571 | Curation by evidence — a local-only, whitelisted usage ledger for tools and capabilities      | Thin note, almost entirely the privacy stance                            |
+| #572 | The bus-factor protocol — escrow + a successor runbook, drilled                               | Full note — custody/release design before any key material is duplicated |
 
 ## Structural observations
 

@@ -21,26 +21,26 @@ At build, each host resolves its own verbs and writes its own `actions.json`: sa
 ## 3. Architecture
 
 ```
-              lib/capabilities.nix   ·   the semantic registry (shared, #384)
-              id · label · icon · children · command.{linux,darwin} · keybind.{…}
-                                   │
-                ┌──────────────────┴───────────────────┐
-          build: metis (NixOS)                   build: neptune (darwin)
-                ▼                                        ▼
-        actions.json  (Linux verbs)              actions.json  (macOS verbs)
-                │                                        │
-     ┌──────────┴───────────┐                 ┌──────────┴───────────┐
-     │ RENDERER (Linux)      │                │ RENDERER (macOS)      │
-     │ bash+jq → fuzzel      │                │ Lua → hs.chooser      │
-     │   --dmenu  (popup)    │                │   (native popup)      │
-     └──────────┬───────────┘                 └──────────┬───────────┘
-   invoke: niri  Hyper+Space                 invoke: Hammerspoon Hyper+Space
-                │                                        │
-                ▼                                        ▼
-   dispatch: noctalia ipc · niri msg ·        dispatch: hammerspoon · pmset ·
-             systemctl · grim                           screencapture · open · osascript
-                │                                        │
-                └──────  same keystroke · same menu feel · base16-themed  ──────┘
+           lib/capabilities.nix   ·   the semantic registry (shared, #384)
+           id · label · icon · children · command.{linux,darwin} · keybind.{…}
+                                │
+             ┌──────────────────┴───────────────────┐
+       build: metis (NixOS)                   build: neptune (darwin)
+             ▼                                        ▼
+     actions.json  (Linux verbs)              actions.json  (macOS verbs)
+             │                                        │
+  ┌──────────┴───────────┐                 ┌──────────┴───────────┐
+  │ RENDERER (Linux)      │                │ RENDERER (macOS)      │
+  │ bash+jq → fuzzel      │                │ Lua → hs.chooser      │
+  │   --dmenu  (popup)    │                │   (native popup)      │
+  └──────────┬───────────┘                 └──────────┬───────────┘
+invoke: niri  Hyper+Space                 invoke: Hammerspoon Hyper+Space
+             │                                        │
+             ▼                                        ▼
+dispatch: noctalia ipc · niri msg ·        dispatch: hammerspoon · pmset ·
+          systemctl · grim                           screencapture · open · osascript
+             │                                        │
+             └──────  same keystroke · same menu feel · base16-themed  ──────┘
 ```
 
 (The invoking chord shown — `Hyper+Space` — is the *leading candidate*, not a settled choice; see §5 and §9.)

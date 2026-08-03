@@ -13,12 +13,12 @@ status: Accepted
 
 Of the four hosts, only two hold user data that isn't trivially reproducible:
 
-| Host | Storage | User data | Reproducible? |
-|------|---------|-----------|---------------|
-| **metis** | btrfs (`@root`/`@home`/`@nix`), no LUKS | `/home` | system yes (flake); `/home` no |
-| **mac-mini** | APFS (Darwin) | user home | system yes (flake); home no |
-| **mercury** | ext4 on EBS (AWS EC2) | work-only, headless | yes — EBS is AWS-replicated/snapshot-able; reprovisible |
-| **nixos-vm** | ext4 (UTM) | refinement target | yes — disposable by design |
+| Host         | Storage                                 | User data           | Reproducible?                                           |
+| ------------ | --------------------------------------- | ------------------- | ------------------------------------------------------- |
+| **metis**    | btrfs (`@root`/`@home`/`@nix`), no LUKS | `/home`             | system yes (flake); `/home` no                          |
+| **mac-mini** | APFS (Darwin)                           | user home           | system yes (flake); home no                             |
+| **mercury**  | ext4 on EBS (AWS EC2)                   | work-only, headless | yes — EBS is AWS-replicated/snapshot-able; reprovisible |
+| **nixos-vm** | ext4 (UTM)                              | refinement target   | yes — disposable by design                              |
 
 So the live question is narrow: what happens to **metis `/home`** and **mac-mini's home** if the disk or host is lost?
 
