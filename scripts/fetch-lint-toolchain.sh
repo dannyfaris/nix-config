@@ -34,8 +34,11 @@ NIXFMT_VERSION="1.4.0"
 NIXFMT_URL="https://github.com/NixOS/nixfmt/releases/download/v1.4.0/nixfmt"
 NIXFMT_SHA256="62488394d5233283096466350487ed46470366f57db4bec824a87ecbacce960a" # TOFU
 
-# deadnix publishes no binaries anywhere; cargo verifies the crates.io checksum.
+# deadnix publishes no binaries anywhere, and 1.3.2 was tagged but never
+# published to crates.io — the git rev is the only route to the pinned version.
+DEADNIX_REPO="https://github.com/astro/deadnix"
 DEADNIX_VERSION="1.3.2"
+DEADNIX_REV="ba988ddf46f1e57abe3dfacbfbd17fec5a7276d9" # tag v1.3.2 at pin time
 
 # nixpkgs pins a mid-branch commit of a fork, so no release corresponds to the
 # statix CI runs and the rev is the only pin available. That build has no
@@ -159,12 +162,11 @@ static_tool() {
   fi
 }
 
-cargo_crate_tool() {
-  local tool="$1" version="$2"
-  if is_installed "$tool" "$version"; then
+deadnix_tool() {
+  if is_installed deadnix "$DEADNIX_VERSION"; then
     return 2
   fi
-  install_from_cargo "$tool" "$tool" --version "$version"
+  install_from_cargo deadnix --git "$DEADNIX_REPO" --rev "$DEADNIX_REV"
 }
 
 # The --help execution stands in for the missing --version: statix is the one
@@ -216,7 +218,7 @@ static_tool nixfmt "$NIXFMT_VERSION" "$NIXFMT_URL" "$NIXFMT_SHA256" || rc=$?
 record "$rc" "nixfmt $NIXFMT_VERSION"
 
 rc=0
-cargo_crate_tool deadnix "$DEADNIX_VERSION" || rc=$?
+deadnix_tool || rc=$?
 record "$rc" "deadnix $DEADNIX_VERSION"
 
 rc=0

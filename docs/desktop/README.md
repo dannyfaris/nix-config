@@ -1,6 +1,6 @@
 # Desktop environment selections
 
-Living documents for the operator's desktop tools — primarily the Wayland desktop environment on metis (and any future Linux desktop host), and also the per-tool selections on macOS clients (neptune and any future Mac) where a tool is the operator's daily-driver GUI for that platform. Each per-tool document captures a selection, the rationale, alternatives considered, configuration choices, sharp edges, and references.
+Living documents for the operator's desktop tools — primarily the Wayland desktop environment on the NixOS hosts that import the `desktop-env` bundles, and also the per-tool selections on the macOS clients where a tool is the operator's daily-driver GUI for that platform. Each per-tool document captures a selection, the rationale, alternatives considered, configuration choices, sharp edges, and references.
 
 The per-tool doc shape transfers cleanly across the platform line: selections that span Linux desktop and macOS (e.g., a terminal where one variant ships on each side, or a cross-platform GUI app like Tailscale) land here as a single doc covering both platforms.
 
@@ -8,7 +8,7 @@ This directory complements `docs/decisions/` (Architecture Decision Records). Wh
 
 ## Index
 
-### Linux desktop (metis)
+### Linux desktop (NixOS desktop hosts)
 
 | Doc                                        | Subject                                                                                                                                                                                                                                 | Landed         |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
@@ -27,7 +27,7 @@ This directory complements `docs/decisions/` (Architecture Decision Records). Wh
 | [popups.md](./popups.md)                   | Floating popup convention for TUI utilities (`popup.<tool>` app-id + single `^popup\.` window-rule; proportional sizing; spawn-fresh, toggle deferred)                                                                                  | #308           |
 | [screen-sharing.md](./screen-sharing.md)   | Screencast backend — keep niri-flake's `xdg-desktop-portal-gnome` driving niri's native `Mutter.ScreenCast` over PipeWire (wiring verified present; RemoteDesktop unsupported upstream)                                                 | #101           |
 | [removable-media.md](./removable-media.md) | USB auto-mount — udisks2 + udiskie (tray-less, fnott notifications) + yazi `mount` plugin; exfatprogs/ntfs3g/dosfstools helpers; passwordless (independent of #103)                                                                     | #105           |
-| [keyd.md](./keyd.md)                       | keyd caps-lock → Hyper (Super+Ctrl+Alt+Shift) — realizes the keybinds.md Hyper namespace on metis, mirroring the mac's Karabiner                                                                                                        | —              |
+| [keyd.md](./keyd.md)                       | keyd caps-lock → Hyper (Super+Ctrl+Alt+Shift) — realizes the keybinds.md Hyper namespace on the NixOS desktop hosts, mirroring the mac's Karabiner                                                                                      | —              |
 | [input.md](./input.md)                     | Input device config — device layer (G502 HERO DPI/buttons/onboard profiles via libratbag/ratbagd + Piper, settings travel on the mouse) + compositor layer (key-repeat/scroll/`accel-profile "flat"` via niri's category `input` block) | #107           |
 | [screen-lock.md](./screen-lock.md)         | swaylock + swayidle — unattended lock/idle automation (lock on idle, displays off, lock before sleep) — *decommissioned, replaced by Noctalia (ADR-036, #385)*                                                                          | #97            |
 | [power-session.md](./power-session.md)     | Power & session controls — fuzzel-dmenu menu (lock/logout/suspend/reboot/shut down) — *mooted (unbuilt), subsumed by Noctalia (ADR-036, #385)*                                                                                          | #98            |
@@ -36,7 +36,7 @@ This directory complements `docs/decisions/` (Architecture Decision Records). Wh
 | [visual-identity.md](./visual-identity.md) | The desktop's aesthetic north-star (living doc) — typography / colour / line-weight / radii / spacing / motion / pointer intent the per-surface selection docs implement against                                                        | #108           |
 | [zen.md](./zen.md)                         | Zen browser — *audit-phase parallel install vs Firefox (#127); audit concluded in Firefox's favour, Zen retired*                                                                                                                        | #127           |
 
-### macOS clients (neptune)
+### macOS clients
 
 | Doc                                                        | Subject                                                                                                                                                                                                                                                  | Landed |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
@@ -60,7 +60,7 @@ This directory complements `docs/decisions/` (Architecture Decision Records). Wh
 | [hammerspoon.md](./hammerspoon.md)                         | **Decommissioned (ADR-040, #494)** — retired from the macOS interaction stack; AeroSpace + Karabiner only. Retained as the selection record for the Hammerspoon era                                                                                      | #11    |
 | [macos-window-management.md](./macos-window-management.md) | **Superseded (ADR-040, #494)** — the pure-Hammerspoon / native-fullscreen-Spaces model is replaced by AeroSpace (tiling WM). Retained as the selection record; current design → [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md) | #440   |
 
-*macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live on neptune, not pending.*
+*macOS rows are marked **#11** — the mac-mini onboarding epic these selections landed under — where a specific child-PR number wasn't recorded in this index; the tools are live, not pending.*
 
 ### Cross-platform (NixOS desktop + macOS)
 

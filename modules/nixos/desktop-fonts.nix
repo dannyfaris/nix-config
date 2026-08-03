@@ -14,8 +14,9 @@
 #
 # stylix.fonts is kept — but is no longer the font source of truth — only
 # because two surviving Stylix targets read it under E1: the Firefox target
-# (per-profile font.name; face-swap-only, so Firefox renders Inter but stays
-# pinned, not following the runtime override, until Part B) and the GTK target.
+# (per-profile font.name + mono size; face-swap-only, so Firefox renders Inter
+# but stays pinned, not following the runtime override, until Part B) and the
+# GTK target.
 # See docs/desktop/fonts.md.
 #
 # Per #390 (Part A); was Stylix-sourced per ADR-028 / #69.
@@ -54,8 +55,8 @@ in
   # doesn't write a competing fonts.fontconfig.defaultFonts.
   stylix.targets.fontconfig.enable = false;
 
-  # Kept only for the surviving E1 Stylix targets (Firefox font.name; GTK
-  # size) — not the font source of truth. sansSerif = Inter is the face-swap
+  # Kept only for the surviving E1 Stylix targets (Firefox name + mono size;
+  # GTK size) — not the font source of truth. sansSerif = Inter is the face-swap
   # that makes Firefox's pinned web body render Inter (see header). serif/emoji
   # are unset (Stylix defaults; the surviving targets don't consume them).
   stylix.fonts = {
@@ -68,7 +69,7 @@ in
       name = "Inter";
     };
     sizes = {
-      terminal = profile.fonts.terminal; # foot (mono)
+      terminal = profile.fonts.terminal; # Firefox mono size — foot reads the profile directly
       popups = profile.fonts.popups; # GTK dialogs (sans)
     };
   };
