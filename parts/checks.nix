@@ -123,6 +123,12 @@ let
       # §Cost). niri, the other source-built desktop dependency, is served by
       # niri.cachix.org and so stays out.
       noctalia = inputs.noctalia.packages.x86_64-linux.default;
+      # nvidia-settings has no substituter (unfree; cache.nixos.org 404s it —
+      # measured on metis 2026-08-03) and rebuilds ~90 s every warm run (#721).
+      # Routed through alcyone's own config so this is the derivation alcyone
+      # builds, not a parallel pkgs.linuxPackages one — kernel-coupled via
+      # boot.kernelPackages. See modules/nixos/nvidia.nix.
+      nvidia-settings = self.nixosConfigurations.alcyone.config.hardware.nvidia.package.settings;
     };
     # The Darwin closure has no source-only build.
     aarch64-darwin = { };
