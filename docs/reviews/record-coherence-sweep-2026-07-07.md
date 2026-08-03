@@ -61,21 +61,21 @@ One finding predates the transition: **`colour-conductor.md`**'s status header s
 
 ## Disposition table
 
-| # | Finding | Severity | Action | Home |
-|---|---------|----------|--------|------|
-| 1 | CLAUDE.md: "Four live hosts", saturn omitted, two retiring named as current | High | **fix-now** (saturn + retiring-flags) then fix-at-transition (full re-census) | CLAUDE.md |
-| 2 | CLAUDE.md break-glass: retiring-host entries; "greetd, once landed" false; saturn absent | High | **fix-now** (greetd + saturn) then fix-at-transition | CLAUDE.md |
-| 3 | CLAUDE.md SSH stance: pre-ADR-042 posture, no ADR-042 ref, "(neptune)" as sole darwin | High | **fix-now** (ADR-042 ref + saturn) | CLAUDE.md |
-| 4 | CLAUDE.md census has no currency enforcement (structural) | High | **file-issue** (generation/lint of host census; ADR-037/#562 hook) | new issue |
-| 5 | ADR-034 no-backup stance fired by keeper's Postgres, no re-examination issue | Medium | **file-issue** (the sweep's one net-new) | new issue |
-| 6 | remote-desktop-access targets "the metis desktop"; metis loses it to jupiter | Medium | note-now, re-target at #387 | design note |
-| 7 | PRD §1.2/§5.5/§11.2/§11.6: neptune "incoming", saturn "planned", Determinate-installer contradiction, false ADR-028 conditional | Medium | fix-at-transition; §11.2 (Determinate vs runbook) is a genuine cross-doc contradiction — fix-now-safe | PRD |
-| 8 | colour-conductor status-header vs body (items 1/5 obsolete, not struck) | Medium | fix (movement-independent) | design note |
-| 9 | ADR-028/029 "mothership additive" framing vs metis role-swap | Low-Med | reconcile at #387 (§History note) | ADRs / #387 |
-| 10 | taxonomy fleet table + headless-bootstrap §Mercury: no retirement flags | Low | fix-at-transition (decommission sweep) | docs |
-| 11 | wiki.md / claude-session-sync.md list nixos-vm as a sync peer | Low | note-only (both unbuilt; fix at implementation) | design notes |
-| — | ~13 ADR bodies naming old fleet / mac-mini | — | **do-not-fix** (frozen history) | — |
-| — | CLAUDE.md PR-auto-merge; ADR-005 nixd hostName | — | **dropped** (false positives) | — |
+| #  | Finding                                                                                                                         | Severity | Action                                                                                                | Home         |
+| -- | ------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------- | ------------ |
+| 1  | CLAUDE.md: "Four live hosts", saturn omitted, two retiring named as current                                                     | High     | **fix-now** (saturn + retiring-flags) then fix-at-transition (full re-census)                         | CLAUDE.md    |
+| 2  | CLAUDE.md break-glass: retiring-host entries; "greetd, once landed" false; saturn absent                                        | High     | **fix-now** (greetd + saturn) then fix-at-transition                                                  | CLAUDE.md    |
+| 3  | CLAUDE.md SSH stance: pre-ADR-042 posture, no ADR-042 ref, "(neptune)" as sole darwin                                           | High     | **fix-now** (ADR-042 ref + saturn)                                                                    | CLAUDE.md    |
+| 4  | CLAUDE.md census has no currency enforcement (structural)                                                                       | High     | **file-issue** (generation/lint of host census; ADR-037/#562 hook)                                    | new issue    |
+| 5  | ADR-034 no-backup stance fired by keeper's Postgres, no re-examination issue                                                    | Medium   | **file-issue** (the sweep's one net-new)                                                              | new issue    |
+| 6  | remote-desktop-access targets "the metis desktop"; metis loses it to jupiter                                                    | Medium   | note-now, re-target at #387                                                                           | design note  |
+| 7  | PRD §1.2/§5.5/§11.2/§11.6: neptune "incoming", saturn "planned", Determinate-installer contradiction, false ADR-028 conditional | Medium   | fix-at-transition; §11.2 (Determinate vs runbook) is a genuine cross-doc contradiction — fix-now-safe | PRD          |
+| 8  | colour-conductor status-header vs body (items 1/5 obsolete, not struck)                                                         | Medium   | fix (movement-independent)                                                                            | design note  |
+| 9  | ADR-028/029 "mothership additive" framing vs metis role-swap                                                                    | Low-Med  | reconcile at #387 (§History note)                                                                     | ADRs / #387  |
+| 10 | taxonomy fleet table + headless-bootstrap §Mercury: no retirement flags                                                         | Low      | fix-at-transition (decommission sweep)                                                                | docs         |
+| 11 | wiki.md / claude-session-sync.md list nixos-vm as a sync peer                                                                   | Low      | note-only (both unbuilt; fix at implementation)                                                       | design notes |
+| —  | ~13 ADR bodies naming old fleet / mac-mini                                                                                      | —        | **do-not-fix** (frozen history)                                                                       | —            |
+| —  | CLAUDE.md PR-auto-merge; ADR-005 nixd hostName                                                                                  | —        | **dropped** (false positives)                                                                         | —            |
 
 Already covered by open PRs (no new action): `.sops.yaml` recovery comment + darwin sops rationale (#581); the ntfy watcher-rule violation (named in #580); the atuin trigger (#560).
 

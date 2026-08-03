@@ -58,13 +58,13 @@ Each platform's `users.nix` derives its `authorizedKeys` by looking up its own h
 
 **The target shape (operator, 2026-07-07).** Asked for the expected future fleet, the operator produced a topology — recorded here verbatim as the target the edge data grows toward:
 
-| Destination | Accepts keys from |
-|---|---|
-| metis | jupiter, neptune, saturn |
-| M720q (new, name TBD) | jupiter, neptune, saturn |
-| jupiter (desktop tower, new) | neptune, saturn |
-| neptune | jupiter, saturn |
-| saturn | jupiter, neptune |
+| Destination                  | Accepts keys from        |
+| ---------------------------- | ------------------------ |
+| metis                        | jupiter, neptune, saturn |
+| M720q (new, name TBD)        | jupiter, neptune, saturn |
+| jupiter (desktop tower, new) | neptune, saturn          |
+| neptune                      | jupiter, saturn          |
+| saturn                       | jupiter, neptune         |
 | Raspberry Pi (new, name TBD) | jupiter, neptune, saturn |
 
 The table has one rule in it: **sources are exactly the three interactive workstations** (jupiter, neptune, saturn); the service tier (metis post-#387, M720q, Pi) is pure sink — accepting only workstations and never each other. Trust flows downhill, never up, never sideways within the service tier. Three structural consequences follow. First, sink hosts never *generate* outbound fleet keys — the standing key surface at target is three keys on encrypted interactive machines, not one per host. Second, the closed edges are precisely the attack direction: the service tier is where the riskiest code will run (homelab services per #387, CI runners executing input-controlled jobs per #546/#547 — #568's threat surface) while the workstations hold the crown jewels; any→any's marginal edges would hand a compromised service box an SSH rail into them. Third, the convenience forgone is thin because SSH direction ≠ data direction — a copy *from* a sink is initiated from the key-holding side — and an emergency edge is a data change plus a destination rebuild via its own break-glass path, the same property the flat list has. metis illustrates that edges are time-varying data: a legitimate source today (it is a desktop), it moves to sink at #387's re-role — a one-line map change plus key retirement, not an architecture event. Review resolutions (operator, 2026-07-07): **saturn** becomes a destination deliberately — its client-only stance flips at implementation, with binding sshd to the tailnet interface the roaming-laptop mitigation to evaluate there; **mercury** is planned for retirement — it never enrols as a source and persists as a workstation-only sink until decommission; **nixos-vm** is likewise leaving the fleet, making the table above the complete target fleet. The first commit expresses the *current* flat semantics as edge data (behaviour-preserving refactor); narrowing the edge set is then a data-only change the operator makes deliberately. The any→any question stops being an architecture and becomes a reviewable attrset — the strawman set above is exactly that, a strawman, held in Unresolved questions for the operator to settle.

@@ -17,12 +17,12 @@ Host names are not load-bearing — they drive no config (no `hostName ==` condi
 
 Adopt **celestial bodies** as the host-naming theme, with one principle underneath it: **gravitational binding mirrors operational dependency.** What a machine *is* — owned metal, rented metal, or a guest VM — decides its celestial class. Substrate is a durable property of the machine (not its software role), so keying the class on substrate stays consistent with ADR-016's stability rule.
 
-| Substrate | Celestial class | Why it fits |
-|-----------|-----------------|-------------|
-| Physical machine (metal you own) | major planet, **moon-capable** | A full world that owns its own gravity — an independent host with dependents; the VMs you pin to it orbit it as moons. |
-| VPS / cloud instance (someone else's metal) | major planet, **moonless** | A real standalone host, but on rented metal — barren, nothing of yours orbiting it. Mercury/Venus being airless-hostile is a fitting bonus. |
-| VM pinned to an owned host | a **moon** of that host's planet | A moon is bound to exactly one planet — the strongest gravitational tie in the scheme — mirroring a pinned VM's total dependence on its host metal. |
-| Roaming VM, or any host that fits no class above | a **minor body** — asteroid &c., the open reserve | Bound to no single planet; a deliberately loose catch-all (see Rationale). |
+| Substrate                                        | Celestial class                                   | Why it fits                                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Physical machine (metal you own)                 | major planet, **moon-capable**                    | A full world that owns its own gravity — an independent host with dependents; the VMs you pin to it orbit it as moons.                              |
+| VPS / cloud instance (someone else's metal)      | major planet, **moonless**                        | A real standalone host, but on rented metal — barren, nothing of yours orbiting it. Mercury/Venus being airless-hostile is a fitting bonus.         |
+| VM pinned to an owned host                       | a **moon** of that host's planet                  | A moon is bound to exactly one planet — the strongest gravitational tie in the scheme — mirroring a pinned VM's total dependence on its host metal. |
+| Roaming VM, or any host that fits no class above | a **minor body** — asteroid &c., the open reserve | Bound to no single planet; a deliberately loose catch-all (see Rationale).                                                                          |
 
 Whether a planet carries moons is itself the owned-vs-rented marker: your own metal can anchor pinned VMs — each of which *is* one of its moons, taking the name of one of that host-planet's actual moons — while rented metal stays barren by choice. A moon is therefore not a phantom signal naming nothing; it is the VM. **Earth is excluded** from the name pool by operator preference.
 
@@ -30,14 +30,14 @@ The **minor-body reserve** (asteroids, and the rest of the celestial menagerie �
 
 **Per-host selection** (ratified in #368):
 
-| Current | New | Class | Machine |
-|---------|-----|-------|---------|
-| (new tower) | **Jupiter** | moon-capable planet | NixOS x86_64 flagship desktop |
-| (new MacBook Air) | **Saturn** | moon-capable planet | darwin daily driver |
-| `metis` | **Mars** | moon-capable planet | NixOS x86_64 work + personal dev (ProDesk) |
-| `mac-mini` | **Neptune** | moon-capable planet | darwin home Mac |
-| `mercury` | **Mercury** | moonless planet | AWS EC2 x86_64 work, headless |
-| `nixos-vm` | *(minor-body reserve — no name minted)* | minor body (reserve) | UTM/aarch64 refinement VM on a non-host Mac; retiring |
+| Current           | New                                     | Class                | Machine                                               |
+| ----------------- | --------------------------------------- | -------------------- | ----------------------------------------------------- |
+| (new tower)       | **Jupiter**                             | moon-capable planet  | NixOS x86_64 flagship desktop                         |
+| (new MacBook Air) | **Saturn**                              | moon-capable planet  | darwin daily driver                                   |
+| `metis`           | **Mars**                                | moon-capable planet  | NixOS x86_64 work + personal dev (ProDesk)            |
+| `mac-mini`        | **Neptune**                             | moon-capable planet  | darwin home Mac                                       |
+| `mercury`         | **Mercury**                             | moonless planet      | AWS EC2 x86_64 work, headless                         |
+| `nixos-vm`        | *(minor-body reserve — no name minted)* | minor body (reserve) | UTM/aarch64 refinement VM on a non-host Mac; retiring |
 
 `nixos-vm` runs in UTM on a **non-host Mac** (a personal machine not configured in this repo), so it is gravitationally bound to no fleet planet — it types to the minor-body reserve, not a moon. An earlier revision assigned it **Triton** on the false premise that it ran on the Mac mini (→ Neptune); corrected per #448. No reserve name is minted: the host is retiring, and the reserve deliberately names things only on need.
 

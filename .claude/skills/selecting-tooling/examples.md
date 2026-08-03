@@ -3,6 +3,7 @@
 Four real selections run through this process. Each is here for one reason: to show how **step 4 (verify against the real system/pins) changed the outcome** — the part a one-shot answer would have gotten wrong.
 
 ## Contents
+
 - Audio — convention is the answer; verify it's *actually* convention
 - Clipboard — the marquee feature was inert; the version we'd get lacked the fix
 - Polkit — the premise was false, and "the only Qt app" unlocked a 573 MiB cleanup
@@ -23,6 +24,7 @@ Four real selections run through this process. Each is here for one reason: to s
 **Request:** copied content should survive the source app closing, with history.
 
 **What verification changed (twice):**
+
 1. The candidate's headline security feature (clipse `excludedApps`, which ships with password managers pre-excluded) was read in **source** and found to query `wlrctl`/`hyprctl` only — it has no niri path, so it is **inert on niri**. The marquee advantage evaporated.
 2. The protection that *does* work (the `CLIPBOARD_STATE=sensitive` hint chain) was broken at our pin: clipse **1.1.0** (what nixpkgs shipped) lacked the handler, added only in 1.1.1. The version we'd actually get mattered more than the latest upstream.
 
@@ -35,6 +37,7 @@ Four real selections run through this process. Each is here for one reason: to s
 **Request:** "nothing surfaces a graphical authentication prompt."
 
 **What verification changed:**
+
 - **The premise was false.** `niri-flake` already runs the KDE agent (`niri-flake-polkit`) — confirmed live on the host. The task became *swap*, not *add*.
 - Walking the closure showed the KDE agent was the **only Qt app** on the host, making the Stylix `qt` target vestigial. The **marginal** removal (not the misleading standalone closure) measured **573 MiB / 62 paths** — and the running prompt was off-theme because no `kdeglobals` exists for a KDE app to read.
 

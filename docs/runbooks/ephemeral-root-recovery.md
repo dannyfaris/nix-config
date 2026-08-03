@@ -97,7 +97,7 @@ btrfs subvolume snapshot /mnt/btrfs-top/roots-archive/<source-stamp> /mnt/btrfs-
 umount /mnt/btrfs-top
 ```
 
-**The kill-switch boot.** Reboot; at the systemd-boot menu press `e`, append ` ephemeral.skip-rollback` to the kernel command line, boot. No rebuild, effective for this boot only. This boot consumes the promotion; the following reboot resumes normal wiping — so use it to extract what was actually needed and land the persist declarations.
+**The kill-switch boot.** Reboot; at the systemd-boot menu press `e`, append `ephemeral.skip-rollback` to the kernel command line, boot. No rebuild, effective for this boot only. This boot consumes the promotion; the following reboot resumes normal wiping — so use it to extract what was actually needed and land the persist declarations.
 
 **Banned: `btrfs subvolume set-default`.** Inert on this fleet — the explicit `subvol=@root` mount option always wins over the default-subvolume setting — with independent persistence and deletion traps besides (research §2). Promotion is by name, never by set-default.
 

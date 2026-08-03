@@ -15,12 +15,12 @@ Stylix is no longer the font source of truth on the desktop. Its model is to har
 
 ## Selections
 
-| Generic | Face | Package | Backs |
-|---|---|---|---|
-| `monospace` | Monaspace Argon Nerd Font | `pkgs.nerd-fonts.monaspace` | foot + the TUIs inside it (gh-dash, zellij, starship, lazygit) |
-| `sans-serif` | Inter | `pkgs.inter` | GTK dialogs, Firefox web body, the fontconfig sans default; Noctalia's own surfaces (it defaults to the `Sans Serif` generic) |
-| `serif` | DejaVu Serif (uncurated) | — (NixOS base) | rare serif-requesting web pages; resolves to the base face, not a curated pick |
-| `emoji` | Noto Color Emoji | `pkgs.noto-fonts-color-emoji` | colour-emoji glyphs (web, notifications) |
+| Generic      | Face                      | Package                       | Backs                                                                                                                         |
+| ------------ | ------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `monospace`  | Monaspace Argon Nerd Font | `pkgs.nerd-fonts.monaspace`   | foot + the TUIs inside it (gh-dash, zellij, starship, lazygit)                                                                |
+| `sans-serif` | Inter                     | `pkgs.inter`                  | GTK dialogs, Firefox web body, the fontconfig sans default; Noctalia's own surfaces (it defaults to the `Sans Serif` generic) |
+| `serif`      | DejaVu Serif (uncurated)  | — (NixOS base)                | rare serif-requesting web pages; resolves to the base face, not a curated pick                                                |
+| `emoji`      | Noto Color Emoji          | `pkgs.noto-fonts-color-emoji` | colour-emoji glyphs (web, notifications)                                                                                      |
 
 Only the faces something actually consumes are installed (whitelist > blanket): the NixOS desktop set is **Monaspace + Inter + Noto emoji**. Serif is *not* installed as a desktop selection — it resolves to the DejaVu the NixOS base set already ships (§Installation model). Headless hosts (electra) render no fonts and install none.
 

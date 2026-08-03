@@ -30,10 +30,11 @@ A second decision rides along. Once a shell owns the chrome *and* can drive a ru
 **2. Consume Noctalia via its own flake input, not the nixpkgs package.** The declarative surface — `programs.noctalia-shell.{settings,colors,user-templates}` — lives in Noctalia's `nix/home-module.nix`, not in nixpkgs or home-manager. The flake input pins `noctalia-qs` (Noctalia's Quickshell fork) by construction, so shell and runtime are version-matched in one lock. `inputs.nixpkgs.follows = "nixpkgs"` keeps it on our `nixos-unstable` channel (ADR-030), per repo convention; the cachix-vs-`follows` tradeoff is an implementation detail (see §Implementation).
 
 **3. Noctalia is the sole theming authority over every rendered desktop surface; Stylix's desktop theming is removed (E1 — see Refinement).** Noctalia runs in its **default, idiomatic theming** — no ported palette, no forced scheme, no terminal-palette fidelity chase — and themes external apps through its own **built-in templates**. Noctalia owns runtime polarity and scheme selection via its control centre. Surface coverage:
-   - **Noctalia's own surfaces** — bar, launcher, notifications, lock, OSD, etc. — in its default look.
-   - **External apps via built-in templates** — foot, GTK, helix, starship, yazi, btop, niri borders (Noctalia ships templates for these).
-   - **Gaps (no upstream template)** — zellij, bat, fzf: left at their app defaults, or given small `user-templates` later.
-   - **Fonts** — Noctalia owns its own surfaces; foot's font is re-homed onto `foot.nix` directly (Noctalia's templating is colour-only and cannot set a terminal font).
+
+- **Noctalia's own surfaces** — bar, launcher, notifications, lock, OSD, etc. — in its default look.
+- **External apps via built-in templates** — foot, GTK, helix, starship, yazi, btop, niri borders (Noctalia ships templates for these).
+- **Gaps (no upstream template)** — zellij, bat, fzf: left at their app defaults, or given small `user-templates` later.
+- **Fonts** — Noctalia owns its own surfaces; foot's font is re-homed onto `foot.nix` directly (Noctalia's templating is colour-only and cannot set a terminal font).
 
 **4. Stylix is demoted on the desktop, not disabled (E1); every other host is untouched.** Remove the Stylix desktop *target-writers*: `home/shared/stylix-targets.nix` leaves the desktop host's import list and `home/nixos/stylix-targets-desktop.nix` leaves the desktop home bundle (import-splits); fonts re-home off `stylix.fonts` to `fonts.packages` + `fontconfig.defaultFonts`; niri geometry/sizing source from `lib/display-profiles.nix`. `stylix.enable` and the host's rose-pine palette entry (`lib/host-palettes.nix`, incl. the #331 slot corrections) **stay** as the static colour table of the Refinement note. mercury, nixos-vm, and mac-mini keep pure declarative Stylix entirely unchanged. (E2 — drop the palette entry and re-home the four `shared/` TUI modules — is a deferred future refinement.)
 
@@ -42,6 +43,7 @@ A second decision rides along. Once a shell owns the chrome *and* can drive a ru
 ## Rationale
 
 **Why Noctalia clears the bar DMS failed — each limb of the ADR-029 failure is neutralised.** ADR-029's retraction rested on three independently-pinned upstreams (DMS / quickshell / niri-flake) skewing apart:
+
 - *AppId-pragma skew* (DMS `shell.qml` against a trailing nixpkgs quickshell) → **removed at its source**: the Noctalia flake pins `noctalia-qs` in the *same input* as the shell QML, so shell and runtime bump together in one lock — the *inter-pin* divergence that produced the pragma mismatch is gone. `noctalia-qs` is itself a fork that tracks Quickshell upstream, so a Quickshell-vs-niri protocol change is not impossible — but that is one external pin moving, not three skewing apart.
 - *systemd start-limit crash loop* → **gone**: v4 launches from the compositor; the systemd path is removed upstream.
 - *niri `include` parse-failure → silent default fallback* → **gone**: Noctalia integrates by a spawn line plus benign rules, injecting nothing into niri's config.

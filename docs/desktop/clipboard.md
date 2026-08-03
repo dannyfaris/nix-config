@@ -45,11 +45,11 @@ This is the load-bearing part of the decision, and the #112 re-scope changed it.
 
 **The only automatic protection is the sensitive-hint chain**, and on our pins it is gated on the clipse version:
 
-| Link | Pin | Status |
-|---|---|---|
-| 1Password GUI marks copies sensitive (`x-kde-passwordManagerHint`) | GUI 8.12.x | ✅ — Wayland secure-clipboard landed in [8.11.0](https://releases.1password.com/linux/8.11/) (2025-07-08), sensitive-marking "for clipboard daemons and managers" in 8.11.2 (2025-07-22); but the hint is documented as scoped to KDE's data-control path, so delivery over niri's `wlr-data-control` is **unverified** |
-| `wl-clipboard` translates it → `CLIPBOARD_STATE=sensitive` | 2.3.0 | ✅ (2.3.0 is the version that added this) |
-| clipse honors `CLIPBOARD_STATE=sensitive` | **1.2.1** (pinned) | ✅ — the handler was added in **v1.1.1**; our channel ships 1.1.0, so this rides the override (see Configuration) |
+| Link                                                               | Pin                | Status                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1Password GUI marks copies sensitive (`x-kde-passwordManagerHint`) | GUI 8.12.x         | ✅ — Wayland secure-clipboard landed in [8.11.0](https://releases.1password.com/linux/8.11/) (2025-07-08), sensitive-marking "for clipboard daemons and managers" in 8.11.2 (2025-07-22); but the hint is documented as scoped to KDE's data-control path, so delivery over niri's `wlr-data-control` is **unverified** |
+| `wl-clipboard` translates it → `CLIPBOARD_STATE=sensitive`         | 2.3.0              | ✅ (2.3.0 is the version that added this)                                                                                                                                                                                                                                                                               |
+| clipse honors `CLIPBOARD_STATE=sensitive`                          | **1.2.1** (pinned) | ✅ — the handler was added in **v1.1.1**; our channel ships 1.1.0, so this rides the override (see Configuration)                                                                                                                                                                                                       |
 
 **Mitigation posture (layered) — narrowed by #112's GUI-only delivery:**
 
@@ -79,6 +79,7 @@ This is the load-bearing part of the decision, and the #112 re-scope changed it.
 **The automatic backstop cannot be trusted until verified on the box — and #112 must be verified first.** The hint chain's load-bearing link (does 1Password's `x-kde-passwordManagerHint` reach niri's `wlr-data-control`?) is unverified, and the test needs the 1Password GUI working on metis. #112 is implemented (PR #367 merged) but **open pending its own on-box smoke test** (polkit unlock + Firefox autofill); until that passes there is no trustworthy password source to test against. Treat the backstop as unproven until both #112 is verified and the test below passes.
 
 **Verify on metis (at implementation, from the physical session):**
+
 - Copy a password from the 1Password GUI, then `wl-paste --list-types` — does `x-kde-passwordManagerHint` appear? If not, 1Password is not delivering the hint over `wlr-data-control` and the automatic backstop does not protect even GUI copies (fall back to layers 1 + 3).
 - Copy from an app, close it, and paste *without* opening the TUI — does the live clipboard survive? If yes, clipse's own persistence is sufficient. If no, recall-via-TUI still meets the user story; add `wl-clip-persist` only if transparent paste is wanted.
 

@@ -7,10 +7,7 @@ status: Accepted
 
 > This ADR **supersedes [ADR-014](./ADR-014-independent-roles.md)** in full and **amends [ADR-013](./ADR-013-composition-framework.md)** by retracting its role-specific sub-claim while preserving its broader explicit-imports philosophy. The composition framework's rejection of auto-discovery, its whitelist stance, and its "explicit > implicit" posture all survive; only the *role layer* on top of that framework is walked back. [ADR-015](./ADR-015-tier-as-directory.md) (tier-as-directory) and [ADR-016](./ADR-016-host-identity.md) (host identity) are untouched.
 
-> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
-> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
-> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
-> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`) per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/` tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
 ## Context
 
@@ -130,48 +127,16 @@ The decomposition above resolves the "single-module bundles will be reconsidered
 
 ### `theming.nix` reclassified from bundle to standalone module (2026-05-31)
 
-`home/shared/bundles/theming.nix` was authored in slice 2b (PR #30,
-2026-05-28) — before the `bundle-purity` lint existed — as a file living
-under `bundles/` whose body sets `stylix.targets.*.enable` inline, with
-no `imports` list. Measured against the `bundle-purity` rule (§8.1 #4,
-restated in this ADR's Decision and Consequences), that is a violation on
-two counts: an aggregator file must contain **only** an `imports` list of
-**two or more** distinct modules, and `theming.nix` has zero imports and
-sets options inline. This blocked the `bundle-purity` lint from landing
-(#54 P5.1, tracked via #65).
+`home/shared/bundles/theming.nix` was authored in slice 2b (PR #30, 2026-05-28) — before the `bundle-purity` lint existed — as a file living under `bundles/` whose body sets `stylix.targets.*.enable` inline, with no `imports` list. Measured against the `bundle-purity` rule (§8.1 #4, restated in this ADR's Decision and Consequences), that is a violation on two counts: an aggregator file must contain **only** an `imports` list of **two or more** distinct modules, and `theming.nix` has zero imports and sets options inline. This blocked the `bundle-purity` lint from landing (#54 P5.1, tracked via #65).
 
-The resolution **(B)** is to recognise the **category error** rather than
-bend the file or the rule. `theming.nix` is not an aggregator and never
-was: it is a single coherent capability — the explicit whitelist of which
-HM-managed tools cede their theming to Stylix — expressed as a flat list
-of `enable` toggles. That is a *standalone module*, not a bundle. The fix
-is therefore a reclassification, not a refactor:
+The resolution **(B)** is to recognise the **category error** rather than bend the file or the rule. `theming.nix` is not an aggregator and never was: it is a single coherent capability — the explicit whitelist of which HM-managed tools cede their theming to Stylix — expressed as a flat list of `enable` toggles. That is a *standalone module*, not a bundle. The fix is therefore a reclassification, not a refactor:
 
-- The file moves out of `bundles/` to `home/shared/stylix-targets.nix`
-  (a standalone module). Standalone modules are permitted to set options
-  inline; the `bundle-purity` rule governs only `foundation.nix` and files
-  under `bundles/`, so the violation ceases to exist by construction —
-  no PRD amendment, no lint carve-out.
-- Hosts that imported the bundle (metis, nixos-vm, mercury) repoint their
-  `extraHomeModules` entry to the new path.
+- The file moves out of `bundles/` to `home/shared/stylix-targets.nix` (a standalone module). Standalone modules are permitted to set options inline; the `bundle-purity` rule governs only `foundation.nix` and files under `bundles/`, so the violation ceases to exist by construction — no PRD amendment, no lint carve-out.
+- Hosts that imported the bundle (metis, nixos-vm, mercury) repoint their `extraHomeModules` entry to the new path.
 
-**Alternatives weighed.** (A) Splitting into one single-line module per
-Stylix target and making `theming.nix` a genuine `imports` list. Rejected:
-it conforms literally but produces ~14 near-empty files no host imports
-separately — exactly the forecast-driven indirection this ADR's
-"single-module bundles are forbidden" rationale warns against — and
-scatters the per-target rationale comments that currently make "where does
-Stylix theming live?" read as one file. (C) Amending §8.1 #4 to carve out
-a "configuration bundle" class. Rejected: it weakens a bright-line,
-deterministic invariant to accommodate one mis-filed file and complicates
-`lint-bundle-purity.sh` with a "config bundle vs real bundle" distinction
-— the Consequences above explicitly count "no carve-outs, no special
-cases" as a win.
+**Alternatives weighed.** (A) Splitting into one single-line module per Stylix target and making `theming.nix` a genuine `imports` list. Rejected: it conforms literally but produces ~14 near-empty files no host imports separately — exactly the forecast-driven indirection this ADR's "single-module bundles are forbidden" rationale warns against — and scatters the per-target rationale comments that currently make "where does Stylix theming live?" read as one file. (C) Amending §8.1 #4 to carve out a "configuration bundle" class. Rejected: it weakens a bright-line, deterministic invariant to accommodate one mis-filed file and complicates `lint-bundle-purity.sh` with a "config bundle vs real bundle" distinction — the Consequences above explicitly count "no carve-outs, no special cases" as a win.
 
-This amendment changes no decision in this ADR; it is a clarifying
-application of the taxonomy it already defines (a bundle aggregates ≥ 2
-modules; a single coherent capability is a standalone module). See #65
-for the implementing change.
+This amendment changes no decision in this ADR; it is a clarifying application of the taxonomy it already defines (a bundle aggregates ≥ 2 modules; a single coherent capability is a standalone module). See #65 for the implementing change.
 
 ### Foundation's inline Stylix block factored into stylix-palette.nix (2026-05-31)
 

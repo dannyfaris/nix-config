@@ -7,10 +7,7 @@ status: Accepted
 
 > **Amended by [ADR-022](./ADR-022-headless-bootstrap-nixos-anywhere.md) on 2026-05-25** for the host SSH key acquisition order only. ADR-022 shifts host-key generation from post-boot harvest (described in this ADR's Implementation section and the original AWS runbook) to operator-side pre-generation injected via `nixos-anywhere --extra-files`. The core decision below (sops-nix, age recipient per host, SSH host key as decryption identity, plaintext blob safe in a public repo) is unchanged and remains authoritative for everything except acquisition order.
 
-> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
-> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
-> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
-> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`) per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/` tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
 ## Context
 

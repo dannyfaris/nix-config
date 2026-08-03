@@ -10,13 +10,13 @@ A **`fuzzel --dmenu` power menu** — a small shell script that presents a label
 
 The menu entries and what each runs:
 
-| Entry | Command | Notes |
-|---|---|---|
-| Lock | `loginctl lock-session` | Fires swayidle's `lock` event → swaylock (the #97 integration). This is the deliberate "lock now" control #97 deferred here. |
-| Log out | `niri msg action quit` | niri shows its built-in quit-confirm dialog (this *is* the logout confirmation); on confirm the niri session ends → greetd/regreet login screen. |
-| Suspend | `systemctl suspend` | swayidle's `before-sleep` locks first, so resume always lands on the lock screen (#97). |
-| Reboot | `systemctl reboot` | Destructive — second-stage confirm (see Configuration). |
-| Shut down | `systemctl poweroff` | Destructive — second-stage confirm. |
+| Entry     | Command                 | Notes                                                                                                                                            |
+| --------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Lock      | `loginctl lock-session` | Fires swayidle's `lock` event → swaylock (the #97 integration). This is the deliberate "lock now" control #97 deferred here.                     |
+| Log out   | `niri msg action quit`  | niri shows its built-in quit-confirm dialog (this *is* the logout confirmation); on confirm the niri session ends → greetd/regreet login screen. |
+| Suspend   | `systemctl suspend`     | swayidle's `before-sleep` locks first, so resume always lands on the lock screen (#97).                                                          |
+| Reboot    | `systemctl reboot`      | Destructive — second-stage confirm (see Configuration).                                                                                          |
+| Shut down | `systemctl poweroff`    | Destructive — second-stage confirm.                                                                                                              |
 
 fuzzel is already a Stylix target (`stylix.targets.fuzzel.enable`, full base16 palette), so the menu inherits the host theme automatically — no per-tool theming to hand-wire.
 

@@ -39,11 +39,11 @@ These are outside the boundary altogether (no per-tool doc required):
 
 ### Day-one casks
 
-| Cask | Justification | Per-tool doc |
-|---|---|---|
-| `ghostty` | Clause 1 (Linux-only `meta.platforms`) | [docs/desktop/ghostty.md](../desktop/ghostty.md) |
-| `tailscale-app` | Clause 1 (`pkgs.tailscale` on Darwin ships only the daemon/CLI; the `NetworkExtension` GUI is not in nixpkgs) | [docs/desktop/tailscale.md](../desktop/tailscale.md) |
-| `1password` | Clause 2 (`pkgs._1password-gui` exists on Darwin; cask chosen as the vendor-supported install path that 1Password's MDM templates target) | [docs/desktop/1password.md](../desktop/1password.md) |
+| Cask            | Justification                                                                                                                             | Per-tool doc                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `ghostty`       | Clause 1 (Linux-only `meta.platforms`)                                                                                                    | [docs/desktop/ghostty.md](../desktop/ghostty.md)     |
+| `tailscale-app` | Clause 1 (`pkgs.tailscale` on Darwin ships only the daemon/CLI; the `NetworkExtension` GUI is not in nixpkgs)                             | [docs/desktop/tailscale.md](../desktop/tailscale.md) |
+| `1password`     | Clause 2 (`pkgs._1password-gui` exists on Darwin; cask chosen as the vendor-supported install path that 1Password's MDM templates target) | [docs/desktop/1password.md](../desktop/1password.md) |
 
 *Clause-3 status of the day-one casks (post-amendment):* Ghostty is moot (not on MAS); 1Password's clause-2 vendor-MDM justification likely survives clause-3 evaluation; Tailscale's MAS variant is vendor-disrecommended per https://tailscale.com/kb/1065/macos-variants (Standalone is the vendor's preferred channel). Re-evaluation tracked under §Consequences migration trigger 4; no day-one cask is a strong clause-3 candidate.
 
@@ -91,7 +91,7 @@ If a manual force-update is ever needed (e.g., to apply a known-fixed CVE before
 brew update && brew upgrade --cask --greedy <name>
 ```
 
-`--greedy` is required because all three casks declare `auto_updates true` (see §Investigation guidance step 2), which tells brew to skip them by default. The `brew update && ` prefix is required because `mutableTaps = false` + `homebrew.global.autoUpdate = false` mean the tap state brew reads is whatever was current at the last `darwin-rebuild switch`. If Sparkle's silent install has already raced ahead of the tap-pinned version, the brew invocation will see the installed version as current and no-op; `brew update` refreshes tap metadata first.
+`--greedy` is required because all three casks declare `auto_updates true` (see §Investigation guidance step 2), which tells brew to skip them by default. The `brew update &&` prefix is required because `mutableTaps = false` + `homebrew.global.autoUpdate = false` mean the tap state brew reads is whatever was current at the last `darwin-rebuild switch`. If Sparkle's silent install has already raced ahead of the tap-pinned version, the brew invocation will see the installed version as current and no-op; `brew update` refreshes tap metadata first.
 
 **Note on fallback cost.** If a per-tool fallback is wired (e.g., the operator suppresses 1Password's updater per its doc), THAT app then requires periodic manual `brew update && brew upgrade --cask --greedy <name>` invocations the operator must own. Suppression-mode adoption is a real ergonomic cost, not free — it shifts the app from vendor-cadence to operator-cadence. Per-tool docs own the exact fallback recipe — for apps with their own update-config knob (Ghostty), the suppression-mode toggle must be coordinated across both layers. Suppression keys alone are insufficient where an in-app knob overrides them.
 

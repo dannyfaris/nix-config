@@ -1,57 +1,32 @@
 # Darwin bootstrap
 
-Operational procedure for bringing a macOS host from clean state to a
-fully-managed `nh darwin switch` target.
+Operational procedure for bringing a macOS host from clean state to a fully-managed `nh darwin switch` target.
 
-See [ADR-027](../decisions/ADR-027-foundation-and-bundles.md) for the
-foundation + bundles composition model the Darwin tree mirrors and the
-[`#11` epic](https://github.com/dannyfaris/nix-config/issues/11) for
-the broader mac-mini onboarding context.
+See [ADR-027](../decisions/ADR-027-foundation-and-bundles.md) for the foundation + bundles composition model the Darwin tree mirrors and the [`#11` epic](https://github.com/dannyfaris/nix-config/issues/11) for the broader mac-mini onboarding context.
 
-> The initial forecast version of this runbook (PR #164) was retired
-> after the live mac-mini bootstrap on 2026-06-02 surfaced the real
-> sequence. This document is the operational pass.
+> The initial forecast version of this runbook (PR #164) was retired after the live mac-mini bootstrap on 2026-06-02 surfaced the real sequence. This document is the operational pass.
 
 ## Operator prerequisites
 
 Run once per fresh clone of this repo on the operator machine:
 
-- `nix` with flakes enabled. Repo cloned. devShell entered once
-  (`nix develop`, or direnv-reload via the repo's `.envrc`). The
-  devShell's `shellHook` installs the pre-commit hooks (ADR-025) and
-  exports `SOPS_AGE_KEY_FILE` so `sops --decrypt` works in-repo
-  without env-var ceremony.
+- `nix` with flakes enabled. Repo cloned. devShell entered once (`nix develop`, or direnv-reload via the repo's `.envrc`). The devShell's `shellHook` installs the pre-commit hooks (ADR-025) and exports `SOPS_AGE_KEY_FILE` so `sops --decrypt` works in-repo without env-var ceremony.
 - Vault access (1Password) from the new Mac or a neighbouring signed-in device. Nothing key-shaped is carried between machines: the Mac's sops identity is populated from the vault in pre-bootstrap step 1, and its fleet SSH key is minted on-box at §Fleet SSH enrolment and lands via a normal PR (docs/design/fleet-key-custody.md).
-- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md
-  §Private flake inputs). Nix fetches *all* inputs at eval, so every
-  machine that evaluates this flake — this Mac, once it rebuilds
-  itself — needs GitHub auth for the private inputs or the rebuild
-  dies at fetch with an HTTP 404. One-time per machine, after
-  `gh auth login` (gh arrives with the first activation; run this
-  before the *second* rebuild, or on first 404):
+- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md §Private flake inputs). Nix fetches *all* inputs at eval, so every machine that evaluates this flake — this Mac, once it rebuilds itself — needs GitHub auth for the private inputs or the rebuild dies at fetch with an HTTP 404. One-time per machine, after `gh auth login` (gh arrives with the first activation; run this before the *second* rebuild, or on first 404):
 
   ```
   install -d -m 700 ~/.config/nix && umask 077 && printf 'access-tokens = github.com=%s\n' "$(gh auth token)" > ~/.config/nix/nix.conf
   ```
 
-  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the
-  file is unmanaged and holds only this line. `gh auth token` returns a
-  session-lifetime OAuth token: a later rebuild 404-ing on the input is
-  the refresh signal (re-run the line). CI's equivalent, the PAT
-  behind it, and the declarative fleet-wide alternative are in
-  docs/ci.md §Private flake inputs.
+  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the file is unmanaged and holds only this line. `gh auth token` returns a session-lifetime OAuth token: a later rebuild 404-ing on the input is the refresh signal (re-run the line). CI's equivalent, the PAT behind it, and the declarative fleet-wide alternative are in docs/ci.md §Private flake inputs.
 
 ## Pre-bootstrap (operator-side, on the Mac)
 
-The Mac Mini and MacBook Air both follow the same sequence. Steps
-must run in order — each depends on the previous.
+The Mac Mini and MacBook Air both follow the same sequence. Steps must run in order — each depends on the previous.
 
 ### 0 — macOS Setup Assistant
 
-Walk through Setup Assistant. The only setting that matters downstream
-is **Account Name** (the Unix short name shown under "Username" /
-"Account Name" — Setup Assistant auto-derives one from the Full Name).
-It **must** be `dbf` exactly. `lib/operator.nix`'s `name` field is the single source of truth; `users.users.dbf`, `home-manager.users.dbf`, `/Users/dbf`, and the sops `age.keyFile` path (`~/.config/sops/age/keys.txt` under `darwinHome`) all key off this string.
+Walk through Setup Assistant. The only setting that matters downstream is **Account Name** (the Unix short name shown under "Username" / "Account Name" — Setup Assistant auto-derives one from the Full Name). It **must** be `dbf` exactly. `lib/operator.nix`'s `name` field is the single source of truth; `users.users.dbf`, `home-manager.users.dbf`, `/Users/dbf`, and the sops `age.keyFile` path (`~/.config/sops/age/keys.txt` under `darwinHome`) all key off this string.
 
 The Full Name (the display name) can be anything.
 
@@ -83,13 +58,7 @@ sh <(curl -L https://nixos.org/nix/install) --daemon
 
 Restart your terminal to pick up the new PATH.
 
-> The Determinate Systems installer was the prior recommendation per
-> PRD §11.2 ("upstream Nix variant, not Determinate Nix"). The
-> `--determinate=false` flag was removed upstream and its replacement
-> `--prefer-upstream-nix` is past its documented availability cutoff;
-> on the live mac-mini bootstrap the Determinate installer aborted
-> with a marketing nudge. The NixOS official installer produces
-> upstream Nix unambiguously and is now the canonical entry point.
+> The Determinate Systems installer was the prior recommendation per PRD §11.2 ("upstream Nix variant, not Determinate Nix"). The `--determinate=false` flag was removed upstream and its replacement `--prefer-upstream-nix` is past its documented availability cutoff; on the live mac-mini bootstrap the Determinate installer aborted with a marketing nudge. The NixOS official installer produces upstream Nix unambiguously and is now the canonical entry point.
 
 Enable flake features (the NixOS installer doesn't set them by default):
 
@@ -98,16 +67,12 @@ mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
 
-Without this step, every subsequent `nix shell` / `nix flake`
-invocation fails with `experimental Nix feature 'nix-command' is
-disabled`. This is per-user config; nix-darwin's foundation enables
-the same flags at system level after first activation, at which point
-the per-user file becomes redundant-but-harmless.
+Without this step, every subsequent `nix shell` / `nix flake` invocation fails with `experimental Nix feature 'nix-command' is
+disabled`. This is per-user config; nix-darwin's foundation enables the same flags at system level after first activation, at which point the per-user file becomes redundant-but-harmless.
 
 ### 3 — Clone the repo
 
-macOS ships without `git`. First `git` invocation triggers Xcode
-Command Line Tools install — a GUI prompt and 5–10 minutes of download:
+macOS ships without `git`. First `git` invocation triggers Xcode Command Line Tools install — a GUI prompt and 5–10 minutes of download:
 
 ```bash
 git clone https://github.com/dannyfaris/nix-config.git ~/nix-config
@@ -116,14 +81,9 @@ cd ~/nix-config
 
 The CLT prompt *aborts* the triggering command (`xcrun: error: invalid active developer path`) — re-run the clone once the install completes.
 
-The expected path is `/Users/dbf/nix-config` — this matches
-`hostContext.flakePath`'s Darwin default in
-`modules/darwin/host-context.nix` (`${operator.darwinHome}/${operator.flakeRepoDirname}`).
+The expected path is `/Users/dbf/nix-config` — this matches `hostContext.flakePath`'s Darwin default in `modules/darwin/host-context.nix` (`${operator.darwinHome}/${operator.flakeRepoDirname}`).
 
-If you want to skip the CLT install, the `nix shell` alternative
-works (CLT is otherwise nix-darwin-unmanaged Apple state per PRD §2.2,
-but provides useful `cc`/`clang`/headers as a side-effect — keeping
-it isn't a problem):
+If you want to skip the CLT install, the `nix shell` alternative works (CLT is otherwise nix-darwin-unmanaged Apple state per PRD §2.2, but provides useful `cc`/`clang`/headers as a side-effect — keeping it isn't a problem):
 
 ```bash
 nix shell nixpkgs#git -c git clone https://github.com/dannyfaris/nix-config.git ~/nix-config
@@ -146,8 +106,7 @@ SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt nix shell nixpkgs#sops -c sops -d 
 
 ### 5 — Collect the operator UID for the host file
 
-This step runs *after* macOS Setup Assistant has created the `dbf`
-user account — without that, `id -u dbf` returns nothing.
+This step runs *after* macOS Setup Assistant has created the `dbf` user account — without that, `id -u dbf` returns nothing.
 
 ```bash
 id -u dbf
@@ -157,121 +116,55 @@ macOS's first-user default is 501. Pin this value in `hosts/<host>/default.nix` 
 
 ### 6 — Move aside `/etc/{bashrc,zshrc}` (NixOS-installer safety guard)
 
-The NixOS official installer modifies `/etc/bashrc` and `/etc/zshrc`
-to source `/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh`.
-nix-darwin refuses to overwrite these files on first activation as a
-safety check. Move them aside so nix-darwin can write its own:
+The NixOS official installer modifies `/etc/bashrc` and `/etc/zshrc` to source `/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh`. nix-darwin refuses to overwrite these files on first activation as a safety check. Move them aside so nix-darwin can write its own:
 
 ```bash
 sudo mv /etc/bashrc /etc/bashrc.before-nix-darwin
 sudo mv /etc/zshrc  /etc/zshrc.before-nix-darwin
 ```
 
-(The Determinate installer doesn't touch these files, which is why
-the old runbook didn't list this step.)
+(The Determinate installer doesn't touch these files, which is why the old runbook didn't list this step.)
 
 ### 7 — One-time interactive App Store sign-in (if the host declares `masApps`)
 
-`homebrew.masApps` apps are installed via `mas-cli` at activation, and
-`mas install` can only fetch apps already associated with the
-signed-in Apple ID — `mas signin` was removed from mas-cli in late
-2025 (PR #1167) after Apple's account-flow changes broke the
-headless path.
+`homebrew.masApps` apps are installed via `mas-cli` at activation, and `mas install` can only fetch apps already associated with the signed-in Apple ID — `mas signin` was removed from mas-cli in late 2025 (PR #1167) after Apple's account-flow changes broke the headless path.
 
-Before the first activation that adds a `masApps` entry — whether
-that's a fresh-Mac `nix run nix-darwin -- switch` or a later
-`nh darwin switch` on an already-bootstrapped host — open the
-App Store app and sign in with the Apple ID that owns the apps
-in question. One-time per machine.
+Before the first activation that adds a `masApps` entry — whether that's a fresh-Mac `nix run nix-darwin -- switch` or a later `nh darwin switch` on an already-bootstrapped host — open the App Store app and sign in with the Apple ID that owns the apps in question. One-time per machine.
 
-If you skip this step, activation surfaces an authentication error
-from `mas install`; the fix is to sign in and re-activate.
+If you skip this step, activation surfaces an authentication error from `mas install`; the fix is to sign in and re-activate.
 
-**Loosen Media & Purchases password requirements for the first
-activation.** Even with the App Store signed in, macOS by default
-prompts for the Apple ID password on *every* `mas install`
-invocation — that's at minimum one prompt per declared masApps
-entry, and re-prompts on any per-app retry. The first activation
-on a fresh Mac with the full app set easily surfaces a dozen
-prompts. Before kicking off the activation, navigate to
-**System Settings → Apple ID → Media & Purchases → Password
-Settings** and set:
+**Loosen Media & Purchases password requirements for the first activation.** Even with the App Store signed in, macOS by default prompts for the Apple ID password on *every* `mas install` invocation — that's at minimum one prompt per declared masApps entry, and re-prompts on any per-app retry. The first activation on a fresh Mac with the full app set easily surfaces a dozen prompts. Before kicking off the activation, navigate to **System Settings → Apple ID → Media & Purchases → Password Settings** and set:
 
-- **Free Downloads:** `Don't Require` — all of `homebrew.masApps`
-  today (Slack, the Microsoft 365 suite, Amphetamine) are free
-  downloads from MAS's perspective (Microsoft 365 features are
-  subscription-locked at runtime, not at download), so this
-  toggle eliminates the prompt for every one of them.
-- **Purchases and In-App Purchases:** `Never Require` (or the
-  loosest option available — exact label varies by macOS version;
-  some versions only offer `Require After 15 Minutes` as the
-  loosest non-`Always Require` choice, which is also acceptable).
-  This covers the edge case where a future paid `masApps` entry
-  is added and prevents the activation from stalling on its
-  prompt.
+- **Free Downloads:** `Don't Require` — all of `homebrew.masApps` today (Slack, the Microsoft 365 suite, Amphetamine) are free downloads from MAS's perspective (Microsoft 365 features are subscription-locked at runtime, not at download), so this toggle eliminates the prompt for every one of them.
+- **Purchases and In-App Purchases:** `Never Require` (or the loosest option available — exact label varies by macOS version; some versions only offer `Require After 15 Minutes` as the loosest non-`Always Require` choice, which is also acceptable). This covers the edge case where a future paid `masApps` entry is added and prevents the activation from stalling on its prompt.
 
-Operator's experience on the 2026-06-03 mac-mini bring-up: even
-with the App Store signed in and `mas` declaratively installed,
-the activation will surface the FIRST `mas install`'s password
-prompt as a foregrounded macOS dialog the operator must
-type-in-and-dismiss. **Plan to sit with the App Store window
-open during the start of the first activation** — once the
-first prompt is dismissed, the loosened Media & Purchases
-settings carry the rest of the run.
+Operator's experience on the 2026-06-03 mac-mini bring-up: even with the App Store signed in and `mas` declaratively installed, the activation will surface the FIRST `mas install`'s password prompt as a foregrounded macOS dialog the operator must type-in-and-dismiss. **Plan to sit with the App Store window open during the start of the first activation** — once the first prompt is dismissed, the loosened Media & Purchases settings carry the rest of the run.
 
-After the first activation completes cleanly, tighten the
-settings back to whatever the operator prefers as a steady-state
-posture. This carve-out exists for first-bootstrap-only; future
-incremental masApps additions trigger at most one prompt each.
+After the first activation completes cleanly, tighten the settings back to whatever the operator prefers as a steady-state posture. This carve-out exists for first-bootstrap-only; future incremental masApps additions trigger at most one prompt each.
 
-**The `mas` CLI itself is installed declaratively** via
-`homebrew.brews = [ "mas" ];` in `modules/darwin/homebrew.nix`.
-nix-darwin's `homebrew.masApps` option doesn't add the `mas`
-formula to the brews list automatically — and although `brew
-bundle` has a lazy fallback that tries to install `mas`
-on-demand when it first hits a `mas "..."` entry, that path is
-fragile (it raises if the on-demand install fails for any
-reason, and surfaces diagnostics inconsistently when the failure
-is actually downstream in mas-cli's auth-state logic).
-Declaring `mas` in the brews list makes the dependency a
-deterministic explicit step; brew bundle processes the Brewfile
-in strict file-line order with `--jobs=1`, so `brew "mas"`
-installs ahead of every `mas` entry on a single first
-activation. The 2026-06-03 mac-mini activation surfaced this
-empirically: every cask installed cleanly, but the MAS section
-produced zero installs — root cause was the lazy-fallback path
-interacting with the App Store sign-in requirement (the
-prerequisite this very step covers).
+**The `mas` CLI itself is installed declaratively** via `homebrew.brews = [ "mas" ];` in `modules/darwin/homebrew.nix`. nix-darwin's `homebrew.masApps` option doesn't add the `mas` formula to the brews list automatically — and although `brew
+bundle` has a lazy fallback that tries to install `mas` on-demand when it first hits a `mas "..."` entry, that path is fragile (it raises if the on-demand install fails for any reason, and surfaces diagnostics inconsistently when the failure is actually downstream in mas-cli's auth-state logic). Declaring `mas` in the brews list makes the dependency a deterministic explicit step; brew bundle processes the Brewfile in strict file-line order with `--jobs=1`, so `brew "mas"` installs ahead of every `mas` entry on a single first activation. The 2026-06-03 mac-mini activation surfaced this empirically: every cask installed cleanly, but the MAS section produced zero installs — root cause was the lazy-fallback path interacting with the App Store sign-in requirement (the prerequisite this very step covers).
 
-(Currently relevant only on hosts whose modules declare
-`homebrew.masApps` — see `modules/darwin/homebrew.nix`.)
+(Currently relevant only on hosts whose modules declare `homebrew.masApps` — see `modules/darwin/homebrew.nix`.)
 
 ### 8 — Expect TCC prompts on first activation
 
-When nix-darwin writes to `/Library/LaunchDaemons/`, macOS may
-prompt for Full Disk Access for the activation process. Approve via
-System Settings → Privacy & Security as the prompts surface. None of
-the steps below auto-dismiss the prompt; first activation pauses
-until you confirm. (On the 2026-06-02 mac-mini bootstrap no TCC
-prompt surfaced; treat this as "may appear, may not".)
+When nix-darwin writes to `/Library/LaunchDaemons/`, macOS may prompt for Full Disk Access for the activation process. Approve via System Settings → Privacy & Security as the prompts surface. None of the steps below auto-dismiss the prompt; first activation pauses until you confirm. (On the 2026-06-02 mac-mini bootstrap no TCC prompt surfaced; treat this as "may appear, may not".)
 
 ## First activation
 
 > A new host's darwinConfiguration is its own PR — the host file at `hosts/<host>/default.nix` plus the mkDarwinHost invocation in `parts/darwin.nix`. If `nix flake show .#darwinConfigurations` returns an empty attrset for your host, the host PR hasn't landed yet — `git pull` the merge before continuing.
 
-The first activation needs `sudo` because `nix run nix-darwin -- switch`
-doesn't escalate on its own:
+The first activation needs `sudo` because `nix run nix-darwin -- switch` doesn't escalate on its own:
 
 ```bash
 cd ~/nix-config
 sudo nix run nix-darwin -- switch --flake .#<host>
 ```
 
-(If the run errors part-way through with a `/etc/bashrc` /
-`/etc/zshrc` safety message, you skipped step 6 — fix it and re-run.)
+(If the run errors part-way through with a `/etc/bashrc` / `/etc/zshrc` safety message, you skipped step 6 — fix it and re-run.)
 
-After this, `darwin-rebuild` is on PATH. Subsequent activations use
-either:
+After this, `darwin-rebuild` is on PATH. Subsequent activations use either:
 
 ```bash
 sudo darwin-rebuild switch --flake .#<host>
@@ -279,9 +172,7 @@ sudo darwin-rebuild switch --flake .#<host>
 nh darwin switch   # self-elevates
 ```
 
-`nh darwin switch` is the canonical command going forward (parallel
-to `nh os switch` on NixOS); `NH_FLAKE` is set from
-`hostContext.flakePath` per ADR-019.
+`nh darwin switch` is the canonical command going forward (parallel to `nh os switch` on NixOS); `NH_FLAKE` is set from `hostContext.flakePath` per ADR-019.
 
 ## Post-activation — first-run grants, sign-ins, and staged installers (manual, per-tool)
 
@@ -297,10 +188,7 @@ The app set carries non-declarable first-run ceremony beyond AeroSpace's own sec
 ## Post-activation — author `~/.ssh/config.local`
 
 `home/shared/ssh.nix` declares `programs.ssh.includes = [
-"~/.ssh/config.local" ]`. The Include target is operator-maintained
-and survives every activation. Author it with a self-describing
-header so a future operator opening it understands the nix-managed
-vs operator-maintained boundary:
+"~/.ssh/config.local" ]`. The Include target is operator-maintained and survives every activation. Author it with a self-describing header so a future operator opening it understands the nix-managed vs operator-maintained boundary:
 
 ```sshconfig
 # ~/.ssh/config.local — operator-maintained, NOT managed by nix-config.
@@ -320,13 +208,7 @@ Host metis-lan
   User dbf
 ```
 
-Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares
-them by bare MagicDNS name (#517), resolvable once the Mac is signed
-into Tailscale (the `tailscale-app` cask is installed via
-`modules/darwin/homebrew.nix` per ADR-031, but the operator still has
-to sign the Mac into the tailnet on first launch; use the break-glass
-entries above until then). This file carries only the non-tailnet
-fallbacks.
+Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares them by bare MagicDNS name (#517), resolvable once the Mac is signed into Tailscale (the `tailscale-app` cask is installed via `modules/darwin/homebrew.nix` per ADR-031, but the operator still has to sign the Mac into the tailnet on first launch; use the break-glass entries above until then). This file carries only the non-tailnet fallbacks.
 
 ## Post-activation — fleet SSH enrolment (#517 / #524 / ADR-042)
 
@@ -400,21 +282,11 @@ AeroSpace recommends this so macOS doesn't reorder Spaces out from under the til
 Run from the new Mac's user shell.
 
 - `echo $SHELL` → fish at `/run/current-system/sw/bin/fish`. `chsh -s
-  $(which fish)` should be a no-op (the shell is already declared via
-  `users.users.dbf.shell` in `modules/darwin/users.nix`, and
-  `environment.shells` carries the entry).
-- `cd ~/nix-config && sops --decrypt secrets/secrets.yaml | head -3`
-  prints `dbf-password:` + hash. The repo's devShell auto-activates
-  via direnv and exports `SOPS_AGE_KEY_FILE`, so no env-var
-  ceremony is needed. (If you see "no identity found", verify you
-  `cd`d into the repo — outside it, the env var is not set.)
+  $(which fish)` should be a no-op (the shell is already declared via `users.users.dbf.shell` in `modules/darwin/users.nix`, and `environment.shells` carries the entry).
+- `cd ~/nix-config && sops --decrypt secrets/secrets.yaml | head -3` prints `dbf-password:` + hash. The repo's devShell auto-activates via direnv and exports `SOPS_AGE_KEY_FILE`, so no env-var ceremony is needed. (If you see "no identity found", verify you `cd`d into the repo — outside it, the env var is not set.)
 - macchina banner renders at every new interactive fish shell — every terminal tab, every zellij pane. The Apple-logo ASCII should display as five ANSI rainbow stripes (green leaf, then yellow / red / magenta / blue bands), rendered from the terminal's palette. **If it renders uncoloured**, see Troubleshooting below.
-- `hx` opens a `.nix` file with `nixd` LSP working — hover over
-  `programs.git` shows the option's type. `:lsp-restart` if
-  uncertain. (The binary is `hx`, not `helix` — `which helix`
-  returns "not found"; that's expected.)
-- `which claude` and `which cursor-agent` both resolve — the base
-  agent set is on every host (ADR-008).
+- `hx` opens a `.nix` file with `nixd` LSP working — hover over `programs.git` shows the option's type. `:lsp-restart` if uncertain. (The binary is `hx`, not `helix` — `which helix` returns "not found"; that's expected.)
+- `which claude` and `which cursor-agent` both resolve — the base agent set is on every host (ADR-008).
 - `which codex` and `which agy` both resolve (both Mac daily-drivers import `agent-clis-extras.nix` for the full agent set).
 
 ### Phase 2 — SSH-context stack into the fleet
@@ -432,10 +304,7 @@ Each host's boot-default palette is declared in `lib/theme-families.nix` (saturn
 
 ### Phase 3 — linux-builder
 
-If the host imports `modules/darwin/linux-builder.nix`, the launchd
-plist `org.nixos.linux-builder.plist` is registered and
-`/var/lib/linux-builder/{keys,nixos.qcow2}` is created at first
-activation. The VM image expands on first invocation.
+If the host imports `modules/darwin/linux-builder.nix`, the launchd plist `org.nixos.linux-builder.plist` is registered and `/var/lib/linux-builder/{keys,nixos.qcow2}` is created at first activation. The VM image expands on first invocation.
 
 ```bash
 nix build nixpkgs#legacyPackages.aarch64-linux.hello --rebuild \
@@ -444,32 +313,21 @@ nix build nixpkgs#legacyPackages.aarch64-linux.hello --rebuild \
 
 Expected: succeeds and produces a store path built on the builder — `--rebuild` forces a real build even though `hello` is substitutable, so a green result proves offload rather than a `cache.nixos.org` substitution. No in-repo aarch64-linux target exists since nixos-vm decommissioned (#634) — the smoke build above rides a stock nixpkgs package; re-point it at the then-current aarch64-linux host closure if one returns to the fleet.
 
-The failure mode that's invisible without active verification is
-**silent local fallback** — if `trusted-users` isn't wired correctly,
-`nix build` succeeds without offloading to the VM and you get an
-empty positive signal. Grep the log to confirm the remote builder
-was actually used:
+The failure mode that's invisible without active verification is **silent local fallback** — if `trusted-users` isn't wired correctly, `nix build` succeeds without offloading to the VM and you get an empty positive signal. Grep the log to confirm the remote builder was actually used:
 
 ```bash
 grep -c "on 'ssh-ng://builder@linux-builder'" /tmp/phase3.log
 ```
 
-A non-zero count is the positive-evidence check. Zero count means
-the build ran locally despite the linux-builder being available
-— investigate `trusted-users` in `/etc/nix/nix.conf` (should
-contain `@admin`; set in `modules/darwin/nix-daemon-darwin.nix`)
-and `builders-use-substitutes = true`.
+A non-zero count is the positive-evidence check. Zero count means the build ran locally despite the linux-builder being available — investigate `trusted-users` in `/etc/nix/nix.conf` (should contain `@admin`; set in `modules/darwin/nix-daemon-darwin.nix`) and `builders-use-substitutes = true`.
 
-The VM listens on `:31022` for SSH. IPv4 may return
-"connection refused" while IPv6 accepts; harmless. Verify:
+The VM listens on `:31022` for SSH. IPv4 may return "connection refused" while IPv6 accepts; harmless. Verify:
 
 ```bash
 nc -zv localhost 31022
 ```
 
-`x86_64` hosts (metis) need a follow-up that adds the
-second builder system to `nix.linux-builder.systems` — today only
-`aarch64-linux` is declared.
+`x86_64` hosts (metis) need a follow-up that adds the second builder system to `nix.linux-builder.systems` — today only `aarch64-linux` is declared.
 
 One calibration note: the historical ~30-minute first-build baseline was measured against the since-removed nixos-vm closure on an actively-cooled Mac mini — expect longer for a comparable closure on a fanless MacBook Air.
 
@@ -496,26 +354,19 @@ sudo darwin-rebuild --switch-generation <N>
 
 ## Break-glass
 
-If `nh darwin switch` / `darwin-rebuild switch` produces a broken
-generation:
+If `nh darwin switch` / `darwin-rebuild switch` produces a broken generation:
 
 1. **Roll back** — `sudo darwin-rebuild --rollback` reverts to the previous generation. Reliable because the rollback works entirely from local generations and requires no network.
-2. **Physical console** — if you can't log in (broken shell config, etc.), boot into Recovery (on Apple Silicon: shut down, then hold the power button until "Loading startup options" → Options) or the Apple-keyboard admin login. macOS itself remains functional even when the
-   nix-darwin generation is broken — the OS isn't replaced by
-   nix-darwin, only configured.
-3. **Disable the launchd job temporarily** — if a managed service
-   misbehaves, `sudo launchctl bootout system/<plist-name>` removes
-   the launchd entry until next activation.
+2. **Physical console** — if you can't log in (broken shell config, etc.), boot into Recovery (on Apple Silicon: shut down, then hold the power button until "Loading startup options" → Options) or the Apple-keyboard admin login. macOS itself remains functional even when the nix-darwin generation is broken — the OS isn't replaced by nix-darwin, only configured.
+3. **Disable the launchd job temporarily** — if a managed service misbehaves, `sudo launchctl bootout system/<plist-name>` removes the launchd entry until next activation.
 
-There is no "kexec into an installer" equivalent on Darwin; macOS
-itself is always the substrate.
+There is no "kexec into an installer" equivalent on Darwin; macOS itself is always the substrate.
 
 ## Troubleshooting
 
 ### `experimental Nix feature 'nix-command' is disabled`
 
-You skipped step 2's experimental-features enablement. Apply the
-single-line fix and reopen the shell:
+You skipped step 2's experimental-features enablement. Apply the single-line fix and reopen the shell:
 
 ```bash
 mkdir -p ~/.config/nix
@@ -534,53 +385,30 @@ sudo nix run nix-darwin -- switch --flake .#<host>
 
 ### Determinate's `/etc/nix/nix.conf` vs nix-darwin's
 
-If you used the Determinate installer (not the canonical path),
-post-activation `/etc/nix/nix.conf` is owned by nix-darwin (written
-from `modules/shared/nix-daemon.nix` + sibling Darwin overrides).
-Determinate's installer settings are discarded. If you need to add
-daemon settings, edit the Nix module — not the file directly.
+If you used the Determinate installer (not the canonical path), post-activation `/etc/nix/nix.conf` is owned by nix-darwin (written from `modules/shared/nix-daemon.nix` + sibling Darwin overrides). Determinate's installer settings are discarded. If you need to add daemon settings, edit the Nix module — not the file directly.
 
 ### `users.users.dbf.uid` mismatch
 
-If first activation errors with "user `dbf` exists but is not managed
-by nix-darwin" or similar, the host file's `users.users.dbf.uid`
-doesn't match the value macOS assigned. Re-run `id -u dbf`, update
-the host file, re-stage, re-activate.
+If first activation errors with "user `dbf` exists but is not managed by nix-darwin" or similar, the host file's `users.users.dbf.uid` doesn't match the value macOS assigned. Re-run `id -u dbf`, update the host file, re-stage, re-activate.
 
 ### `which helix` returns "not found"
 
-The helix binary is named `hx`, not `helix`. The package is
-installed; the verification check is `which hx` (returns
-`/etc/profiles/per-user/dbf/bin/hx`) and `hx --version`.
+The helix binary is named `hx`, not `helix`. The package is installed; the verification check is `which hx` (returns `/etc/profiles/per-user/dbf/bin/hx`) and `hx --version`.
 
 ### sops "no identity found" outside the repo
 
-The devShell exports `SOPS_AGE_KEY_FILE`, but the env var only
-exists inside `~/nix-config` (direnv auto-activation). Running
-`sops` from elsewhere needs an explicit `SOPS_AGE_KEY_FILE=…`
-prefix, or `cd ~/nix-config` first.
+The devShell exports `SOPS_AGE_KEY_FILE`, but the env var only exists inside `~/nix-config` (direnv auto-activation). Running `sops` from elsewhere needs an explicit `SOPS_AGE_KEY_FILE=…` prefix, or `cd ~/nix-config` first.
 
 ### Determinate installer marketing noise / abort
 
-If you tried the Determinate installer (not the canonical path),
-note that:
-- It prints "use our macOS package instead" nudges both pre- and
-  post-install regardless of the flag passed. Not an error.
-- If it reports failure, run `which nix` before retrying — partial
-  installs sometimes report failure on a late step despite Nix being
-  functional. If `nix` resolves to a path, try a fresh terminal and
-  `nix --version` before falling back to the NixOS-installer path.
+If you tried the Determinate installer (not the canonical path), note that:
+
+- It prints "use our macOS package instead" nudges both pre- and post-install regardless of the flag passed. Not an error.
+- If it reports failure, run `which nix` before retrying — partial installs sometimes report failure on a late step despite Nix being functional. If `nix` resolves to a path, try a fresh terminal and `nix --version` before falling back to the NixOS-installer path.
 
 ### Stylix Darwin gaps
 
-Upstream Stylix has known platform-specific gaps on Darwin
-(`stylix.cursor`, `stylix.opacity` — issues
-[nix-community/stylix#2078](https://github.com/nix-community/stylix/issues/2078)
-and
-[nix-community/stylix#440](https://github.com/nix-community/stylix/issues/440)).
-Neither is used in this config, so the gaps don't block activation,
-but if a future module reaches for those options, expect eval
-failures until upstream lands fixes.
+Upstream Stylix has known platform-specific gaps on Darwin (`stylix.cursor`, `stylix.opacity` — issues [nix-community/stylix#2078](https://github.com/nix-community/stylix/issues/2078) and [nix-community/stylix#440](https://github.com/nix-community/stylix/issues/440)). Neither is used in this config, so the gaps don't block activation, but if a future module reaches for those options, expect eval failures until upstream lands fixes.
 
 ### macchina Apple-logo banner renders uncoloured
 
@@ -588,18 +416,9 @@ The Apple-logo `ascii.txt` in `home/darwin/macchina-shell-init.nix` carries clas
 
 ## What this runbook does NOT cover
 
-- Recovery from a corrupted nix store on macOS — `/nix` repair via
-  `nix-store --verify --check-contents --repair` from a working
-  generation.
-- Migrating an existing macOS install with extensive pre-nix-darwin
-  state. Best path: snapshot, then run this runbook on top — the
-  generations system lets you back out.
-- Declarative iCloud / Apple-service state, Mosyle MDM
-  interactions — out of scope per PRD §2.2. Mac App Store apps
-  *are* covered now: declarative install via `homebrew.masApps`
-  per ADR-031 clause 3. The cleanup asymmetry (entries dropped
-  from `masApps` are not auto-uninstalled) means retirement is a
-  two-step operation:
+- Recovery from a corrupted nix store on macOS — `/nix` repair via `nix-store --verify --check-contents --repair` from a working generation.
+- Migrating an existing macOS install with extensive pre-nix-darwin state. Best path: snapshot, then run this runbook on top — the generations system lets you back out.
+- Declarative iCloud / Apple-service state, Mosyle MDM interactions — out of scope per PRD §2.2. Mac App Store apps *are* covered now: declarative install via `homebrew.masApps` per ADR-031 clause 3. The cleanup asymmetry (entries dropped from `masApps` are not auto-uninstalled) means retirement is a two-step operation:
 
   ```bash
   # 1. Remove the entry from modules/darwin/homebrew.nix and
@@ -608,16 +427,5 @@ The Apple-logo `ascii.txt` in `home/darwin/macchina-shell-init.nix` carries clas
   mas uninstall <numeric-id>
   ```
 
-  Per-tool docs under `docs/desktop/` record both the numeric ID
-  and the uninstall command for every managed MAS app.
-- Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is
-  Linux-only in nixpkgs, so the Darwin side doesn't ship
-  `xterm-ghostty` terminfo (neptune imports `modules/darwin/sshd.nix`
-  directly; only NixOS hosts add it, via
-  `modules/nixos/ghostty-terminfo.nix` in their remote-access bundle).
-  Ghostty clients SSHing into a Darwin host either rely on Ghostty's
-  shell-integration ssh-terminfo push (the client copies terminfo
-  over on connect), fall back to `TERM=xterm-256color` with reduced
-  rendering fidelity, or wait for a nix-homebrew Ghostty cask (#13)
-  that ships terminfo system-wide. Operator uses Darwin hosts
-  primarily as SSH clients, not servers — acceptable posture.
+  Per-tool docs under `docs/desktop/` record both the numeric ID and the uninstall command for every managed MAS app.
+- Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is Linux-only in nixpkgs, so the Darwin side doesn't ship `xterm-ghostty` terminfo (neptune imports `modules/darwin/sshd.nix` directly; only NixOS hosts add it, via `modules/nixos/ghostty-terminfo.nix` in their remote-access bundle). Ghostty clients SSHing into a Darwin host either rely on Ghostty's shell-integration ssh-terminfo push (the client copies terminfo over on connect), fall back to `TERM=xterm-256color` with reduced rendering fidelity, or wait for a nix-homebrew Ghostty cask (#13) that ships terminfo system-wide. Operator uses Darwin hosts primarily as SSH clients, not servers — acceptable posture.

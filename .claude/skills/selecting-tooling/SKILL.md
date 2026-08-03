@@ -44,6 +44,7 @@ Selection progress:
 **6 — Decide.** An honest tradeoff table, a clear lean, and the named residual risk. For any number: **measure it or cite it — never fabricate — and state it once** (don't repeat a figure across the doc and the issue comment; it drifts).
 
 **7 — Record + build.** Follow the repo's existing cadence; this skill does not restate it:
+
 - **Artifact + structure:** the per-tool selection-doc shape in `docs/desktop/README.md` (or `docs/<area>/`).
 - **Workflow** (doc-before-code, intent-first issues, peer-review of staged diffs, draft-PR + squash auto-merge): `docs/workflow.md`.
 - Peer-review **both** the selection doc and the implementation diff with a subagent before commit.

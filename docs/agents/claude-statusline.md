@@ -19,28 +19,28 @@ The script sources `~/.claude/statusline-colours.sh`, a derivation `home/shared/
 
 Role → base16 slot mapping — mostly the standard base16 semantic convention, with untracked moved off MAUVE so the SSH host marker is the only purple element on line 2:
 
-| Binding | Role | base16 slot |
-|---|---|---|
-| `BLUE` | path | `base0D` |
-| `TEAL` | branch | `base0C` |
-| `GREEN` | staged | `base0B` |
-| `YELLOW` | modified | `base0A` |
-| `ORANGE` | untracked | `base09` |
-| `RED` | danger / alarm | `base08` |
-| `MAUVE` | SSH host marker | `base0E` |
-| `MUTED` | account label | `base04` |
+| Binding  | Role            | base16 slot |
+| -------- | --------------- | ----------- |
+| `BLUE`   | path            | `base0D`    |
+| `TEAL`   | branch          | `base0C`    |
+| `GREEN`  | staged          | `base0B`    |
+| `YELLOW` | modified        | `base0A`    |
+| `ORANGE` | untracked       | `base09`    |
+| `RED`    | danger / alarm  | `base08`    |
+| `MAUVE`  | SSH host marker | `base0E`    |
+| `MUTED`  | account label   | `base04`    |
 
 ## Model-tier colour on line 1
 
 Line 1's leading `✦ <model name>` segment is coloured by Anthropic model tier so the active model is identifiable at a glance. Substring match on `.model.display_name` (not exact) so future variants inherit their tier's colour without a script change; Sonnet is checked before Opus so a hypothetical "Sonnet (Opus-tuned)" hybrid renders as Sonnet:
 
-| Pattern | Tier | Colour | Rationale |
-|---|---|---|---|
-| `*Fable*` | Fable (frontier) | RED | top of the warmth ladder (teal → orange → red); above Opus |
-| `*Opus*` | Opus | ORANGE | warmest accent below Fable |
-| `*Sonnet*` | Sonnet | TEAL | calm "label" hue; pairs with branch on line 2 |
-| Haiku | lightweight | default fg | absence of styling *is* the signal — "workhorse with no flourish" |
-| unknown / future | — | default fg | by fall-through |
+| Pattern          | Tier             | Colour     | Rationale                                                         |
+| ---------------- | ---------------- | ---------- | ----------------------------------------------------------------- |
+| `*Fable*`        | Fable (frontier) | RED        | top of the warmth ladder (teal → orange → red); above Opus        |
+| `*Opus*`         | Opus             | ORANGE     | warmest accent below Fable                                        |
+| `*Sonnet*`       | Sonnet           | TEAL       | calm "label" hue; pairs with branch on line 2                     |
+| Haiku            | lightweight      | default fg | absence of styling *is* the signal — "workhorse with no flourish" |
+| unknown / future | —                | default fg | by fall-through                                                   |
 
 **Review this mapping when Anthropic ships a new tier name** — a "Pro" / "Lite" between Sonnet and Opus, or a successor scheme — the case statement won't recognise it. (Exercised when Fable 5 landed as the tier above Opus.)
 

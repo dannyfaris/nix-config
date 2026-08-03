@@ -28,6 +28,9 @@ programs.dprint = {
   enable = true;
   includes = [ "*.md" ];   # module default is includes = [ ".*" ] (all files);
                            # without this, dprint contends with nixfmt/shfmt on every tracked file
+  excludes = [ "docs/desktop/keybinds.md" ];   # carries the generated hyper-bindings region the
+                                               # keybinds-table check byte-diffs against the registry
+                                               # emitter; formatter and generator must not fight
   settings = {
     markdown = { textWrap = "never"; emphasisKind = "asterisks"; };
     plugins = pkgs.dprint-plugins.getPluginList (p: [ p.dprint-plugin-markdown ]);
@@ -49,11 +52,11 @@ programs.dprint = {
 
 **Candidates weighed.** All three candidates ship a treefmt-nix module (`dprint.nix`, `prettier.nix`, `mdformat.nix`, all present at the pinned treefmt-nix rev), so architectural cost is equal — none needs a bespoke hook. The decision turns on the three forces:
 
-| Candidate | Wrap control | Hermetic/offline | Churn character | Verdict |
-|---|---|---|---|---|
-| **dprint** + markdown plugin | `textWrap:never` = exactly one line per paragraph — the repo's soft-wrap semantic | Yes — `getPluginList` loads the local `.wasm`; no network | Prose reflow (intended) + table re-pad + emphasis unify to `*` (the measured 14:1 majority) | **Chosen** |
-| Prettier | `proseWrap: preserve\|never\|always` — has `never`, but always renumbers ordered lists and rewrites list-marker style | Node-based; runs offline but heavier closure | Reflows list markers + table pipes aggressively; more incidental churn | Rejected — noisier |
-| mdformat | Conservative; `--wrap no` exists but GFM tables need plugins; default keeps `_` emphasis | Python; offline | Least churn, but weakest GFM-table + wrap-config story; leaves emphasis on `_` | Rejected — under-powered for this corpus |
+| Candidate                    | Wrap control                                                                                                          | Hermetic/offline                                          | Churn character                                                                             | Verdict                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **dprint** + markdown plugin | `textWrap:never` = exactly one line per paragraph — the repo's soft-wrap semantic                                     | Yes — `getPluginList` loads the local `.wasm`; no network | Prose reflow (intended) + table re-pad + emphasis unify to `*` (the measured 14:1 majority) | **Chosen**                               |
+| Prettier                     | `proseWrap: preserve\|never\|always` — has `never`, but always renumbers ordered lists and rewrites list-marker style | Node-based; runs offline but heavier closure              | Reflows list markers + table pipes aggressively; more incidental churn                      | Rejected — noisier                       |
+| mdformat                     | Conservative; `--wrap no` exists but GFM tables need plugins; default keeps `_` emphasis                              | Python; offline                                           | Least churn, but weakest GFM-table + wrap-config story; leaves emphasis on `_`              | Rejected — under-powered for this corpus |
 
 Prettier meets wrap and hermetic, but its always-on list renumbering and marker rewriting inflate the reflow churn beyond the intended prose-reflow (force 1). mdformat is the most conservative, but its GFM-table handling needs a plugin stack and its default leaves emphasis on `_` — the opposite of the repo's majority, so it would churn the 5513, not the 383 (force 1 again). dprint wins on all three forces simultaneously: `textWrap:never` is the exact wrap semantic (force 3), the wasm plugin is store-local (force 2), and `asterisks` targets the minority marker for the minimal emphasis churn (force 1).
 

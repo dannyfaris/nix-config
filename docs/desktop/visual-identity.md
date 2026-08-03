@@ -32,12 +32,12 @@ The sans face is **Inter** — a screen-first UI sans, neutral and legible at sm
 
 base16-idiomatic, named by slot. base16/Stylix stays the colour foundation and is the deliberate-divergence axis — no framework colour model is adopted, because base16 is a **flat-slot** scheme, unlike the tonal palettes of M3 / Material You. The chrome speaks a small vocabulary of semantic signals, each pinned to one slot:
 
-| Role | Slot | Meaning | Surfaces |
-|---|---|---|---|
-| **Focus** | `base0D` | the surface that holds focus | niri active window, fuzzel, waybar active workspace, gh-dash focused section |
-| **Attention** | `base09` | chrome shown *without* taking focus | fnott normal-urgency notification |
-| **Critical** | `base08` | error / urgent | fnott critical, waybar urgent |
-| **Muted** | `base03` | inactive | niri inactive window, fnott low |
+| Role          | Slot     | Meaning                             | Surfaces                                                                     |
+| ------------- | -------- | ----------------------------------- | ---------------------------------------------------------------------------- |
+| **Focus**     | `base0D` | the surface that holds focus        | niri active window, fuzzel, waybar active workspace, gh-dash focused section |
+| **Attention** | `base09` | chrome shown *without* taking focus | fnott normal-urgency notification                                            |
+| **Critical**  | `base08` | error / urgent                      | fnott critical, waybar urgent                                                |
+| **Muted**     | `base03` | inactive                            | niri inactive window, fnott low                                              |
 
 The boundary is behavioural: a surface uses *focus* if it holds focus when active — which includes overlays like the launcher and the auth prompt, because when active they *become* the focused window, so their accent can never clash with a focus they don't own. *Attention* is for chrome that appears **without** taking focus — today only notifications — which coexists with a separately-focused window and must read as distinct from it. Focus rides base16's canonical accent slot; the other roles are deliberate app-level assignments to tonally-fitting slots — base16 doesn't itself prescribe UI-chrome roles, so this map is ours to hold consistently. On metis the per-host override parks `base0E` on `base0D`'s tone, so the two are equal today and every focus surface reads identically; the discipline is held *by slot* so it stays coherent under any scheme where they diverge. Pursuing Material You (matugen) would mean reconstructing a tonal scheme — matugen does not accept base16 — so it is against the grain and not pursued. **Decided** — implemented in #358; role tokens alias the slots (#369).
 

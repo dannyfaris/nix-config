@@ -11,25 +11,14 @@ status: Accepted — **mosh removed 2026-06-05 ([#47](https://github.com/dannyfa
 >
 > **What stands:** **OSC52** clipboard bridging is unaffected and remains the live decision of this ADR — it is plain terminal-output passthrough that any terminal/multiplexer carries, independent of mosh. Plain SSH (key-only, [ADR-010](./ADR-010-ssh.md)) is now the sole remote-shell transport; zellij ([ADR-004](./ADR-004-multiplexer.md)) still provides cross-disconnect session persistence (you reconnect and `zellij attach`, the part mosh used to smooth over). The mosh Rationale/Implementation below is retained as historical record of why it was originally adopted.
 
-> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
-> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
-> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
-> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`) per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/` tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
 ## Context
 
-This is a headless dev box. The user works at it exclusively over SSH
-from their Mac. Two friction points dominate that workflow:
+This is a headless dev box. The user works at it exclusively over SSH from their Mac. Two friction points dominate that workflow:
 
-1. **Connection brittleness.** SSH dies on every network hiccup, laptop
-   sleep/wake, or IP change. Each disconnect kills running processes
-   tied to the session. With zellij (ADR-004), processes survive but
-   the user still has to reconnect and reattach.
-2. **Cross-machine clipboard.** Yanking text in helix on the dev box
-   leaves it in helix's internal register — invisible to the Mac's
-   clipboard. Pasting into Slack, browser, or any Mac app means
-   mouse-selecting the terminal output, which breaks the keyboard-driven
-   workflow entirely.
+1. **Connection brittleness.** SSH dies on every network hiccup, laptop sleep/wake, or IP change. Each disconnect kills running processes tied to the session. With zellij (ADR-004), processes survive but the user still has to reconnect and reattach.
+2. **Cross-machine clipboard.** Yanking text in helix on the dev box leaves it in helix's internal register — invisible to the Mac's clipboard. Pasting into Slack, browser, or any Mac app means mouse-selecting the terminal output, which breaks the keyboard-driven workflow entirely.
 
 Both have well-established solutions. Both are easy wins.
 
@@ -40,14 +29,10 @@ Two complementary mechanisms are enabled for this tier:
 1. ~~**mosh** at the system level (`programs.mosh.enable`), which installs the binary and opens UDP ports 60000–61000 in the firewall.~~ **(Removed 2026-06-05, #47 — see Amendment.)**
 2. **OSC52 clipboard bridging**, configured at three layers:
    - Helix: `editor.clipboard-provider = "termcode"`.
-   - Zellij: pass-through of OSC52 sequences (default behaviour in modern
-     zellij).
-   - Terminal emulator on the Mac: must support OSC52 (Ghostty does by
-     default; iTerm2 needs an explicit toggle; kitty / alacritty / wezterm
-     all support it).
+   - Zellij: pass-through of OSC52 sequences (default behaviour in modern zellij).
+   - Terminal emulator on the Mac: must support OSC52 (Ghostty does by default; iTerm2 needs an explicit toggle; kitty / alacritty / wezterm all support it).
 
-SSH agent forwarding from the Mac is **off** (the standard security
-default — never expose the client's keys to the server).
+SSH agent forwarding from the Mac is **off** (the standard security default — never expose the client's keys to the server).
 
 ## Rationale
 
@@ -55,76 +40,43 @@ default — never expose the client's keys to the server).
 
 > **Removed 2026-06-05 (#47).** Retained as historical record of the original adoption rationale; see the Amendment at the top for why it was dropped.
 
-mosh replaces the SSH transport for terminal sessions with a
-session-resumption protocol over UDP. The headline features are:
+mosh replaces the SSH transport for terminal sessions with a session-resumption protocol over UDP. The headline features are:
 
-- Survives network changes (wifi → ethernet, tethering, IP swaps) without
-  reconnect.
+- Survives network changes (wifi → ethernet, tethering, IP swaps) without reconnect.
 - Survives laptop sleep/wake without reconnect ceremony.
 - Local echo for high-latency connections (typing appears immediately).
 
-mosh and zellij are complementary, not redundant. Mosh handles
-network-blip and sleep cases (no reconnect needed); zellij handles
-cross-reboot persistence (laptop reboot → must SSH in fresh, then
-`zellij attach`).
+mosh and zellij are complementary, not redundant. Mosh handles network-blip and sleep cases (no reconnect needed); zellij handles cross-reboot persistence (laptop reboot → must SSH in fresh, then `zellij attach`).
 
-The first connection still uses SSH for the handshake; mosh upgrades the
-session afterwards. Auth is unchanged from regular SSH (uses the same
-keys / authorized_keys file).
+The first connection still uses SSH for the handshake; mosh upgrades the session afterwards. Auth is unchanged from regular SSH (uses the same keys / authorized_keys file).
 
-mosh is terminal-only: it does not forward ports, agents, or X11. For
-those rare cases, plain SSH still works. The two coexist; no conflict.
+mosh is terminal-only: it does not forward ports, agents, or X11. For those rare cases, plain SSH still works. The two coexist; no conflict.
 
 ### OSC52 clipboard bridging
 
-OSC52 is an ANSI escape sequence that lets terminal applications send
-text to the *terminal emulator's* clipboard. The flow:
+OSC52 is an ANSI escape sequence that lets terminal applications send text to the *terminal emulator's* clipboard. The flow:
 
-1. Helix prints the OSC52 sequence to its terminal output stream
-   (just bytes, like printing characters).
+1. Helix prints the OSC52 sequence to its terminal output stream (just bytes, like printing characters).
 2. The bytes flow over SSH/mosh to the Mac terminal emulator.
-3. The Mac terminal emulator recognises OSC52 and writes the text to the
-   Mac's system clipboard.
+3. The Mac terminal emulator recognises OSC52 and writes the text to the Mac's system clipboard.
 4. `Cmd-V` in any Mac app pastes it.
 
-It's purely terminal-output-based, so it works through SSH, mosh, zellij —
-anything that passes the terminal output stream. No special socket, no
-networking.
+It's purely terminal-output-based, so it works through SSH, mosh, zellij — anything that passes the terminal output stream. No special socket, no networking.
 
-The reverse direction (Mac → dev box) doesn't need OSC52: terminal
-emulators handle paste natively as keystrokes inserted into the input
-stream.
+The reverse direction (Mac → dev box) doesn't need OSC52: terminal emulators handle paste natively as keystrokes inserted into the input stream.
 
 ### Why agent forwarding stays off
 
-`ForwardAgent yes` would make the Mac's SSH agent (and its keys) usable
-*from* the dev box. The standard security argument applies: any process
-on the dev box (including a compromised one) could then use those keys.
-This is the universally-recommended default, and there's no current need
-that would justify deviating. ADR-009 also makes it unnecessary — the
-git auth path doesn't use SSH.
+`ForwardAgent yes` would make the Mac's SSH agent (and its keys) usable *from* the dev box. The standard security argument applies: any process on the dev box (including a compromised one) could then use those keys. This is the universally-recommended default, and there's no current need that would justify deviating. ADR-009 also makes it unnecessary — the git auth path doesn't use SSH.
 
 ## Consequences
 
-- ✓ "Disconnect/reconnect ceremony" essentially disappears for normal
-  network and sleep cases.
+- ✓ "Disconnect/reconnect ceremony" essentially disappears for normal network and sleep cases.
 - ✓ Yank-and-paste works keyboard-only across the SSH boundary.
-- ✓ Both mechanisms are compatible with the rest of the stack (zellij,
-  helix, fish, ssh).
-- ✗ mosh client must be installed on the Mac separately (not in scope of
-  this nix config). User runs `brew install mosh` once.
-- ✗ OSC52 in iTerm2 needs an explicit toggle ("Allow programs to access
-  clipboard"). **Ghostty has a similar gate**: `clipboard-write` defaults
-  to `ask`, which prompts on every paste from a terminal app. Set
-  `clipboard-write = allow` in Ghostty's config to make OSC52 silently
-  work. Surfaced during Tier 3 verification — paste-from-helix didn't
-  populate the Mac clipboard, but the nix-config side was correct
-  (helix `clipboard-provider = "termcode"`, zellij default pass-through,
-  mosh OSC52-aware). Resolution deferred — to be exercised
-  end-to-end now that metis's desktop has landed with foot.
-- ⚠ Migration trigger: a Mac terminal emulator without OSC52 support
-  would break the clipboard bridge. Modern alternatives all support it;
-  unlikely to be an issue.
+- ✓ Both mechanisms are compatible with the rest of the stack (zellij, helix, fish, ssh).
+- ✗ mosh client must be installed on the Mac separately (not in scope of this nix config). User runs `brew install mosh` once.
+- ✗ OSC52 in iTerm2 needs an explicit toggle ("Allow programs to access clipboard"). **Ghostty has a similar gate**: `clipboard-write` defaults to `ask`, which prompts on every paste from a terminal app. Set `clipboard-write = allow` in Ghostty's config to make OSC52 silently work. Surfaced during Tier 3 verification — paste-from-helix didn't populate the Mac clipboard, but the nix-config side was correct (helix `clipboard-provider = "termcode"`, zellij default pass-through, mosh OSC52-aware). Resolution deferred — to be exercised end-to-end now that metis's desktop has landed with foot.
+- ⚠ Migration trigger: a Mac terminal emulator without OSC52 support would break the clipboard bridge. Modern alternatives all support it; unlikely to be an issue.
 
 ## Implementation
 
@@ -138,22 +90,15 @@ mosh configured at the system level in `modules/nixos/mosh.nix`:
 }
 ```
 
-This installs the binary AND opens UDP 60000–61000 in the firewall
-automatically — both are required, and the module handles them together.
+This installs the binary AND opens UDP 60000–61000 in the firewall automatically — both are required, and the module handles them together.
 
 OSC52 is configured at three places:
 
-- **Helix** (`home/shared/editor.nix`): in
-  `programs.helix.settings.editor`, set `clipboard-provider = "termcode"`.
-- **Zellij** (`home/shared/multiplexer.nix`): default settings already
-  pass OSC52 through. No extra config needed in the typical case; if the
-  bridge ever stops working, check zellij's clipboard config first.
-- **Terminal emulator on the Mac**: outside this repo's scope. Use
-  Ghostty, iTerm2 (with the OSC52 toggle on), kitty, alacritty, or
-  wezterm. Verify via Slice 6's clipboard smoke test.
+- **Helix** (`home/shared/editor.nix`): in `programs.helix.settings.editor`, set `clipboard-provider = "termcode"`.
+- **Zellij** (`home/shared/multiplexer.nix`): default settings already pass OSC52 through. No extra config needed in the typical case; if the bridge ever stops working, check zellij's clipboard config first.
+- **Terminal emulator on the Mac**: outside this repo's scope. Use Ghostty, iTerm2 (with the OSC52 toggle on), kitty, alacritty, or wezterm. Verify via Slice 6's clipboard smoke test.
 
 Daily use:
 
 - `ssh dbf@<host>` from the Mac (key auth). ~~`mosh …` instead of `ssh …`~~ — mosh removed (#47); SSH is the sole remote-shell transport, with zellij (`za`) handling reconnect-and-reattach across disconnects.
-- Inside helix, `y` (yank) deposits text in the Mac clipboard. `Cmd-V` to
-  paste anywhere.
+- Inside helix, `y` (yank) deposits text in the Mac clipboard. `Cmd-V` to paste anywhere.

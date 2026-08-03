@@ -5,10 +5,7 @@ status: Accepted (amended 2026-06-03 — see §History)
 
 # ADR-021: Container runtime on hosts that need containers — rootless Docker on Linux, colima on Darwin, per-host opt-in
 
-> **Revision (2026-06-05):** stale module paths in this ADR were swept to the
-> current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)
-> per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/`
-> tier prefix. Navigability fix only — the decision recorded here is unchanged.
+> **Revision (2026-06-05):** stale module paths in this ADR were swept to the current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`) per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/` tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
 ## Context
 

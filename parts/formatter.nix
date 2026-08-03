@@ -1,6 +1,6 @@
 # Tree-wide formatter. Wires `nix fmt` (via formatter.<system>) and the
 # format-correctness check (via checks.<system>.treefmt). nixfmt formats
-# Nix files; shfmt formats shell scripts.
+# Nix files; shfmt formats shell scripts; dprint formats markdown.
 #
 # The assembled wrapper (config.treefmt.build.wrapper) is also consumed by
 # the treefmt pre-commit hook in parts/checks.nix, so format-checking runs
@@ -20,20 +20,43 @@
 {
   imports = [ inputs.treefmt-nix.flakeModule ];
 
-  perSystem = _: {
-    treefmt = {
-      projectRootFile = "flake.nix";
-      programs.nixfmt.enable = true;
-      programs.shfmt.enable = true;
+  perSystem =
+    { pkgs, ... }:
+    {
+      treefmt = {
+        projectRootFile = "flake.nix";
+        programs = {
+          nixfmt.enable = true;
+          shfmt.enable = true;
 
-      # Auto-generated hardware configs (per ADR-023) are overwritten in
-      # their entirety by `nixos-anywhere --generate-hardware-config` on
-      # regenerate; nixos-generate-config's output shape would diff
-      # against the formatter on every regenerate. Excluding here keeps
-      # the drop-in property intact. Canonical list lives in statix.toml;
-      # lib/auto-gen-paths.nix reads it and exposes the glob form here
-      # (same list parts/checks.nix consumes in regex form).
-      settings.global.excludes = (import ../lib/auto-gen-paths.nix).globs;
+          # Deterministic markdown formatter — the ADR-046 selection; config
+          # recorded there. includes overrides the module default (all files),
+          # else dprint contends with nixfmt/shfmt on every tracked file.
+          dprint = {
+            enable = true;
+            includes = [ "*.md" ];
+            # keybinds.md carries the generated hyper-bindings region that the
+            # keybinds-table check byte-diffs against the registry emitter —
+            # formatter and generator must not fight over generated content.
+            excludes = [ "docs/desktop/keybinds.md" ];
+            settings = {
+              markdown = {
+                textWrap = "never";
+                emphasisKind = "asterisks";
+              };
+              plugins = pkgs.dprint-plugins.getPluginList (p: [ p.dprint-plugin-markdown ]);
+            };
+          };
+        };
+
+        # Auto-generated hardware configs (per ADR-023) are overwritten in
+        # their entirety by `nixos-anywhere --generate-hardware-config` on
+        # regenerate; nixos-generate-config's output shape would diff
+        # against the formatter on every regenerate. Excluding here keeps
+        # the drop-in property intact. Canonical list lives in statix.toml;
+        # lib/auto-gen-paths.nix reads it and exposes the glob form here
+        # (same list parts/checks.nix consumes in regex form).
+        settings.global.excludes = (import ../lib/auto-gen-paths.nix).globs;
+      };
     };
-  };
 }

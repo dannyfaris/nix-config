@@ -5,24 +5,11 @@ status: Accepted
 
 # ADR-020: Work-vs-personal divergences expressed via import splits
 
-> **Amendment (2026-06-05): paths, host set, and composition refreshed to
-> the current shape.** The import-split *principle* this ADR records is
-> unchanged; several concrete details have moved since 2026-05-18 and the
-> body below is swept to match:
-> - **Paths.** The modules live under `home/shared/` (not the old
->   `home/core/shared/`), and the NixOS wiring file is
->   `modules/nixos/home-manager.nix` (not `modules/core/nixos/…`), with a
->   nix-darwin sibling at `modules/darwin/home-manager.nix`.
-> - **Host set.** What was originally the lone UTM VM as *the*
->   mixed personal/work host is now three — nixos-vm, metis, and mac-mini;
->   mercury remains the sole work-only host.
-> - **Composition.** Per [ADR-027](./ADR-027-foundation-and-bundles.md)
->   (foundation + bundles), hosts no longer import the individual identity
->   files via `extraHomeModules`; they opt in through capability *bundles*
->   that compose the split — `home/shared/bundles/git-multi-identity.nix`
->   (base + dual identity + gh) on mixed hosts, and
->   `home/shared/bundles/git-work.nix` (base + work identity) on
->   work-only hosts.
+> **Amendment (2026-06-05): paths, host set, and composition refreshed to the current shape.** The import-split *principle* this ADR records is unchanged; several concrete details have moved since 2026-05-18 and the body below is swept to match:
+>
+> - **Paths.** The modules live under `home/shared/` (not the old `home/core/shared/`), and the NixOS wiring file is `modules/nixos/home-manager.nix` (not `modules/core/nixos/…`), with a nix-darwin sibling at `modules/darwin/home-manager.nix`.
+> - **Host set.** What was originally the lone UTM VM as *the* mixed personal/work host is now three — nixos-vm, metis, and mac-mini; mercury remains the sole work-only host.
+> - **Composition.** Per [ADR-027](./ADR-027-foundation-and-bundles.md) (foundation + bundles), hosts no longer import the individual identity files via `extraHomeModules`; they opt in through capability *bundles* that compose the split — `home/shared/bundles/git-multi-identity.nix` (base + dual identity + gh) on mixed hosts, and `home/shared/bundles/git-work.nix` (base + work identity) on work-only hosts.
 >
 > (The work directory itself was renamed `~/work` → `~/grey-st` in #212.)
 
@@ -69,6 +56,6 @@ The cost of the split is more files. The PRD anticipated this (§5.1's directory
 The split lives at `home/shared/git.nix` + `git-identity-dual.nix` + `git-identity-work.nix` + `gh.nix`. Per [ADR-027](./ADR-027-foundation-and-bundles.md), hosts no longer name these files individually; they import a capability *bundle* that composes the right pieces, and each host's `hosts/<host>/default.nix` lists the bundle via `_module.args.hostContext.extraHomeModules`:
 
 - nixos-vm / metis / mac-mini: `[ ../../home/shared/bundles/git-multi-identity.nix ]` (base + dual identity + gh)
-- mercury:                      `[ ../../home/shared/bundles/git-work.nix ]` (base + work identity)
+- mercury: `[ ../../home/shared/bundles/git-work.nix ]` (base + work identity)
 
 The wiring file (`modules/nixos/home-manager.nix`, with the nix-darwin sibling `modules/darwin/home-manager.nix`) appends `extraHomeModules` to the standard imports list. The mechanism is the one documented in ADR-019; this ADR records the convention that it is the right tool for work-vs-personal divergences specifically, in preference to host-keyed conditionals.
