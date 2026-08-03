@@ -302,35 +302,6 @@ For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not**
 
 Each host's boot-default palette is declared in `lib/theme-families.nix` (saturn included; host-identity theming is retired — the catalogue is fleet-global and the per-host entry is a boot default only); post-ADR-041 palettes no longer repaint terminals over SSH, and with the statuslines' ANSI conversion landed (#411) no TUI bakes them — they colour each host's own terminal via Stylix and `lib/scheme-pair.nix`.
 
-### Phase 3 — linux-builder
-
-If the host imports `modules/darwin/linux-builder.nix`, the launchd plist `org.nixos.linux-builder.plist` is registered and `/var/lib/linux-builder/{keys,nixos.qcow2}` is created at first activation. The VM image expands on first invocation.
-
-```bash
-nix build nixpkgs#legacyPackages.aarch64-linux.hello --rebuild \
-  --no-link --print-out-paths --print-build-logs 2>&1 | tee /tmp/phase3.log
-```
-
-Expected: succeeds and produces a store path built on the builder — `--rebuild` forces a real build even though `hello` is substitutable, so a green result proves offload rather than a `cache.nixos.org` substitution. No in-repo aarch64-linux target exists since nixos-vm decommissioned (#634) — the smoke build above rides a stock nixpkgs package; re-point it at the then-current aarch64-linux host closure if one returns to the fleet.
-
-The failure mode that's invisible without active verification is **silent local fallback** — if `trusted-users` isn't wired correctly, `nix build` succeeds without offloading to the VM and you get an empty positive signal. Grep the log to confirm the remote builder was actually used:
-
-```bash
-grep -c "on 'ssh-ng://builder@linux-builder'" /tmp/phase3.log
-```
-
-A non-zero count is the positive-evidence check. Zero count means the build ran locally despite the linux-builder being available — investigate `trusted-users` in `/etc/nix/nix.conf` (should contain `@admin`; set in `modules/darwin/nix-daemon-darwin.nix`) and `builders-use-substitutes = true`.
-
-The VM listens on `:31022` for SSH. IPv4 may return "connection refused" while IPv6 accepts; harmless. Verify:
-
-```bash
-nc -zv localhost 31022
-```
-
-`x86_64` hosts (metis) need a follow-up that adds the second builder system to `nix.linux-builder.systems` — today only `aarch64-linux` is declared.
-
-One calibration note: the historical ~30-minute first-build baseline was measured against the since-removed nixos-vm closure on an actively-cooled Mac mini — expect longer for a comparable closure on a fanless MacBook Air.
-
 ## Subsequent updates
 
 Day-to-day:

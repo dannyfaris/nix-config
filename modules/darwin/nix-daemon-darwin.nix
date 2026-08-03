@@ -23,8 +23,8 @@
 #   posture for nix-daemon operations. nix-darwin's upstream default is
 #   `root`-only, which is too narrow for any operator Darwin host: the
 #   operator runs as an admin user (not root, by macOS design) and
-#   needs trusted-user privileges to drive remote builders (e.g.
-#   linux-builder), override substituters, or mark paths as trusted.
+#   needs trusted-user privileges to drive remote builders, override
+#   substituters, or mark paths as trusted.
 #   `@admin` is macOS's admin-group shorthand; on a sole-operator Mac
 #   it resolves to the operator only. NixOS hosts in this repo don't
 #   need an equivalent override — none use remote builders today and

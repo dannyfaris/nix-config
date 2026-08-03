@@ -3,7 +3,7 @@
 #
 #   - `power.restartAfterPowerFailure = true;` — host auto-reboots
 #     when AC returns after an outage. Essential for the always-on
-#     SSH-bastion / builder role neptune fills; otherwise a power
+#     SSH-bastion role neptune fills; otherwise a power
 #     blip during operator-elsewhere hours leaves the host off until
 #     someone walks to it and presses the power button.
 #
