@@ -28,6 +28,9 @@ programs.dprint = {
   enable = true;
   includes = [ "*.md" ];   # module default is includes = [ ".*" ] (all files);
                            # without this, dprint contends with nixfmt/shfmt on every tracked file
+  excludes = [ "docs/desktop/keybinds.md" ];   # carries the generated hyper-bindings region the
+                                               # keybinds-table check byte-diffs against the registry
+                                               # emitter; formatter and generator must not fight
   settings = {
     markdown = { textWrap = "never"; emphasisKind = "asterisks"; };
     plugins = pkgs.dprint-plugins.getPluginList (p: [ p.dprint-plugin-markdown ]);

@@ -35,6 +35,10 @@
           dprint = {
             enable = true;
             includes = [ "*.md" ];
+            # keybinds.md carries the generated hyper-bindings region that the
+            # keybinds-table check byte-diffs against the registry emitter —
+            # formatter and generator must not fight over generated content.
+            excludes = [ "docs/desktop/keybinds.md" ];
             settings = {
               markdown = {
                 textWrap = "never";
