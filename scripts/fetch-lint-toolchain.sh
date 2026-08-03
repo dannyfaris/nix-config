@@ -9,7 +9,7 @@ export LC_ALL=C
 # Every pin below was read from this one nixpkgs rev: git-hooks-nix and
 # treefmt-nix both follow the root `nixpkgs` input, so it is the single source
 # of the binaries CI runs.
-NIXPKGS_REV="e2587caef70cea85dd97d7daab492899902dbf5d"
+NIXPKGS_REV="148bab9c1c3c53136ecb44a6ea356a0ed5b39b06"
 
 # `TOFU` marks a sha256 computed at pin time (2026-08-02) because upstream
 # publishes no checksum file; actionlint's is transcribed from its published
@@ -35,7 +35,7 @@ NIXFMT_URL="https://github.com/NixOS/nixfmt/releases/download/v1.4.0/nixfmt"
 NIXFMT_SHA256="62488394d5233283096466350487ed46470366f57db4bec824a87ecbacce960a" # TOFU
 
 # deadnix publishes no binaries anywhere; cargo verifies the crates.io checksum.
-DEADNIX_VERSION="1.3.1"
+DEADNIX_VERSION="1.3.2"
 
 # nixpkgs pins a mid-branch commit of a fork, so no release corresponds to the
 # statix CI runs and the rev is the only pin available. That build has no
