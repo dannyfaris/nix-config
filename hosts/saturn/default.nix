@@ -39,19 +39,6 @@ _: {
     # caveat.
     ../../modules/darwin/colima.nix
 
-    # UTM — virtualisation platform. On saturn this hosts the operator's
-    # own VMs (saturn is a VM host in its own right). Adds pkgs.utm to PATH
-    # which surfaces both UTM.app and `utmctl`. See docs/desktop/utm.md.
-    ../../modules/darwin/utm.nix
-
-    # linux-builder — nix-darwin's built-in aarch64-linux build VM. neptune
-    # carries it as the fleet's cross-platform builder; saturn carries its
-    # own so the laptop stays self-sufficient for Linux builds when away
-    # from neptune (offloading to neptune isn't reachable off the tailnet
-    # / behind hotel NAT). See the module header for the resource-tuning
-    # and x86_64-emulation notes.
-    ../../modules/darwin/linux-builder.nix
-
     # Touch ID for sudo — pam_tid.so + pam_watchid.so. The MacBook Air's
     # built-in Touch ID is the sensor; Apple Watch unlock is the free
     # side-effect. See docs/darwin/touch-id.md.

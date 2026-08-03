@@ -1,10 +1,12 @@
 # UTM
 
+> **Retired from the fleet 2026-08-03** (#726). Both Darwin hosts dropped `pkgs.utm` — `modules/darwin/utm.nix` and its neptune + saturn imports were removed. UTM had been kept to host the `nixos-vm` fleet member on neptune (decommissioned #634) and the operator's own VMs on saturn; with nixos-vm gone and the saturn VM-hosting capability retired, no host imports it (re-adding is a one-line import). This document is retained as the UTM selection record.
+
 Type-2 virtualisation platform — runs Linux / Windows / other-OS VMs on macOS via Apple Virtualization.framework or QEMU (host-side via JIT). Picked because it was the host for the `nixos-vm` fleet member — the aarch64-Linux refinement target, decommissioned 2026-08-03 (#634). Without UTM, there was no way to drive the nixos-vm host on this Mac.
 
 ## Selection
 
-Darwin: `pkgs.utm` via [`modules/darwin/utm.nix`](../../modules/darwin/utm.nix), imported by `hosts/neptune/default.nix`. ADR-031's §Boundary rule **nixpkgs-by-default baseline** applies — neither clause-2 nor clause-3 carve-outs are justified (see Rationale).
+Darwin: `pkgs.utm` via `modules/darwin/utm.nix` (removed #726), previously imported by `hosts/neptune/default.nix` and `hosts/saturn/default.nix`. ADR-031's §Boundary rule **nixpkgs-by-default baseline** applied — neither clause-2 nor clause-3 carve-outs were justified (see Rationale).
 
 This is the **second Darwin runtime to land via nixpkgs** rather than via the cask path, after [colima.md](./colima.md). The shape parallels colima's: standalone module, single `environment.systemPackages` line, no Homebrew involvement.
 
@@ -30,13 +32,13 @@ Per ADR-031's clause-2 specificity bar — *"Don't like the nix-managed location
 
 ## Configuration
 
-**Module declaration** — `modules/darwin/utm.nix`:
+**Module declaration** — `modules/darwin/utm.nix` (removed #726):
 
 ```nix
 environment.systemPackages = [ pkgs.utm ];
 ```
 
-That's the whole module. The host imports `../../modules/darwin/utm.nix` from `hosts/neptune/default.nix`.
+That was the whole module. Both Macs imported `../../modules/darwin/utm.nix` (neptune and saturn) until the #726 fleet-wide drop.
 
 The nixpkgs derivation handles the rest:
 

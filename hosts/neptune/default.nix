@@ -1,12 +1,11 @@
 # Host-specific configuration for neptune (Apple Silicon Mac mini,
 # aarch64-darwin). First Darwin host in the fleet; the operator's
-# primary SSH client into the NixOS hosts (per lib/operator.nix sshEdges)
-# and a cross-platform NixOS-builder via linux-builder (PRD §10, §11.6).
+# primary SSH client into the NixOS hosts (per lib/operator.nix sshEdges).
 #
-# Composes the Darwin foundation + remote-access bundle + linux-builder
-# standalone, per ADR-027. macOS owns disk and hardware, so there is no
-# disko.nix / hardware-configuration.nix sibling (ADR-023's three-file
-# structure applies to NixOS hosts only).
+# Composes the Darwin foundation + remote-access bundle, per ADR-027. macOS
+# owns disk and hardware, so there is no disko.nix /
+# hardware-configuration.nix sibling (ADR-023's three-file structure applies
+# to NixOS hosts only).
 #
 # Bootstrap runbook: docs/runbooks/darwin-bootstrap.md.
 _: {
@@ -27,7 +26,6 @@ _: {
     # native .app on macOS, not a nixpkgs terminfo), or fall back to
     # TERM=xterm-256color.
     ../../modules/darwin/sshd.nix
-    ../../modules/darwin/linux-builder.nix
     # nix-homebrew + declarative cask list per ADR-031. Owns Ghostty,
     # Tailscale (`tailscale-app`), and 1Password on Darwin, plus the
     # Sparkle silent-update keys for the two Sparkle-driven apps. See
@@ -42,16 +40,6 @@ _: {
     # `linger = true` on the Linux side). See docs/desktop/colima.md
     # for the GUI-session dependency + auto-login caveat.
     ../../modules/darwin/colima.nix
-
-    # UTM — virtualisation platform; second Darwin nixpkgs-installed
-    # runtime after colima. Originally imported to host the nixos-vm fleet
-    # member (decommissioned 2026-08-03, #634); retention is an open
-    # question — see #726. Adds
-    # pkgs.utm to PATH which surfaces both UTM.app (via nix-darwin's
-    # system-applications symlink) and `utmctl` (the CLI control tool,
-    # via the derivation's makeWrapper loop). See docs/desktop/utm.md
-    # for the ADR-031 walk + CLI-first rationale.
-    ../../modules/darwin/utm.nix
 
     # Touch ID for sudo — pam_tid.so + pam_watchid.so via
     # `security.pam.services.sudo_local.touchIdAuth`. Magic Keyboard
@@ -86,8 +74,8 @@ _: {
     # docs/design/macos-deterministic-tiling.md (ADR-040 Stage 2, #494).
     ../../modules/darwin/jankyborders.nix
 
-    # Power / sleep / recovery for the always-on builder + SSH-bastion
-    # role. Auto-restart after outage, never sleep the computer,
+    # Power / sleep / recovery for the always-on SSH-bastion role.
+    # Auto-restart after outage, never sleep the computer,
     # display sleep at factory default. Values here are wrong for a
     # battery-powered Mac — a future MacBook host would not import
     # this module. See module header for the per-knob rationale.
