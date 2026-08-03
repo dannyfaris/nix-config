@@ -1,7 +1,9 @@
-# ADR-019: Per-host parametrisation — `_module.args.hostContext` + `extraSpecialArgs`
+---
+date: 2026-05-18
+status: Accepted
+---
 
-**Date**: 2026-05-18
-**Status**: Accepted
+# ADR-019: Per-host parametrisation — `_module.args.hostContext` + `extraSpecialArgs`
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

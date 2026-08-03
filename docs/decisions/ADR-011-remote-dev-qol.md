@@ -1,7 +1,9 @@
-# ADR-011: Remote-dev quality of life — ~~mosh~~ + OSC52
+---
+date: 2026-05-06
+status: Accepted — **mosh removed 2026-06-05 ([#47](https://github.com/dannyfaris/nix-config/issues/47)); OSC52 stands** (see Amendment)
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted — **mosh removed 2026-06-05 ([#47](https://github.com/dannyfaris/nix-config/issues/47)); OSC52 stands** (see Amendment)
+# ADR-011: Remote-dev quality of life — ~~mosh~~ + OSC52
 
 > **Amendment (2026-06-05, #47): mosh removed; OSC52 unaffected.** mosh is dropped from the fleet. Its state-synchronising terminal emulator implements only a subset of terminal escapes and, by design, does **not** carry OSC 4/10/11 dynamic-palette sequences — the exact mechanism by which a host's per-host Stylix theme reaches the *client* terminal on connect (it works over plain SSH, which is a transparent byte pipe). So over mosh the client keeps its own palette and the per-host theme never lands; an unthemed app (lazydocker) renders the client's palette over mosh but the host's over SSH, which isolates the cause. Per-host terminal theming is central to this setup, so that is a showstopper. It compounded accumulated jank surfaced while dialling mosh in: macchina's bar glyph was silently dropped, `COLORTERM` was stripped (truecolor lost), and `TERM` was downgraded (`xterm-ghostty` → `xterm-256color`) — none recoverable, because the loss is in mosh's emulator, not the environment.
 >

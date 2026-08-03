@@ -1,7 +1,9 @@
-# ADR-032: Proportionate enforcement and single-sourced rationale
+---
+date: 2026-06-06
+status: Accepted, Implemented (amended 2026-06-06 — see §History)
+---
 
-**Date**: 2026-06-06
-**Status**: Accepted, Implemented (amended 2026-06-06 — see §History)
+# ADR-032: Proportionate enforcement and single-sourced rationale
 
 > This ADR turns the repo's own proportionality principles — [philosophy.md](../philosophy.md) "No premature abstraction" and "Single source of truth" — inward, onto the repo's *meta-layer*: its enforcement machinery (linters, CI guards) and its rationale prose (comments, docs). It adds no new architecture; it constrains how that meta-layer is allowed to grow. Precedent: [ADR-027](./ADR-027-foundation-and-bundles.md) walked back an over-built abstraction once it had data; this generalises the same instinct to guardrails and documentation.
 

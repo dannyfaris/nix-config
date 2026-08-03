@@ -1,7 +1,9 @@
-# ADR-021: Container runtime on hosts that need containers — rootless Docker on Linux, colima on Darwin, per-host opt-in
+---
+date: 2026-05-18
+status: Accepted (amended 2026-06-03 — see §History)
+---
 
-**Date**: 2026-05-18
-**Status**: Accepted (amended 2026-06-03 — see §History)
+# ADR-021: Container runtime on hosts that need containers — rootless Docker on Linux, colima on Darwin, per-host opt-in
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

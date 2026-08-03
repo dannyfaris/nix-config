@@ -19,7 +19,7 @@ Where [`decisions/`](../decisions/) records the *terse, frozen* ADR (the decisio
 - **Weigh the alternatives.** Name the options considered and why the chosen one wins against the stated forces — the choice should be legible, not asserted.
 - **De-risk honestly.** Record what was verified and where; keep the open items — what is still to confirm at implementation — explicit. A design note is a proposal, not a guarantee.
 - **Drawbacks and Cost are distinct.** Drawbacks are reasons-against the whole direction (strongest while Proposed); Cost is the standing price of the direction once chosen, and is optional — omit it when there is nothing non-obvious to record.
-- One subject per note; dated / issue-linked; soft-wrapped — as elsewhere in `docs/`.
+- One subject per note; dated / issue-linked; soft-wrapped (formatter-enforced once dprint is wired, #435 PR B) — as elsewhere in `docs/`.
 
 ## Index
 

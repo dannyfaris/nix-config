@@ -1,7 +1,9 @@
-# ADR-025: Continuous integration in the flake
+---
+date: 2026-05-26
+status: Accepted
+---
 
-**Date**: 2026-05-26
-**Status**: Accepted
+# ADR-025: Continuous integration in the flake
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

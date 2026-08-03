@@ -1,7 +1,9 @@
-# ADR-040: AeroSpace as the macOS window manager
+---
+date: 2026-07-02
+status: Accepted, Implementation pending (Phase B — #494)
+---
 
-**Date**: 2026-07-02
-**Status**: Accepted, Implementation pending (Phase B — #494)
+# ADR-040: AeroSpace as the macOS window manager
 
 > Adopt **AeroSpace** as neptune's window manager, superseding [ADR-039](./ADR-039-capability-registry.md) §7's pure-Hammerspoon / native-fullscreen-Spaces realization. AeroSpace owns the workspace layer on a single native macOS Space (i3-flat tiling, no SIP), installed declaratively (`pkgs.aerospace` + `programs.aerospace`), with binds single-sourced through a new `aerospace-action` emitter. **Hammerspoon retires from the interaction stack entirely** — Karabiner (Hyper substrate) + AeroSpace only. This reverses a frozen decision on the strength of a live Phase-A trial (GO); the *why* lives in the design note [`docs/design/macos-deterministic-tiling.md`](../design/macos-deterministic-tiling.md), this ADR freezes the decision.
 

@@ -1,7 +1,9 @@
-# ADR-031: nix-homebrew boundary for managed casks on Darwin
+---
+date: 2026-06-02
+status: Accepted (amended 2026-06-02 — see §History)
+---
 
-**Date**: 2026-06-02
-**Status**: Accepted (amended 2026-06-02 — see §History)
+# ADR-031: nix-homebrew boundary for managed casks on Darwin
 
 ## Context
 

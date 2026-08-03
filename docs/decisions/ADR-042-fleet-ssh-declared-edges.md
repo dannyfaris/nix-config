@@ -1,7 +1,9 @@
-# ADR-042: Fleet SSH trust — declared edges, static per-host keys
+---
+date: 2026-07-07
+status: Accepted, Implementation pending (#524 re-scoped)
+---
 
-**Date**: 2026-07-07
-**Status**: Accepted, Implementation pending (#524 re-scoped)
+# ADR-042: Fleet SSH trust — declared edges, static per-host keys
 
 > Fleet SSH user auth stays on **static per-host keys**; the trust topology becomes a **declared edge whitelist** — destination host → authorised source hosts — held as data in `lib/`, derived into each host's `authorizedKeys`, and stance-asserted. An SSH CA and Tailscale SSH are **declined on today's evidence**, each behind recorded migration triggers (Consequences). The *why* lives in the design note [`docs/design/fleet-ssh-identity.md`](../design/fleet-ssh-identity.md); this ADR freezes the decision. Amends [ADR-010](./ADR-010-ssh.md), whose §History carries the per-host key model this builds on.
 

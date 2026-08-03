@@ -1,7 +1,9 @@
-# ADR-044: Nix-owned runtime theme menu on Linux
+---
+date: 2026-07-14
+status: Accepted, Implemented; runtime-verified on metis 2026-07-14 (#609). **Noctalia delivery mechanism amended 2026-07-25 (#644)** — see §Amendment: Noctalia v5 and §History; the copy-into-place delivery and the `colors-{dark,light}.json` artefacts described below are the v4-era mechanism, superseded by the constant-name custom palette.
+---
 
-**Date**: 2026-07-14
-**Status**: Accepted, Implemented; runtime-verified on metis 2026-07-14 (#609). **Noctalia delivery mechanism amended 2026-07-25 (#644)** — see §Amendment: Noctalia v5 and §History; the copy-into-place delivery and the `colors-{dark,light}.json` artefacts described below are the v4-era mechanism, superseded by the constant-name custom palette.
+# ADR-044: Nix-owned runtime theme menu on Linux
 
 > Nix (via Stylix's `base16.mkSchemeAttrs` engine) is the **single theming authority** on the Linux desktop. A Nix-declared catalogue of named families is rendered per entry into stable data derivations; a `~/.local/state/theme-menu/current` symlink + per-target resolved symlinks (`foot.ini`, `niri.kdl`, `gtk3.css`, `gtk4.css`, `colors.json`) are the runtime state, plus an atomic copy of `colors.json` delivered into `~/.config/noctalia/` (Noctalia's watchers can't see symlink swaps — see §Explicit triggers); the `theme` CLI switches them atomically with explicit reload fan-out. Noctalia is demoted from colour authority to a **themed-by-Nix shell** — the colour-authority half of ADR-036 is reversed (see §Amendment to ADR-036 below); Noctalia as the cohesive shell (bar, launcher, notifications, lock, OSD, wallpaper, idle) is **unchanged**. Host-identity theming is retired (operator call, landed with the shared core slice #610 — every desktop host offers the full catalogue at runtime, and a host's `defaults` entry is a boot default only). The two-axis persistence model (family = symlink, polarity = dconf `org/gnome/desktop/interface/color-scheme`) and the explicit-trigger rule (no passive file-watch assumed for any surface) are the load-bearing conventions.
 

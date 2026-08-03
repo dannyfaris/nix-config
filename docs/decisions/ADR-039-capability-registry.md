@@ -1,7 +1,9 @@
-# ADR-039: Single-source capability registry — the cross-platform keybind & interaction architecture
+---
+date: 2026-06-24
+status: Accepted, Implementation pending; **§7 (macOS window-management realization) superseded by [ADR-040](./ADR-040-macos-window-manager-aerospace.md)** — the registry architecture (§1–6, §8–9) stands
+---
 
-**Date**: 2026-06-24
-**Status**: Accepted, Implementation pending; **§7 (macOS window-management realization) superseded by [ADR-040](./ADR-040-macos-window-manager-aerospace.md)** — the registry architecture (§1–6, §8–9) stands
+# ADR-039: Single-source capability registry — the cross-platform keybind & interaction architecture
 
 > One semantic capability registry (`lib/capabilities.nix`) becomes the single source for the cross-platform interaction layer: it generates the keybind configs (niri/keyd/Karabiner/Hammerspoon), a unified action/cheatsheet **palette**, and the `keybinds.md` reference table — from one declaration per capability. Freezes the load-bearing decisions of the 2026-06-23 keybind audit and the interaction-design thread: the Hyper taxonomy keystone (Hyper = primary cross-platform layer at `Ctrl+Alt`/`Ctrl+Opt`, parity-not-identity; Super = the Cmd-parity command modifier), the three-dimension schema (chord-tokens · per-platform realization · descriptive metadata), the atomic base-shape cutover, the unified palette, and the pure-Hammerspoon macOS realization. Detail lives in the living docs (`keybinds.md`, the research notes) and the build issues (#384/#437/#442/#440); this ADR is the frozen *why*.
 

@@ -1,7 +1,9 @@
-# ADR-009: Git — dual identity, HTTPS+token auth
+---
+date: 2026-05-06
+status: Accepted
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted
+# ADR-009: Git — dual identity, HTTPS+token auth
 
 > **Amendment (2026-06-18, #364): glab token moves to the OS keyring at rest on graphical hosts.** ADR-009 chose a *helper-managed* token model (gh and glab each store their own token) and accepted that the token state lives outside nix's reach — that stands. What this refines is the at-rest *encoding* of glab's token. As filed, glab persisted its GitLab personal-access token in **plaintext** in `~/.config/glab-cli/config.yml` (mode 600 but an unencrypted `glpat-…` string), while gh's token on the same host is held in the gnome-keyring Secret Service ([#104](../desktop/gnome-keyring.md)). glab 1.101.0 supports that same Secret Service: `glab auth login --use-keyring` stores the token in the OS keyring (Linux: libsecret/gnome-keyring via zalando/go-keyring over D-Bus) and **strips the plaintext `token:` from config.yml**, leaving only `use_keyring: true` — the exact parallel to gh's keyring-backed config. So on metis (and any graphical host running the Secret Service) glab now mirrors gh: still helper-managed, but encrypted at rest. Closes #364.
 >

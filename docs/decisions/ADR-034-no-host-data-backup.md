@@ -1,7 +1,9 @@
-# ADR-034: No host-data backup — recovery is reprovision-from-source
+---
+date: 2026-06-08
+status: Accepted
+---
 
-**Date**: 2026-06-08
-**Status**: Accepted
+# ADR-034: No host-data backup — recovery is reprovision-from-source
 
 > Records a deliberate *non*-adoption: this repo does not back up live-host user data, and does not intend to at current data volumes. Recovery from host loss is reprovision-from-flake plus the homes durable data already has (git remotes, 1Password, cloud sync, the off-band sops identity). Closes the open question #197 raised — "am I actually backed up?" — by writing the answer down rather than leaving it assumed.
 

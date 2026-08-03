@@ -1,7 +1,9 @@
-# ADR-030: nixpkgs channel — track `nixos-unstable`
+---
+date: 2026-05-31
+status: Accepted, Implemented
+---
 
-**Date**: 2026-05-31
-**Status**: Accepted, Implemented
+# ADR-030: nixpkgs channel — track `nixos-unstable`
 
 ## Context
 

@@ -21,7 +21,7 @@ keyboards**. The physical `Cmd`-position key therefore emits `Super` on Linux an
 `Super` (the Cmd-position key) is the natural home for macOS-convention commands
 on both platforms.
 
-**Markdown.** Soft-wrapped (one line per paragraph).
+**Markdown.** Soft-wrapped (one line per paragraph) — formatter-enforced once dprint is wired (#435 PR B; [ADR-046](../decisions/ADR-046-markdown-formatter.md)).
 
 ## The organizing principle
 

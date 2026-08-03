@@ -1,7 +1,9 @@
-# ADR-033: Eval-time checks for deliberate stances and lib functions
+---
+date: 2026-06-08
+status: Accepted, Implemented
+---
 
-**Date**: 2026-06-08
-**Status**: Accepted, Implemented
+# ADR-033: Eval-time checks for deliberate stances and lib functions
 
 > Adds a fast, eval-only regression net to the CI stack: assert the CLAUDE.md "Deliberate stances" still hold across the host matrix, and unit-test the `lib/` functions that carry real logic. No new architecture — it extends the [ADR-025](./ADR-025-ci-in-flake.md) in-flake CI framework with checks the per-host `toplevel` builds structurally cannot provide.
 

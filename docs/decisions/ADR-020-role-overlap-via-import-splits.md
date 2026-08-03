@@ -1,7 +1,9 @@
-# ADR-020: Work-vs-personal divergences expressed via import splits
+---
+date: 2026-05-18
+status: Accepted
+---
 
-**Date**: 2026-05-18
-**Status**: Accepted
+# ADR-020: Work-vs-personal divergences expressed via import splits
 
 > **Amendment (2026-06-05): paths, host set, and composition refreshed to
 > the current shape.** The import-split *principle* this ADR records is
