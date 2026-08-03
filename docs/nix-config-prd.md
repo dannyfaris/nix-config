@@ -287,7 +287,7 @@ For NixOS hosts installed via `nixos-anywhere` (ADR-022), the per-host directory
 
 Examples drawn from the current and planned set of hosts:
 
-- `metis` — personal x86_64 dev box, transitioning from headless to the first desktop host (ADR-028)
+- `metis` — personal x86_64 dev box, headless-turned-first-desktop-host (ADR-028; transition landed)
 - `jupiter` — NixOS x86_64 flagship desktop tower (planned; pending hardware; celestial name per ADR-038)
 - `saturn` — MacBook Air, darwin daily driver (planned via nix-darwin; celestial name per ADR-038)
 - `neptune` — Mac mini (aarch64-darwin, nix-darwin; live as of 2026-06-02, onboarded as `mac-mini` and renamed per ADR-038)
@@ -599,7 +599,7 @@ Data — Obsidian vault contents, photography libraries, project repositories �
 
 A successful design produces a configuration that another competent operator (familiar with Nix at a general level, given access to the repository and 1Password) can rebuild from in an afternoon. This is the operational standard the bootstrap design serves.
 
-The test holds today for NixOS headless hosts (via the nixos-anywhere + disko path resolved in ADR-022, demonstrated on Mercury and Metis) and for macOS hosts (via the Darwin runbook validated by the mac-mini onboarding on 2026-06-02). It will hold for NixOS workstation hosts once metis transitions to the desktop env (ADR-028).
+The test holds today for NixOS headless hosts (via the nixos-anywhere + disko path resolved in ADR-022, demonstrated on Mercury and Metis) and for macOS hosts (via the Darwin runbook validated by the mac-mini onboarding on 2026-06-02). It holds for NixOS workstation hosts too — metis's transition to the desktop env (ADR-028) landed, and alcyone and alnair now compose the same desktop-env bundles.
 
 ---
 

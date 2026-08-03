@@ -88,7 +88,8 @@
   # keeps the package's `ExecStart=niri --session`. `enableDefaultPath =
   # false` stops NixOS injecting a minimal `PATH=` that would shadow the
   # full session PATH niri-session populates at runtime via `systemctl
-  # --user import-environment` (else foot/waybar/fuzzel spawns break).
+  # --user import-environment` (else the binds' bare-name spawns — foot,
+  # noctalia, xdg-open — don't resolve).
   systemd.user.services = {
     niri = {
       overrideStrategy = "asDropin";
