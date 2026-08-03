@@ -15,7 +15,7 @@ Evergreen NixOS + nix-darwin configuration. Hosts:
 
 <!-- END CENSUS: hosts -->
 
-Metis is the first desktop host, running niri per [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)). The Stylix-foundation + bundle-composition basis from ADR-028 stands.
+Metis was the first desktop host; the Linux desktop now runs on the fleet's NixOS desktop hosts, on niri per [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (which amends [ADR-028](./docs/decisions/ADR-028-stylix-foundation-and-desktop-env.md)). ADR-028's bundle-composition basis stands; its Stylix-as-theming-source-of-truth clause has since been amended — see the desktop bullet under §Conventions for the current stack.
 
 ## Reference documentation
 
@@ -45,10 +45,11 @@ home/shared/bundles/           # capability bundles (home-level, cross-platform)
 home/shared/                   # cross-platform standalone home-manager modules
 home/nixos/bundles/            # NixOS-specific home-manager bundles
 home/nixos/                    # NixOS-specific home-manager modules (e.g. macchina-shell-init)
+home/darwin/bundles/           # Darwin-specific home-manager bundles
 home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, aerospace)
 ```
 
-Composition follows the foundation + bundles model (ADR-027): every host imports `foundation.nix` (identity + admin + posture), opts into capability bundles for what the host does, and imports standalone modules for capabilities that don't yet have a bundle home. A new host is a new directory under `hosts/` that composes these directly — no role layer. Per-host values (e.g. flake path, hostname for nixd) flow from each host's `_module.args.hostContext` into home-manager modules via the wiring in `modules/nixos/home-manager.nix`; see ADR-019.
+Composition follows the foundation + bundles model (ADR-027): every host imports `foundation.nix` (identity + admin + posture), opts into capability bundles for what the host does, and imports standalone modules for capabilities that don't yet have a bundle home. A new host is a new directory under `hosts/` that composes these directly — no role layer. Per-host values (e.g. flake path, hostname for nixd) flow from each host's `_module.args.hostContext` into home-manager modules via the wiring in `modules/nixos/home-manager.nix` (body in `lib/mk-home-manager.nix`); see ADR-019.
 
 ## Philosophy
 
@@ -85,7 +86,7 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 
 <!-- END CENSUS: break-glass -->
 
-In all cases: log in, fix the config, and re-activate — `nh os switch` on NixOS, `nh darwin switch` on neptune (or the underlying `sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on PATH).
+In all cases: log in, fix the config, and re-activate — `nh os switch` on NixOS, `nh darwin switch` on the Darwin hosts (or the underlying `sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on PATH).
 
 ## Build & deploy
 
@@ -98,6 +99,9 @@ nh os switch
 
 # Cheap build verification without activation:
 nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel --no-link
+
+# Same, on a Darwin host:
+nix build .#darwinConfigurations.<hostname>.system --no-link
 
 # Check flake validity:
 nix flake check
@@ -112,7 +116,7 @@ In a nix-less agent/cloud session, run `scripts/fetch-lint-toolchain.sh` once, t
 
 ## Conventions
 
-- **home-manager** is integrated as a NixOS module (single `nixos-rebuild` command for system + home).
+- **home-manager** is integrated as a NixOS module (and as a nix-darwin module on the Darwin hosts) — one rebuild command per host for system + home.
 - **flake-parts** for flake organisation.
 - One inline comment per non-obvious setting explaining "why", not "what".
 - **Rationale is single-sourced.** An inline comment gives the *why* of one setting in ≤ ~3 lines; anything longer (a decision with alternatives, a multi-item matrix) lives in one canonical home — an ADR or `docs/<area>/` — with a one-line pointer from the code, never restated. Incident provenance (PR-number root causes, dated observations, timings) is history, not rationale — it lives in the PR or an ADR §History, not inline; `git blame` reaches it. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md) and [docs/workflow.md](./docs/workflow.md) §"Rationale lives in one place".
@@ -124,8 +128,8 @@ In a nix-less agent/cloud session, run `scripts/fetch-lint-toolchain.sh` once, t
 - **Non-trivial design moves through the design loop.** A cross-cutting or hard-to-reverse change is designed before it is coded, run as an operator dialogue agreement-gated at every stage boundary through the start of build — a design note in [docs/design/](./docs/design/) (intent → forces → options → de-risk), peer-reviewed, with the living-reference update landing in the same change. Invoke the `/design` skill for the procedure; [docs/design/design-loop.md](./docs/design/design-loop.md) is the *why*. The `design-note-structure` lint gates note shape (presence, not quality) in CI; tool/package choices use the `selecting-tooling` skill instead.
 - **Claims about runtime behaviour need runtime verification.** `nix flake check`, lints, and peer review confirm the *declared* (eval-time) state, not the *enforced* one — a change can pass all three and still be inert in production ("set ≠ enforced", tracked in [#303](https://github.com/dannyfaris/nix-config/issues/303)). For a change asserting a runtime, security, or network-posture property, confirm the behaviour on a host before calling it done; when it is unclear which layer actually enforces the property, probe it empirically first. Worked example: [#336](https://github.com/dannyfaris/nix-config/issues/336) removed a firewall rule that was never the gate (tailscale's `ts-input` pre-empts the NixOS firewall) — eval and a two-reviewer adversarial pass both missed it, a runtime probe caught it. This is the design loop's de-risk rung applied.
 - **PRs land via squash auto-merge.** After `gh pr create`, run `gh pr merge <num> --auto --squash` to enable auto-merge; the PR squash-merges itself once required checks pass. See [docs/workflow.md](./docs/workflow.md) §"PRs land via squash auto-merge" for rationale.
-- **Markdown is soft-wrapped** — one line per paragraph (no hard newlines mid-paragraph). Tracked `.md` files are formatted to this shape by dprint via treefmt (`nix fmt`), the mechanism chosen in [ADR-046](./docs/decisions/ADR-046-markdown-formatter.md) and wired in #435 PR B; before that wiring lands, author the shape by hand. Issue/PR *bodies* stay hand-authored soft-wrapped (the formatter cannot reach `gh` descriptions). See [docs/workflow.md](./docs/workflow.md) §"Markdown is soft-wrapped" for rationale.
-- Desktop environment lands on metis (x86_64) per ADR-028 (Stylix-foundation + bundle composition), amended by [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only direction; per-tool selections). Stack: niri + foot + greetd, with Stylix as the theme source-of-truth for the TUI surface, foot, fuzzel, fnott, waybar, firefox, and GTK/Qt toolkit theming. Pointer + icon cohesion (`stylix.cursor`, `stylix.icons`, niri focus-ring) is tracked separately under #110 — promised by ADR-028 but not yet wired. Per-tool selections (application launcher, notification daemon, status bar, browser, IDE) land deliberately as `docs/desktop/<tool>.md` selection rationale per issue (#72–#77). The previously-recorded "do not resurrect waybar / fuzzel / mako" guidance is inverted by ADR-029 — waybar and fuzzel are now the chosen status bar and launcher; fnott (not mako) is the chosen notification daemon. Living documents under [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each per-tool selection.
+- **Markdown is soft-wrapped** — one line per paragraph (no hard newlines mid-paragraph). Tracked `.md` files are formatted to this shape by dprint via treefmt (`nix fmt`), the mechanism chosen in [ADR-046](./docs/decisions/ADR-046-markdown-formatter.md) and wired in #435 PR B. Issue/PR *bodies* stay hand-authored soft-wrapped (the formatter cannot reach `gh` descriptions). See [docs/workflow.md](./docs/workflow.md) §"Markdown is soft-wrapped" for rationale.
+- Desktop environment runs on alcyone, alnair and metis per ADR-028 (bundle composition), amended by [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only), [ADR-036](./docs/decisions/ADR-036-noctalia-shell-linux-desktop.md) (Noctalia as the cohesive shell) and — via ADR-036 — [ADR-044](./docs/decisions/ADR-044-linux-runtime-theme-menu.md) (Nix-owned runtime theme menu; Noctalia is themed by Nix, not a theming authority). Stack: niri + foot + greetd + Noctalia — Noctalia owns bar, launcher, notifications, lock, OSD, wallpaper and idle, subsuming waybar / fuzzel / fnott / swaylock + swayidle, all decommissioned in #385. Colour comes from the theme-menu conductor and its `theme` CLI, TUIs follow the terminal palette ([ADR-041](./docs/decisions/ADR-041-terminal-authority-tui-theming.md)), and fonts resolve through the fontconfig conductor (#390); Stylix remains the palette engine plus the Firefox and GTK targets. Living documents under [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each per-tool selection, decommissioned tools included.
 
 ## Open work
 
