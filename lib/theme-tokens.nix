@@ -5,8 +5,8 @@
 # accent drift out of sync between modules, #333). Colour roles *alias* what
 # Stylix centralizes (Stylix stays the source); spacing and the radius ladder
 # are canonical here; geometry and layout alias the active display profile;
-# motion carries structure only (values open, #111). Surfaces reference these
-# tokens instead of restating literals.
+# motion carries structure only (values still unset; #111 closed 2026-06-18
+# without them). Surfaces reference these tokens instead of restating literals.
 #
 # Imported per-consumer as `import ../../lib/theme-tokens.nix { inherit config; }`
 # — the lib/ import convention (theme-families/operator are plain attrsets,
@@ -61,8 +61,8 @@ let
 in
 {
   # IBM Carbon spacing scale (visual-identity.md §Spacing). Static. "Stay on the
-  # scale." Intra-surface padding consumers land under #111; s01/s05 are already
-  # aliased below by geometry.borderWidth / layout.gap.
+  # scale." No intra-surface padding consumer yet (#111 closed 2026-06-18 without
+  # one); s01/s05 are the on-vocab references for geometry.borderWidth / layout.gap.
   inherit spacing;
 
   # Semantic colour roles (visual-identity.md §Colour) — each ALIASES a base16
@@ -88,7 +88,8 @@ in
   layout.gap = profile.geometry.gap; # display-profile-scaled; on-vocab is Carbon spacing-05
 
   # Motion taxonomy (visual-identity.md §Motion). Structure only — duration tiers
-  # and easings land under #111, decided against rendered reality.
+  # and easings are still unset (#111 closed 2026-06-18 without them), to be
+  # decided against rendered reality.
   motion = {
     duration = { }; # $type: duration
     easing = { }; # $type: cubicBezier
