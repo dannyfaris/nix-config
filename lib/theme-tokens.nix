@@ -2,15 +2,16 @@
 #
 # A DTCG-shaped view over the design values that were previously bare literals
 # repeated across per-surface modules (the scattering that let the base0D focus
-# accent drift out of sync between modules, #333). Colour roles and type sizes
-# *alias* what Stylix centralizes (Stylix stays the source); geometry, spacing,
-# and layout are canonical here; motion carries structure only (values open,
-# #111). Surfaces reference these tokens instead of restating literals.
+# accent drift out of sync between modules, #333). Colour roles *alias* what
+# Stylix centralizes (Stylix stays the source); spacing and the radius ladder
+# are canonical here; geometry and layout alias the active display profile;
+# motion carries structure only (values open, #111). Surfaces reference these
+# tokens instead of restating literals.
 #
 # Imported per-consumer as `import ../../lib/theme-tokens.nix { inherit config; }`
 # — the lib/ import convention (theme-families/operator are plain attrsets,
 # stances takes { lib }; this one takes config), not threaded via _module.args.
-# Takes `config` for the dynamic colour/type groups that read Stylix; the static
+# Takes `config` for the dynamic colour group that reads Stylix; the static
 # groups never touch it, so static-only consumers (niri) force no Stylix eval
 # (laziness).
 #
@@ -73,17 +74,6 @@ in
     attention = role "base09" "bright-yellow"; # chrome shown without taking focus (notifications)
     critical = role "base08" "red"; # error / urgent
     muted = role "base03" "bright-black"; # inactive
-  };
-
-  # Font sizes ALIAS stylix.fonts.sizes.* (modules/nixos/desktop-fonts.nix),
-  # which the active display profile drives. Defined as the named view over the
-  # slots; not yet consumed by any surface — foot/waybar/fnott/GTK size via their
-  # Stylix slot, fuzzel via profile.fonts.launcher directly. The values noted are
-  # the 1.5× on-vocab band; the active 2× profile resolves smaller.
-  type.size = {
-    chrome = config.stylix.fonts.sizes.desktop; # waybar slot (1.5× on-vocab: 13)
-    popup = config.stylix.fonts.sizes.popups; # fnott + GTK slot (1.5× on-vocab: 12)
-    terminal = config.stylix.fonts.sizes.terminal; # foot / TUI slot (1.5× on-vocab: 11)
   };
 
   # Line weight & radii (visual-identity.md §Line weight & radii). Static.

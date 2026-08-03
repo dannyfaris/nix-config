@@ -6,13 +6,13 @@
 # 1.5×). Each profile couples the niri output scale + the font ramp + the
 # geometry, calibrated so all scales render at the SAME apparent size: the 1.5×
 # profile carries the on-vocab design values (Carbon spacing-05 gap 16, M3 md
-# radius 12, the agreed font band — foot 11 (stopgap: 10, #715) / bar 13 /
-# launcher 14 / notif + dialog 12), and the 1× and 2× profiles scale those by
-# ~1/scale to preserve that apparent look at each scale.
+# radius 12, the agreed font band — foot 11 (stopgap: 10, #715) / dialog 12),
+# and the 1× and 2× profiles scale those by ~1/scale to preserve that apparent
+# look at each scale.
 #
-# Faces are not scale-dependent — the hybrid model holds across profiles: mono
-# (Monaspace Argon) backs foot + waybar + fuzzel; sans (IBM Plex Sans) backs
-# fnott + GTK dialogs + web body. Only sizes + geometry + scale move per profile.
+# Faces are not scale-dependent: mono (Monaspace Argon) backs foot + TUIs; sans
+# (Inter) backs GTK dialogs + web body. Only sizes + geometry + scale move per
+# profile.
 #
 # Retained switchable for on-panel retuning: flip `active` to "1.0" / "1.5" /
 # "2.0" and `nh os switch`. Scale is the only display knob pinned (#106):
@@ -30,9 +30,7 @@ let
       scale = 1.0;
       fonts = {
         terminal = 17;
-        desktop = 20;
         popups = 18;
-        launcher = 21;
       };
       geometry = {
         gap = 24;
@@ -44,9 +42,7 @@ let
       scale = 1.5;
       fonts = {
         terminal = 10; # 11 in the agreed band; 10 chosen on alnair's panel (#715 evidence)
-        desktop = 13;
         popups = 12;
-        launcher = 14;
       };
       geometry = {
         gap = 16;
@@ -58,9 +54,7 @@ let
       scale = 2.0;
       fonts = {
         terminal = 8;
-        desktop = 10;
         popups = 9;
-        launcher = 11;
       };
       geometry = {
         gap = 12;

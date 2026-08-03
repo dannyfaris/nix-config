@@ -16,7 +16,7 @@
 # because two surviving Stylix targets read it under E1: the Firefox target
 # (per-profile font.name; face-swap-only, so Firefox renders Inter but stays
 # pinned, not following the runtime override, until Part B) and the GTK target.
-# stylix.fonts.sizes also feeds the type.size tokens. See docs/desktop/fonts.md.
+# See docs/desktop/fonts.md.
 #
 # Per #390 (Part A); was Stylix-sourced per ADR-028 / #69.
 { pkgs, ... }:
@@ -69,7 +69,6 @@ in
     };
     sizes = {
       terminal = profile.fonts.terminal; # foot (mono)
-      desktop = profile.fonts.desktop; # type.size token (chrome)
       popups = profile.fonts.popups; # GTK dialogs (sans)
     };
   };
