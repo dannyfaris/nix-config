@@ -247,16 +247,18 @@ The collective fleet is called **Sidera** (Latin, *the stars*) — see ADR-045.
 
 ## The fleet
 
-The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today lags its target name until that host's rename lands. Only `neptune` (the deployed home Mac, from the ADR-038 pilot) carries a celestial name on live hardware, so the re-key is barely-started.
+> Upkeep: this section is a roadmap (live targets plus reserve and prospect pools), not a census — it is a deliberate superset of `hosts/`, so it is not bound to the host-census lint (#583). Correct the `hosts/` dir today cells at each onboarding/rename; a generated census remains the recorded end state (#583's revisit trigger; the registry-carrier question lives with #562). As of 2026-08-03 the live dirs are `alcyone`, `alnair`, `electra`, `metis`, `neptune`, `saturn`.
+
+The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today can lag its target name until that host's rename lands. The re-key is early: hosts onboarded since ADR-045 (`alcyone`, `alnair`, `electra`) already sit under their star name, while the planet-named holdovers (`metis`, `neptune`, `saturn`) each still await their star rename.
 
 ### Main homelab — the Pleiades
 
 | Target name | Machine | `hosts/` dir today |
 |------|---------|--------------------|
-| **Alcyone** | NixOS x86_64 flagship desktop tower | — (not yet onboarded) |
+| **Alcyone** | NixOS x86_64 flagship desktop tower | `alcyone` |
 | **Celaeno** | darwin home Mac (mini) | `neptune` (deployed — the one live re-key) |
 | **Maia** | mini PC (M720q) | — (upcoming) |
-| **Electra** | mini PC (M920q) | — (upcoming) |
+| **Electra** | mini PC (M920q) | `electra` |
 | **Taygeta** | Raspberry Pi 4 | — (upcoming) |
 | **Atlas** | NAS (6-bay) | — (upcoming) |
 
@@ -267,7 +269,7 @@ Reserve sisters: **Merope, Asterope, Pleione**.
 | Target name | Machine | `hosts/` dir today |
 |------|---------|--------------------|
 | **Acrux** | darwin MacBook Air daily driver | `saturn` (config only; deploy pending hardware) |
-| **Alnair** | NixOS laptop | — (upcoming) |
+| **Alnair** | NixOS laptop | `alnair` |
 
 ### Offsite homelab — Centaurus
 
@@ -276,10 +278,3 @@ Reserve sisters: **Merope, Asterope, Pleione**.
 | **Hadar** | NixOS x86_64 work + personal dev (HP ProDesk) | `metis` |
 
 Reserve: **Toliman, Menkent**.
-
-### Retiring — no star minted
-
-| Machine | `hosts/` dir today | Note |
-|---------|--------------------|------|
-| AWS EC2 x86_64 work, headless | `mercury` | retiring (#634) |
-| UTM/aarch64 refinement VM | `nixos-vm` | retiring |

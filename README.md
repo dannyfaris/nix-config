@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/dannyfaris/nix-config/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/dannyfaris/nix-config/actions/workflows/ci.yaml)
 
-Personal NixOS + nix-darwin configuration. Four hosts today: a UTM aarch64 VM for refinement (`nixos-vm`), an AWS EC2 x86_64 box for work-only headless dev (`mercury`), an HP ProDesk x86_64 desktop (`metis`), and an Apple Silicon Mac mini (`neptune`, the first nix-darwin host). The same flake-parts tree builds them all; the same set of decisions — module structure, naming, default stances, operational posture — governs every host.
+Personal NixOS + nix-darwin configuration for a small fleet of NixOS and nix-darwin hosts, mixing x86_64-linux desktops and laptops with Apple Silicon Macs. The same flake-parts tree builds them all; the same set of decisions — module structure, naming, default stances, operational posture — governs every host. The current roster lives in [`CLAUDE.md`](./CLAUDE.md) §"Purpose", where a lint keeps it honest.
 
 Shared publicly for transparency and so others can lift pieces useful to their own configurations. Not maintained as a generalisable template — decisions reflect one operator's preferences and constraints (PRD §2.2).
 
