@@ -21,6 +21,13 @@ let
   autoGenPathsFailures = import ../lib/tests/auto-gen-paths.nix { inherit lib; };
   capabilitiesFailures = import ../lib/tests/capabilities.nix { inherit lib; };
 
+  # Host-registration set-diff (lib/host-registration.nix): fleet-global data
+  # binding hosts/ ↔ the flake registrations ↔ the per-host checks, so like
+  # the keybind/lib checks it rides x86_64-linux once, not per host. See
+  # docs/design/host-registration-binding.md.
+  hostRegistration = import ../lib/host-registration.nix { inherit lib; };
+  hostRegistrationTestFailures = import ../lib/tests/host-registration.nix { inherit lib; };
+
   # Keybind capability registry (lib/capabilities.nix): the collision lint is
   # platform data, not per-host config, so it rides mkReportCheck once on the
   # x86_64-linux runner (like the lib unit tests), not per host. See #384 / ADR-039.
@@ -200,6 +207,24 @@ in
           self.nixosConfigurations.electra.config;
       lib-auto-gen-paths = mkUnitTestCheck "x86_64-linux" "auto-gen-paths" autoGenPathsFailures;
       lib-capabilities = mkUnitTestCheck "x86_64-linux" "capabilities" capabilitiesFailures;
+      lib-host-registration =
+        mkUnitTestCheck "x86_64-linux" "host-registration"
+          hostRegistrationTestFailures;
+      # Named `hosts-registration` (plural), not `host-registration`, so
+      # mkChecksWithoutHosts's `host-` prefix filter can't eat it from the
+      # docs-only set. See docs/design/host-registration-binding.md.
+      hosts-registration =
+        mkReportCheck "x86_64-linux" "hosts-registration"
+          "Host-registration drift — hosts/ vs parts/{nixos,darwin}.nix vs parts/checks.nix (#710)"
+          (
+            hostRegistration.failures {
+              dirs = lib.attrNames (lib.filterAttrs (_: t: t == "directory") (builtins.readDir ../hosts));
+              nixosRegs = builtins.attrNames self.nixosConfigurations;
+              darwinRegs = builtins.attrNames self.darwinConfigurations;
+              nixosChecks = builtins.attrNames self.checks.x86_64-linux;
+              darwinChecks = builtins.attrNames self.checks.aarch64-darwin;
+            }
+          );
       keybind-collisions =
         mkReportCheck "x86_64-linux" "keybind-collisions"
           "Keybind chord collisions (lib/capabilities.nix; ADR-039 §8)"
