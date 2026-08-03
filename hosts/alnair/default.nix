@@ -27,7 +27,7 @@
     # Capability bundles.
     ../../modules/nixos/bundles/remote-access.nix
     ../../modules/nixos/bundles/desktop-env.nix
-    ../../modules/nixos/bundles/mobility.nix # Fleet's first NixOS laptop cluster — suspend/lid/backlight/power posture (#636) plus roaming Wi-Fi MAC privacy (#753).
+    ../../modules/nixos/bundles/mobility.nix # Fleet's first NixOS laptop cluster — suspend/lid/backlight/power posture (#636) plus roaming-identity privacy (#753, #754).
 
     # Standalone system modules.
     ../../modules/nixos/boot-systemd.nix
