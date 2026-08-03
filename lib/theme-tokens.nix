@@ -71,7 +71,7 @@ in
     focus = role "base0D" "blue"; # the surface that holds focus
     # bright-yellow is the nearest on-bus colour to base09 (in gruvbox it
     # renders warm gold — orange-adjacent); ANSI-16 has no orange.
-    attention = role "base09" "bright-yellow"; # chrome shown without taking focus (notifications)
+    attention = role "base09" "bright-yellow"; # chrome shown without taking focus
     critical = role "base08" "red"; # error / urgent
     muted = role "base03" "bright-black"; # inactive
   };
