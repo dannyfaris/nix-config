@@ -61,7 +61,7 @@ Additionally, statix's skew is *structural and permanent*: any future re-pin mus
 
 ```
 statix check                                   # whole-tree; reads statix.toml itself
-NIXF=$(git ls-files '*.nix' | grep -vE '^hosts/[^/]*/hardware-configuration\.nix$|^hosts/nixos-vm/hardware\.nix$|^\.claude/worktrees')
+NIXF=$(git ls-files '*.nix' | grep -vE '^hosts/[^/]*/hardware-configuration\.nix$|^\.claude/worktrees')
 deadnix --fail $NIXF
 nixfmt --check $NIXF
 shellcheck $(git ls-files '*.sh')
@@ -69,7 +69,7 @@ actionlint $(git ls-files '.github/workflows/*')
 shfmt -i 2 -s -d $(git ls-files '*.sh') .envrc  # .envrc is in shfmt's configured scope
 ```
 
-The `grep -vE` reproduces `statix.toml`'s three ignore globs. This is the one accepted duplication: three static globs, sitting one file away from their source, changed rarely and visibly.
+The `grep -vE` reproduces `statix.toml`'s two ignore globs. This is the one accepted duplication: two static globs, sitting one file away from their source, changed rarely and visibly.
 
 ### Files this change touches
 

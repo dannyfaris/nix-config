@@ -51,10 +51,12 @@ in
     backupFileExtension = "hm-bak";
 
     # `inputs` is forwarded so HM modules can import flake-provided HM
-    # modules internally (an `inputs.<flake>.homeModules.default` import
-    # inside a home/ module). No HM module consumes it today — the
-    # zen-browser module that did was retired (#127) — but it is kept as
-    # the extension point for future flake-input HM modules.
+    # modules internally. Consumed today by home/nixos/noctalia.nix
+    # (`inputs.noctalia.homeModules.default` import + `.packages`) and
+    # home/nixos/niri.nix (`inputs.niri-flake.lib`); the first consumer
+    # was the zen-browser module, retired (#127). Reaches HM modules
+    # only via extraSpecialArgs below — specialArgs feeds the system
+    # module tree, not this submodule.
     extraSpecialArgs = {
       inherit
         hostContext
