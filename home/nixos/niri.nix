@@ -173,6 +173,17 @@ in
           };
         clip-to-geometry = true;
       }
+
+      # Keep the capture routes that run without a human at the console (grim
+      # over wlr-screencopy; niri's automatic screenshot-screen/-window actions)
+      # from becoming a credential channel (#529) — the interactive screenshot
+      # UI still shows the window. app-id is PROVISIONAL: pin it from
+      # `niri msg windows`, since an unmatched rule is silently inert.
+      # See docs/desktop/screen-capture.md §Sharp edges.
+      {
+        matches = [ { app-id = "^1[Pp]assword$"; } ];
+        block-out-from = "screen-capture";
+      }
     ];
 
     # The cross-platform Hyper layer (Ctrl+Alt base) is generated from the
