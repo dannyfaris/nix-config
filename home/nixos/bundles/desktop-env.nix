@@ -36,6 +36,9 @@
 #   - removable-media.nix — udiskie auto-mount + notifications (tray-less)
 #     and the mount.yazi unmount/eject plugin. Pairs with the system-side
 #     udisks2 + fs helpers. See docs/desktop/removable-media.md (#105).
+#   - screen-capture.nix — grim, non-interactive wlr-screencopy capture for
+#     remote/agent visual verification over SSH. niri's interactive
+#     screenshot UI stays the console path. See docs/desktop/screen-capture.md (#529).
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + the Noctalia shell
@@ -76,6 +79,7 @@
     ../portal-color-scheme.nix
     ../polkit-agent.nix
     ../removable-media.nix
+    ../screen-capture.nix
     # Desktop-only Stylix targets — co-located with the bundle that
     # enables them, so desktop hosts pick them up transitively. The
     # cross-platform TUI targets stay in `home/shared/stylix-targets.nix`.
