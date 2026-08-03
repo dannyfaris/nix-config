@@ -10,17 +10,17 @@
 # Pure aggregation per the bundle-purity rule (PRD §8.1 #3): the
 # capabilities are factored into standalone modules beside this file —
 #
-#   - power.nix            — power posture (upower telemetry, platform
-#                            profiles, s2idle suspend, lid handling).
-#   - backlight.nix        — screen + keyboard backlight control.
-#   - bluetooth.nix        — Bluetooth for laptop peripherals.
-#   - wifi-mac-privacy.nix — per-SSID Wi-Fi MAC, so a roaming host is not
-#                            linkable across networks.
+#   - power.nix           — power posture (upower telemetry, platform
+#                           profiles, s2idle suspend, lid handling).
+#   - backlight.nix       — screen + keyboard backlight control.
+#   - bluetooth.nix       — Bluetooth for laptop peripherals.
+#   - roaming-privacy.nix — the identifiers a portable broadcasts on every
+#                           network it joins (Wi-Fi MAC, DHCP hostname).
 {
   imports = [
     ../power.nix
     ../backlight.nix
     ../bluetooth.nix
-    ../wifi-mac-privacy.nix
+    ../roaming-privacy.nix
   ];
 }
