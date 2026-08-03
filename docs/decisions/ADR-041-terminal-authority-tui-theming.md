@@ -1,7 +1,9 @@
-# ADR-041: The terminal is the TUI colour authority
+---
+date: 2026-07-02
+status: Accepted
+---
 
-**Date**: 2026-07-02
-**Status**: Accepted
+# ADR-041: The terminal is the TUI colour authority
 
 > TUIs render from the **terminal's 16-colour ANSI palette** instead of build-time Stylix hex — per-tool ANSI/auto-detecting config (bat `base16`, helix `base16_terminal`, fzf `--color=16`, zellij `ansi`, starship/lazygit native ANSI names, yazi dual presets) replaces the Stylix target whitelist, which empties. TUIs now follow runtime polarity flips (the terminal repaints its slots; everything drawn from them follows) and render in the **local** palette over SSH. This ends [ADR-028](./ADR-028-stylix-foundation-and-desktop-env.md) item 1's "Stylix governs the TUI surface" clause fleet-wide (the ADR-028→029 pattern: a direction change gets a superseding ADR), and **deliberately retires the per-host palette-shift SSH signal for TUIs** (operator-endorsed). Stylix itself stays enabled everywhere — as the palette engine behind `lib/scheme-pair.nix`, the Ghostty target, and the `lib/theme-tokens.nix` role table (#411 ended the statuslines' build-time reads).
 

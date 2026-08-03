@@ -1,7 +1,9 @@
-# ADR-001: Shell — fish
+---
+date: 2026-05-06
+status: Accepted
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted
+# ADR-001: Shell — fish
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

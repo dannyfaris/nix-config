@@ -1,7 +1,9 @@
-# ADR-037: Documentation mutability contracts — facts as code, reasons as prose
+---
+date: 2026-06-16
+status: Accepted, Implementation pending
+---
 
-**Date**: 2026-06-16
-**Status**: Accepted, Implementation pending
+# ADR-037: Documentation mutability contracts — facts as code, reasons as prose
 
 > Classifies every documentation artifact — including the CLAUDE.md guidance files — by what would make it *wrong*, and routes content to a home that can defend it: mechanical facts to generated/checked code, reasons to single-sourced prose, a decision's lifecycle to the issue tracker, only load-bearing *why* to a frozen ADR. Applies [ADR-033](./ADR-033-eval-checks-stances-and-lib-units.md)'s eval-check instinct to documentation facts and [ADR-032](./ADR-032-proportionate-enforcement-and-rationale.md)'s single-sourcing to the prose that remains. Bound by ADR-032 Rule 1: only the grep-class lint rung is committed up front; heavier enforcement waits on evidence.
 

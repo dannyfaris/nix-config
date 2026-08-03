@@ -1,7 +1,9 @@
-# ADR-002: Prompt — starship
+---
+date: 2026-05-06
+status: Accepted
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted
+# ADR-002: Prompt — starship
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

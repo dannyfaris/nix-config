@@ -1,7 +1,9 @@
-# ADR-012: Module taxonomy — most-communicative term
+---
+date: 2026-05-06
+status: Accepted
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted
+# ADR-012: Module taxonomy — most-communicative term
 
 > **Note:** the directory paths referenced throughout this ADR
 > (`modules/home/`, `modules/system/`) reflect the pre-refactor layout

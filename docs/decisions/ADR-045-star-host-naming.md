@@ -1,7 +1,9 @@
-# ADR-045: Star host-naming — a flat, non-binding pool, superseding the celestial-substrate framework
+---
+date: 2026-07-25
+status: Accepted, Implementation pending
+---
 
-**Date**: 2026-07-25
-**Status**: Accepted, Implementation pending
+# ADR-045: Star host-naming — a flat, non-binding pool, superseding the celestial-substrate framework
 
 > Retires [ADR-038](./ADR-038-celestial-host-naming.md)'s substrate→class thesis (*gravitational binding mirrors operational dependency*) wholesale, and names hosts after **stars** instead: a flat pool that makes no operational claim. The move answers two problems the incoming intake surfaced ([#639](https://github.com/dannyfaris/nix-config/issues/639)): the major-planet pool is exhausted (8 planets − Earth = 7, nearly all assigned, ~2 free against ~5 un-named owned machines inbound), and "moon-capable" had gone dishonest for machines — laptops, service-minis, a NAS — that will never anchor a VM. Both trace to the *name carrying a claim*; a flat star-label dissolves both. The approach is **deliberately non-binding** — taste, not rule; host names remain non-load-bearing (they drive no config, unchanged from ADR-038 §Context). Full fleet re-key, no grandfathering (only `neptune` had landed as a deployed rename, so the live-cutover cost is one box — `saturn` carries a planet name in-repo but its hardware is not yet deployed). VMs are just stars — the moon→planet binding is dropped. The collective fleet takes the name **Sidera**. The living naming rule — southern-sky preference, the optional constellation-grouping, the per-host roster — lives in [taxonomy.md](../taxonomy.md#host-naming), **not** frozen here, precisely because it is non-binding. Decided in #639; renames staged per-host as before.
 

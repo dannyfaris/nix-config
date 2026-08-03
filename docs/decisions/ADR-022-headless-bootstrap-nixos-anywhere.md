@@ -1,7 +1,10 @@
+---
+date: 2026-05-25
+status: Accepted
+---
+
 # ADR-022: Host install via `nixos-anywhere` + `disko`
 
-**Date**: 2026-05-25
-**Status**: Accepted
 **Supersedes**: ADR-017
 **Amends**: ADR-018 (host SSH key acquisition order only)
 

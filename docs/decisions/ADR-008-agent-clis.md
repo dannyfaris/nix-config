@@ -1,7 +1,9 @@
-# ADR-008: AI coding agents — Claude Code, Codex, Antigravity, Cursor
+---
+date: 2026-05-06
+status: Accepted
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted
+# ADR-008: AI coding agents — Claude Code, Codex, Antigravity, Cursor
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

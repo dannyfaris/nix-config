@@ -1,7 +1,9 @@
-# ADR-004: Multiplexer — zellij
+---
+date: 2026-05-06
+status: Accepted
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted
+# ADR-004: Multiplexer — zellij
 
 > **Amendment (2026-06-05):** mosh was removed from the fleet ([#47](https://github.com/dannyfaris/nix-config/issues/47), [ADR-011](./ADR-011-remote-dev-qol.md)). References below to mosh "pairing" with zellij are historical — there is no mosh layer; cross-disconnect persistence is carried by zellij alone (reconnect over plain SSH, then `zellij attach`). The zellij decision itself is unchanged.
 >

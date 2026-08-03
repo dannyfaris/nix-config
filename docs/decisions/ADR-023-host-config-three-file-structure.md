@@ -1,7 +1,9 @@
-# ADR-023: Three-file host configuration structure
+---
+date: 2026-05-25
+status: Accepted
+---
 
-**Date**: 2026-05-25
-**Status**: Accepted
+# ADR-023: Three-file host configuration structure
 
 ## Context
 

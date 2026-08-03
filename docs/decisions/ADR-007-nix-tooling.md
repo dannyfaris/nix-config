@@ -1,7 +1,9 @@
-# ADR-007: Nix tooling — nh, nom, nixd, nixfmt, statix, deadnix
+---
+date: 2026-05-06
+status: Accepted
+---
 
-**Date**: 2026-05-06
-**Status**: Accepted
+# ADR-007: Nix tooling — nh, nom, nixd, nixfmt, statix, deadnix
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

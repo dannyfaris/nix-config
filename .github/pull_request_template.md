@@ -21,4 +21,4 @@ Closes #
 - [ ] Staged diff peer-reviewed by an independent reviewer before commit (docs/workflow.md §"Peer-review staged diffs before commit").
 - [ ] For selections: rationale doc landed before the implementing commit (doc-before-code cadence).
 - [ ] Pre-commit gate passed (`nix build .#checks.<system>.pre-commit`).
-- [ ] New and amended markdown authored soft-wrapped (#266).
+- [ ] Markdown passes `nix fmt` (dprint, once wired in #435 PR B); issue/PR body soft-wrapped by hand (#266).

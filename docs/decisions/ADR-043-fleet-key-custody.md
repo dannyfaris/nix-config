@@ -1,7 +1,9 @@
-# ADR-043: Fleet key custody — one key, one role, one lifecycle
+---
+date: 2026-07-13
+status: Accepted, Implemented (#526)
+---
 
-**Date**: 2026-07-13
-**Status**: Accepted, Implemented (#526)
+# ADR-043: Fleet key custody — one key, one role, one lifecycle
 
 > Every fleet credential does **one job** and carries **one lifecycle**. Machine sops decryption rides **host-key-derived age identities** — one per NixOS host that holds a secret, reproduced with the host on reprovision; Darwin hosts hold none (they declare no secrets). The edit + disaster-recovery root is **one standalone operator age key** with no SSH ancestry, vault-held (1Password item "sops age key - operator") plus an offline copy. SSH and git-hosting auth live on their own rails (per-host keys per ADR-042/ADR-010; HTTPS+token per ADR-009). Neptune's triple-role `id_ed25519` — fleet SSH + GitHub push + sops recovery root in one passphrase-less file — is retired and extinguished. The *why* lives in the design note [`docs/design/fleet-key-custody.md`](../design/fleet-key-custody.md); this ADR freezes the decision. The rotation itself is recorded in [ADR-010](./ADR-010-ssh.md) §History (2026-07-13).
 

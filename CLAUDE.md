@@ -154,7 +154,7 @@ In a nix-less agent/cloud session, run `scripts/fetch-lint-toolchain.sh` once, t
   squash-merges itself once required checks pass. See
   [docs/workflow.md](./docs/workflow.md) §"PRs land via squash
   auto-merge" for rationale.
-- **Markdown is soft-wrapped** — author one line per paragraph (no hard newlines mid-paragraph); the editor handles visual wrapping. Applies to docs, ADRs, READMEs, and issue/PR bodies. New and amended markdown is soft-wrapped even within an otherwise hard-wrapped file; legacy docs reflow opportunistically when next substantively edited (no bulk reflow). See [docs/workflow.md](./docs/workflow.md) §"Markdown is soft-wrapped" for rationale.
+- **Markdown is soft-wrapped** — one line per paragraph (no hard newlines mid-paragraph). Tracked `.md` files are formatted to this shape by dprint via treefmt (`nix fmt`), the mechanism chosen in [ADR-046](./docs/decisions/ADR-046-markdown-formatter.md) and wired in #435 PR B; before that wiring lands, author the shape by hand. Issue/PR *bodies* stay hand-authored soft-wrapped (the formatter cannot reach `gh` descriptions). See [docs/workflow.md](./docs/workflow.md) §"Markdown is soft-wrapped" for rationale.
 - Desktop environment lands on metis (x86_64) per ADR-028
   (Stylix-foundation + bundle composition), amended by
   [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only

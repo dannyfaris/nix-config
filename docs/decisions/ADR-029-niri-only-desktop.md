@@ -1,7 +1,9 @@
-# ADR-029: niri-only desktop after DMS retraction
+---
+date: 2026-05-29
+status: Accepted; amended by ADR-036 (a cohesive shell — Noctalia — returns to the Linux desktop; the per-tool status-bar/launcher/notification/lock selections are subsumed there)
+---
 
-**Date**: 2026-05-29
-**Status**: Accepted; amended by ADR-036 (a cohesive shell — Noctalia — returns to the Linux desktop; the per-tool status-bar/launcher/notification/lock selections are subsumed there)
+# ADR-029: niri-only desktop after DMS retraction
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the
 > current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`)

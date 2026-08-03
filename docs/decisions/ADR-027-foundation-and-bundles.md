@@ -1,7 +1,9 @@
-# ADR-027: Foundation and capability bundles (walk back the role taxonomy)
+---
+date: 2026-05-27
+status: Accepted
+---
 
-**Date**: 2026-05-27
-**Status**: Accepted
+# ADR-027: Foundation and capability bundles (walk back the role taxonomy)
 
 > This ADR **supersedes [ADR-014](./ADR-014-independent-roles.md)** in full and **amends [ADR-013](./ADR-013-composition-framework.md)** by retracting its role-specific sub-claim while preserving its broader explicit-imports philosophy. The composition framework's rejection of auto-discovery, its whitelist stance, and its "explicit > implicit" posture all survive; only the *role layer* on top of that framework is walked back. [ADR-015](./ADR-015-tier-as-directory.md) (tier-as-directory) and [ADR-016](./ADR-016-host-identity.md) (host identity) are untouched.
 
