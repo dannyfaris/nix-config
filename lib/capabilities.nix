@@ -31,7 +31,12 @@
 #   - home/darwin/karabiner.nix   → `tiers.hyper.darwin` (the Ctrl+Opt substrate)
 #                                    + `karabinerHyperRemapKeys` (now emptied —
 #                                    the Mission-Control remaps retired, ADR-040)
+#   - home/darwin/skhd.nix        → `skhdChords` (TRIAL BRANCH: chord per
+#                                    darwin-realized cap; the module keys its
+#                                    command bodies by cap id and asserts the two
+#                                    sets match, the #537 pattern)
 #   - parts/checks.nix            → `collisions` + `darwinCollisions` +
+#                                    `skhdCollisions` (TRIAL BRANCH) +
 #                                    `validationFailures` (mkReportCheck, #535)
 #                                    + `keybindsTable` (the
 #                                    fragment package + the generate-and-diff
@@ -152,6 +157,76 @@ let
   asKeyFor = k: asKey.${k} or (lib.toLower k);
   aerospaceChord =
     chord: lib.concatStringsSep "-" (darwinModTokens chord ++ [ (asKeyFor chord.key) ]);
+
+  # ── skhd (darwin, trial branch) chord rendering ────────────────────────────
+  # skhd's grammar is `<mod> + <mod> - <key> : <command>`. Modifier vocabulary is
+  # the same set AeroSpace uses, so darwinModTokens is reused unchanged; only the
+  # join and the key spelling differ.
+  #
+  # NO punctuation key has a literal spelling. skhd's `literal_keycode_str`
+  # (src/tokenize.h:13-32) is entirely alphabetic, and `resolve_identifier_type` is
+  # only reached from the tokenizer's `isalpha` branch — so every punctuation key
+  # must be an ANSI keycode, whether or not the character is also a reserved
+  # grammar token. Uppercase hex is mandatory: eat_hex accepts 0-9A-F only
+  # (src/tokenize.c:55-63), so a lowercased `0x2b` truncates to `0x2` and binds a
+  # different key silently. Values are the kVK_ANSI_* constants.
+  #
+  # Named literals are pinned to skhd's table rather than guessed (`return`, not
+  # `enter`): an unmapped name tokenizes as an identifier, which the key position
+  # rejects (src/parse.c:298-308), and a parse error discards the ENTIRE mode map
+  # (src/parse.c:496-500) — so one wrong name costs every bind on the host, not
+  # just its own.
+  #
+  # This map must stay key-for-key with `asKey` above; `validationFailuresFor`
+  # asserts it, because a key present in one and missing from the other renders a
+  # bare `lib.toLower` identifier and takes the whole keymap down while CI stays
+  # green.
+  skhdKey = {
+    Left = "left";
+    Right = "right";
+    Up = "up";
+    Down = "down";
+    Return = "return";
+    Tab = "tab";
+    Space = "space";
+    Minus = "0x1B";
+    Equal = "0x18";
+    Semicolon = "0x29";
+    Comma = "0x2B";
+    Slash = "0x2C";
+  };
+  skhdKeyFor = k: skhdKey.${k} or (lib.toLower k);
+  skhdChord =
+    chord: "${lib.concatStringsSep " + " (darwinModTokens chord)} - ${skhdKeyFor chord.key}";
+
+  # Every capability carrying a darwin realization. `skhdChords` is an attrset, so
+  # consumers iterating it get alphabetical id order, not registry order — the
+  # generated skhdrc is grouped by that, not by the registry's reading order. The
+  # trial's skhd module keys its command bodies by these ids and asserts the two
+  # sets match exactly (the #537 pattern), so the registry owns every darwin
+  # *chord* and a chord change moves the bind with it.
+  darwinRealizedCapsFor = reg: lib.filter (c: (c.platforms.darwin.realization or null) != null) reg;
+  skhdChordsFor =
+    reg:
+    lib.listToAttrs (map (c: lib.nameValuePair c.id (skhdChord c.chord)) (darwinRealizedCapsFor reg));
+  skhdChords = skhdChordsFor registry;
+
+  # skhd resolves duplicate chords silently, first-wins, with no diagnostic
+  # (src/hashtable.h:94-97) — so a collision is invisible at runtime and this lint
+  # is the only thing that can catch it.
+  skhdCollisionsFor =
+    reg:
+    let
+      entries = map (c: {
+        inherit (c) id;
+        chord = skhdChord c.chord;
+      }) (darwinRealizedCapsFor reg);
+      byChord = lib.groupBy (e: e.chord) entries;
+    in
+    lib.mapAttrsToList (
+      chord: es: "duplicate skhd chord ${chord}: claimed by ${lib.concatMapStringsSep ", " (e: e.id) es}"
+    ) (lib.filterAttrs (_c: es: lib.length es > 1) byChord);
+  skhdCollisions = skhdCollisionsFor registry;
 
   # ── Workspace families — generated, not hand-listed (one per workspace 1–9) ─
   focusWorkspaces = map (n: {
@@ -1259,9 +1334,26 @@ let
   # lowercased into the config and reject the WHOLE file at AeroSpace's
   # runtime parse — this check moves that failure to eval.
   validDarwinKey = k: lib.hasAttr k asKey || builtins.match "[A-Za-z0-9]" k != null;
+  # asKey and skhdKey must name the same keys. A key in one but not the other is
+  # invisible to every other gate — the chord still renders, the collision lint
+  # still passes, the host still builds — but the missing side falls through to
+  # `lib.toLower` and emits an identifier its parser rejects, costing the whole
+  # keymap. Asserted here so the drift fails CI instead of the keyboard.
+  darwinKeyMapDrift =
+    let
+      onlyAs = lib.subtractLists (lib.attrNames skhdKey) (lib.attrNames asKey);
+      onlySkhd = lib.subtractLists (lib.attrNames asKey) (lib.attrNames skhdKey);
+    in
+    lib.optional (
+      onlyAs != [ ]
+    ) "darwin key maps out of sync: in asKey but not skhdKey: [${lib.concatStringsSep ", " onlyAs}]"
+    ++ lib.optional (
+      onlySkhd != [ ]
+    ) "darwin key maps out of sync: in skhdKey but not asKey: [${lib.concatStringsSep ", " onlySkhd}]";
   validationFailuresFor =
     reg:
-    lib.concatLists (
+    darwinKeyMapDrift
+    ++ lib.concatLists (
       lib.imap0 (
         i: c:
         let
@@ -1447,6 +1539,12 @@ in
     aerospaceBinds
     aerospaceBindsFor
     aerospaceExecCaps
+    skhdChord
+    skhdChords
+    skhdChordsFor
+    skhdCollisions
+    skhdCollisionsFor
+    darwinRealizedCapsFor
     collisions
     collisionsFor
     darwinCollisions

@@ -231,6 +231,15 @@ in
         mkReportCheck "x86_64-linux" "keybind-collisions-darwin"
           "Keybind chord collisions — darwin/AeroSpace (lib/capabilities.nix; ADR-039 §8, ADR-040)"
           capabilities.darwinCollisions;
+      # TRIAL BRANCH ONLY — the skhd namespace neptune actually runs. Separate
+      # from the AeroSpace lint above because skhd renders chords differently
+      # (`ctrl + alt - 0x2B`, not `ctrl-alt-comma`) and, unlike AeroSpace, resolves
+      # a duplicate silently first-wins with no diagnostic (src/hashtable.h:94-97)
+      # — so this lint is the only thing that can catch one.
+      keybind-collisions-skhd =
+        mkReportCheck "x86_64-linux" "keybind-collisions-skhd"
+          "Keybind chord collisions — darwin/skhd (lib/capabilities.nix)"
+          capabilities.skhdCollisions;
       # Registry shape gate: a malformed entry (typo'd realization tag,
       # misspelled field, unmapped darwin key) is silently dropped by the
       # emitters, so its absence must fail here instead (#535).

@@ -12,6 +12,9 @@ let
     niriBindsFor
     aerospaceChord
     aerospaceBindsFor
+    skhdChord
+    skhdChordsFor
+    skhdCollisionsFor
     collisionsFor
     darwinCollisionsFor
     validationFailuresFor
@@ -292,6 +295,130 @@ lib.runTests {
       })
     ];
     expected = { };
+  };
+
+  # ── skhd chord rendering (TRIAL BRANCH) ────────────────────────────────────
+  # skhd joins modifiers with " + " and separates the key with " - ", so the same
+  # chord that renders `ctrl-alt-up` for AeroSpace renders `ctrl + alt - up` here.
+  testSkhdChordBase = {
+    expr = skhdChord {
+      tier = "hyper";
+      key = "B";
+    };
+    expected = "ctrl + alt - b";
+  };
+
+  testSkhdChordArrow = {
+    expr = skhdChord {
+      tier = "hyper";
+      mods = [ "Shift" ];
+      key = "Left";
+    };
+    expected = "ctrl + alt + shift - left";
+  };
+
+  # `return`, not AeroSpace's `enter` — skhd's own literal table.
+  testSkhdChordReturn = {
+    expr = skhdChord {
+      tier = "hyper";
+      key = "Return";
+    };
+    expected = "ctrl + alt - return";
+  };
+
+  # Punctuation has no literal spelling in skhd; it must render as an UPPERCASE
+  # ANSI keycode. A lowercase hex digit would truncate in eat_hex and bind a
+  # different key silently, so the case is asserted, not just the value.
+  testSkhdChordPunctIsUppercaseHex = {
+    expr = skhdChord {
+      tier = "hyper";
+      key = "Comma";
+    };
+    expected = "ctrl + alt - 0x2B";
+  };
+
+  testSkhdChordSuperEscalator = {
+    expr = skhdChord {
+      tier = "hyper";
+      mods = [ "Super" ];
+      key = "Up";
+    };
+    expected = "ctrl + alt + cmd - up";
+  };
+
+  # The emitter keys by capability id (not by chord — the module looks bodies up
+  # by id), and covers aerospace-exec caps too: on the skhd side every cap needs a
+  # chord regardless of how its body is authored.
+  testSkhdChordsCoversExecCaps = {
+    expr = skhdChordsFor [
+      (mkAsCap "focus-window-up" {
+        tier = "hyper";
+        key = "Up";
+      } "focus up")
+      (mkAsExecCap "maximise-by-isolation" {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "M";
+      })
+    ];
+    expected = {
+      focus-window-up = "ctrl + alt - up";
+      maximise-by-isolation = "ctrl + alt + shift - m";
+    };
+  };
+
+  testSkhdCollisionsCleanIsEmpty = {
+    expr = skhdCollisionsFor [
+      (mkAsCap "a" {
+        tier = "hyper";
+        key = "A";
+      } "focus up")
+      (mkAsCap "b" {
+        tier = "hyper";
+        key = "B";
+      } "focus down")
+    ];
+    expected = [ ];
+  };
+
+  # skhd resolves a duplicate chord silently first-wins with no diagnostic, so
+  # this lint is the only thing standing between a collision and a dead bind.
+  testSkhdCollisionsDuplicateFires = {
+    expr = builtins.length (skhdCollisionsFor [
+      (mkAsCap "a" {
+        tier = "hyper";
+        key = "A";
+      } "focus up")
+      (mkAsCap "b" {
+        tier = "hyper";
+        key = "A";
+      } "focus down")
+    ]);
+    expected = 1;
+  };
+
+  # Declaration order of `mods` must not hide a collision: both render to the
+  # same canonical string, so the lint must group them together.
+  testSkhdCollisionsModOrderNormalised = {
+    expr = builtins.length (skhdCollisionsFor [
+      (mkAsCap "a" {
+        tier = "hyper";
+        mods = [
+          "Shift"
+          "Super"
+        ];
+        key = "A";
+      } "focus up")
+      (mkAsCap "b" {
+        tier = "hyper";
+        mods = [
+          "Super"
+          "Shift"
+        ];
+        key = "A";
+      } "focus down")
+    ]);
+    expected = 1;
   };
 
   # A clean darwin registry produces no collision failures.
