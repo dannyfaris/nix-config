@@ -166,9 +166,9 @@ The collective fleet is called **Sidera** (Latin, *the stars*) — see ADR-045.
 
 ## The fleet
 
-> Upkeep: this section is a roadmap (live targets plus reserve and prospect pools), not a census — it is a deliberate superset of `hosts/`, so it is not bound to the host-census lint (#583). Correct the `hosts/` dir today cells at each onboarding/rename; a generated census remains the recorded end state (#583's revisit trigger; the registry-carrier question lives with #562). As of 2026-08-03 the live dirs are `alcyone`, `alnair`, `electra`, `metis`, `neptune`, `saturn`.
+> Upkeep: this section is a roadmap (live targets plus reserve and prospect pools), not a census — it is a deliberate superset of `hosts/`, so it is not bound to the host-census lint (#583). Correct the `hosts/` dir today cells at each onboarding/rename; a generated census remains the recorded end state (#583's revisit trigger; the registry-carrier question lives with #562). As of 2026-08-05 the live dirs are `alcyone`, `alnair`, `electra`, `metis`, `neptune`.
 
-The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today can lag its target name until that host's rename lands. The re-key is early: hosts onboarded since ADR-045 (`alcyone`, `alnair`, `electra`) already sit under their star name, while the planet-named holdovers (`metis`, `neptune`, `saturn`) each still await their star rename.
+The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today can lag its target name until that host's rename lands. The re-key is early: hosts onboarded since ADR-045 (`alcyone`, `alnair`, `electra`) already sit under their star name, while the planet-named holdovers (`metis`, `neptune`) each still await their star rename.
 
 ### Main homelab — the Pleiades
 
@@ -185,10 +185,11 @@ Reserve sisters: **Merope, Asterope, Pleione**.
 
 ### Portable devices
 
-| Target name | Machine                         | `hosts/` dir today                              |
-| ----------- | ------------------------------- | ----------------------------------------------- |
-| **Acrux**   | darwin MacBook Air daily driver | `saturn` (config only; deploy pending hardware) |
-| **Alnair**  | NixOS laptop                    | `alnair`                                        |
+| Target name | Machine      | `hosts/` dir today |
+| ----------- | ------------ | ------------------ |
+| **Alnair**  | NixOS laptop | `alnair`           |
+
+Reserve: **Acrux**.
 
 ### Offsite homelab — Centaurus
 

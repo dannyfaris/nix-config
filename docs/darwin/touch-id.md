@@ -4,7 +4,7 @@ Operator's authentication shortcut for `sudo` on every Darwin host that has Touc
 
 ## Selection
 
-`security.pam.services.sudo_local.touchIdAuth = true;` and `security.pam.services.sudo_local.reattach = true;`, set in `modules/darwin/touch-id.nix` and imported per-host by Darwin hosts that want it (today: `neptune`, `saturn`). The module is a single-capability standalone per ADR-027 — capabilities, even universally desired ones, do not belong in `foundation.nix`.
+`security.pam.services.sudo_local.touchIdAuth = true;` and `security.pam.services.sudo_local.reattach = true;`, set in `modules/darwin/touch-id.nix` and imported per-host by any Darwin host that wants it (today: `neptune`). The module is a single-capability standalone per ADR-027 — capabilities, even universally desired ones, do not belong in `foundation.nix`.
 
 ## Rationale
 

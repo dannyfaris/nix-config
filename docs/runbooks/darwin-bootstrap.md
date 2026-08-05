@@ -22,7 +22,7 @@ Run once per fresh clone of this repo on the operator machine:
 
 ## Pre-bootstrap (operator-side, on the Mac)
 
-The Mac Mini and MacBook Air both follow the same sequence. Steps must run in order — each depends on the previous.
+Applies to every Darwin host (neptune today). Steps must run in order — each depends on the previous.
 
 ### 0 — macOS Setup Assistant
 
@@ -30,7 +30,7 @@ Walk through Setup Assistant. The only setting that matters downstream is **Acco
 
 The Full Name (the display name) can be anything.
 
-Take Setup Assistant's other offers where they appear: **Touch ID fingerprint enrolment** (without it the declared `pam_tid` sudo silently falls back to password — docs/darwin/touch-id.md §Prerequisite) and **FileVault** (turning the §FileVault step below into verify-only; saturn's declared Phase-1 build has FileVault on from bring-up — `hosts/saturn/default.nix`, leaned on by the key-custody chain, ADR-043).
+Take Setup Assistant's other offers where they appear: **Touch ID fingerprint enrolment** (without it the declared `pam_tid` sudo silently falls back to password — docs/darwin/touch-id.md §Prerequisite) and **FileVault** (turning the §FileVault step below into verify-only).
 
 ### 1 — Install the operator age identity from the vault
 
@@ -214,13 +214,13 @@ Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares them by ba
 
 Same steps as the headless runbook (see [headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment): generate this host's passphrase-less outbound user key (`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`), add its pubkey to `lib/operator.nix` `hostKeys`, add/extend the relevant `sshEdges` entries (ADR-042's declared-edge model), and commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to `hosts/<host>/` with its `ssh-known-hosts.nix` and `ssh.nix` entries. Existing hosts pick all of it up at their own next switch.
 
-Client-only hosts (saturn today) run the first three steps only — mint the key, add it to `hostKeys`, and add this host to the source lists of the destinations it should reach (metis, neptune). Committing a host public key + `ssh-known-hosts`/`ssh.nix` entries is the *destination flip's* work — saturn's pending flip has its own subsection in that runbook. The enrolment lands via a normal PR: run `gh auth login` first (git is HTTPS+token per ADR-009 — nothing earlier in this runbook sets up push auth).
+A client-only host — one whose config omits `modules/darwin/sshd.nix` — runs the first three steps only: mint the key, add it to `hostKeys`, and add this host to the source lists of the destinations it should reach (metis, neptune). Committing a host public key + `ssh-known-hosts`/`ssh.nix` entries is a destination's work, which a client-only host has none of until it starts serving sshd. The enrolment lands via a normal PR: run `gh auth login` first (git is HTTPS+token per ADR-009 — nothing earlier in this runbook sets up push auth).
 
 ## Post-activation — enable FileVault (manual, not declarable)
 
-`modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters on every Darwin host, and the threat differs by role: neptune is the SSH bastion holding shared fleet state, while saturn is a laptop that physically travels — theft or loss is its dominant threat. The step below applies to both.
+`modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters on every Darwin host, and the stake scales with what the host holds: on neptune, the SSH bastion carrying shared fleet state, physical possession of the box otherwise hands that state over intact.
 
-Enable it once, after first activation — or take Setup Assistant's offer at §0 and make this step verify-only. On saturn this is required from bring-up — the declared Phase-1 build (`hosts/saturn/default.nix`; ADR-043's theft-at-rest bound leans on it) — not optional:
+Enable it once, after first activation — or take Setup Assistant's offer at §0 and make this step verify-only:
 
 ```bash
 # Prompts for the unlocking user's password, then prints the recovery key to
@@ -235,13 +235,13 @@ fdesetup status
 Notes:
 
 - On Apple Silicon, FileVault keys to the Secure Enclave, so encryption is effectively instant (no multi-hour conversion pass) and the operator login already unlocks the disk at boot.
-- On an always-on host that imports `modules/darwin/power.nix` (neptune): `restartAfterPowerFailure = true` still auto-reboots after an outage, but with FileVault on the host stops at the boot-time unlock screen (shown before macOS finishes booting) and waits for an operator to authenticate — it will not reach a logged-in, SSH-serving state unattended. `sudo fdesetup authrestart` caches the unlock key for a single *planned* restart, but does nothing for an unexpected power-failure reboot; accept the manual unlock as the cost of at-rest security on an always-on host. This interaction does not arise on a laptop such as saturn, which omits `power.nix` (no unattended-reboot expectation).
+- On an always-on host that imports `modules/darwin/power.nix` (neptune): `restartAfterPowerFailure = true` still auto-reboots after an outage, but with FileVault on the host stops at the boot-time unlock screen (shown before macOS finishes booting) and waits for an operator to authenticate — it will not reach a logged-in, SSH-serving state unattended. `sudo fdesetup authrestart` caches the unlock key for a single *planned* restart, but does nothing for an unexpected power-failure reboot; accept the manual unlock as the cost of at-rest security on an always-on host.
 
 ## Post-activation — enable Screen Sharing (manual, not declarable)
 
 Inbound Screen Sharing (reach this host's desktop from another Mac over the tailnet, e.g. `vnc://neptune`) **cannot be declared.** nix-darwin has no option for it, and while the underlying `com.apple.screensharing` LaunchDaemon *is* loadable from the command line (`launchctl enable system/com.apple.screensharing`), that only brings the daemon up to listen on 5900 — it does **not** authorize the service. Apple changed Screen Sharing / Remote Management handling in macOS Monterey 12.1 and the "permitted" state is now TCC-gated: it can only be written through the System Settings UI, not by `sudo`, `launchctl`, `defaults`, or `kickstart`. A daemon-only enable connects, then fails with *"Screen Sharing is not permitted on this Mac. Disable and re-enable Screen Sharing or Remote Management in System Settings."* This was verified on neptune (macOS 26 Tahoe); a `launchctl`-driven activation module was prototyped and dropped for exactly this reason.
 
-**Per-host: enable on neptune** (the always-on mini serving inbound desktop access); **skip on saturn** — a roaming laptop's declared posture is outbound-only (`hosts/saturn/default.nix` — no inbound surfaces), and once enabled, inbound VNC:5900 passes the ALF unconditionally (Apple-signed daemon).
+**Per-host: enable on neptune** (the always-on mini serving inbound desktop access); leave it off on any host whose declared posture is outbound-only, because once enabled, inbound VNC:5900 passes the ALF unconditionally (Apple-signed daemon).
 
 Where wanted, enable it once, after first activation:
 
@@ -255,7 +255,7 @@ Notes:
 
 ## Post-activation — grant AeroSpace Accessibility + Mission Control settings (manual, not declarable)
 
-The Macs' window manager is **AeroSpace** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md); `home/darwin/aerospace.nix`), with **JankyBorders** drawing the focus-border (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts both, but AeroSpace needs one manual grant before it can tile, and one Mission Control setting cleared. Neither is declarable — the grant is TCC-gated (same wall as Screen Sharing above), the setting is a per-user Dock preference AeroSpace reads at runtime.
+The Darwin window manager is **AeroSpace** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md); `home/darwin/aerospace.nix`), with **JankyBorders** drawing the focus-border (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts both, but AeroSpace needs one manual grant before it can tile, and one Mission Control setting cleared. Neither is declarable — the grant is TCC-gated (same wall as Screen Sharing above), the setting is a per-user Dock preference AeroSpace reads at runtime.
 
 ### AeroSpace needs the Accessibility permission
 
@@ -273,7 +273,7 @@ Deliberately called out so a future operator doesn't hunt for a missing permissi
 
 - **System Settings → Desktop & Dock → Mission Control → turn *off* "Automatically rearrange Spaces based on most recent use"** (verified on macOS 26 Tahoe). Equivalent from the shell: `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (`mru-spaces` = `0` when disabled).
 
-AeroSpace recommends this so macOS doesn't reorder Spaces out from under the tiler's Space-index tracking. The Macs each run a **single** native Space (AeroSpace owns the workspace layer — ADR-040), so there is little for macOS to rearrange, but the setting is cleared as a precaution and to match AeroSpace's documented baseline. AeroSpace's guide lists further optional macOS tweaks (e.g. "Displays have separate Spaces", "Group windows by application") aimed at multi-monitor setups; none are needed on these single-display hosts.
+AeroSpace recommends this so macOS doesn't reorder Spaces out from under the tiler's Space-index tracking. The Mac runs a **single** native Space (AeroSpace owns the workspace layer — ADR-040), so there is little for macOS to rearrange, but the setting is cleared as a precaution and to match AeroSpace's documented baseline. AeroSpace's guide lists further optional macOS tweaks (e.g. "Displays have separate Spaces", "Group windows by application") aimed at multi-monitor setups; none are needed on a single-display host.
 
 ## Verification
 
@@ -287,11 +287,11 @@ Run from the new Mac's user shell.
 - macchina banner renders at every new interactive fish shell — every terminal tab, every zellij pane. The Apple-logo ASCII should display as five ANSI rainbow stripes (green leaf, then yellow / red / magenta / blue bands), rendered from the terminal's palette. **If it renders uncoloured**, see Troubleshooting below.
 - `hx` opens a `.nix` file with `nixd` LSP working — hover over `programs.git` shows the option's type. `:lsp-restart` if uncertain. (The binary is `hx`, not `helix` — `which helix` returns "not found"; that's expected.)
 - `which claude` and `which cursor-agent` both resolve — the base agent set is on every host (ADR-008).
-- `which codex` and `which agy` both resolve (both Mac daily-drivers import `agent-clis-extras.nix` for the full agent set).
+- `which codex` and `which agy` both resolve (Darwin daily drivers import `agent-clis-extras.nix` for the full agent set).
 
 ### Phase 2 — SSH-context stack into the fleet
 
-Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `metis` (and `neptune`, Mac-to-Mac).
+Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `metis` and `neptune`.
 
 For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not** expect a terminal palette shift: ADR-041 deliberately retired the per-host palette repaint (TUIs follow the local terminal's palette; the Stylix fish target that emitted the OSC escapes was removed fleet-wide).
 
@@ -300,7 +300,7 @@ For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not**
 - **Terminal tab title** reflects the remote host (Ghostty is the `ghostty` cask on Darwin per ADR-031; tab-title behaviour matches Linux Ghostty).
 - Claude Code statusline colours follow the **local** terminal's palette (#411) — deliberately not a per-host signal.
 
-Each host's boot-default palette is declared in `lib/theme-families.nix` (saturn included; host-identity theming is retired — the catalogue is fleet-global and the per-host entry is a boot default only); post-ADR-041 palettes no longer repaint terminals over SSH, and with the statuslines' ANSI conversion landed (#411) no TUI bakes them — they colour each host's own terminal via Stylix and `lib/scheme-pair.nix`.
+Each host's boot-default palette is declared in `lib/theme-families.nix` (host-identity theming is retired — the catalogue is fleet-global and the per-host entry is a boot default only); post-ADR-041 palettes no longer repaint terminals over SSH, and with the statuslines' ANSI conversion landed (#411) no TUI bakes them — they colour each host's own terminal via Stylix and `lib/scheme-pair.nix`.
 
 ## Subsequent updates
 

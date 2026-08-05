@@ -72,13 +72,12 @@
   };
 
   # sshEdges — destination host → the source hosts whose keys it accepts.
-  # Every host that runs sshd (and saturn, pending its flip) needs an
-  # entry: the derivation indexes this by hostName, so a missing host
-  # throws at eval (whitelist, not silent-empty default — an absent edge
-  # is a loud build failure, never a quietly keyless host). This is the
-  # interim edge map toward the target topology (ADR-042; design note
-  # §target shape) — self-edges are deliberately absent (no host SSHes
-  # itself); saturn is empty until its destination flip (no sshd today).
+  # Every host needs an entry: the derivation indexes this by hostName,
+  # so a missing host throws at eval (whitelist, not silent-empty default
+  # — an absent edge is a loud build failure, never a quietly keyless
+  # host). This is the interim edge map toward the target topology
+  # (ADR-042; design note §target shape) — self-edges are deliberately
+  # absent (no host SSHes itself).
   sshEdges = {
     metis = [
       "neptune"
@@ -90,10 +89,8 @@
       "alcyone"
       "alnair"
     ];
-    saturn = [ ];
-    # Alcyone (#631, ADR-042) — accepts neptune + alnair (saturn joins at
-    # its destination flip); a workstation *source* into metis and
-    # neptune since its fleet enrolment.
+    # Alcyone (#631, ADR-042) — accepts neptune + alnair; a workstation
+    # *source* into metis and neptune since its fleet enrolment.
     alcyone = [
       "neptune"
       "alnair"

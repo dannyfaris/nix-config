@@ -11,7 +11,6 @@ Evergreen NixOS + nix-darwin configuration. Hosts:
 - `electra` — Lenovo ThinkCentre M920q Tiny / x86_64 bare metal, genuinely headless always-on service-tier node, role deliberately open.
 - `metis` — HP ProDesk / x86_64 shared work + personal dev box.
 - `neptune` — Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02.
-- `saturn` — Apple Silicon MacBook Air, first laptop, client-only — no inbound sshd.
 
 <!-- END CENSUS: hosts -->
 
@@ -82,11 +81,10 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 - **electra**: physical console (monitor + keyboard) — headless, so there is no greetd login.
 - **metis**: physical console (monitor + keyboard) or the greetd login.
 - **neptune**: Apple keyboard + display at the local login.
-- **saturn**: Apple keyboard + display at the local login.
 
 <!-- END CENSUS: break-glass -->
 
-In all cases: log in, fix the config, and re-activate — `nh os switch` on NixOS, `nh darwin switch` on the Darwin hosts (or the underlying `sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on PATH).
+In all cases: log in, fix the config, and re-activate — `nh os switch` on NixOS, `nh darwin switch` on the Darwin host (or the underlying `sudo nixos-rebuild switch` / `darwin-rebuild switch` if `nh` isn't on PATH).
 
 ## Build & deploy
 
@@ -116,7 +114,7 @@ In a nix-less agent/cloud session, run `scripts/fetch-lint-toolchain.sh` once, t
 
 ## Conventions
 
-- **home-manager** is integrated as a NixOS module (and as a nix-darwin module on the Darwin hosts) — one rebuild command per host for system + home.
+- **home-manager** is integrated as a NixOS module (and as a nix-darwin module on the Darwin host) — one rebuild command per host for system + home.
 - **flake-parts** for flake organisation.
 - One inline comment per non-obvious setting explaining "why", not "what".
 - **Rationale is single-sourced.** An inline comment gives the *why* of one setting in ≤ ~3 lines; anything longer (a decision with alternatives, a multi-item matrix) lives in one canonical home — an ADR or `docs/<area>/` — with a one-line pointer from the code, never restated. Incident provenance (PR-number root causes, dated observations, timings) is history, not rationale — it lives in the PR or an ADR §History, not inline; `git blame` reaches it. See [ADR-032](./docs/decisions/ADR-032-proportionate-enforcement-and-rationale.md) and [docs/workflow.md](./docs/workflow.md) §"Rationale lives in one place".

@@ -250,10 +250,6 @@ in
       stances-neptune =
         mkStanceCheck "aarch64-darwin" "darwin" "neptune"
           self.darwinConfigurations.neptune.config;
-      host-saturn = self.darwinConfigurations.saturn.system;
-      stances-saturn =
-        mkStanceCheck "aarch64-darwin" "darwin" "saturn"
-          self.darwinConfigurations.saturn.config;
     };
   };
 
@@ -509,7 +505,7 @@ in
 
           # Guards against two tracked paths differing only by case, which
           # cannot coexist in a checkout on a case-insensitive filesystem
-          # (APFS: neptune, saturn, the macos-15 CI leg) — one silently
+          # (APFS: neptune, the macos-15 CI leg) — one silently
           # clobbers the other, and the Linux box that authored the pair
           # cannot see the breakage. The lint reads the index itself, so
           # `files` matches everything and no filenames are passed. git is

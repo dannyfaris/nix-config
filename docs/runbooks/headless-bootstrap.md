@@ -197,7 +197,7 @@ Fleet SSH trust is a declared edge whitelist (ADR-042): `lib/operator.nix` holds
 
 2. **Add the pubkey to `lib/operator.nix` `hostKeys`** — one entry `<host> = "ssh-ed25519 … dbf@<host>";`, labelled with its origin.
 
-3. **Add or extend the relevant `sshEdges` entries.** Add the destination's own entry (`<host> = [ … ];`) listing which sources may reach it, and add `<host>` to the source list of every existing destination it should be able to SSH into. A host that runs sshd (or is a pending destination) with no `sshEdges` entry throws at eval — the whitelist is loud, never a silent keyless host.
+3. **Add or extend the relevant `sshEdges` entries.** Add the destination's own entry (`<host> = [ … ];`) listing which sources may reach it, and add `<host>` to the source list of every existing destination it should be able to SSH into. A host that runs sshd with no `sshEdges` entry throws at eval — the whitelist is loud, never a silent keyless host.
 
 4. **Host identity → declared trust (#517).** Commit the host's public host key and pin it fleet-wide.
 
@@ -210,16 +210,6 @@ Fleet SSH trust is a declared edge whitelist (ADR-042): `lib/operator.nix` holds
    ```
 
 Existing hosts accept the newcomer (and trust its host key) only after their *own* next switch — the authorized_keys and ssh_known_hosts files are rendered per-host at activation.
-
-### saturn's pending destination flip (ADR-042)
-
-saturn is client-only today (`hosts/saturn/default.nix` deliberately omits `sshd.nix`); ADR-042 flips it to a destination. Its `sshEdges` entry already exists behaviour-preservingly, but no sshd yet serves it. Landing the flip:
-
-- Generate saturn's outbound user key on saturn (step 1 above) and add it to `hostKeys` — saturn is both a source (workstation) and, post-flip, a destination.
-- Enable a Darwin sshd for it: import `modules/darwin/sshd.nix` in `hosts/saturn/default.nix` (the same hardened `extraConfig` posture neptune uses; the stance layer covers it automatically once `services.openssh.enable` is true).
-- Harvest and commit saturn's host pubkey and its `ssh-known-hosts.nix` + `ssh.nix` entries (step 4 above).
-- Set saturn's `sshEdges` entry to its intended sources (per the ADR-042 target: the interactive workstations), narrowing from the behaviour-preserving default as a reviewed data change.
-- Evaluate binding sshd to the tailnet interface at that commit — a `ListenAddress` on saturn's tailnet IP versus a firewall scope — the roaming-laptop mitigation ADR-042 names (a travelling laptop must not expose :22 on hotel/café networks). Decide and record which mechanism at the flip.
 
 ## Verification
 

@@ -10,6 +10,5 @@ in
 {
   flake.darwinConfigurations = {
     neptune = mkDarwinHost { hostname = "neptune"; };
-    saturn = mkDarwinHost { hostname = "saturn"; };
   };
 }
