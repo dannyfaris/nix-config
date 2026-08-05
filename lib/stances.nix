@@ -85,10 +85,10 @@ let
   #
   # Guard is `== true`, not the bare value: unlike NixOS (where
   # `services.openssh.enable` defaults to `false`), nix-darwin leaves it
-  # `null` on a host that doesn't import sshd (e.g. saturn, a client-only
-  # laptop). `lib.optionals null` would throw — `== true` coerces the
-  # tri-state to a Boolean so an sshd-less Darwin host is simply not in
-  # scope (same intent as the NixOS helper above).
+  # `null` on a host that doesn't import sshd. `lib.optionals null` would
+  # throw — `== true` coerces the tri-state to a Boolean so a Darwin host
+  # that declines sshd is simply not in scope (same intent as the NixOS
+  # helper above).
   sshDarwin =
     config:
     lib.optionals (config.services.openssh.enable == true) (

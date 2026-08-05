@@ -11,7 +11,7 @@ let
   hostReg = import ../host-registration.nix { inherit lib; };
   inherit (hostReg) failures;
 
-  # The real-fleet shape (4 nixos, 2 darwin), all four surfaces agreeing —
+  # The real-fleet shape (4 nixos, 1 darwin), all four surfaces agreeing —
   # the baseline every drift fixture perturbs by exactly one edit.
   clean = {
     dirs = [
@@ -20,7 +20,6 @@ let
       "electra"
       "metis"
       "neptune"
-      "saturn"
     ];
     nixosRegs = [
       "alcyone"
@@ -30,7 +29,6 @@ let
     ];
     darwinRegs = [
       "neptune"
-      "saturn"
     ];
     nixosChecks = [
       "host-metis"
@@ -48,9 +46,7 @@ let
     ];
     darwinChecks = [
       "host-neptune"
-      "host-saturn"
       "stances-neptune"
-      "stances-saturn"
       "pre-commit"
       "treefmt"
     ];

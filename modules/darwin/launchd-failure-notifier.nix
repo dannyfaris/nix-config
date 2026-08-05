@@ -38,9 +38,10 @@
 # Self-coverage: this daemon's own label is in the checked set; dedup
 # bounds any self-report to a single notification.
 #
-# Neptune-only: saturn is a roaming laptop, asleep half the time; the
-# polling inspector has no meaningful signal there. Import by the host file;
-# do not add to foundation.
+# Import by the host file, not foundation: the 10-minute poll only yields
+# signal on a machine that stays awake, so a battery-powered Mac that
+# sleeps most of the day has no use for it. Neptune — always-on — is the
+# only importer today.
 #
 # Limitation: if the tailnet is down the POST fails and no dedup state is
 # written, so the alert retries each poll until delivered. The notifier

@@ -117,9 +117,5 @@
       family = "gruvbox";
       polarity = "dark";
     };
-    saturn = {
-      family = "solarized";
-      polarity = "dark";
-    };
   };
 }

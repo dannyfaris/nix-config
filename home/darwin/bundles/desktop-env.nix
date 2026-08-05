@@ -1,8 +1,8 @@
 # desktop-env — home-manager pieces for the macOS desktop workflow.
 #
-# The Darwin parallel of home/nixos/bundles/desktop-env.nix: the opt-in
-# GUI capability both Mac daily-driver hosts (neptune, saturn) share, so
-# the composition lives once and can't drift between them. macOS owns the
+# The Darwin parallel of home/nixos/bundles/desktop-env.nix: the opt-in GUI
+# capability a Mac daily driver takes as a unit, named once here rather than
+# re-listed module-by-module in every host that wants it. macOS owns the
 # desktop itself; these modules customise it — window management, terminal,
 # keyboard remap, screenshots, and runtime theme switching.
 #
@@ -16,7 +16,7 @@
 #
 # The system-side companions (the .app installs, launchd agents, and
 # services these user configs pair with) live in modules/darwin/* and are
-# imported in each host's system `imports` — see hosts/{neptune,saturn}.
+# imported in each host's system `imports` — see hosts/neptune.
 {
   imports = [
     # Ghostty user config (~/.config/ghostty/config). Cask owns the .app —

@@ -89,7 +89,8 @@ _: {
     # launchd job-failure surfacing via ntfy (#346). Polls every 10 minutes
     # for org.nixos.* and org.nix-community.home.* jobs that have exited
     # non-zero and stayed down; POSTs to the fleet ntfy endpoint over the
-    # tailnet. Neptune-only: saturn is a roaming laptop, asleep half the time.
+    # tailnet. Host-imported rather than foundation — see the module header
+    # for why the poll needs an always-awake host.
     ../../modules/darwin/launchd-failure-notifier.nix
   ];
 

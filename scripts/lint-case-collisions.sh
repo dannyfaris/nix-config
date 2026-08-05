@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fails if two tracked paths differ only by ASCII case. Such a pair cannot
-# both exist in a checkout on a case-insensitive filesystem (APFS: neptune,
-# saturn, and the macos-15 CI leg), where one silently clobbers the other.
+# both exist in a checkout on a case-insensitive filesystem (APFS: neptune
+# and the macos-15 CI leg), where one silently clobbers the other.
 # The Linux legs are the real enforcers — on Darwin the collision is already
 # collapsed by the time the source reaches the store, so the check cannot
 # see it there. Deliberately ASCII-only: `tr` is byte-oriented, so Unicode
