@@ -9,6 +9,7 @@ Evergreen NixOS + nix-darwin configuration. Hosts:
 - `alcyone` — Gigabyte B550 GAMING X V2 / x86_64 bare metal, flagship desktop; first discrete GPU (RTX 4060) + first encrypted-at-rest host.
 - `alnair` — Surface Laptop 4 / x86_64 bare metal, the fleet's first Linux laptop.
 - `electra` — Lenovo ThinkCentre M920q Tiny / x86_64 bare metal, genuinely headless always-on service-tier node, role deliberately open.
+- `hadar` — HP ProDesk Mini 600 G9 / x86_64 bare metal, headless personal-only node at the off-site Centaurus location (the former metis hardware redeployed).
 - `neptune` — Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02.
 
 <!-- END CENSUS: hosts -->
@@ -78,6 +79,7 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 - **alcyone**: physical console (monitor + keyboard) or the greetd login.
 - **alnair**: physical console (built-in keyboard + display) or the greetd login.
 - **electra**: physical console (monitor + keyboard) — headless, so there is no greetd login.
+- **hadar**: physical console (monitor + keyboard) at the off-site location — headless, so there is no greetd login.
 - **neptune**: Apple keyboard + display at the local login.
 
 <!-- END CENSUS: break-glass -->

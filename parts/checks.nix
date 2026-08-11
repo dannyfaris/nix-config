@@ -194,6 +194,7 @@ in
       host-alcyone = self.nixosConfigurations.alcyone.config.system.build.toplevel;
       host-alnair = self.nixosConfigurations.alnair.config.system.build.toplevel;
       host-electra = self.nixosConfigurations.electra.config.system.build.toplevel;
+      host-hadar = self.nixosConfigurations.hadar.config.system.build.toplevel;
       stances-alcyone =
         mkStanceCheck "x86_64-linux" "nixos" "alcyone"
           self.nixosConfigurations.alcyone.config;
@@ -203,6 +204,7 @@ in
       stances-electra =
         mkStanceCheck "x86_64-linux" "nixos" "electra"
           self.nixosConfigurations.electra.config;
+      stances-hadar = mkStanceCheck "x86_64-linux" "nixos" "hadar" self.nixosConfigurations.hadar.config;
       lib-auto-gen-paths = mkUnitTestCheck "x86_64-linux" "auto-gen-paths" autoGenPathsFailures;
       lib-capabilities = mkUnitTestCheck "x86_64-linux" "capabilities" capabilitiesFailures;
       lib-host-registration =

@@ -109,6 +109,12 @@
       family = "catppuccin";
       polarity = "dark";
     };
+    # Carried over from the machine's metis era (operator's pick for
+    # this box); headless, so this feeds the TUI palette only.
+    hadar = {
+      family = "rose-pine";
+      polarity = "dark";
+    };
     neptune = {
       family = "gruvbox";
       polarity = "dark";

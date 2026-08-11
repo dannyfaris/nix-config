@@ -99,6 +99,7 @@ in
       alcyone = fleetHost;
       alnair = fleetHost;
       electra = fleetHost;
+      hadar = fleetHost;
 
       # Baseline stance for every destination, declared rather than
       # inherited from defaults (explicit > implicit). No option overlap

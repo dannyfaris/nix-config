@@ -104,6 +104,15 @@
       "alnair"
       "neptune"
     ];
+    # Hadar (#798, ADR-042) — off-site (Centaurus) service-tier PURE
+    # sink, mirroring electra: accepts the operator's workstation
+    # sources, and never becomes a source — no outbound key exists on
+    # the host at all (hosts/hadar/default.nix).
+    hadar = [
+      "alcyone"
+      "alnair"
+      "neptune"
+    ];
   };
 
   # The operator's git identities — one record per identity, the single

@@ -13,5 +13,6 @@ in
     alcyone = mkHost { hostname = "alcyone"; };
     alnair = mkHost { hostname = "alnair"; };
     electra = mkHost { hostname = "electra"; };
+    hadar = mkHost { hostname = "hadar"; };
   };
 }

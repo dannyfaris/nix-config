@@ -166,9 +166,9 @@ The collective fleet is called **Sidera** (Latin, *the stars*) — see ADR-045.
 
 ## The fleet
 
-> Upkeep: this section is a roadmap (live targets plus reserve and prospect pools), not a census — it is a deliberate superset of `hosts/`, so it is not bound to the host-census lint (#583). Correct the `hosts/` dir today cells at each onboarding/rename; a generated census remains the recorded end state (#583's revisit trigger; the registry-carrier question lives with #562). As of 2026-08-11 the live dirs are `alcyone`, `alnair`, `electra`, `neptune`.
+> Upkeep: this section is a roadmap (live targets plus reserve and prospect pools), not a census — it is a deliberate superset of `hosts/`, so it is not bound to the host-census lint (#583). Correct the `hosts/` dir today cells at each onboarding/rename; a generated census remains the recorded end state (#583's revisit trigger; the registry-carrier question lives with #562). As of 2026-08-11 the live dirs are `alcyone`, `alnair`, `electra`, `hadar`, `neptune`.
 
-The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today can lag its target name until that host's rename lands. The re-key is early: hosts onboarded since ADR-045 (`alcyone`, `alnair`, `electra`) already sit under their star name, while the planet-named holdover (`neptune`) still awaits its star rename.
+The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today can lag its target name until that host's rename lands. The re-key is early: hosts onboarded since ADR-045 (`alcyone`, `alnair`, `electra`, `hadar`) already sit under their star name, while the planet-named holdover (`neptune`) still awaits its star rename.
 
 ### Main homelab — the Pleiades
 
@@ -193,8 +193,8 @@ Reserve: **Acrux**.
 
 ### Offsite homelab — Centaurus
 
-| Target name | Machine                                       | `hosts/` dir today |
-| ----------- | --------------------------------------------- | ------------------ |
-| **Hadar**   | NixOS x86_64 work + personal dev (HP ProDesk) | — (retired)        |
+| Target name | Machine              | `hosts/` dir today |
+| ----------- | -------------------- | ------------------ |
+| **Hadar**   | mini PC (HP ProDesk) | `hadar`            |
 
 Reserve: **Toliman, Menkent**.
