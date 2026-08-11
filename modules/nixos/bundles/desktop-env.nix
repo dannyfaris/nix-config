@@ -15,7 +15,7 @@
 #   - lock-before-sleep.nix — systemd-lock-handler: logind sleep delay-inhibitor + user-level lock/sleep targets, so the Noctalia lock provably engages before any suspend (#644).
 #   - libsecret.nix        — secret-tool CLI for the (transitively-enabled) Secret Service.
 #   - removable-media.nix  — udisks2 + filesystem helpers (auto-mount is home-side udiskie). See docs/desktop/removable-media.md (#105).
-#   - file-manager.nix     — Thunar + gvfs virtual backends + tumbler thumbnails (GUI complement to yazi). See docs/desktop/file-manager.md (#762).
+#   - file-manager.nix     — Nautilus (own thumbnails) + gvfs virtual backends (GUI complement to yazi). See docs/desktop/file-manager.md (#771).
 #   - onepassword-gui.nix  — 1Password desktop password manager (GUI only). See docs/desktop/1password.md (#112).
 #   - ratbagd.nix          — gaming-mouse device layer (ratbagd + Piper) for the G502 HERO. See docs/desktop/input.md (#107).
 #

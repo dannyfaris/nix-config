@@ -12,12 +12,16 @@
 #   1. Access/Notification route to a gtk backend that isn't on the system.
 #   2. FileChooser is unpinned, so it falls to `default` → gnome. But
 #      xdg-desktop-portal-gnome doesn't implement the picker itself; it
-#      delegates to `org.gnome.Nautilus`, which isn't installed on this
-#      niri box. A live D-Bus trace showed the frontend calling gnome,
-#      gnome calling Nautilus, and the bus returning ServiceUnknown ("The
-#      name is not activatable") — so every portal file dialog silently
-#      does nothing (found via Obsidian's "Open folder as vault"). This is
-#      niri#3765 / nixpkgs#360101.
+#      delegates to `org.gnome.Nautilus`. At the time this was diagnosed,
+#      Nautilus wasn't installed on this niri box, so a live D-Bus trace
+#      showed the frontend calling gnome, gnome calling Nautilus, and the
+#      bus returning ServiceUnknown ("The name is not activatable") — so
+#      every portal file dialog silently does nothing (found via
+#      Obsidian's "Open folder as vault"). This is niri#3765 /
+#      nixpkgs#360101. Nautilus is now installed (see
+#      docs/desktop/file-manager.md), but FileChooser stays pinned to gtk
+#      below rather than gnome/Nautilus — see the fix rationale that
+#      follows.
 #
 # Fix (the non-Nautilus route the niri wiki documents, and exactly what the
 # nixpkgs programs.niri module does under `useNautilus = false` — an option
