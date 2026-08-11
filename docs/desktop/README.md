@@ -36,6 +36,8 @@ This directory complements `docs/decisions/` (Architecture Decision Records). Wh
 | [clipboard.md](./clipboard.md)             | Clipboard persistence + history — *the `clipse` selection was never built; subsumed by Noctalia (ADR-036, #385); session-PATH `wl-clipboard` gap fixed under #360*                                                                      | #99            |
 | [visual-identity.md](./visual-identity.md) | The desktop's aesthetic north-star (living doc) — typography / colour / line-weight / radii / spacing / motion / pointer intent the per-surface selection docs implement against                                                        | #108           |
 | [zen.md](./zen.md)                         | Zen browser — *audit-phase parallel install vs Firefox (#127); audit concluded in Firefox's favour, Zen retired*                                                                                                                        | #127           |
+| [file-manager.md](./file-manager.md)       | Thunar + gvfs — GUI complement to yazi (drag-and-drop, thumbnails, MTP/SMB/`trash://`); shared freedesktop trash with declarative 30-day purge; fires removable-media.md's revisit clause                                               | #762           |
+| [pointer-icons.md](./pointer-icons.md)     | Colloid icon theme + phinger cursor — measured field (canon picks fail the Qt/closure bars); icons follow build polarity, cursor static; runtime render-list swap is the recorded follow-up                                             | #110           |
 
 ### macOS clients
 

@@ -1,6 +1,6 @@
 # Removable media access
 
-Plug in a USB drive → it auto-mounts → it's browsable, on the niri desktop on metis (#105). Scope is *removable* block storage (USB sticks, SD cards, external disks). Virtual backends (phone MTP/PTP, SMB/NFS network shares, `trash://`) are out of scope — they need gvfs and a GTK file manager, neither of which this stack carries.
+Plug in a USB drive → it auto-mounts → it's browsable, on the niri desktop on metis (#105). Scope is *removable* block storage (USB sticks, SD cards, external disks). Virtual backends (phone MTP/PTP, SMB/NFS network shares, `trash://`) were originally out of scope; they landed later via gvfs + Thunar when the need became real — see [file-manager.md](./file-manager.md) (#762).
 
 ## Premise correction — mostly independent of #103
 
@@ -10,7 +10,7 @@ The issue framed this as depending on the graphical-authentication agent (#103).
 
 - **System: `services.udisks2.enable`** — the daemon that exposes block devices and performs the mount (to `/run/media/$USER/<label>`), plus the userspace filesystem helpers it shells out to: **`exfatprogs`** (exFAT), **`ntfs3g`** (NTFS), **`dosfstools`** (FAT). In `modules/nixos/removable-media.nix`, via the system desktop-env bundle.
 - **Home: `services.udiskie`** (`automount`, `notify`, **`tray = "never"`**) — the user daemon that auto-mounts on insert and pops fnott notifications. Plus the **`mount.yazi`** plugin for in-yazi unmount/eject. In `home/nixos/removable-media.nix`, via the home desktop-env bundle.
-- **Browse surface: yazi** — already installed; auto-mounts land at `/run/media/$USER/<label>` and yazi browses them like any path. No GUI file manager and no gvfs.
+- **Browse surface: yazi** — already installed; auto-mounts land at `/run/media/$USER/<label>` and yazi browses them like any path. (Since #762, Thunar is the complementary GUI surface — [file-manager.md](./file-manager.md); yazi keeps the terminal-browse and `mount.yazi` eject roles recorded here.)
 
 ## Rationale
 
@@ -24,7 +24,7 @@ The issue framed this as depending on the graphical-authentication agent (#103).
 
 ## Alternatives considered
 
-**A GUI file manager (Nautilus/Thunar) + gvfs.** The "fuller desktop" path — built-in mount integration and virtual backends. Passed over: it pulls a GTK file manager + gvfs closure for a capability yazi already covers, against the minimal/TUI posture. gvfs earns its place only if phone/MTP or network shares become a need; revisit then.
+**A GUI file manager (Nautilus/Thunar) + gvfs.** The "fuller desktop" path — built-in mount integration and virtual backends. Passed over at the time: it pulls a GTK file manager + gvfs closure for a capability yazi already covers, against the minimal/TUI posture. The recorded trigger — "gvfs earns its place only if phone/MTP or network shares become a need; revisit then" — fired as #762: Thunar + gvfs landed as a *complement* per [file-manager.md](./file-manager.md), with the yazi roles in this doc unchanged.
 
 **udiskie with the tray wired into waybar.** Gives the tray icon + click-to-open. Passed over for `tray = "never"`: it requires making waybar provide `tray.target` with correct ordering — the documented fragility above — for an affordance the mount.yazi plugin already covers. Easy to revisit if a tray icon is wanted later.
 
