@@ -119,7 +119,7 @@ in
     wantedBy = [ "multi-user.target" ];
     serviceConfig.Type = "oneshot";
     script = samProbeScript;
-    # Opt-in failure fan-out to metis's ntfy (unit-failure-notifier.nix
+    # Opt-in failure fan-out to the fleet ntfy endpoint (unit-failure-notifier.nix
     # contract) — a bind failure means a dead built-in keyboard.
     onFailure = [ "notify-failure@%n.service" ];
   };

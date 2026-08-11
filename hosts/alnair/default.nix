@@ -35,7 +35,7 @@
     ../../modules/nixos/tailscale.nix
     ../../modules/nixos/claude-desktop.nix # Claude Desktop for Linux, Phase 1 (Chat + Claude Code); Cowork deferred upstream (#683).
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
-    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to metis's ntfy over the tailnet (#199) — client only; alnair runs no ntfy server.
+    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199) — client only; alnair runs no ntfy server.
     ../../modules/nixos/surface.nix # Surface silicon — SAM chain (initrd + runtime), Iris Xe graphics, webcam device access. Alnair-only host-scoped hardware, never a shared bundle (#636).
     ../../modules/nixos/ephemeral-root.nix # Enforced from first boot — see ephemeralRoot below; docs/design/ephemeral-root.md.
     ../../modules/nixos/persist-os-core.nix # OS-core persist whitelist (machine-id, /var/lib/nixos, systemd timers/coredump, /var/log, /var/db/sudo, /root).

@@ -23,6 +23,8 @@
 let
   cfg = config.ephemeralRoot;
 
+  ntfyEndpoint = import ../../lib/ntfy-endpoint.nix;
+
   # The systemd .device unit for the backing device. escapeSystemdPath turns
   # /dev/disk/by-label/nixos into dev-disk-by\x2dlabel-nixos, matching what
   # systemd names the device unit (a naive /->- replace mishandles the
@@ -382,8 +384,9 @@ in
         # The QUIET second topic on the existing self-hosted ntfy — drift
         # reports on the high-priority fleet-failures topic would train alert
         # fatigue. The option is the test seam (point at a local sink so posts
-        # succeed) and the receiver-relocation point (one-line move here).
-        default = "http://metis:8090/fleet-state";
+        # succeed); the default is single-sourced from lib/ntfy-endpoint.nix
+        # (#688), so relocating the receiver is a one-line edit there.
+        default = ntfyEndpoint.stateUrl;
         description = "ntfy topic the probe posts drift rollups to (quiet, non-failure channel).";
       };
     };

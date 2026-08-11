@@ -37,7 +37,8 @@
     ../../modules/nixos/tailscale.nix
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
     ../../modules/nixos/wake-on-lan-emitter.nix # WoL emitter (#632) — always-on, same /24 as alcyone; provides the wake-alcyone wrapper. ADR-042: LAN broadcast, not an SSH edge.
-    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to metis's ntfy over the tailnet (#199) — client from day one; the ntfy SERVER relocating here is a #637 follow-on, not scaffold scope.
+    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199) — client from day one.
+    ../../modules/nixos/ntfy-server.nix # Self-hosted ntfy receiver for the fleet's failure notifications (#199), relocated here from metis (#688).
     ../../modules/nixos/ephemeral-root.nix # Enforced from first boot — see ephemeralRoot below; docs/design/ephemeral-root.md.
     ../../modules/nixos/persist-os-core.nix # OS-core persist whitelist (machine-id, /var/lib/nixos, systemd timers/coredump, /var/log, /var/db/sudo, /root).
     # No docker.nix — the open role decision (#637) gates container

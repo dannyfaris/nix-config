@@ -7,21 +7,25 @@
 # public exposure. That tailnet boundary IS the auth: ntfy keeps its
 # default anonymous read-write access, introducing no token/secret (#199).
 #
-# Imported by metis only — the chosen always-on receiver. The operator
-# subscribes the ntfy phone/desktop app to
-#   http://metis:8090/fleet-failures
+# Imported by electra only — the chosen always-on receiver (relocated from
+# metis, #688). The operator subscribes the ntfy phone/desktop app to
+#   http://electra:8090/fleet-failures
 # over Tailscale.
 { config, lib, ... }:
+let
+  ntfyEndpoint = import ../../lib/ntfy-endpoint.nix;
+in
 {
   services.ntfy-sh = {
     enable = true;
     settings = {
       # base-url must match what clients use, including the port, or ntfy
-      # rejects publish/subscribe with a host mismatch.
-      base-url = "http://metis:8090";
+      # rejects publish/subscribe with a host mismatch — both come from
+      # lib/ntfy-endpoint.nix so they can't diverge.
+      base-url = ntfyEndpoint.baseUrl;
       # All-interfaces bind; the firewall (tailscale0-only) is what scopes
       # reachability to the tailnet — see the header note.
-      listen-http = ":8090";
+      listen-http = ":${toString ntfyEndpoint.port}";
     };
   };
 
