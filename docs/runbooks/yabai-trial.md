@@ -8,7 +8,7 @@ Scope: neptune, the fleet's only Mac since saturn was purged (#759). The swap is
 
 Two behaviours differ sharply from AeroSpace and are not obvious from the config.
 
-**Space switching is a synthesized gesture, not an instant jump.** With SIP enabled the scripting addition is unavailable, so `space --focus` falls through to `space_manager_focus_space_using_gesture` (`space_manager.c:993-999`), which synthesizes `abs(target − current)` high-velocity swipes. Desktop 1 → 9 fires eight of them. Every switch animates where AeroSpace's was instant, and a keypress landing mid-animation is rejected with `DISPLAY_IS_ANIMATING` and does nothing. This is the single biggest experiential change and probably what the trial verdict turns on.
+**Two different space-switch mechanisms are in play, and they feel nothing alike.** With SIP enabled the scripting addition is unavailable, so `yabai -m space --focus` falls through to `space_manager_focus_space_using_gesture` (`space_manager.c:993-999`), which synthesizes `abs(target − current)` dock swipes at a hardcoded `9999` velocity (`:956`) — the stated intent being to *skip* the macOS slide. The result is an instant cut, not an animation. `Hyper+1‑9` therefore does **not** use it: those nine synthesize macOS's own "Switch to Desktop N" instead, keeping the slide (step 4). The gesture path still backs `Hyper+Tab` and the `Hyper+←/→` edge-scroll, so those still cut instantly — a deliberate inconsistency, not an oversight. Either way, a keypress landing mid-animation is rejected with `DISPLAY_IS_ANIMATING` and does nothing.
 
 **Service mode captures every key.** `Hyper+Shift+Semicolon` enters it, and while there `::  service @` swallows all input — typing reaches no application. Only three keys respond: `escape` returns to default, `r` balances the tree, `f` toggles float. It looks exactly like a wedged session. If the machine stops responding to the keyboard, press Escape first.
 
@@ -23,7 +23,14 @@ Two behaviours differ sharply from AeroSpace and are not obvious from the config
    ```
 2. **Confirm "Displays have separate Spaces" is on** (System Settings → Desktop & Dock → Mission Control). yabai hard-requires it and *exits successfully* if it is off, so the failure is invisible to `launchctl list`.
 3. **Confirm "Automatically rearrange Spaces" is off.** It reorders mission-control indices underneath the keymap.
-4. **Re-entering the branch after the first time only:** stop AeroSpace before switching.
+4. **Enable "Switch to Desktop 1" through "Switch to Desktop 9"** (System Settings → Keyboard → Keyboard Shortcuts… → Mission Control, expand the collapsed *Mission Control* group). They bind `Ctrl+1‑9` and are **off by default** on macOS 26.
+
+   `Hyper+1‑9` synthesizes these rather than calling `yabai -m space --focus`, because yabai's SIP-free path deliberately skips the macOS slide (`space_manager.c:956` posts dock swipes at a hardcoded 9999 velocity) and the slide is wanted. **The nine checkboxes are therefore load-bearing**: untick them, or move to a fresh Mac, and `Hyper+1‑9` goes *silently* dead — skhd fires a shortcut macOS no longer listens for, with nothing in any log. Nothing in the repo declares them today; `system.defaults.CustomUserPreferences."com.apple.symbolichotkeys"` is the lever if that is wanted.
+
+   The `Hyper+←/→` edge-scroll also leans on these: its wrap (Desktop 1 → last, and back) synthesizes a numbered Switch-to-Desktop, because macOS's Move-left/right-a-space does not wrap. Its plain step uses Move-a-space, which unlike the numbered shortcuts is **enabled by default** and needs no ticking. Consequence of the wrap being a numbered jump: go beyond **9** Desktops and the wrap silently no-ops while the step keeps working, since there is no "Switch to Desktop 10" shortcut bound.
+
+   The trade accepted here: the native slide is longer than yabai's cut, and yabai rejects a switch arriving mid-animation (`DISPLAY_IS_ANIMATING`), so rapid switching drops more keypresses than the `space --focus` path did.
+5. **Re-entering the branch after the first time only:** stop AeroSpace before switching.
 
    ```
    launchctl bootout gui/$(id -u)/org.nix-community.home.aerospace
@@ -33,7 +40,7 @@ Two behaviours differ sharply from AeroSpace and are not obvious from the config
 
 ## After activating
 
-5. **Grant Accessibility to both yabai and skhd** (System Settings → Privacy & Security → Accessibility). Both prompt on first launch. Until granted, neither tiles nor binds anything.
+6. **Grant Accessibility to both yabai and skhd** (System Settings → Privacy & Security → Accessibility). Both prompt on first launch. Until granted, neither tiles nor binds anything.
 
    Both agents are configured `KeepAlive.SuccessfulExit = false` precisely so a missing grant does *not* respawn-prompt in a loop, so after granting, start them by hand:
 
@@ -42,7 +49,7 @@ Two behaviours differ sharply from AeroSpace and are not obvious from the config
    launchctl kickstart -k gui/$(id -u)/org.nix-community.home.skhd
    ```
 
-6. **Verify they are actually alive.** `launchctl list` is not evidence — both binaries exit with status 0 when their preconditions fail, so a dead daemon reports healthy and the fleet's `launchd-failure-notifier` stays silent.
+7. **Verify they are actually alive.** `launchctl list` is not evidence — both binaries exit with status 0 when their preconditions fail, so a dead daemon reports healthy and the fleet's `launchd-failure-notifier` stays silent.
 
    ```
    pgrep -xl yabai skhd            # both must appear

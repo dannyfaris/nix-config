@@ -47,14 +47,20 @@ let
 
   # Edge-scroll fallthrough. `window --focus <dir>` exits non-zero at the layout
   # edge (src/message.c:918-925), so failure means "step to the adjacent space".
-  # SPACE_SEL has no wrap-around, so the wrap is explicit — but it is decided by
-  # comparing the *mission-control index*, never by a second exit status:
-  # `space --focus prev` also fails on DISPLAY_IS_ANIMATING and IN_MISSION_CONTROL
-  # (src/space_manager.c:980-991), and under the SIP-on gesture path "animating" is
-  # the normal state right after any switch — so an exit-status chain would
-  # intermittently teleport to the far end of the desktop list instead of stepping
-  # one across. Lands on the target space's last-focused window rather than its far
-  # column: weaker than the AeroSpace version, which walked to the far column.
+  # Both the step and the wrap synthesize macOS's own shortcuts rather than
+  # `space --focus`, for the animation reason on focus-workspace-* below — the
+  # step is the natively-enabled Move-left/right-a-space, the wrap a numbered
+  # Switch-to-Desktop (Move-a-space does not wrap, so the wrap must be a jump).
+  #
+  # The edge is decided by comparing the *mission-control index*, never by a
+  # second exit status. That mattered when the branch called `space --focus prev`
+  # (which also fails on DISPLAY_IS_ANIMATING — the normal state right after any
+  # switch — so a status chain intermittently teleported to the far end), and it
+  # matters more now: a synthesized keystroke reports success whether or not macOS
+  # acted on it, so there is no status left to chain on at all.
+  #
+  # Lands on the target space's last-focused window rather than its far column:
+  # weaker than the AeroSpace version, which walked to the far column.
   spaceIndex = "$(${y "query --spaces --space"} | ${jq} -r .index)";
   spaceCount = "$(${y "query --spaces --display"} | ${jq} 'length')";
   edge =
@@ -65,10 +71,10 @@ let
           "[ \"${spaceIndex}\" = \"1\" ]"
         else
           "[ \"${spaceIndex}\" = \"${spaceCount}\" ]";
-      wrapTo = if dir == "west" then "last" else "first";
-      step = if dir == "west" then "prev" else "next";
+      wrap = if dir == "west" then ''${skhd} -k "ctrl - ${spaceCount}"'' else ''${skhd} -k "ctrl - 1"'';
+      step = if dir == "west" then ''${skhd} -k "ctrl - left"'' else ''${skhd} -k "ctrl - right"'';
     in
-    "if ${y "window --focus ${dir}"}; then :; elif ${atEdge}; then ${y "space --focus ${wrapTo}"}; else ${y "space --focus ${step}"}; fi";
+    "if ${y "window --focus ${dir}"}; then :; elif ${atEdge}; then ${wrap}; else ${step}; fi";
 
   # Cycle Ghostty windows in creation order, wrapping. `jq -s` slurps to `[]` on
   # empty input so `--argjson` still receives valid JSON when nothing is focused —
@@ -120,7 +126,11 @@ let
   }
   // lib.listToAttrs (
     lib.concatMap (n: [
-      (lib.nameValuePair "focus-workspace-${toString n}" (y "space --focus ${toString n}"))
+      # Synthesizes macOS's own "Switch to Desktop N" rather than calling
+      # `space --focus`: yabai's SIP-free path posts dock swipes at a hardcoded
+      # 9999 velocity to *skip* the slide (space_manager.c:956), and the slide is
+      # wanted. Depends on nine System Settings shortcuts — docs/runbooks/yabai-trial.md.
+      (lib.nameValuePair "focus-workspace-${toString n}" ''${skhd} -k "ctrl - ${toString n}"'')
       (lib.nameValuePair "move-window-to-workspace-${toString n}" (y "window --space ${toString n}"))
     ]) (lib.range 1 9)
   );
