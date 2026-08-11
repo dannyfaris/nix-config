@@ -33,6 +33,37 @@ let
   # x86_64-linux runner (like the lib unit tests), not per host. See #384 / ADR-039.
   capabilities = import ../lib/capabilities.nix { inherit lib; };
 
+  # niri config document (lib/niri-config.nix): inert until slice B swaps it in
+  # (docs/design/niri-sourcing.md), so nothing else in the tree evaluates it —
+  # an eval error or a serializer regression would sit undetected between the
+  # slices. Force both host shapes here instead. Fixture args, not host config:
+  # the point is that the document *renders*, and reading real hosts would drag
+  # Stylix eval in for no added coverage.
+  niriConfigFailures =
+    let
+      render =
+        laptop:
+        (import ../lib/niri-config.nix {
+          inherit lib laptop;
+          tokens = import ../lib/theme-tokens.nix { config = { }; };
+          cursor = {
+            theme = "check-fixture";
+            size = 24;
+          };
+          noctalia = "/nix/store/0000000000000000000000000000000-check-fixture/bin/noctalia";
+        }).text;
+      # Rendering is where a bad node shape throws; the length forces it.
+      probe =
+        laptop:
+        let
+          text = render laptop;
+        in
+        lib.optional (
+          builtins.stringLength text == 0
+        ) "niri-config (laptop=${lib.boolToString laptop}) rendered an empty document";
+    in
+    probe false ++ probe true;
+
   pkgsFor = system: inputs.nixpkgs.legacyPackages.${system};
 
   # Render a list of failure strings into a check derivation: a no-op
@@ -223,6 +254,10 @@ in
               darwinChecks = builtins.attrNames self.checks.aarch64-darwin;
             }
           );
+      niri-config-renders =
+        mkReportCheck "x86_64-linux" "niri-config-renders"
+          "niri config document fails to render (lib/niri-config.nix; docs/design/niri-sourcing.md)"
+          niriConfigFailures;
       keybind-collisions =
         mkReportCheck "x86_64-linux" "keybind-collisions"
           "Keybind chord collisions (lib/capabilities.nix; ADR-039 §8)"
