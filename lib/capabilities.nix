@@ -12,8 +12,9 @@
 # actions.json dataset (#437) remain later phases.
 #
 # Repo-decoupled by design (ADR-039 §9 — extraction-ready): this unit takes
-# only { lib } and imports no repo modules, so packaging it standalone later
-# stays cheap. The AeroSpace emitter emits only pure binding *values*
+# only { lib } and imports nothing outside lib/ — its one import is the sibling
+# lib/kdl.nix, itself { lib }-only — so packaging it standalone later stays
+# cheap. The AeroSpace emitter emits only pure binding *values*
 # (`aerospace-action`); the `aerospace-exec` complex bodies (which need the
 # package-derived `aerospace` path) are hand-authored in home/darwin/
 # aerospace.nix, mirroring how `niriBinds` emits binds the niri module composes
@@ -21,6 +22,10 @@
 #
 # Consumers:
 #   - home/nixos/niri.nix         → `niriBinds` (the generated bind attrset)
+#   - (none yet)                  → `niriBindNodes` — the KDL-node form of the
+#                                    same binds, landed ahead of the module
+#                                    that will consume it
+#                                    (docs/design/niri-sourcing.md)
 #   - home/darwin/aerospace.nix   → `aerospaceBinds` (the emitted
 #                                    mode.main.binding attrset) + `aerospaceExecCaps`
 #                                    + `aerospaceChord` (the hand-authored exec
@@ -43,6 +48,10 @@
 # Hyper table is generated from `keybindsTable`, #457).
 { lib }:
 let
+  # KDL constructors for the niri bind-node emitter below; a lib/-internal
+  # sibling, so the §9 extraction constraint above still holds.
+  kdl = import ./kdl.nix { inherit lib; };
+
   # ── Tiers — the single-sourced Hyper constant (ADR-039 §3/§4) ──────────────
   # Canonical modifier tokens; each emitter maps them to its own dialect (niri:
   # Super→Mod; keyd: Ctrl→C …). Bare Ctrl+Alt is the known-good base
@@ -1098,6 +1107,32 @@ let
     );
   niriBinds = niriBindsFor registry;
 
+  # The same binds as KDL nodes, for the repo-owned config.kdl that replaces
+  # niri-flake's rendering (docs/design/niri-sourcing.md). A bind is the chord
+  # as node name with the action as its single child; `kdl.leaf` folds every
+  # payload the registry can carry (attrset → properties, anything else →
+  # arguments), so `{ }` / int / string / list-of-string need no dispatch here.
+  # Keyed by chord like `niriBindsFor` so a consumer's attrNames-based shadow
+  # check carries over verbatim; `lib.attrValues` gives the node list.
+  niriBindNodesFor =
+    reg:
+    lib.listToAttrs (
+      map (
+        c:
+        let
+          chord = niriChord c.chord;
+          children = lib.mapAttrsToList kdl.leaf c.platforms.linux.action;
+        in
+        # niri takes exactly one action per bind, and a bare mapAttrsToList would
+        # render a two-key payload as two children — silently, where niri-flake's
+        # typed surface rejected it at eval. Restate the guarantee it used to hold.
+        lib.throwIf (lib.length children != 1)
+          "capabilities.nix: niri bind ${chord} declares ${toString (lib.length children)} actions; niri takes exactly one"
+          (lib.nameValuePair chord (kdl.node chord [ ] children))
+      ) (lib.filter isNiriAction reg)
+    );
+  niriBindNodes = niriBindNodesFor registry;
+
   # ── AeroSpace (darwin) emitter ─────────────────────────────────────────────
   # Darwin window management is realized by AeroSpace (ADR-040, superseding
   # ADR-039 §7's pure-Hammerspoon realization). Two darwin realization types:
@@ -1443,6 +1478,8 @@ in
     niriChord
     niriBinds
     niriBindsFor
+    niriBindNodes
+    niriBindNodesFor
     aerospaceChord
     aerospaceBinds
     aerospaceBindsFor

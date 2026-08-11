@@ -7,9 +7,11 @@
 { lib }:
 let
   caps = import ../capabilities.nix { inherit lib; };
+  kdl = import ../kdl.nix { inherit lib; };
   inherit (caps)
     niriChord
     niriBindsFor
+    niriBindNodesFor
     aerospaceChord
     aerospaceBindsFor
     collisionsFor
@@ -41,6 +43,12 @@ let
       inherit action;
     };
   };
+
+  # One fixture cap through the node emitter, serialized. The KDL string is the
+  # contract — `kdl.leaf`'s arguments-vs-properties fold is only visible there,
+  # and a wrong fold is valid KDL with the wrong meaning (`spawn="foot"` for
+  # `spawn "foot"`).
+  bindKdl = cap: kdl.serialize.nodes (lib.attrValues (niriBindNodesFor [ cap ]));
 
   # An aerospace-exec capability (hand-authored body in aerospace.nix; the
   # emitter skips it but the collision lint counts its chord — the merged
@@ -95,6 +103,100 @@ lib.runTests {
     ];
     expected = {
       "Ctrl+Alt+Left".action.focus-column-left = { };
+    };
+  };
+
+  # ── niri bind nodes (docs/design/niri-sourcing.md) ────────────────────────
+  # One test per action payload shape the registry can carry, because the
+  # emitter does no dispatch — every shape rides on `kdl.leaf`'s fold.
+  # Empty attrset → a bare action node, no arguments, no properties.
+  testNiriBindNodesEmptyAction = {
+    expr = bindKdl (
+      mkCap "focus-column-left" {
+        tier = "hyper";
+        key = "Left";
+      } { focus-column-left = { }; }
+    );
+    expected = "Ctrl+Alt+Left { focus-column-left; }";
+  };
+
+  # Int → a bare (unquoted) argument; niri type-checks int-vs-string per field.
+  testNiriBindNodesIntAction = {
+    expr = bindKdl (
+      mkCap "focus-workspace-1" {
+        tier = "hyper";
+        key = "1";
+      } { focus-workspace = 1; }
+    );
+    expected = "Ctrl+Alt+1 { focus-workspace 1; }";
+  };
+
+  # String → a quoted argument, not a property.
+  testNiriBindNodesStringAction = {
+    expr = bindKdl (
+      mkCap "narrow-column" {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "Minus";
+      } { set-column-width = "-10%"; }
+    );
+    expected = ''Ctrl+Alt+Shift+Minus { set-column-width "-10%"; }'';
+  };
+
+  # List → one quoted argument per element (the spawn argv form).
+  testNiriBindNodesListAction = {
+    expr = bindKdl (
+      mkCap "open-browser"
+        {
+          tier = "hyper";
+          key = "B";
+        }
+        {
+          spawn = [
+            "niri-focus-or-spawn"
+            "firefox"
+          ];
+        }
+    );
+    expected = ''Ctrl+Alt+B { spawn "niri-focus-or-spawn" "firefox"; }'';
+  };
+
+  # The structural contract: the chord is the node name and the action is its
+  # single child. niri rejects a two-child bind, so the one-child invariant
+  # (which the registry validator does not enforce) is asserted here.
+  testNiriBindNodesStructure = {
+    expr =
+      let
+        n =
+          (niriBindNodesFor [
+            (mkCap "focus-column-left" {
+              tier = "hyper";
+              key = "Left";
+            } { focus-column-left = { }; })
+          ])."Ctrl+Alt+Left";
+      in
+      {
+        inherit (n) name arguments properties;
+        children = map (c: c.name) n.children;
+      };
+    expected = {
+      name = "Ctrl+Alt+Left";
+      arguments = [ ];
+      properties = { };
+      children = [ "focus-column-left" ];
+    };
+  };
+
+  # Guard: the live registry renders the argv-spawn and the int-workspace binds
+  # as real KDL — the fixtures above prove the fold, this proves the wiring.
+  testLiveRegistryEmitsNiriBindNodes = {
+    expr = {
+      spawnArgv = kdl.serialize.node caps.niriBindNodes."Ctrl+Alt+B";
+      workspaceInt = kdl.serialize.node caps.niriBindNodes."Ctrl+Alt+1";
+    };
+    expected = {
+      spawnArgv = ''Ctrl+Alt+B { spawn "niri-focus-or-spawn" "firefox" "xdg-open" "https://"; }'';
+      workspaceInt = "Ctrl+Alt+1 { focus-workspace 1; }";
     };
   };
 
