@@ -15,8 +15,7 @@
 #                            insert-hint + recent-windows/highlight)
 #   gtk3-{dark,light}.css  — 34 @define-color keys for GTK3 theming
 #   gtk4-{dark,light}.css  — window { --*-color } libadwaita custom-property
-#                            block only (#777 — @define-color/:root are inert
-#                            on gtk 4.22 + libadwaita 1.9; window {} paints)
+#                            block only (see renderGtk4 below / #777)
 #   noctalia.json          — Noctalia v5 custom palette: dark + light objects,
 #                            each 16 M3-role keys + the mandatory terminal
 #                            block (polarity-independent — v5 selects the
@@ -459,6 +458,25 @@ let
         if [ "$val" = "'prefer-dark'" ]; then echo "dark"; else echo "light"; fi
       }
 
+      # ---------- gtk4 live-reload ----------
+      # The only re-parse signal GTK4's user-css provider honours is a
+      # prefers-color-scheme change; a bounce (opposite value, ~300ms, back)
+      # makes running apps re-read the swapped css (#777; mechanism in
+      # docs/desktop/file-manager.md). Always lands on $1 (dark|light).
+      gtk4_reload() {
+        if [ "$1" = "dark" ]; then
+          bounce_value="'default'"
+          correct_value="'prefer-dark'"
+        else
+          bounce_value="'prefer-dark'"
+          correct_value="'default'"
+        fi
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "$bounce_value" 2>/dev/null || true
+        sleep 0.3
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "$correct_value" || \
+          echo "theme: dconf bounce-back write failed (non-fatal outside session)" >&2
+      }
+
       # ---------- list ----------
       # Advertise polarity state and forms so bare `theme` is self-documenting
       # (#609 operator-requested discoverability).
@@ -479,12 +497,16 @@ let
       arg2="''${2:-}"
 
       # Detect polarity-only invocation: theme dark | theme light
+      # is_family_switch gates the GTK4 bounce below — a polarity-only call
+      # already changes the dconf value and needs no bounce.
       if [ "$arg1" = "dark" ] || [ "$arg1" = "light" ]; then
         new_polarity="$arg1"
         new_family=$(readlink "$state/current" 2>/dev/null || echo "$data/$boot_default")
         new_family="''${new_family##*/}"
+        is_family_switch=0
       else
         # Family (+ optional polarity): theme <family> [dark|light]
+        is_family_switch=1
         new_family="$arg1"
         if [ ! -d "$data/$new_family" ]; then
           echo "theme: unknown family '$new_family' (menu: ${lib.concatStringsSep ", " families})" >&2
@@ -622,6 +644,12 @@ let
         fi
       else
         echo "theme: no noctalia socket found (non-fatal outside session)" >&2
+      fi
+
+      # Family switches need the synthetic signal; polarity-only
+      # invocations already change the value (#777).
+      if [ "$is_family_switch" -eq 1 ]; then
+        gtk4_reload "$new_polarity"
       fi
 
       echo "theme: switched to ''${new_family}/''${new_polarity}"
