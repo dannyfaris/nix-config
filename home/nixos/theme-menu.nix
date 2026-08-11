@@ -14,8 +14,8 @@
 #                            focus-ring/border/shadow/tab-indicator/
 #                            insert-hint + recent-windows/highlight)
 #   gtk3-{dark,light}.css  — 34 @define-color keys for GTK3 theming
-#   gtk4-{dark,light}.css  — same 34 keys + :root { --*-color } libadwaita
-#                            custom-property block for GTK4
+#   gtk4-{dark,light}.css  — window { --*-color } libadwaita custom-property
+#                            block only (see renderGtk4 below / #777)
 #   noctalia.json          — Noctalia v5 custom palette: dark + light objects,
 #                            each 16 M3-role keys + the mandatory terminal
 #                            block (polarity-independent — v5 selects the
@@ -247,10 +247,14 @@ let
     @define-color theme_unfocused_selected_fg_color @accent_fg_color;
   '';
 
-  # GTK4 — same 34 @define-color keys + the :root {} libadwaita custom-
-  # property block. Slot mapping same as GTK3; :root mirrors the @define-color
-  # values as CSS custom properties.
-  # Additional :root-only keys (from live file):
+  # GTK4 — libadwaita custom-property block, scoped on `window {}` rather
+  # than `:root {}`: on gtk 4.22 + libadwaita 1.9, `:root` loses the
+  # cascade to libadwaita's own variable definitions but `window {}`
+  # paints (verified empirically on Nautilus, #777). The `@define-color`
+  # block GTK3 still relies on is dropped here — inert on this pin, and
+  # GTK3 theming (a separate file, renderGtk3) is unaffected. Slot mapping
+  # otherwise matches GTK3 (see renderGtk3 above).
+  # Additional keys beyond the GTK3 set (from live file):
   #   --warning-bg   = base0E (magenta family as warning accent)
   #   --warning-fg   = base07 (bright-white, readable on magenta bg)
   #   --warning      = base0E
@@ -258,61 +262,61 @@ let
   #   --success-bg   = base02 (dark green-tinted surface)
   #   --success-fg   = base07
   #   --shade-color  = rgba fixed (semi-transparent black)
-  renderGtk4 =
-    c:
-    renderGtk3 c
-    + ''
+  # The three backdrop/border aliases use var(--window-bg-color) rather
+  # than the GTK3 render's `@window_bg_color` — that named-color reference
+  # is part of the now-dropped @define-color mechanism, so it's rewritten
+  # to the custom-property equivalent, same resolved value.
+  renderGtk4 = c: ''
+    window {
+        --accent-color: #${c.base0D};
+        --accent-bg-color: #${c.base0D};
+        --accent-fg-color: #${c.base00};
 
-      :root {
-          --accent-color: #${c.base0D};
-          --accent-bg-color: #${c.base0D};
-          --accent-fg-color: #${c.base00};
+        --destructive-bg-color: #${c.base08};
+        --destructive-fg-color: #${c.base00};
 
-          --destructive-bg-color: #${c.base08};
-          --destructive-fg-color: #${c.base00};
+        --error-bg-color: #${c.base08};
+        --error-fg-color: #${c.base00};
+        --error-color: #${c.base08};
 
-          --error-bg-color: #${c.base08};
-          --error-fg-color: #${c.base00};
-          --error-color: #${c.base08};
+        --window-bg-color: #${c.base00};
+        --window-fg-color: #${c.base05};
 
-          --window-bg-color: #${c.base00};
-          --window-fg-color: #${c.base05};
+        --view-bg-color: #${c.base00};
+        --view-fg-color: #${c.base05};
 
-          --view-bg-color: #${c.base00};
-          --view-fg-color: #${c.base05};
+        --headerbar-bg-color: #${c.base00};
+        --headerbar-fg-color: #${c.base05};
+        --headerbar-backdrop-color: var(--window-bg-color);
 
-          --headerbar-bg-color: #${c.base00};
-          --headerbar-fg-color: #${c.base05};
-          --headerbar-backdrop-color: @window_bg_color;
+        --popover-bg-color: #${c.base01};
+        --popover-fg-color: #${c.base05};
 
-          --popover-bg-color: #${c.base01};
-          --popover-fg-color: #${c.base05};
+        --card-bg-color: #${c.base01};
+        --card-fg-color: #${c.base05};
 
-          --card-bg-color: #${c.base01};
-          --card-fg-color: #${c.base05};
+        --dialog-bg-color: #${c.base00};
+        --dialog-fg-color: #${c.base05};
 
-          --dialog-bg-color: #${c.base00};
-          --dialog-fg-color: #${c.base05};
+        --overview-bg-color: #${c.base01};
+        --overview-fg-color: #${c.base05};
 
-          --overview-bg-color: #${c.base01};
-          --overview-fg-color: #${c.base05};
+        --sidebar-bg-color: #${c.base01};
+        --sidebar-fg-color: #${c.base05};
+        --sidebar-backdrop-color: var(--window-bg-color);
+        --sidebar-border-color: var(--window-bg-color);
 
-          --sidebar-bg-color: #${c.base01};
-          --sidebar-fg-color: #${c.base05};
-          --sidebar-backdrop-color: @window_bg_color;
-          --sidebar-border-color: @window_bg_color;
+        --warning-bg-color: #${c.base0E};
+        --warning-fg-color: #${c.base07};
+        --warning-color: #${c.base0E};
 
-          --warning-bg-color: #${c.base0E};
-          --warning-fg-color: #${c.base07};
-          --warning-color: #${c.base0E};
+        --success-color: #${c.base0B};
+        --success-bg-color: #${c.base02};
+        --success-fg-color: #${c.base07};
 
-          --success-color: #${c.base0B};
-          --success-bg-color: #${c.base02};
-          --success-fg-color: #${c.base07};
-
-          --shade-color: rgba(0, 0, 0, 0.36);
-      }
-    '';
+        --shade-color: rgba(0, 0, 0, 0.36);
+    }
+  '';
 
   # noctalia.json — Noctalia v5 custom palette. ONE file per family carrying
   # BOTH mode objects (v5 selects dark/light in-process via theme.mode, so
@@ -454,6 +458,25 @@ let
         if [ "$val" = "'prefer-dark'" ]; then echo "dark"; else echo "light"; fi
       }
 
+      # ---------- gtk4 live-reload ----------
+      # The only re-parse signal GTK4's user-css provider honours is a
+      # prefers-color-scheme change; a bounce (opposite value, ~300ms, back)
+      # makes running apps re-read the swapped css (#777; mechanism in
+      # docs/desktop/file-manager.md). Always lands on $1 (dark|light).
+      gtk4_reload() {
+        if [ "$1" = "dark" ]; then
+          bounce_value="'default'"
+          correct_value="'prefer-dark'"
+        else
+          bounce_value="'prefer-dark'"
+          correct_value="'default'"
+        fi
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "$bounce_value" 2>/dev/null || true
+        sleep 0.3
+        ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "$correct_value" || \
+          echo "theme: dconf bounce-back write failed (non-fatal outside session)" >&2
+      }
+
       # ---------- list ----------
       # Advertise polarity state and forms so bare `theme` is self-documenting
       # (#609 operator-requested discoverability).
@@ -474,12 +497,16 @@ let
       arg2="''${2:-}"
 
       # Detect polarity-only invocation: theme dark | theme light
+      # is_family_switch gates the GTK4 bounce below — a polarity-only call
+      # already changes the dconf value and needs no bounce.
       if [ "$arg1" = "dark" ] || [ "$arg1" = "light" ]; then
         new_polarity="$arg1"
         new_family=$(readlink "$state/current" 2>/dev/null || echo "$data/$boot_default")
         new_family="''${new_family##*/}"
+        is_family_switch=0
       else
         # Family (+ optional polarity): theme <family> [dark|light]
+        is_family_switch=1
         new_family="$arg1"
         if [ ! -d "$data/$new_family" ]; then
           echo "theme: unknown family '$new_family' (menu: ${lib.concatStringsSep ", " families})" >&2
@@ -617,6 +644,12 @@ let
         fi
       else
         echo "theme: no noctalia socket found (non-fatal outside session)" >&2
+      fi
+
+      # Family switches need the synthetic signal; polarity-only
+      # invocations already change the value (#777).
+      if [ "$is_family_switch" -eq 1 ]; then
+        gtk4_reload "$new_polarity"
       fi
 
       echo "theme: switched to ''${new_family}/''${new_polarity}"
