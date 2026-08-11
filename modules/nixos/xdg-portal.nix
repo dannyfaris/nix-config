@@ -1,15 +1,17 @@
 # xdg-portal — make xdg-desktop-portal actually work on the niri desktop.
 #
-# niri ships a portal config (`niri-portals.conf`, delivered via
-# xdg.portal.configPackages) that reads:
+# nixpkgs' programs.niri module pins niri's portal routing:
 #   default=gnome;gtk;
 #   org.freedesktop.impl.portal.Access=gtk;
 #   org.freedesktop.impl.portal.Notification=gtk;
 #   org.freedesktop.impl.portal.Secret=gnome-keyring;
-# but niri-flake installs only the gnome and gnome-keyring backends — never
-# the gtk one those pins name. Two failures result:
+# and installs the gnome, gnome-keyring and gtk backends. It pins
+# FileChooser to gtk only under `useNautilus = false`, which is *not* the
+# default — so FileChooser is what this module still has to fix:
 #
-#   1. Access/Notification route to a gtk backend that isn't on the system.
+#   1. (historical, pre-#763) under niri-flake the gtk backend named by
+#      those pins was never installed, so Access/Notification routed to a
+#      backend that wasn't on the system. nixpkgs installs it.
 #   2. FileChooser is unpinned, so it falls to `default` → gnome. But
 #      xdg-desktop-portal-gnome doesn't implement the picker itself; it
 #      delegates to `org.gnome.Nautilus`. At the time this was diagnosed,
@@ -23,11 +25,13 @@
 #      below rather than gnome/Nautilus — see the fix rationale that
 #      follows.
 #
-# Fix (the non-Nautilus route the niri wiki documents, and exactly what the
-# nixpkgs programs.niri module does under `useNautilus = false` — an option
-# niri-flake's module does not expose, so we wire it by hand):
+# Fix (the non-Nautilus route the niri wiki documents, and what the nixpkgs
+# module itself does under `useNautilus = false`):
 #   - install the gtk backend (extraPortals) — the general-purpose,
 #     GNOME-session-free implementation of FileChooser/Access/Notification.
+#     nixpkgs' wayland-session helper now supplies it too, but the pin below
+#     is meaningless without the backend, so this module keeps declaring the
+#     one its own fix depends on rather than inheriting it.
 #   - route FileChooser to it (config.niri), bypassing gnome's Nautilus
 #     dependency, exactly as niri already does for Access/Notification.
 #
@@ -35,10 +39,11 @@
 # color-scheme Settings bridge that Firefox/GTK dark-light rides on (see
 # home/nixos/portal-color-scheme.nix / ADR-044).
 #
-# Defining xdg.portal.config.niri makes NixOS ignore niri's configPackages
-# copy entirely and write a wholesale /etc/xdg override, so niri's other
-# pins are re-declared here verbatim (drop one and e.g. Secret silently
-# breaks). Re-sync this block if niri changes its portal defaults.
+# niri's other pins are re-declared here verbatim. Since #763 they duplicate
+# the nixpkgs module's own definitions rather than replacing a configPackages
+# copy: identical values merge, and a divergence — upstream changing a pin,
+# or this block drifting — is a loud eval conflict rather than a silent
+# behaviour change. Re-sync this block if that fires.
 { pkgs, ... }:
 {
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];

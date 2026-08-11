@@ -75,8 +75,7 @@ What runs at `git commit` versus what only CI can run — a reading-guide to the
 The installer (`cachix/install-nix-action`) gets `extra_nix_config`:
 
 - `accept-flake-config = false` carries the whitelist-over-blanket stance from `modules/shared/nix-daemon.nix` into CI — a transitive input's `nixConfig` block can't silently add a substituter or change settings on the runner. ADR-025 §Rationale owns this decision.
-- `niri.cachix.org` is whitelisted as a substituter + trusted key, mirroring `nix.settings` in `modules/nixos/niri.nix` (ADR-028 slice 3b.5). Without it CI's daemon won't trust the cache, niri builds from source, and the build hits an in-flight upstream nixpkgs Rust-crate-fetcher 403. The public key is the one niri-flake itself would have added via its default-on `cache.enable`; `niri.nix` is the single source for both the substituter URL and the key.
-- Cross-arch note: `niri.cachix.org` serves x86_64-linux only. `nix flake check` builds every host, but only the x86_64 hosts import the niri module, so the substituter is only ever queried on the x86_64 matrix entry — harmless on the others.
+- That is now the whole list. `niri.cachix.org` was whitelisted here as a substituter + trusted key (ADR-028 slice 3b.5, mirroring `nix.settings` in `modules/nixos/niri.nix`) for as long as niri came from `niri-flake`; #763 sources niri from nixpkgs instead, `cache.nixos.org` serves it, and the trust delegation was dropped rather than replaced — see [docs/design/niri-sourcing.md](./design/niri-sourcing.md). CI trusts no non-default substituter.
 
 ## GitHub fetch token
 
@@ -86,7 +85,7 @@ It is deliberately not `GH_PAT_FLAKE_LOCK` — that one is scoped to *this* repo
 
 ## Cache
 
-`cache-nix-action` provides `actions/cache`-shaped storage for build **outputs**. It is **not** a substituter and is orthogonal to the `niri.cachix.org` trust lines — it amortises the non-niri half of the desktop closure (Quickshell, Qt6, matugen, DMS, xwayland-satellite, foot, transitive deps) that a fresh runner would otherwise rebuild every cold run. It is a post-ADR-025 addition (under `#61`, an ADR-028 follow-up — ADR-025 §23 deferred the binary-cache question and CI v1 ran cache-less), not a foundational CI-v1 decision; the dated sizing/tuning history is in ADR-025 §History.
+`cache-nix-action` provides `actions/cache`-shaped storage for build **outputs**. It is **not** a substituter — it amortises the source-built part of the desktop closure (Quickshell, Qt6, matugen, DMS, xwayland-satellite, foot, transitive deps) that a fresh runner would otherwise rebuild every cold run. It is a post-ADR-025 addition (under `#61`, an ADR-028 follow-up — ADR-025 §23 deferred the binary-cache question and CI v1 ran cache-less), not a foundational CI-v1 decision; the dated sizing/tuning history is in ADR-025 §History.
 
 **Why this and not Cachix / FlakeHub / Attic.** Those are larger trust or operational delegations than a one-operator / few-host project warrants today (a substituter is a signing-key trust root; Attic is a service to run). `cache-nix-action` is plain `actions/cache` storage with no new trust root. Revisit only if hit-rate stays below ~60% over a month, or a second major source-built dependency lands (the `#61` "triggers to revisit"). That second trigger fired on 2026-08-02 — `noctalia` is the second such dependency — and the follow-up it points at is #418; it is recorded here rather than silently satisfied below.
 
@@ -129,5 +128,5 @@ A job that hits its cap fails the run, which — for `flake-check` and `gitleaks
 ## References
 
 - [ADR-025](./decisions/ADR-025-ci-in-flake.md) — the framework decision and the dated history this doc points back to.
-- [ADR-028](./decisions/ADR-028-stylix-foundation-and-desktop-env.md) — desktop closure + the niri cache (slice 3b.5); `modules/nixos/niri.nix` is the single source for the niri substituter + key.
+- [ADR-028](./decisions/ADR-028-stylix-foundation-and-desktop-env.md) — desktop closure + the niri cache (slice 3b.5), the latter retired by [docs/design/niri-sourcing.md](./design/niri-sourcing.md).
 - [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md) — proportionate enforcement (the blind-retry choice) and single-sourced rationale (why this doc points rather than restates).

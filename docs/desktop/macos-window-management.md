@@ -36,7 +36,7 @@ Decided through a `selecting-tooling` exploration; the full rationale lives in [
 
 ## Configuration
 
-- **Handlers** — hand-authored Lua in `home/darwin/hammerspoon.nix`. The handler *bodies* live there; the registry references each by *name* and the emitter (`lib/capabilities.nix`, `hammerspoonBindsFor`) generates the `hs.hotkey.bind(...)` calls. This mirrors the niri side's `niriBindsFor` (the emitter emits bindings; the module owns the rest) and keeps `capabilities.nix` pure codegen (ADR-039 §9, extraction-ready).
+- **Handlers** — hand-authored Lua in `home/darwin/hammerspoon.nix`. The handler *bodies* live there; the registry references each by *name* and the emitter (`lib/capabilities.nix`, `hammerspoonBindsFor`) generates the `hs.hotkey.bind(...)` calls. This mirrors the niri side's `niriBindNodesFor` (the emitter emits bindings; the config document owns the rest) and keeps `capabilities.nix` pure codegen (ADR-039 §9, extraction-ready).
 - **Substrate** — Caps Lock → `Hyper` (`Ctrl+Opt`) is hand-authored in `home/darwin/karabiner.nix`, reading the single-sourced `tiers.hyper.darwin` constant from the registry (ADR-039 §4). The base-shape change is one edit.
 - **Collision lint** — the eval-time keybind lint covers the macOS chords too: no two Hammerspoon handlers may claim one chord, and a handler may not land on a chord the Karabiner substrate already reserves (the `Ctrl+Opt+arrow` Mission-Control remaps and `Ctrl+Opt+1‑9` Space jumps). See `lib/capabilities.nix` and [ADR-039 §8](../decisions/ADR-039-capability-registry.md).
 

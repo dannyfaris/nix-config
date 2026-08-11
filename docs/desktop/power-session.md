@@ -50,7 +50,7 @@ fuzzel is already a Stylix target (`stylix.targets.fuzzel.enable`, full base16 p
 - **Destructive actions are confirmed; safe ones dispatch directly.** Lock and Suspend run immediately. Log out relies on niri's *built-in* quit-confirm dialog, so it needs no extra prompt. Reboot and Shut down route through a second `fuzzel --dmenu` prompt (`Cancel` / `Yes, <action>`) with `Cancel` pre-highlighted as the default (`fuzzel --select-index 0`); because cancel/Escape emits nothing, a stray Enter on the default lands on `Cancel` and dispatches nothing. This second-prompt confirm is the established `--dmenu` idiom — [jluttine/rofi-power-menu](https://github.com/jluttine/rofi-power-menu) confirms logout/reboot/shutdown by default and ships a standalone `dmenu-power-menu` variant; this follows that model.
 - Entry order puts the safe, frequent action (Lock) first and the destructive pair last.
 
-**Keybind** — `home/nixos/niri.nix` gains `"Mod+Ctrl+Alt+Shift+Escape".action.spawn` → the menu script (niri spells `Hyper` as the four modifiers `Mod+Ctrl+Alt+Shift`). One new `Hyper` bind — one learning ceremony — and `Mod+Shift+E` → `action.quit` is left as-is (direct quit-niri stays; the menu's "Log out" entry is the fuller path). The Hyper modifier this needs is realized by keyd (#282, landed), so the chord fires. [keybinds.md](./keybinds.md) gains the `Hyper+Escape` row in the same PR (the bind-manifest commit).
+**Keybind** — `lib/niri-config.nix` gains a `Mod+Ctrl+Alt+Shift+Escape` bind spawning the menu script (niri spells `Hyper` as the four modifiers `Mod+Ctrl+Alt+Shift`). One new `Hyper` bind — one learning ceremony — and `Mod+Shift+E` → `quit` is left as-is (direct quit-niri stays; the menu's "Log out" entry is the fuller path). The Hyper modifier this needs is realized by keyd (#282, landed), so the chord fires. [keybinds.md](./keybinds.md) gains the `Hyper+Escape` row in the same PR (the bind-manifest commit).
 
 **waybar trigger** — `home/nixos/waybar.nix` gains a `custom/power` module (a power glyph) whose `on-click` spawns the same menu script. Mouse and keyboard hit one script, so the menu definition, the confirm, and the Stylix-themed surface are all shared. The button needs no modifier, so it is **keyd-independent** — the mouse path works regardless of keyd.
 
@@ -77,7 +77,7 @@ fuzzel is already a Stylix target (`stylix.targets.fuzzel.enable`, full base16 p
 - [keyd.md](./keyd.md) (#282) — realizes the `Hyper` modifier on metis that this bind depends on.
 - [fuzzel.md](./fuzzel.md) (#73) — the launcher reused in `--dmenu` mode; its Stylix target is what themes the menu.
 - `home/nixos/power-session.nix` — the menu script + dispatch (the implementation surface).
-- `home/nixos/niri.nix` — the `Hyper+Escape` (`Mod+Ctrl+Alt+Shift+Escape`) bind; `home/nixos/waybar.nix` — the `custom/power` `on-click` mouse trigger.
+- `lib/niri-config.nix` — the `Hyper+Escape` (`Mod+Ctrl+Alt+Shift+Escape`) bind; `home/nixos/waybar.nix` — the `custom/power` `on-click` mouse trigger.
 - [jluttine/rofi-power-menu](https://github.com/jluttine/rofi-power-menu) — the `--dmenu` confirm idiom (default-confirm logout/reboot/shutdown) this follows.
 - waybar [`menu(5)`](https://man.archlinux.org/man/extra/waybar/waybar-menu.5.en) (native dropdown — rejected, §Alternatives) and [#1968](https://github.com/Alexays/Waybar/issues/1968) (the `on-click` smoke-test).
 - ADR-028 (Stylix as surface source-of-truth — the "no Stylix target ⇒ hand-wired CSS" argument against wlogout), ADR-029 (niri-only desktop).

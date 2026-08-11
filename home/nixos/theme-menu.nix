@@ -430,7 +430,7 @@ let
       pkgs.coreutils
       pkgs.dconf
       pkgs.procps # pgrep, ps
-      config.programs.niri.package # niri msg action load-config-file
+      pkgs.niri # niri msg action load-config-file (same package modules/nixos/niri.nix installs)
       config.programs.noctalia.package # noctalia msg — the explicit palette-activation trigger
     ];
     text = ''

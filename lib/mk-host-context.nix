@@ -37,6 +37,15 @@
           default = [ ];
           description = "Home-manager modules imported on top of the home base.";
         };
+        laptop = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Linux desktop only: selects lib/niri-config.nix's built-in-panel +
+            touchpad + power-key fragment. Narrower than the name suggests — it
+            is a niri config selector, not general laptop semantics (#636).
+          '';
+        };
         idleSuspend = lib.mkOption {
           type = lib.types.bool;
           default = false;

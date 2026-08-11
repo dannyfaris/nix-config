@@ -111,14 +111,16 @@
   # Per-host parametrisation consumed by home-manager modules (ADR-019).
   # extraHomeModules is the full HM imports list — capability bundles plus
   # standalone modules (ADR-027). Personal-only dev box: cli tooling +
-  # single personal git identity + GitHub CLI + desktop-env + laptop niri
-  # fragment + login info display + base agent CLIs + agent-CLI extras +
-  # outbound SSH.
+  # single personal git identity + GitHub CLI + desktop-env + login info
+  # display + base agent CLIs + agent-CLI extras + outbound SSH.
   #
   # flakePath omitted — the host-context default ("/home/dbf/nix-config")
   # matches this host.
   hostContext = {
     hostName = "alnair";
+    # Selects niri's built-in-panel + touchpad + power-key fragment
+    # (lib/niri-config.nix) — the fleet's only host with that hardware (#636).
+    laptop = true;
     # Guarded idle→suspend (Noctalia, home/nixos/noctalia.nix) — natural
     # for a laptop (#636); the s2idle-only suspend path is the mobility
     # bundle's concern.
@@ -132,7 +134,6 @@
       ../../home/shared/git-identity.nix
       ../../home/shared/gh.nix
       ../../home/nixos/bundles/desktop-env.nix
-      ../../home/nixos/niri-laptop.nix # Alnair-scoped niri fragment — MacBook-Air touchpad feel + HiDPI, not the shared desktop niri.nix (#636).
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix
       ../../home/nixos/macchina-shell-init.nix

@@ -11,10 +11,13 @@
 # (TTYReset/TTYVHangup/TTYVTDisallocate); without it, kernel/systemd
 # messages can paint over the tuigreet UI during cold boot.
 #
-# tuigreet discovers wayland-sessions from the default XDG path
-# (/run/current-system/sw/share/wayland-sessions on NixOS) — no
-# --sessions flag needed; niri-flake's nixosModule installs the
-# niri.desktop entry there automatically.
+# tuigreet discovers wayland-sessions through XDG_DATA_DIRS — no --sessions
+# flag needed. The entry comes from `services.displayManager.sessionPackages`,
+# which NixOS collects into the `desktops` derivation that XDG_DATA_DIRS points
+# at; the niri package declares itself there via `passthru.providedSessions`.
+# NOT from system-path: `environment.pathsToLink` carries no wayland-sessions
+# entry, so /run/current-system/sw/share/wayland-sessions does not exist (the
+# comment here asserted otherwise until #763 checked the built system).
 #
 # Per ADR-028.
 { pkgs, ... }:

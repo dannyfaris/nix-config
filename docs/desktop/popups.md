@@ -15,21 +15,21 @@ A popup is any window whose `app-id` is `popup.<tool>`. A single niri `window-ru
 Intended shape of the rule (to land with the first consumer, #99):
 
 ```nix
-programs.niri.settings.window-rules = [
-  {
-    # Floating sized-popup convention for TUI utilities (#308).
-    # Any window whose app-id is "popup.<tool>" opens as a centered,
-    # proportionally-sized floating window. New popups conform by
-    # adopting the app-id prefix; this rule is the single home for the
-    # geometry. Per-tool deviation = a later, more specific rule.
-    matches = [ { app-id = "^popup\\."; } ];
-    open-floating = true;
-    open-focused  = true;
-    default-column-width.proportion  = 0.5;  # width  as a fraction of the screen
-    default-window-height.proportion = 0.5;  # height — only applies to floating windows
-    # centering: niri centers new floating windows by default — no position rule.
-  }
-];
+# In lib/niri-config.nix's windowRules list.
+# Floating sized-popup convention for TUI utilities (#308). Any window whose
+# app-id is "popup.<tool>" opens as a centered, proportionally-sized floating
+# window. New popups conform by adopting the app-id prefix; this rule is the
+# single home for the geometry. Per-tool deviation = a later, more specific
+# rule (niri applies rules in document order, later wins).
+(kdl.plain "window-rule" [
+  (kdl.leaf "match" { app-id = "^popup\\."; })
+  (kdl.leaf "open-floating" true)
+  (kdl.leaf "open-focused" true)
+  # width/height as fractions of the screen; height applies to floating only.
+  (kdl.plain "default-column-width" [ (kdl.leaf "proportion" 0.5) ])
+  (kdl.plain "default-window-height" [ (kdl.leaf "proportion" 0.5) ])
+  # centering: niri centers new floating windows by default — no position rule.
+])
 ```
 
 The spawning command is inline at the keybind site for now (`foot --app-id=popup.<tool> -e <tool>`); there is deliberately no launcher-wrapper abstraction yet (see "Deferred: launcher wrapper").
@@ -59,7 +59,7 @@ If a future popup genuinely holds meaningful state in-process, the sanctioned pa
 
 ## Adding a new popup
 
-1. Bind a key (in `home/nixos/niri.nix`) to `spawn = [ "foot" "--app-id=popup.<tool>" "-e" "<tool>" ]`.
+1. Bind a key (in `lib/niri-config.nix`, or the registry it merges) to `spawn "foot" "--app-id=popup.<tool>" "-e" "<tool>"`.
 2. Nothing else — the `^popup\.` rule already floats, focuses, centers, and sizes it.
 
 Per-tool deviation (different size, anchored placement) = add a later `window-rule` matching the specific `app-id`; niri applies the last matching rule's non-null values, so the specific rule wins over the namespace default.
@@ -84,7 +84,7 @@ Omarchy routes popups through a wrapper (`omarchy-launch-tui`) that derives the 
 
 - [#308](https://github.com/dannyfaris/nix-config/issues/308) — this convention (intent, scope, prior-art research thread).
 - [#99](https://github.com/dannyfaris/nix-config/issues/99) — clipboard history; first consumer of the convention.
-- [niri.md](./niri.md) — compositor selection; window-rules are part of niri-flake's settings surface.
+- [niri.md](./niri.md) — compositor selection; window-rules live in the repo-owned config document (lib/niri-config.nix).
 - [foot.md](./foot.md) — terminal the popups run in; `--app-id` is the identity lever.
 - [keybinds.md](./keybinds.md) — where popup binds live in the modifier-namespace model.
 - niri window rules — https://github.com/niri-wm/niri/wiki/Configuration:-Window-Rules

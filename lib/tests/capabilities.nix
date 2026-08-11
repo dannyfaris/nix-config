@@ -10,7 +10,6 @@ let
   kdl = import ../kdl.nix { inherit lib; };
   inherit (caps)
     niriChord
-    niriBindsFor
     niriBindNodesFor
     aerospaceChord
     aerospaceBindsFor
@@ -90,20 +89,6 @@ lib.runTests {
       key = "Up";
     };
     expected = "Ctrl+Alt+Shift+Up";
-  };
-
-  # The emitter keys each bind by its rendered chord and wraps the typed action
-  # attrset under `action` — exactly a hand-authored niri bind's shape.
-  testNiriBindsShape = {
-    expr = niriBindsFor [
-      (mkCap "focus-column-left" {
-        tier = "hyper";
-        key = "Left";
-      } { focus-column-left = { }; })
-    ];
-    expected = {
-      "Ctrl+Alt+Left".action.focus-column-left = { };
-    };
   };
 
   # ── niri bind nodes (docs/design/niri-sourcing.md) ────────────────────────

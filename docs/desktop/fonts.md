@@ -84,7 +84,7 @@ The font list stays **inline** in `desktop-fonts.nix` — the module is imported
 
 **Firefox is face-swap-only under E1.** Stylix's Firefox target writes per-profile font *and* chrome-colour prefs as one unit, with no font-only toggle. So `stylix.fonts.{monospace,sansSerif=Inter,sizes}` stay set for that target to read: Firefox's web body becomes Inter (consistent with the rest), but it is *pinned*, not generic — it does not follow a runtime `99-local.conf` override, and Stylix re-pins it on rebuild. Full Firefox font-freedom (Firefox on pure generics) rides with the colour severance that takes Stylix off the desktop entirely — the deferred E2 / Part B (#390, ADR-036).
 
-The general font base comes from NixOS's `fonts.enableDefaultPackages = true` (set as `mkDefault true` by niri-flake): `dejavu_fonts`, `freefont_ttf`, `gyre-fonts`, `liberation_ttf`, `unifont`, and `noto-fonts-color-emoji`. This is what makes "drop serif" safe — `DejaVu Serif` is present regardless, so the `serif` generic still resolves. Flipping `enableDefaultPackages = false` would mean curating the entire base set ourselves; deliberately not done.
+The general font base comes from NixOS's `fonts.enableDefaultPackages = true` (set as `mkDefault true` by the niri module's `services.graphical-desktop` wiring): `dejavu_fonts`, `freefont_ttf`, `gyre-fonts`, `liberation_ttf`, `unifont`, and `noto-fonts-color-emoji`. This is what makes "drop serif" safe — `DejaVu Serif` is present regardless, so the `serif` generic still resolves. Flipping `enableDefaultPackages = false` would mean curating the entire base set ourselves; deliberately not done.
 
 ### Darwin
 

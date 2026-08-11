@@ -7,7 +7,7 @@ Keyboard and pointer ergonomics on metis (niri): key-repeat, scrolling, pointer 
 **Two layers, two tools, by where the setting physically lives:**
 
 - **Device layer** — DPI steps, button remaps, report rate, LEDs, **onboard profiles** → **libratbag/ratbagd** (`services.ratbagd.enable`), driven interactively with the **Piper** GTK GUI (and `ratbagctl` for the side buttons). Settings are written to the **G502's onboard memory**, so they travel *with the mouse* across reboots and machines.
-- **Compositor layer** — key-repeat rate/delay, scroll method, natural-scroll, pointer acceleration → **niri's declarative per-category `input` block** (`programs.niri.settings.input.{keyboard,mouse}`). niri configures input *by device category*, not by device name, so these apply to whatever pointer/keyboard is plugged in.
+- **Compositor layer** — key-repeat rate/delay, scroll method, natural-scroll, pointer acceleration → **niri's declarative per-category `input` block** (`input > keyboard` / `input > mouse` in `lib/niri-config.nix`). niri configures input *by device category*, not by device name, so these apply to whatever pointer/keyboard is plugged in.
 
 ## Rationale
 
@@ -15,7 +15,7 @@ Keyboard and pointer ergonomics on metis (niri): key-repeat, scrolling, pointer 
 
 **The compositor layer needs neither a GUI nor swap-proofing.** Key-repeat, scroll method, and accel are a handful of set-once scalars; a GUI would add ceremony over five values. And the original fragility worry — "declarative config breaks when I change mice" — does not hold for niri, because niri keys input settings by device *category* (`mouse`, `keyboard`, …), not by device name or `event` number. The genuinely swap-fragile pattern is per-device `udev`/`xinput` rules tied to a device identity, which this config does not and would not use. So the compositor layer is the repo-native declarative home, in lockstep with the rest of the niri config — no tension with the project's declarative posture.
 
-**The split keeps the declarative stance intact.** The flake declaratively enables the *capability* (`services.ratbagd.enable` + `piper`); the *device profile* (DPI/buttons) lives in mouse firmware, which was never in the flake's scope — no more than a monitor's OSD or keyboard firmware is. The compositor feel is fully declarative in niri-flake. Nothing imperative leaks into OS or user state.
+**The split keeps the declarative stance intact.** The flake declaratively enables the *capability* (`services.ratbagd.enable` + `piper`); the *device profile* (DPI/buttons) lives in mouse firmware, which was never in the flake's scope — no more than a monitor's OSD or keyboard firmware is. The compositor feel is fully declarative in the repo-owned niri config document. Nothing imperative leaks into OS or user state.
 
 **Acceleration is set once, deliberately, at the compositor.** Pointer accel is computed in **libinput** (niri passes `accel-speed`/`accel-profile` straight through), and it is *independent of and multiplicative with* the mouse's onboard DPI. With niri/libinput's default `adaptive` profile, raising onboard DPI also shifts where you sit on the velocity curve, so the two compound non-linearly. The selection is to set sensitivity via **device DPI** and pin the compositor to **`accel-profile "flat"`** (velocity-independent), so the two layers don't fight.
 
@@ -29,14 +29,14 @@ Keyboard and pointer ergonomics on metis (niri): key-repeat, scrolling, pointer 
 
 **Compositor layer:**
 
-- **Third-party niri config GUIs** (niri-settings, NiriMod, …) — none packaged in nixpkgs, and they'd write imperative state *outside* the flake, which is the opposite of what this repo wants. The compositor layer belongs in `programs.niri.settings.input` regardless, so "no GUI here" isn't a loss.
+- **Third-party niri config GUIs** (niri-settings, NiriMod, …) — none packaged in nixpkgs, and they'd write imperative state *outside* the flake, which is the opposite of what this repo wants. The compositor layer belongs in niri's own `input` block regardless, so "no GUI here" isn't a loss.
 - **GNOME Settings / KDE System Settings** — do not apply: niri is Smithay-based, not Mutter or KWin, and reads input only from its own KDL. `gsettings`/`dconf` don't drive niri's accel/repeat/scroll.
 - **All-on-device** (fix DPI on the mouse, neutralise the compositor with flat accel and do nothing else) — a legitimate minority approach. Rejected because key-repeat and scroll *must* live at the compositor on Wayland anyway (see Sharp edges), so the compositor layer can't be empty.
 
 ## Configuration
 
 - **Device layer** — `modules/nixos/ratbagd.nix` (in the desktop-env bundle): `services.ratbagd.enable = true;` ships `libratbag` (the `ratbagctl` CLI), registers D-Bus activation, and installs the systemd unit; alongside it, `pkgs.piper` is the GTK GUI. `ratbagd` is **D-Bus-activated — do not `systemctl enable` it.** Piper is *only* a frontend and requires `ratbagd` running. Use Piper for DPI/profiles and `ratbagctl` for the side buttons (Piper bugs, see Sharp edges). Settings are authored interactively and persisted to the G502's onboard memory; they are intentionally **not** declared in the flake.
-- **Compositor layer** — `programs.niri.settings.input` in `home/nixos/niri.nix`: `keyboard.{repeat-delay,repeat-rate}` (niri's defaults are a sluggish 600 ms / 25 Hz), `mouse.{accel-profile = "flat", accel-speed, natural-scroll}` (scroll-method left at niri's default — the G502's wheel needs no override). The non-feel-dependent choice is `accel-profile "flat"` with `accel-speed 0` (rationale above); the feel-dependent values (exact repeat rate/delay, scroll direction) are tuned on metis.
+- **Compositor layer** — the `input` node of `lib/niri-config.nix`: `keyboard > repeat-delay`/`repeat-rate` (niri's defaults are a sluggish 600 ms / 25 Hz), `mouse > accel-profile "flat"`/`accel-speed`/`natural-scroll` (scroll-method left at niri's default — the G502's wheel needs no override). The non-feel-dependent choice is `accel-profile "flat"` with `accel-speed 0` (rationale above); the feel-dependent values (exact repeat rate/delay, scroll direction) are tuned on metis. The laptop host adds a `touchpad` block under the same node, selected by `hostContext.laptop` (#636).
 
 ### Keyboard (Keychron K1)
 
@@ -50,7 +50,7 @@ The one device-layer setting is hardware, not config: the K1's physical **Mac �
 - **G502 HERO button-mapping bugs in Piper.** Some side/extra buttons (delivered via hidraw) can't be remapped or saved through Piper, and modifier keys can't be assigned to buttons. Prefer **`ratbagctl`** over the GUI for button work on this device — which dents the "GUI-managed" goal for the *button* sub-surface specifically (DPI/profiles via the GUI are fine).
 - **Onboard-mode gotcha — the #1 "it didn't stick" cause.** libratbag writes to onboard profiles, which only take effect when the mouse is in onboard-profile mode. If G HUB on another OS ever switched the G502 to host/software mode, libratbag's writes silently no-op and settings appear to "revert after reboot." Check the mode first if anything fails to persist.
 - **`ratbagd` registers no udev rules.** The NixOS module sets `systemd.packages`/`services.dbus.packages` but not `services.udev.packages`. Fine because `ratbagd` runs as a root D-Bus daemon; if a non-root `ratbagctl` ever needs device access, add `services.udev.packages = [ pkgs.libratbag ];`.
-- **niri has no per-device input config yet.** Settings are category-wide ([niri #371](https://github.com/niri-wm/niri/issues/371) open; per-device PRs unmerged as of the 2026-06-16 pin). If the operator ever runs two pointers simultaneously wanting different *compositor* feel, that's blocked upstream until per-device lands — re-check on each niri-flake bump. (Different *device* settings for two mice are fine — they live on each mouse's onboard memory.)
+- **niri has no per-device input config yet.** Settings are category-wide ([niri #371](https://github.com/niri-wm/niri/issues/371) open; per-device PRs unmerged as of the 2026-06-16 pin). If the operator ever runs two pointers simultaneously wanting different *compositor* feel, that's blocked upstream until per-device lands — re-check on each nixpkgs bump. (Different *device* settings for two mice are fine — they live on each mouse's onboard memory.)
 - **Wayland key-repeat is compositor-owned.** Rate/delay travel via `wl_keyboard.repeat_info`; `xset r rate` is inert for native Wayland clients. So `repeat-rate`/`repeat-delay` *must* live in niri config, not in any X-era tool.
 
 ## References

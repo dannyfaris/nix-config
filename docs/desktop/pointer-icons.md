@@ -20,7 +20,7 @@
 
 ## Configuration
 
-`home/nixos/pointer-icons.nix`, imported by the home desktop-env bundle: `stylix.icons` (enable/package/light/dark — Stylix resolves the name by build-time polarity into `gtk.iconTheme`) and `stylix.cursor` (name/package/size → `home.pointerCursor` with GTK + X11 wiring), plus `programs.niri.settings.cursor` referencing the same values so the compositor layer and the toolkit layer cannot drift. Both option shapes verified in the pinned stylix and niri-flake sources.
+`home/nixos/pointer-icons.nix`, imported by the home desktop-env bundle: `stylix.icons` (enable/package/light/dark — Stylix resolves the name by build-time polarity into `gtk.iconTheme`) and `stylix.cursor` (name/package/size → `home.pointerCursor` with GTK + X11 wiring). It is the sole owner of those values; niri's `cursor` block gets them from the same place rather than restating them — `home/nixos/niri.nix` reads `config.stylix.cursor.{name,size}` back out and threads them into the config document, so the compositor layer and the toolkit layer cannot drift. (Watch the rename across that seam: stylix's `name` is niri's `xcursor-theme`.)
 
 ## Sharp edges
 

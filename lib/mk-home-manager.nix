@@ -52,9 +52,10 @@ in
 
     # `inputs` is forwarded so HM modules can import flake-provided HM
     # modules internally. Consumed today by home/nixos/noctalia.nix
-    # (`inputs.noctalia.homeModules.default` import + `.packages`) and
-    # home/nixos/niri.nix (`inputs.niri-flake.lib`); the first consumer
-    # was the zen-browser module, retired (#127). Reaches HM modules
+    # (`inputs.noctalia.homeModules.default` import + `.packages`); the
+    # first consumer was the zen-browser module, retired (#127), and
+    # home/nixos/niri.nix stopped consuming it with niri-flake (#763).
+    # Reaches HM modules
     # only via extraSpecialArgs below — specialArgs feeds the system
     # module tree, not this submodule.
     extraSpecialArgs = {

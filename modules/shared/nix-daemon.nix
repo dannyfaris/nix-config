@@ -29,8 +29,6 @@
     # prompts interactively, then accepts — this makes the answer "no" by
     # default). Symmetric with CI's runner setting in
     # .github/workflows/ci.yaml; the host is where that stance originates.
-    # Also a second layer under niri.nix's explicit niri-flake.cache.enable
-    # = false: that opt-out is the belt, this is the braces.
     accept-flake-config = false;
   };
 

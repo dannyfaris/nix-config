@@ -2,7 +2,7 @@
 #
 # The Secret Service daemon (`org.freedesktop.secrets`, provided by
 # gnome-keyring) is already running on this host as a transitive
-# consequence of niri-flake's nixosModule — see docs/desktop/gnome-keyring.md
+# consequence of the niri module — see docs/desktop/gnome-keyring.md
 # for the full picture of inherited state vs what this slice actually
 # owns. The only concrete addition #104 makes to the configuration is
 # putting `secret-tool` on PATH so the operator can:
@@ -20,9 +20,11 @@
 # clients on the desktop hosts; this just exposes the CLI binaries.
 #
 # Per #104. The gnome-keyring activation itself is accepted as
-# inherited from niri-flake's nixosModule (same precedent as
-# xdg.portal.enable, also inherited and not re-asserted) — see the
-# doc for the full inheritance picture.
+# inherited from nixpkgs' programs.niri module, which sets
+# `services.gnome.gnome-keyring.enable = mkDefault true` (same precedent
+# as xdg.portal.enable, also inherited and not re-asserted) — see the
+# doc for the full inheritance picture. The inheritance survived the
+# niri-flake removal unchanged; only its source moved (#763).
 { pkgs, ... }:
 {
   environment.systemPackages = [ pkgs.libsecret ];

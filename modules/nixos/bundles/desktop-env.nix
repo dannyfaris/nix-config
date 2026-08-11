@@ -5,14 +5,14 @@
 # capabilities a desktop host needs are factored into standalone modules
 # beside this file:
 #
-#   - niri.nix             — compositor (system enablement + cache opt-out).
+#   - niri.nix             — compositor (system enablement, sourced from nixpkgs).
 #   - keyd.nix             — Caps Lock → Hyper modifier (keyboard parity with the mac's Karabiner).
 #   - greetd.nix           — display manager (tuigreet on tty1).
 #   - audio.nix            — PipeWire sound server + rtkit realtime scheduling. See docs/desktop/audio.md (#96).
 #   - bluetooth.nix        — BlueZ for Bluetooth peripherals; the pairing UI rides the shell (#636, #773).
 #   - desktop-fonts.nix    — Stylix font selections (mono/sans/emoji) + install wiring.
 #   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
-#   - xdg-portal.nix       — routes the portal FileChooser (and Access/Notification) to the gtk backend niri-flake omits, so file dialogs work without Nautilus.
+#   - xdg-portal.nix       — routes the portal FileChooser to the gtk backend, so file dialogs work without Nautilus.
 #   - lock-before-sleep.nix — systemd-lock-handler: logind sleep delay-inhibitor + user-level lock/sleep targets, so the Noctalia lock provably engages before any suspend (#644).
 #   - libsecret.nix        — secret-tool CLI for the (transitively-enabled) Secret Service.
 #   - removable-media.nix  — udisks2 + filesystem helpers (auto-mount is home-side udiskie). See docs/desktop/removable-media.md (#105).

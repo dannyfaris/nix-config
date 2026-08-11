@@ -33,12 +33,13 @@ let
   # x86_64-linux runner (like the lib unit tests), not per host. See #384 / ADR-039.
   capabilities = import ../lib/capabilities.nix { inherit lib; };
 
-  # niri config document (lib/niri-config.nix): inert until slice B swaps it in
-  # (docs/design/niri-sourcing.md), so nothing else in the tree evaluates it —
-  # an eval error or a serializer regression would sit undetected between the
-  # slices. Force both host shapes here instead. Fixture args, not host config:
-  # the point is that the document *renders*, and reading real hosts would drag
-  # Stylix eval in for no added coverage.
+  # niri config document (lib/niri-config.nix): the host builds only ever render
+  # the shape their own `laptop` flag selects, so a regression in the other
+  # branch would surface on one host and not the other. Force both shapes here.
+  # Fixture args, not host config: the point is that the document *renders*, and
+  # reading real hosts would drag Stylix eval in for no added coverage. (What
+  # niri makes of the render is the separate `niri validate` gate in
+  # home/nixos/niri.nix — see docs/design/niri-sourcing.md.)
   niriConfigFailures =
     let
       render =
@@ -158,8 +159,8 @@ let
       # The same attribute home/nixos/noctalia.nix reads, so this is the
       # derivation the desktop hosts build rather than a parallel one.
       # v5 has no binary cache anywhere (docs/design/noctalia-v5-migration.md
-      # §Cost). niri, the other source-built desktop dependency, is served by
-      # niri.cachix.org and so stays out.
+      # §Cost). niri stays out for the opposite reason: since #763 it comes
+      # from nixpkgs and cache.nixos.org serves it.
       noctalia = inputs.noctalia.packages.x86_64-linux.default;
       # nvidia-settings has no substituter (unfree; cache.nixos.org 404s it —
       # measured on metis 2026-08-03) and rebuilds ~90 s every warm run (#721).

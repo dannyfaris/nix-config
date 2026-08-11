@@ -17,15 +17,13 @@
 # cheap. The AeroSpace emitter emits only pure binding *values*
 # (`aerospace-action`); the `aerospace-exec` complex bodies (which need the
 # package-derived `aerospace` path) are hand-authored in home/darwin/
-# aerospace.nix, mirroring how `niriBinds` emits binds the niri module composes
-# — the codegen stays pure (ADR-039 §2).
+# aerospace.nix, mirroring how `niriBindNodes` emits binds the niri config
+# document composes — the codegen stays pure (ADR-039 §2).
 #
 # Consumers:
-#   - home/nixos/niri.nix         → `niriBinds` (the generated bind attrset)
-#   - (none yet)                  → `niriBindNodes` — the KDL-node form of the
-#                                    same binds, landed ahead of the module
-#                                    that will consume it
-#                                    (docs/design/niri-sourcing.md)
+#   - lib/niri-config.nix         → `niriBindNodes` (the generated bind nodes,
+#                                    merged into the config document's `binds`
+#                                    block; docs/design/niri-sourcing.md)
 #   - home/darwin/aerospace.nix   → `aerospaceBinds` (the emitted
 #                                    mode.main.binding attrset) + `aerospaceExecCaps`
 #                                    + `aerospaceChord` (the hand-authored exec
@@ -73,8 +71,9 @@ let
   # ── niri chord rendering ───────────────────────────────────────────────────
   # niri writes Super as "Mod"; Ctrl/Alt/Shift are literal. A chord renders as
   # the tier's base modifiers, then any escalator `mods`, then the key — joined
-  # with "+". This keeps the emitted attribute name identical to a hand-authored
-  # niri bind, so niri-flake's typing (and build-time `niri validate`) still apply.
+  # with "+". This keeps the emitted node name identical to a hand-authored niri
+  # bind, so the build-time `niri validate` gate covers generated and
+  # hand-authored binds alike.
   niriMod = m: if m == "Super" then "Mod" else m;
   # Canonical modifier order so the emitted chord string is deterministic: two
   # caps with the same modifier SET render identically regardless of declaration
@@ -1094,26 +1093,15 @@ let
 
   # ── niri emitter ───────────────────────────────────────────────────────────
   # Parametrised over a registry so the unit tests can drive it with fixtures;
-  # `niriBinds` applies it to the real registry. Each linux niri-action becomes
-  # one `{ "<chord>" = { action = <payload>; }; }` entry — a plain attrset for
-  # programs.niri.settings.binds (niri-flake type-checks it like a hand bind).
+  # `niriBindNodes` applies it to the real registry. Each linux niri-action
+  # becomes one KDL bind node for the repo-owned config.kdl
+  # (docs/design/niri-sourcing.md): the chord as node name with the action as
+  # its single child. `kdl.leaf` folds every payload the registry can carry
+  # (attrset → properties, anything else → arguments), so `{ }` / int / string
+  # / list-of-string need no dispatch here. Keyed by chord so a consumer's
+  # attrNames-based shadow check works on it; `lib.attrValues` gives the node
+  # list.
   isNiriAction = c: (c.platforms.linux.realization or null) == "niri-action";
-  niriBindsFor =
-    reg:
-    lib.listToAttrs (
-      map (c: lib.nameValuePair (niriChord c.chord) { action = c.platforms.linux.action; }) (
-        lib.filter isNiriAction reg
-      )
-    );
-  niriBinds = niriBindsFor registry;
-
-  # The same binds as KDL nodes, for the repo-owned config.kdl that replaces
-  # niri-flake's rendering (docs/design/niri-sourcing.md). A bind is the chord
-  # as node name with the action as its single child; `kdl.leaf` folds every
-  # payload the registry can carry (attrset → properties, anything else →
-  # arguments), so `{ }` / int / string / list-of-string need no dispatch here.
-  # Keyed by chord like `niriBindsFor` so a consumer's attrNames-based shadow
-  # check carries over verbatim; `lib.attrValues` gives the node list.
   niriBindNodesFor =
     reg:
     lib.listToAttrs (
@@ -1476,8 +1464,6 @@ in
     tiers
     registry
     niriChord
-    niriBinds
-    niriBindsFor
     niriBindNodes
     niriBindNodesFor
     aerospaceChord

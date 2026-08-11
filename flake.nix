@@ -75,11 +75,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    niri-flake = {
-      url = "github:sodiboo/niri-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Noctalia Shell (v5, native C++ rewrite) — cohesive Wayland desktop
     # shell for the Linux desktop (ADR-036; v5 re-integration #644,
     # docs/design/noctalia-v5-migration.md). Pinned to the release tag —

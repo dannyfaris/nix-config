@@ -89,15 +89,11 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
           # accept-flake-config = false carries the whitelist stance into
-          # CI (no transitive input can add a substituter). niri.cachix.org
-          # mirrors modules/nixos/niri.nix — without it niri builds from
-          # source and hits an upstream crates.io 403. See docs/ci.md
+          # CI (no transitive input can add a substituter). See docs/ci.md
           # §Substituters.
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = false
-            extra-substituters = https://niri.cachix.org
-            extra-trusted-public-keys = niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964=
 
       # Build-output cache (actions/cache-shaped storage, NOT a
       # substituter) to amortise cold-run rebuilds of the desktop closure.

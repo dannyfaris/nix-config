@@ -2,17 +2,19 @@
 
 The polkit authentication agent for the niri desktop on metis (#103) — the GUI that prompts for a password when a graphical app needs elevated privileges (mounting removable media in a file manager, a privileged settings change, a disk tool). This doc records a *swap*, not an addition: a graphical agent already runs, and this replaces it with a lighter, theme-cohesive one. The text-mode elevation path (`sudo`/`pkexec` in a terminal) is unaffected and out of scope.
 
+**The swap basis has since dissolved.** [#763](https://github.com/dannyfaris/nix-config/issues/763) sources niri from nixpkgs instead of niri-flake, and nixpkgs' `programs.niri` module runs no authentication agent at all — so mate-polkit is now the session's *only* agent rather than a replacement for one, and there is no KDE agent left to disable. The selection below is unchanged; its comparison basis is history. See [docs/design/niri-sourcing.md](../design/niri-sourcing.md).
+
 ## Premise correction
 
-The issue framed this as "nothing surfaces a graphical authentication prompt." That is not the case: **niri-flake's nixosModule already runs the KDE agent** (`polkit-kde-authentication-agent-1`) via a `niri-flake-polkit` systemd user service, alongside the polkit daemon and gnome-keyring. Verified live on metis: the unit is active and the KDE agent is the process serving prompts. So #103 is really "keep niri-flake's KDE/Qt agent, or deliberately swap it" — and this doc swaps it.
+The issue framed this as "nothing surfaces a graphical authentication prompt." That was not the case at the time: **niri-flake's nixosModule already ran the KDE agent** (`polkit-kde-authentication-agent-1`) via a `niri-flake-polkit` systemd user service, alongside the polkit daemon and gnome-keyring. Verified live on metis: the unit was active and the KDE agent was the process serving prompts. So #103 was really "keep niri-flake's KDE/Qt agent, or deliberately swap it" — and this doc swapped it.
 
 ## Selection
 
-**mate-polkit** (GTK3, `polkit-mate-authentication-agent-1`), run as a hand-rolled `systemd.user.services` unit bound to `graphical-session.target`, replacing niri-flake's KDE agent (`systemd.user.services.niri-flake-polkit.enable = false`). Because the KDE agent being removed is the only thing on metis pulling the Qt/KDE stack, the now-vestigial **`stylix.targets.qt`** is dropped in the same change. (Activation is smoke-test-pending on metis — see Sharp edges.)
+**mate-polkit** (GTK3, `polkit-mate-authentication-agent-1`), run as a hand-rolled `systemd.user.services` unit bound to `graphical-session.target`. Because the KDE agent it displaced was the only thing pulling the Qt/KDE stack, the then-vestigial **`stylix.targets.qt`** was dropped in the same change and stays dropped. (Activation is smoke-test-pending on metis — see Sharp edges.)
 
 ## Rationale
 
-**Architecture, briefly.** polkit has two halves: the **daemon** (`polkitd`, system-wide, decides whether an action is authorised) and an **authentication agent** (per-session GUI that prompts for the password). The daemon is compositor-agnostic; the agent is the toolkit-specific, swappable, session-side piece. `security.polkit.enable` only runs the daemon — the agent is a separate systemd user service. niri does not spawn one itself; niri-flake supplies the KDE agent by default.
+**Architecture, briefly.** polkit has two halves: the **daemon** (`polkitd`, system-wide, decides whether an action is authorised) and an **authentication agent** (per-session GUI that prompts for the password). The daemon is compositor-agnostic; the agent is the toolkit-specific, swappable, session-side piece. `security.polkit.enable` only runs the daemon — the agent is a separate systemd user service. niri does not spawn one itself, and neither does nixpkgs' `programs.niri` module, so supplying one is entirely this repo's job. (niri-flake did supply the KDE agent by default; that is what §Premise correction records.)
 
 **The swap is justified on styling first, dependency-minimalism second — and both point the same way.**
 
@@ -35,7 +37,7 @@ The issue framed this as "nothing surfaces a graphical authentication prompt." T
 ## Configuration
 
 - `home/nixos/` — a small module wiring `systemd.user.services.<mate-polkit>`: `ExecStart` the `polkit-mate-authentication-agent-1` binary, `PartOf`/`After`/`WantedBy = graphical-session.target` (the standard agent-registration pattern; mirrors how the home-manager `services.polkit-gnome` module builds its unit, since there is no home-manager module for mate-polkit). Imported via the desktop-env home bundle.
-- **Disable the KDE agent:** `systemd.user.services.niri-flake-polkit.enable = false` (the niri-flake-documented lever) so the two agents do not both register.
+- **No KDE agent to disable.** While niri came from niri-flake the module also set `systemd.user.services.niri-flake-polkit.enable = false` so the two agents did not both register; #763 removed the flake and the agent with it, so mate-polkit registers unopposed.
 - **Drop the vestigial Qt target:** remove the `qt.enable` line from `home/nixos/stylix-targets-desktop.nix`, leaving the `gtk.enable` block — and the `gtk.gtk4.theme` line directly below it, which is gtk-coupled, not qt — untouched. This realises the bulk of the 573 MiB; Stylix's qt target also sets `QT_QPA_PLATFORMTHEME`/`QT_STYLE_OVERRIDE`, so dropping it removes that session env, which no longer has a consumer.
 
 ## Sharp edges
@@ -55,10 +57,10 @@ The issue framed this as "nothing surfaces a graphical authentication prompt." T
 ## References
 
 - mate-polkit (mate-desktop) — GTK3 polkit agent, 1.28.1 (upstream / nixpkgs facts); runtime deps `gtk3` + `polkit` + `gettext`; respects the GTK theme.
-- niri-flake README — the `niri-flake-polkit` service and the `systemd.user.services.niri-flake-polkit.enable = false` lever; niri "Important Software" wiki (agents are user-configured; KDE agent is the example).
+- niri-flake README — the `niri-flake-polkit` service and the `systemd.user.services.niri-flake-polkit.enable = false` lever (both retired with the input, #763); niri "Important Software" wiki (agents are user-configured; KDE agent is the example).
 - home-manager `services.polkit-gnome` — the canonical graphical-session.target agent-unit pattern to mirror.
 - Verified on metis (this work): the KDE agent runs off-theme (no `kdeglobals`); the KDE agent is the only actual Qt *app* (qt6ct/qt5ct/Kvantum are theming tools); the combined agent + qt-target removal measures 573 MiB / 62 paths via `nix path-info`.
 - soteria (ImVaskel) + nixpkgs `security.soteria` — the modern GTK4 alternative, passed over on viability; revisit post-1.0.
-- [gnome-keyring.md](./gnome-keyring.md) — the Secret Service, independent of polkit (often conflated; both happen to be enabled by niri-flake).
+- [gnome-keyring.md](./gnome-keyring.md) — the Secret Service, independent of polkit (often conflated; the niri module happens to enable both daemons, though not this agent).
 - [screen-lock.md](./screen-lock.md) — the same minimal/native posture applied to another surface.
 - ADR-028 (Stylix as surface source-of-truth), ADR-029 (niri-only desktop).

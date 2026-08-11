@@ -4,7 +4,7 @@ Key-remapping daemon for Linux. Picked as the **metis-side realization of the Hy
 
 This is **parity-not-identity** with neptune's macOS Hyper (ADR-039 §3): same UX — Caps Lock becomes a layer with `Shift`/`Super` free to stack as escalators — but each platform uses its best-fit chord (Linux `Ctrl+Alt`, macOS `Ctrl+Opt`). The macOS counterpart migrates to `Ctrl+Opt` in the macOS emitter phase (#440); until then neptune still produces the pre-cutover all-four `Super+Ctrl+Alt+Shift`, so the two hosts' bases differ in the interim.
 
-Scope: keyd produces the Hyper *modifier*; the chord→action binds are generated from the registry (`home/nixos/niri.nix` consumes `caps.niriBinds`) and recorded in [keybinds.md](./keybinds.md). keyd owns substrate production only — the registry owns chord→action (ADR-039 §4).
+Scope: keyd produces the Hyper *modifier*; the chord→action binds are generated from the registry (`lib/niri-config.nix` consumes `caps.niriBindNodes`) and recorded in [keybinds.md](./keybinds.md). keyd owns substrate production only — the registry owns chord→action (ADR-039 §4).
 
 ## Selection
 
@@ -59,7 +59,7 @@ services.keyd = {
 };
 ```
 
-`capslock = layer(hyper)` is deliberately *not* the more common `overload(hyper, esc)`: `layer` gives a hold-only Hyper with an inert tap, whereas `overload` would add a tap-Escape the mac doesn't have (see Alternatives). Imported by `modules/nixos/bundles/desktop-env.nix` alongside `niri.nix` / `greetd.nix`. niri Hyper binds are written as `Ctrl+Alt+<key>` (plus `Shift`/`Super` escalators) and generated from the registry in `home/nixos/niri.nix`, not authored here.
+`capslock = layer(hyper)` is deliberately *not* the more common `overload(hyper, esc)`: `layer` gives a hold-only Hyper with an inert tap, whereas `overload` would add a tap-Escape the mac doesn't have (see Alternatives). Imported by `modules/nixos/bundles/desktop-env.nix` alongside `niri.nix` / `greetd.nix`. niri Hyper binds are written as `Ctrl+Alt+<key>` (plus `Shift`/`Super` escalators) and generated from the registry in `lib/niri-config.nix`, not authored here.
 
 The load-bearing choice recorded here is the mapping (`caps_lock → Ctrl+Alt`, hold-only); the modifier set itself comes from the registry, and the module surface is verified against `services.keyd` at build time. keyd resolves layers by name, so section order in the generated file doesn't matter.
 

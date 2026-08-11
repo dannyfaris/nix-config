@@ -1,7 +1,7 @@
 # Pointer & icon theme — Colloid icons + phinger cursor (#110).
 # Selection, field measurements, and the polarity/render-list sharp edges:
 # docs/desktop/pointer-icons.md.
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 {
   # Stylix resolves light/dark by build-time polarity into gtk.iconTheme;
   # runtime polarity flips don't swap it — see the doc's sharp edges.
@@ -18,11 +18,7 @@
     name = "phinger-cursors-light";
     size = 24;
   };
-
-  # Compositor layer references the stylix values so the niri cursor and
-  # the toolkit cursor cannot drift.
-  programs.niri.settings.cursor = {
-    theme = config.stylix.cursor.name;
-    size = config.stylix.cursor.size;
-  };
+  # The compositor layer reads these same values rather than restating them, so
+  # the niri cursor and the toolkit cursor cannot drift — home/nixos/niri.nix
+  # threads stylix.cursor into niri's cursor block.
 }

@@ -5,8 +5,9 @@
 # user-facing capabilities the desktop session needs are factored into
 # standalone modules beside this file:
 #
-#   - niri.nix — programs.niri.settings.binds (curated essential set;
-#     see docs/desktop/keybinds.md for the full taxonomy).
+#   - niri.nix — writes the repo-owned config.kdl (lib/niri-config.nix,
+#     including the curated bind set; see docs/desktop/keybinds.md for the
+#     full taxonomy) after gating it on `niri validate`.
 #   - foot.nix — programs.foot.enable.
 #   - noctalia.nix — the cohesive shell, v5 native rewrite (ADR-036; #644):
 #     bar, launcher, notifications, OSD, lock, wallpaper, clipboard, idle —
@@ -30,9 +31,8 @@
 #     color-scheme bridge. The dconf write moved into theme-menu.nix's gated
 #     seed so rebuilds no longer reset runtime polarity. Closes the gap #141
 #     left unresolved (now via theme-menu's seed + `theme` CLI).
-#   - polkit-agent.nix — mate-polkit (GTK3) authentication agent,
-#     replacing niri-flake's default KDE agent (disabled system-side
-#     in modules/nixos/niri.nix). See docs/desktop/polkit.md (#103).
+#   - polkit-agent.nix — mate-polkit (GTK3) authentication agent, the
+#     session's only one (niri ships none). See docs/desktop/polkit.md (#103).
 #   - removable-media.nix — udiskie auto-mount + notifications (tray-less)
 #     and the mount.yazi unmount/eject plugin. Pairs with the system-side
 #     udisks2 + fs helpers. See docs/desktop/removable-media.md (#105).
@@ -43,7 +43,8 @@
 #     Nautilus (system-side package + gvfs in modules/nixos/file-manager.nix).
 #     See docs/desktop/file-manager.md (#771).
 #   - pointer-icons.nix — Colloid icons + phinger cursor (stylix.icons /
-#     stylix.cursor + niri cursor block). See docs/desktop/pointer-icons.md (#110).
+#     stylix.cursor; niri's cursor block reads the same values via niri.nix).
+#     See docs/desktop/pointer-icons.md (#110).
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + the Noctalia shell
