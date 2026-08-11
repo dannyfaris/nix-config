@@ -71,7 +71,7 @@ A v5-capability probe on alnair decided it. `noctalia msg` **does** expose the v
 
 **Not a patchbay.** `pwvucontrol` (and `pavucontrol`) are mixers — per-app/device volume and routing to a sink. Routing one app's output into another app's input is a patchbay concern (`qpwgraph` / `helvum`), out of scope here and added only if that need ever appears.
 
-**Bluetooth audio is out of scope.** metis is a wired desktop; no `services.pipewire` Bluetooth (`wireplumber` BT config / `hardware.bluetooth`) is wired. A separate concern if a BT device is ever introduced.
+**Bluetooth audio is out of scope.** BlueZ now runs on every desktop host (`hardware.bluetooth` via the desktop-env bundle, #773), but no `services.pipewire` Bluetooth (`wireplumber` BT config) is wired. A separate concern if BT audio is ever wanted.
 
 ## References
 

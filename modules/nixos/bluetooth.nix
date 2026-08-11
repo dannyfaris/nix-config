@@ -1,4 +1,4 @@
-# Bluetooth for laptop peripherals (#636). The pairing UI rides the shell.
+# Bluetooth peripherals for the desktop hosts (#636, #773). The pairing UI rides the shell.
 { config, lib, ... }:
 {
   hardware.bluetooth.enable = true;
