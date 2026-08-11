@@ -23,9 +23,15 @@ Two behaviours differ sharply from AeroSpace and are not obvious from the config
    ```
 2. **Confirm "Displays have separate Spaces" is on** (System Settings → Desktop & Dock → Mission Control). yabai hard-requires it and *exits successfully* if it is off, so the failure is invisible to `launchctl list`.
 3. **Confirm "Automatically rearrange Spaces" is off.** It reorders mission-control indices underneath the keymap.
-4. **Enable "Switch to Desktop 1" through "Switch to Desktop 9"** (System Settings → Keyboard → Keyboard Shortcuts… → Mission Control, expand the collapsed *Mission Control* group). They bind `Ctrl+1‑9` and are **off by default** on macOS 26.
+4. **Verify "Switch to Desktop 1" through "Switch to Desktop 9" are enabled** (System Settings → Keyboard → Keyboard Shortcuts… → Mission Control, expand the collapsed *Mission Control* group). They bind `Ctrl+1‑9` and are **on by default** on macOS 26, so this is a check, not a change. Confirm from the shell instead if preferred — the absence of `118`-and-up entries under `AppleSymbolicHotKeys` means *at system default*, because only a deviation is ever written:
 
-   `Hyper+1‑9` synthesizes these rather than calling `yabai -m space --focus`, because yabai's SIP-free path deliberately skips the macOS slide (`space_manager.c:956` posts dock swipes at a hardcoded 9999 velocity) and the slide is wanted. **The nine checkboxes are therefore load-bearing**: untick them, or move to a fresh Mac, and `Hyper+1‑9` goes *silently* dead — skhd fires a shortcut macOS no longer listens for, with nothing in any log. Nothing in the repo declares them today; `system.defaults.CustomUserPreferences."com.apple.symbolichotkeys"` is the lever if that is wanted.
+   ```
+   defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys | grep -E '^\s{4}[0-9]+ ='
+   ```
+
+   Order matters: a `Ctrl+N` does nothing when Desktop N does not exist, and System Settings lists only as many entries as there are Desktops — so step 1 has to come first, and testing these before it will mislead.
+
+   `Hyper+1‑9` synthesizes these rather than calling `yabai -m space --focus`, because yabai's SIP-free path deliberately skips the macOS slide (`space_manager.c:956` posts dock swipes at a hardcoded 9999 velocity) and the slide is wanted. **They are therefore load-bearing**: switch them off and `Hyper+1‑9` goes *silently* dead — skhd fires a shortcut macOS no longer listens for, with nothing in any log. They are left **undeclared deliberately**. Being correct by default, the only thing a declaration would buy is a guard against someone disabling them; and hand-authoring the `com.apple.symbolichotkeys` structure (symbolic-hotkey ids plus `(charCode, keyCode, modifier)` triples, whose keycodes for 1‑9 are non-sequential) risks *breaking* a working default to defend against something that has not happened. The lightest mechanism that holds the guarantee is this paragraph ([ADR-032](../decisions/ADR-032-proportionate-enforcement-and-rationale.md)).
 
    The `Hyper+←/→` edge-scroll also leans on these: its wrap (Desktop 1 → last, and back) synthesizes a numbered Switch-to-Desktop, because macOS's Move-left/right-a-space does not wrap. Its plain step uses Move-a-space, which unlike the numbered shortcuts is **enabled by default** and needs no ticking. Consequence of the wrap being a numbered jump: go beyond **9** Desktops and the wrap silently no-ops while the step keeps working, since there is no "Switch to Desktop 10" shortcut bound.
 
@@ -95,6 +101,7 @@ Dated log of what the live trial established, kept here because it shares the br
 
 - **One Space existed pre-trial, not four.** Eight had to be created, not five. The original figure would have left the operator four Desktops short with a quarter of the keymap silently dead — the exact failure the step exists to prevent.
 - **Counting `uuid` keys in `com.apple.spaces` is not a valid Space count.** It sweeps in `Collapsed Space` records for displays that are not connected. The Main monitor's `Spaces` array is the only honest source; the corrected probe is in step 1.
+- **"Switch to Desktop N" is on by default, not off.** Step 4 briefly said otherwise, and the commit that introduced the native-shortcut binds ([`3b5d374`](https://github.com/dannyfaris/nix-config/commit/3b5d374)) argues from the same wrong premise — read its message with that in mind. The error came from probing the shortcuts while only **one** Desktop existed: `Ctrl+1` was already the current Desktop and Desktop 3 did not exist, so both were no-ops regardless of whether anything was bound. The control test that seemed to clear the mechanism (`ctrl + alt - 2` switching correctly) proved only that *synthesis* worked — that chord was caught by skhd, so it said nothing about macOS's own bindings. **A negative result from a probe run against absent state is not evidence.** Nine Desktops later the same probe passes with no plist entry present at all, which is what "at system default" looks like.
 
 ### 2026-08-11 — observations carried, not yet acted on
 
