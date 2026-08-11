@@ -46,6 +46,7 @@
       "1password" # 1Password desktop GUI on metis (lib.getName of _1password-gui; #112). See docs/desktop/1password.md
       "antigravity-cli" # Google Antigravity CLI (`agy`), replaced Gemini CLI in the agent-clis extras; ADR-008 (#433)
       "claude-code"
+      "claude-desktop" # Claude Desktop for Linux (Anthropic beta, repackaged) on alcyone. See modules/nixos/claude-desktop.nix
       "cursor"
       "cursor-cli"
       "nvidia-settings" # NVIDIA control-panel util pulled by the driver on alcyone (#631). See modules/nixos/nvidia.nix
