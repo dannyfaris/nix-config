@@ -127,8 +127,8 @@ let
       # The same attribute home/nixos/noctalia.nix reads, so this is the
       # derivation the desktop hosts build rather than a parallel one.
       # v5 has no binary cache anywhere (docs/design/noctalia-v5-migration.md
-      # §Cost). niri, the other source-built desktop dependency, is served by
-      # niri.cachix.org and so stays out.
+      # §Cost). niri was the other source-built desktop dependency; since #763
+      # it comes from nixpkgs, so cache.nixos.org serves it and it stays out.
       noctalia = inputs.noctalia.packages.x86_64-linux.default;
       # nvidia-settings has no substituter (unfree; cache.nixos.org 404s it —
       # measured on metis 2026-08-03) and rebuilds ~90 s every warm run (#721).
