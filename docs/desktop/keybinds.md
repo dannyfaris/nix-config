@@ -46,10 +46,13 @@ Principles:
    parity is achieved per-bind; niri-only actions (geometry, vertical window nav)
    live on `Hyper` too. A **divergent leaf** — an action present on one platform
    only — is correct, not a gap.
-3. **Escalators.** `Hyper+Shift` = *move* — on-screen moves (move column, move
-   window-in-column) *and* send-window-to-workspace; `Hyper+Super` = *switch
-   workspace*. "Shift moves, Super switches." This aligns with the dominant
-   i3/sway convention (`$mod+Shift+N` sends a window to workspace N).
+3. **Escalators.** `Hyper+Shift` = *act on the window* — on-screen moves (move
+   column, move window-in-column), send-window-to-workspace, *and* window
+   geometry (resize, preset-width, center, fullscreen, maximize — migrated from
+   base `Hyper` in #762); `Hyper+Super` = *switch workspace*. "Shift acts on
+   the window, Super switches." Bare `Hyper` is left to navigate, switch, and
+   launch. Still aligned with the dominant i3/sway convention (`$mod+Shift+N`
+   sends a window to workspace N).
 4. **Mild duplication is allowed** when it rewards muscle memory (e.g. overview
    reachable two ways). Distinct from *transitional* duplication (migration
    scaffolding), which is retired at cutover.
@@ -82,8 +85,8 @@ window models, so the taxonomy is built on it and macOS follows:
   than native Spaces (ADR-040).
 
 `Hyper` navigates the *immediate* level (columns, windows-in-column); `Hyper+Shift`
-*moves* (column, window-in-column, and send-to-workspace `1‑9`); `Hyper+Super`
-*switches* workspace (`↑/↓`).
+*acts on the window* — moves (column, window-in-column, send-to-workspace `1‑9`)
+and geometry; `Hyper+Super` *switches* workspace (`↑/↓`).
 
 ## The `Hyper` layer
 
@@ -93,7 +96,7 @@ The bind inventory below is **generated from the capability registry**
 contract; #457). Chords are the friendly tier form; the per-platform cells are
 the short action label (`—` where a platform doesn't realize the bind). The
 behavioural nuance the one-line cells can't carry — the macOS edge-scroll
-fallthrough, the geometry keys reused for app-launch — lives in the notes that
+fallthrough, the geometry cluster's `Hyper+Shift` home — lives in the notes that
 follow.
 
 <!-- BEGIN GENERATED: hyper-bindings — source lib/capabilities.nix; run `just gen-keybinds` -->
@@ -104,14 +107,15 @@ follow.
 | `Hyper+↑` | Focus window up | Focus window up |
 | `Hyper+↓` | Focus window down | Focus window down |
 | `Hyper+Tab` | Overview | Last workspace |
-| `Hyper+−` | Shrink column width | — |
-| `Hyper+=` | Grow column width | — |
-| `Hyper+R` | Cycle column width | — |
-| `Hyper+C` | Center column | — |
-| `Hyper+F` | Fullscreen window | — |
-| `Hyper+M` | Maximize column | — |
+| `Hyper+Shift+−` | Shrink column width | — |
+| `Hyper+Shift+=` | Grow column width | — |
+| `Hyper+Shift+R` | Cycle column width | — |
+| `Hyper+Shift+C` | Center column | — |
+| `Hyper+Shift+F` | Fullscreen window | — |
+| `Hyper+Shift+M` | Maximize column | — |
 | `Hyper+Return` | Open terminal | Open terminal |
 | `Hyper+B` | Open browser | Open browser |
+| `Hyper+F` | Open file manager | Open Finder |
 | `Hyper+Shift+←` | Move column left | Move window left |
 | `Hyper+Shift+→` | Move column right | Move window right |
 | `Hyper+Shift+↑` | Move window up | Move window up |
@@ -120,7 +124,6 @@ follow.
 | `Hyper+Super+↓` | Switch workspace down | — |
 | `Hyper+1‑9` | Focus workspace N | Switch to workspace N |
 | `Hyper+Shift+1‑9` | Move window to workspace N | Move window to workspace N |
-| `Hyper+F` | — | Open Finder |
 | `Hyper+M` | — | Open Messages |
 | `Hyper+E` | — | Open Outlook |
 | `Hyper+S` | — | Open Slack |
@@ -173,21 +176,26 @@ no chord→action realization to generate from, so they stay hand-listed here.
 
 ### Window geometry
 
-> macOS geometry is **darwin-N/A** under AeroSpace (ADR-040): the tiler auto-tiles,
-> so the per-window geometry cluster (resize `−/=`, preset-width `R`, center `C`)
-> is dropped. `F` and `M` are **reused** on macOS for app-launch (Finder,
-> Messages); the focus-stable "maximize" is **maximise-by-isolation**
-> (`Hyper+Shift+M` — move the window to its own empty workspace, since AeroSpace's
-> `fullscreen` drops on focus-change). The niri geometry capability IDs stay for
-> the Linux side. History: [macos-window-management.md](./macos-window-management.md).
+> The geometry cluster lives on `Hyper+Shift` (migrated from base `Hyper` in
+> #762 — "Shift acts on the window"). macOS geometry is **darwin-N/A** under
+> AeroSpace (ADR-040): the tiler auto-tiles, so the per-window geometry cluster
+> (resize `−/=`, preset-width `R`, center `C`) is dropped there. Bare `Hyper+M`
+> is reused on macOS for app-launch (Messages); the focus-stable "maximize" is
+> **maximise-by-isolation** (`Hyper+Shift+M` — move the window to its own empty
+> workspace, since AeroSpace's `fullscreen` drops on focus-change — sharing its
+> chord with niri's Maximize column as the action-analogue). The niri geometry
+> capability IDs stay for the Linux side. History:
+> [macos-window-management.md](./macos-window-management.md).
 
 ### Spawn & session
 
 > `Hyper+Return` opens a terminal (floating foot on niri; on macOS an
 > `exec-and-forget open -na Ghostty.app` — always a *new* window, a new app
 > instance per window); `Hyper+B` opens the browser (default browser on niri;
-> `open -a "Google Chrome"` focus-or-launch on macOS). macOS also adds app-launch
-> on `Hyper+F/M/E/S//` (Finder/Messages/Outlook/Slack/1Password) — all
+> `open -a "Google Chrome"` focus-or-launch on macOS); `Hyper+F` opens the file
+> surface — one capability, exact chord parity: Thunar on niri, focus-or-launch
+> Finder on macOS (see docs/desktop/file-manager.md). macOS also adds app-launch
+> on `Hyper+M/E/S//` (Messages/Outlook/Slack/1Password) — all
 > `aerospace-action` binds (ADR-040).
 
 ## The `Super` layer — the Cmd-position modifier

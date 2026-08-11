@@ -261,17 +261,8 @@ let
       };
     };
   darwinWmExtras = [
-    (mkAppLaunch {
-      id = "open-finder";
-      key = "F";
-      app = "Finder";
-      label = "Open Finder";
-      keywords = [
-        "finder"
-        "files"
-        "launch"
-      ];
-    })
+    # open-finder was folded into spawn-file-manager (below) when the freed
+    # Hyper+F gave the chord exact cross-platform parity (#762).
     (mkAppLaunch {
       id = "open-messages";
       key = "M";
@@ -579,13 +570,16 @@ let
       };
     }
 
-    # Base Hyper — window geometry. On macOS these are structurally "darwin:
-    # N/A" (no platforms.darwin): AeroSpace auto-tiles, so per-window geometry
-    # is superseded (ADR-040, superseding ADR-039 §7's Hammerspoon geometry
-    # handlers). The capability IDs + their niri realization stay — the Linux
-    # side still uses them, and a future Hyprland move could re-realize
-    # center/maximize (design note §Future). Hyper+F and Hyper+M are reused on
-    # darwin for app-launch (open-finder / open-messages, below).
+    # Hyper+Shift — window geometry (migrated from base Hyper in #762: bare
+    # Hyper = navigate/switch/launch, Hyper+Shift = act on the window; see
+    # keybinds.md §The spatial model). On macOS these are structurally
+    # "darwin: N/A" (no platforms.darwin): AeroSpace auto-tiles, so
+    # per-window geometry is superseded (ADR-040, superseding ADR-039 §7's
+    # Hammerspoon geometry handlers). The capability IDs + their niri
+    # realization stay — the Linux side still uses them, and a future
+    # Hyprland move could re-realize center/maximize (design note §Future).
+    # The freed Hyper+F gives spawn-file-manager exact Finder parity with
+    # the Finder launch folded into spawn-file-manager (below).
     {
       id = "shrink-column";
       label = "Shrink column width";
@@ -598,6 +592,7 @@ let
       ];
       chord = {
         tier = "hyper";
+        mods = [ "Shift" ];
         key = "Minus";
       };
       platforms.linux = {
@@ -618,6 +613,7 @@ let
       ];
       chord = {
         tier = "hyper";
+        mods = [ "Shift" ];
         key = "Equal";
       };
       platforms.linux = {
@@ -638,6 +634,7 @@ let
       ];
       chord = {
         tier = "hyper";
+        mods = [ "Shift" ];
         key = "R";
       };
       platforms.linux = {
@@ -657,6 +654,7 @@ let
       ];
       chord = {
         tier = "hyper";
+        mods = [ "Shift" ];
         key = "C";
       };
       platforms.linux = {
@@ -676,6 +674,7 @@ let
       ];
       chord = {
         tier = "hyper";
+        mods = [ "Shift" ];
         key = "F";
       };
       platforms.linux = {
@@ -684,7 +683,6 @@ let
       };
       # darwin: N/A — AeroSpace `fullscreen` drops on focus-change; the focus-
       # stable equivalent is maximise-by-isolation (Hyper+Shift+M, below).
-      # Hyper+F is reused on darwin for open-finder. (ADR-040.)
     }
     {
       id = "maximize-column";
@@ -697,15 +695,16 @@ let
       ];
       chord = {
         tier = "hyper";
+        mods = [ "Shift" ];
         key = "M";
       };
       platforms.linux = {
         realization = "niri-action";
         action.maximize-column = { };
       };
-      # darwin: N/A — AeroSpace has no stable maximize; the equivalent is
-      # maximise-by-isolation (Hyper+Shift+M, below). Hyper+M is reused on
-      # darwin for open-messages. (ADR-040.)
+      # darwin: N/A here as an entry — but the chord now sits in exact
+      # action-analogue parity with darwin's maximise-by-isolation (its own
+      # Hyper+Shift+M entry below; disjoint per-platform tables). (ADR-040.)
     }
 
     # Base Hyper — spawn
@@ -781,6 +780,42 @@ let
         ];
         realization = "aerospace-action";
         action = ''exec-and-forget open -a "Google Chrome"'';
+      };
+    }
+    {
+      id = "spawn-file-manager";
+      label = "Open file manager";
+      description = "Open the GUI file manager";
+      keywords = [
+        "files"
+        "file manager"
+        "thunar"
+        "explorer"
+        "folders"
+      ];
+      # F: exact cross-platform parity (Thunar / Finder on one chord),
+      # enabled by the geometry cluster's move to Hyper+Shift (#762). See
+      # docs/desktop/file-manager.md §Configuration.
+      chord = {
+        tier = "hyper";
+        key = "F";
+      };
+      platforms.linux = {
+        realization = "niri-action";
+        action.spawn = [ "thunar" ];
+      };
+      # macOS: focus-or-launch Finder (subsumed the former open-finder
+      # mkAppLaunch entry). ADR-040.
+      platforms.darwin = {
+        realization = "aerospace-action";
+        action = ''exec-and-forget open -a "Finder"'';
+        label = "Open Finder";
+        description = "Focus Finder, or launch it if not running";
+        keywords = [
+          "finder"
+          "files"
+          "launch"
+        ];
       };
     }
 
