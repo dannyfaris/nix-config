@@ -209,6 +209,18 @@ in
         matches = [ { app-id = "^1[Pp]assword$"; } ];
         block-out-from = "screen-capture";
       }
+
+      # Utility-palette apps float above the ribbon instead of tiling into
+      # it; escape hatch is toggle-window-floating (Hyper+Shift+Space, from
+      # the registry). thunar app-id pinned from a live window; the 1Password
+      # regex shares the PROVISIONAL status of the #529 rule above.
+      {
+        matches = [
+          { app-id = "^thunar$"; }
+          { app-id = "^1[Pp]assword$"; }
+        ];
+        open-floating = true;
+      }
     ];
 
     # The cross-platform Hyper layer (Ctrl+Alt base) is generated from the
