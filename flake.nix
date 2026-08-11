@@ -116,6 +116,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
+
+    # Claude Desktop for Linux — see modules/nixos/claude-desktop.nix
+    # (the consumer) and #683 (selection rationale). Both transitive
+    # inputs follow ours so no second nixpkgs/flake-parts enters the lock.
+    claude-desktop = {
+      url = "github:aaddrick/claude-desktop-debian";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
   };
 
   outputs =
