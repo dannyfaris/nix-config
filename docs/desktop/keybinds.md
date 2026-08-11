@@ -117,6 +117,7 @@ follow.
 | `Hyper+B` | Focus or open browser | Focus or open browser |
 | `Hyper+F` | Open file manager | Open Finder |
 | `Hyper+C` | Focus or open Claude | — |
+| `Hyper+/` | Open 1Password | Open 1Password |
 | `Hyper+Shift+←` | Move column left | Move window left |
 | `Hyper+Shift+→` | Move column right | Move window right |
 | `Hyper+Shift+↑` | Move window up | Move window up |
@@ -128,7 +129,6 @@ follow.
 | `Hyper+M` | — | Open Messages |
 | `Hyper+E` | — | Open Outlook |
 | `Hyper+S` | — | Open Slack |
-| `Hyper+/` | — | Open 1Password |
 | `Hyper+,` | — | Toggle tiles/accordion |
 | `Hyper+Shift+;` | — | Service mode |
 | `Hyper+Shift+M` | — | Maximise (isolate) |
@@ -182,7 +182,7 @@ no chord→action realization to generate from, so they stay hand-listed here.
 
 ### Spawn & session
 
-> `Hyper+Return` opens a terminal (floating foot on niri; on macOS an `exec-and-forget open -na Ghostty.app` — always a *new* window, a new app instance per window); `Hyper+B` focus-or-opens the browser (niri: focus the existing Firefox window via `niri-focus-or-spawn`, else `xdg-open` the default browser; `open -a "Google Chrome"` focus-or-launch on macOS); `Hyper+F` opens the file surface — one capability, exact chord parity: Nautilus on niri, focus-or-launch Finder on macOS (see docs/desktop/file-manager.md); `Hyper+C` focus-or-opens Claude Desktop (niri only, on the hosts that carry it — the app is single-instance, so a plain re-spawn raises and focuses the existing window; #683). macOS also adds app-launch on `Hyper+M/E/S//` (Messages/Outlook/Slack/1Password) — all `aerospace-action` binds (ADR-040).
+> `Hyper+Return` opens a terminal (floating foot on niri; on macOS an `exec-and-forget open -na Ghostty.app` — always a *new* window, a new app instance per window); `Hyper+B` focus-or-opens the browser (niri: focus the existing Firefox window via `niri-focus-or-spawn`, else `xdg-open` the default browser; `open -a "Google Chrome"` focus-or-launch on macOS); `Hyper+F` opens the file surface — one capability, exact chord parity: Nautilus on niri, focus-or-launch Finder on macOS (see docs/desktop/file-manager.md); `Hyper+C` focus-or-opens Claude Desktop (niri only, on the hosts that carry it — the app is single-instance, so a plain re-spawn raises and focuses the existing window; #683); `Hyper+/` focus-or-opens 1Password (niri: focus the existing window via `niri-focus-or-spawn`, app-id pinned from a live probe, else spawn the tray app — single-instance, so the spawn raises the existing window if one is open; `open -a 1Password` focus-or-launch on macOS). macOS also adds app-launch on `Hyper+M/E/S` (Messages/Outlook/Slack) — all `aerospace-action` binds (ADR-040).
 
 ## The `Super` layer — the Cmd-position modifier
 
