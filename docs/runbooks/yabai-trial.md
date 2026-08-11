@@ -82,6 +82,13 @@ That restores the config but **not** the desktop state. Also:
 - **Delete the Desktops you added**, back to the single one that existed before the trial. Deleting a Desktop migrates its windows to the adjacent one, so there is no need to move anything by hand first. AeroSpace is built around a single native Space; left as-is it resumes owning a layout containing windows it cannot see.
 - **Re-grant Accessibility to AeroSpace** if its own grant went stale.
 - Stale yabai/skhd entries can be removed from the Accessibility list.
+- **Quit SwiftBar and delete its preference.** Two pieces of it outlive a branch checkout. The launchd agent only `open`s the app, so unloading the agent does not quit the running process — it survives until you quit it or log out. And `targets.darwin.defaults` is a one-way `defaults write` in an activation script; home-manager tracks no state for user defaults and never reverts one, so `PluginDirectory` persists pointing at a directory that is about to be empty. The plugin symlink itself *is* home-manager-owned and goes on its own.
+
+  ```
+  osascript -e 'quit app "SwiftBar"'
+  defaults delete com.ameba.SwiftBar
+  rmdir ~/.local/share/swiftbar-plugins    # only if empty — the symlink is HM-removed
+  ```
 
 ## Findings
 
