@@ -212,11 +212,11 @@ in
 
       # Utility-palette apps float above the ribbon instead of tiling into
       # it; escape hatch is toggle-window-floating (Hyper+Shift+Space, from
-      # the registry). thunar app-id pinned from a live window; the 1Password
-      # regex shares the PROVISIONAL status of the #529 rule above.
+      # the registry). nautilus app-id pinned from a live window; the
+      # 1Password regex shares the PROVISIONAL status of the #529 rule above.
       {
         matches = [
-          { app-id = "^thunar$"; }
+          { app-id = "^org\\.gnome\\.Nautilus$"; }
           { app-id = "^1[Pp]assword$"; }
         ];
         open-floating = true;

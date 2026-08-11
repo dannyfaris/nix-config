@@ -822,11 +822,11 @@ let
       keywords = [
         "files"
         "file manager"
-        "thunar"
+        "nautilus"
         "explorer"
         "folders"
       ];
-      # F: exact cross-platform parity (Thunar / Finder on one chord),
+      # F: exact cross-platform parity (Nautilus / Finder on one chord),
       # enabled by the geometry cluster's move to Hyper+Shift (#762). See
       # docs/desktop/file-manager.md §Configuration.
       chord = {
@@ -835,7 +835,7 @@ let
       };
       platforms.linux = {
         realization = "niri-action";
-        action.spawn = [ "thunar" ];
+        action.spawn = [ "nautilus" ];
       };
       # macOS: focus-or-launch Finder (subsumed the former open-finder
       # mkAppLaunch entry). ADR-040.
