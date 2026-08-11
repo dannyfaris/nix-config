@@ -26,6 +26,14 @@ in
       # All-interfaces bind; the firewall (tailscale0-only) is what scopes
       # reachability to the tailnet — see the header note.
       listen-http = ":${toString ntfyEndpoint.port}";
+
+      # iOS cannot be woken by a self-hosted instance: the ntfy app's APNs
+      # certificate belongs to ntfy.sh, so a content-free poll-request (topic
+      # hash only) is relayed upstream to trigger the push; the phone then
+      # fetches the message from here over the tailnet. A deliberate exception
+      # to #199's no-public-dependency preference — its hard constraint (no
+      # token/secret) still holds, as the relay is anonymous. See #791.
+      upstream-base-url = "https://ntfy.sh";
     };
   };
 
