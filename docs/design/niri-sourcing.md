@@ -1,6 +1,6 @@
 # niri sourcing after niri-flake — taking the compositor off an abandoned dependency
 
-**Status:** Proposed — design note (`docs/design/`). Not built; design ruled and de-risked (stages 1–4), build next. [#763](https://github.com/dannyfaris/nix-config/issues/763) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged by this note) and [#770](https://github.com/dannyfaris/nix-config/issues/770) (theming authority, which waits on the outcome).
+**Status:** Proposed — design note (`docs/design/`). Design ruled and de-risked; **slice A built and inert**, slice B (the flip) next. [#763](https://github.com/dannyfaris/nix-config/issues/763) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged by this note) and [#770](https://github.com/dannyfaris/nix-config/issues/770) (theming authority, which waits on the outcome).
 
 ## Summary
 
