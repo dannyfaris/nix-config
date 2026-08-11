@@ -85,9 +85,7 @@ window models, so the taxonomy is built on it and macOS follows:
   On macOS these are **AeroSpace workspaces** (`Hyper+1‑9`), tiler-owned rather
   than native Spaces (ADR-040).
 
-`Hyper` navigates the *immediate* level (columns, windows-in-column); `Hyper+Shift`
-*acts on the window* — moves (column, window-in-column, send-to-workspace `1‑9`)
-and geometry; `Hyper+Super` *switches* workspace (`↑/↓`).
+`Hyper` navigates the *immediate* level (columns, windows-in-column) — on niri, `Hyper+↑/↓` additionally falls through to the workspace above/below once it runs out of column to traverse, so the outer level stays one chord away without a modifier; `Hyper+Shift` *acts on the window* — moves (column, window-in-column, send-to-workspace `1‑9`) and geometry; `Hyper+Super` *switches* workspace (`↑/↓`) unconditionally regardless of position in the column, which is why both binds survive alongside the fallthrough.
 
 ## The `Hyper` layer
 
@@ -105,8 +103,8 @@ follow.
 |---|---|---|
 | `Hyper+←` | Focus column left | Focus window left |
 | `Hyper+→` | Focus column right | Focus window right |
-| `Hyper+↑` | Focus window up | Focus window up |
-| `Hyper+↓` | Focus window down | Focus window down |
+| `Hyper+↑` | Focus window or workspace up | Focus window up |
+| `Hyper+↓` | Focus window or workspace down | Focus window down |
 | `Hyper+Tab` | Overview | Last workspace |
 | `Hyper+Shift+−` | Shrink column width | — |
 | `Hyper+Shift+=` | Grow column width | — |
@@ -146,15 +144,7 @@ no chord→action realization to generate from, so they stay hand-listed here.
 
 ### Focus & navigation
 
-> On macOS these are **AeroSpace** binds (ADR-040). `Hyper+↑/↓` = `focus up/down`
-> — vertical focus within a tiling stack (the niri within-column analogue; niche
-> under AeroSpace's flat i3 tiling until you nest windows). `Hyper+←/→` carry a
-> darwin-specific **edge-scroll fallthrough**: `focus left/right`, but at the
-> workspace edge they wrap to the adjacent workspace (`--wrap-around`) and land on
-> the far column — *not* a faithful `focus-column` mirror, a deliberate
-> reconstruction of continuous scroll at *workspace* granularity (the design note's
-> no-scrollable-columns limitation). The Karabiner Mission-Control remaps that
-> once occupied these chords are retired.
+> Both platforms carry an edge fallthrough, on different axes and with different edge behaviour. On niri, `Hyper+↑/↓` moves focus within the column (window-in-column) — or, when a floating window holds focus, to the nearest floating window in that direction, since niri's directional focus dispatches through whichever layer is active — and, once there is nothing further that way, falls through to the workspace above/below. This **clamps** at the first/last workspace, it does not wrap. Note the floating consequence: a lone floating window (the `open-floating` utility-palette rule) has nothing above or below it, so `Hyper+↑/↓` switches workspace and leaves it behind — where the old non-fallthrough bind was simply inert. On macOS these are **AeroSpace** binds (ADR-040): `Hyper+↑/↓` = `focus up/down` — vertical focus within a tiling stack (the niri within-column analogue; niche under AeroSpace's flat i3 tiling until you nest windows), with no workspace fallthrough. `Hyper+←/→` carry a darwin-specific **edge-scroll fallthrough**: `focus left/right`, but at the workspace edge they **wrap** to the adjacent workspace (`--wrap-around`) and land on the far column — *not* a faithful `focus-column` mirror, a deliberate reconstruction of continuous scroll at *workspace* granularity (the design note's no-scrollable-columns limitation). The Karabiner Mission-Control remaps that once occupied these chords are retired.
 
 ### Move (`Hyper+Shift`) & switch-workspace (`Hyper+Super`)
 
