@@ -1,10 +1,10 @@
 # niri sourcing after niri-flake — taking the compositor off an abandoned dependency
 
-**Status:** Proposed — design note (`docs/design/`). Not built; **partial draft, design loop paused mid-stage-2** (see Unresolved questions for the live loop state). [#763](https://github.com/dannyfaris/nix-config/issues/763) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged by this note) and [#770](https://github.com/dannyfaris/nix-config/issues/770) (theming authority, which waits on the outcome).
+**Status:** Proposed — design note (`docs/design/`). Not built; design ruled through stage 3, de-risk and build next. [#763](https://github.com/dannyfaris/nix-config/issues/763) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged by this note) and [#770](https://github.com/dannyfaris/nix-config/issues/770) (theming authority, which waits on the outcome).
 
 ## Summary
 
-niri reaches this fleet through `sodiboo/niri-flake`, a third-party flake that is no longer maintained, and that dependency has become a gate rather than a conduit: it blocks the weekly lockfile bump fleet-wide, blocks a mechanism decision in #770, and carries a single-maintainer binary-cache trust delegation that was never chosen on merit. This note proposes removing the dependency outright — niri from nixpkgs, the NixOS module surface from nixpkgs, and the KDL config surface owned by this repo — rather than narrowing it or replacing it with a fork. **How that config surface is authored once niri-flake's typed `programs.niri.settings` is gone is the open question this note exists to settle, and it is not yet decided.**
+niri reaches this fleet through `sodiboo/niri-flake`, a third-party flake that is no longer maintained, and that dependency has become a gate rather than a conduit: it blocks the weekly lockfile bump fleet-wide, blocks a mechanism decision in #770, and carries a single-maintainer binary-cache trust delegation that was never chosen on merit. This note removes the dependency outright — niri and its NixOS module from nixpkgs, and the KDL config surface owned by this repo as plain data rendered through a vendored 224-line MIT serializer. The typed `programs.niri.settings` option tree is deliberately not reproduced; `niri validate` at build time replaces what it guarded.
 
 ## Motivation
 
@@ -16,95 +16,120 @@ The blast radius is disproportionate to the defect. One stalled third-party repo
 
 **Forces any solution must satisfy:**
 
-1. **No residual dependency on an unmaintained upstream.** Narrowing the dependency (package from nixpkgs, modules still from niri-flake) leaves the same failure mode latent; the operator's ruling is that this is not acceptable.
-2. **No new trust delegation as the price of the fix.** Swapping to a fork substitutes one single-maintainer flake and one single-maintainer cachix key for another. That is not a fix, it is a deferral.
+1. **No residual dependency on an unmaintained upstream.** Narrowing the dependency (package from nixpkgs, modules still from niri-flake) leaves the same failure mode latent.
+2. **No new trust delegation as the price of the fix.** Swapping to a fork substitutes one single-maintainer flake and one single-maintainer cachix key for another. That is a deferral, not a fix.
 3. **The weekly bump cannot be blocked by a third party again.** Whatever lands must fail closed on *our* code, not someone else's unmerged PR.
-4. **Desktop capability is preserved end to end** on both remaining niri hosts: the compositor starts, greetd offers the session, config is validated *before* it reaches a host, the theme-menu include resolves, screencast works.
-5. **Config validation survives the migration.** Losing niri-flake's build-time `niri validate` in exchange for runtime discovery of a broken config would trade one gate for a worse one.
+4. **Desktop capability is preserved end to end** on both niri hosts: the compositor starts, greetd offers the session, the theme-menu include resolves, screencast works.
+5. **Config validation survives the migration.** Losing build-time validation in exchange for runtime discovery of a broken config would trade one gate for a worse one.
 
 **Scope boundary (operator ruling, 2026-08-11):** this is about niri and only niri. It is not a stance about single-maintainer inputs generally, and explicitly does not open an audit of other flake inputs — Noctalia included.
 
-**Target hosts: alcyone and alnair.** metis is being decommissioned ahead of this work completing and is deliberately excluded, which leaves no third niri host to fall back on while one is being changed.
+**Target hosts: alcyone and alnair** — the only remaining niri hosts since metis was retired (#387, PRs #799/#800). There is no third graphical host to fall back on while one is being changed.
 
 ## Design
 
-**Not yet ruled — this is the stage-3 gate, and the note is paused before it.** What follows states the fork rather than pre-empting it, so the resuming session inherits the question and not an assumed answer.
+Three forks were ruled in operator dialogue on 2026-08-12; the mechanism follows from them.
 
-The system-side swap is settled in shape: the nixpkgs NixOS module (`nixos/modules/programs/wayland/niri.nix`) covers the side effects this repo currently inherits from niri-flake's nixosModule — session package for greetd, `systemd.packages` plus the `systemd.user.services.niri` drop-in, the `xdg.portal` config including `xdg-desktop-portal-gnome` for screencast, `wayland-session.nix`, and `gnome-keyring.enable`. See De-risk evidence.
+**System layer — nixpkgs, wholesale.** `modules/nixos/niri.nix` imports nixpkgs' `programs.niri` module instead of niri-flake's nixosModule, and takes `pkgs.niri` as the package. The nixpkgs module supplies the side effects this repo currently inherits: the session package greetd reads, `systemd.packages` plus the `systemd.user.services.niri` drop-in, the `xdg.portal` config including `xdg-desktop-portal-gnome` for screencast, `wayland-session.nix`, and `gnome-keyring.enable`. The `niri-flake` input is removed from `flake.nix`, and with it the `niri.cachix.org` substituter and trusted key (see Rationale). niri-flake's KDE polkit agent disappears too, which retires part of why `home/nixos/polkit-agent.nix` exists.
 
-What is genuinely open is the **KDL authoring route** — how `home/nixos/niri.nix`, `home/nixos/niri-laptop.nix` and the niri-emitting portion of `lib/capabilities.nix` produce a config once `programs.niri.settings` and `inputs.niri-flake.lib.kdl.serialize` no longer exist. Three candidates, none yet weighed against the forces above:
+**Config layer — plain data, authored as KDL nodes (ruling 1 + 2).** `programs.niri.settings` and its 3785-line option tree are not reproduced. niri config becomes an ordinary Nix expression built from KDL node constructors — `plain "layout" [ (leaf "gaps" 16) ]` rather than `layout.gaps = 16` — serialized by a vendored copy of niri-flake's `kdl.nix` (224 lines, MIT, self-contained: it takes only `lib`) at `lib/kdl.nix` with upstream attribution and licence retained. The rendered document is written to `~/.config/niri/config.kdl` via `xdg.configFile`.
 
-- **Hand-authored KDL text** managed as a home-manager file. Simplest to reason about; loses every structural guarantee, and `lib/capabilities.nix` currently relies on the typed surface to emit binds.
-- **A local serializer** — a small repo-owned Nix→KDL renderer. Precedent exists in-tree: `home/nixos/theme-menu.nix` already renders `niri-{dark,light}.kdl`.
-- **Vendoring niri-flake's `lib.kdl`** as repo-owned code, under its licence. Keeps the serializer's maturity, takes on its maintenance, and removes the flake without removing the code's origin.
+This is a *smaller* vendored surface than it looks, and deliberately so: `kdl.nix` is the KDL writer only. The attrset→node mapper that would let us keep today's authoring shape lives separately in `settings.nix` (`render`, from :3297, ~490 lines) and is niri-schema-specific — taking it would reintroduce the schema-mirror maintenance that ruling 1 rejected. Authoring as nodes means a new niri config key is a new node, not a schema extension.
 
-Build-time validation looks recoverable under all three, since `pkgs.niri` ships the `niri validate` binary and can be run over generated config in a derivation — **unverified**, and it is the load-bearing assumption behind force 5.
+**Keybind registry.** `lib/capabilities.nix`'s niri emitter (`niriBindsFor`, :1092) currently produces `{ "<chord>" = { action = { focus-column-left = {}; }; }; }`. It emits KDL nodes instead. The unit tests in `lib/tests/capabilities.nix` move with it. The emitter is Linux-only, so the AeroSpace/Darwin path is untouched; `kdl.nix` takes only `lib`, so it composes with the repo-decoupled constraint ADR-039 §9 places on that file.
+
+**The theme-menu include.** Today `home/nixos/niri.nix:86-91` reaches *through* niri-flake's option default — `settings.render cfg.settings` — serializes it, and appends `include optional=true "~/.local/state/theme-menu/niri.kdl"`. That contortion exists only because niri-flake owns the rendering. Under this design we own the document, so the include is simply the last node appended to it. `optional=true` still requires niri 26.04, which is satisfied (see De-risk evidence).
+
+**Validation (force 5).** `niri validate` runs over the generated `config.kdl` in a derivation that the home-manager configuration depends on, so a bad config fails the build — locally at `nh os switch` and in CI alike — rather than surfacing at session start. This is what replaces the eval-time name checking the typed surface gave: a misspelled key becomes a build failure instead of an eval failure. The diagnostic points at generated KDL rather than a Nix line, which is the accepted cost of ruling 1.
+
+**Version cadence (ruling 3).** niri rides nixpkgs' cadence with no bespoke pin; the weekly bump carries it. `niri validate` is the guard rather than a pin — a release with breaking KDL syntax becomes a failed build, which is the same protection niri-flake gave and the same failure mode we want. A release that changes *semantics* without changing syntax passes validate and would surface as behaviour on alcyone; no route protects against that, and a pin would only delay it.
+
+**How this meets the forces.** Forces 1–3 are met by construction: no flake input remains, no cache key replaces the one dropped, and every remaining failure mode is in code this repo owns. Force 4 is a build-and-verify claim, discharged at stage 7 on alcyone, not asserted here. Force 5 is met by the validate derivation — conditional on the one assumption still untested below.
 
 ## De-risk evidence
 
-**Verified 2026-08-11, this session.**
+**Verified 2026-08-12** (this session, against the pinned inputs):
 
-- The nixpkgs niri module's contents were read directly from the pinned nixpkgs (`/nix/store/02ixg0skfsq4dgqna2dsqvynx6rrx6mk-…-source`, `nixos/modules/programs/wayland/niri.nix`). It provides `services.displayManager.sessionPackages`, `systemd.packages`, the `systemd.user.services.niri` drop-in with `enableDefaultPath = false`, the full `xdg.portal` config with `xdg-desktop-portal-gnome`, `wayland-session.nix`, and `services.gnome.gnome-keyring.enable` — the last being what `modules/nixos/libsecret.nix` documents as inherited from niri-flake. Its option surface is only `enable`, `package` and `useNautilus`; there is no settings/KDL surface, which is what makes the authoring question load-bearing.
-- The consumer surface was enumerated by grep: `home/nixos/niri.nix` (384 lines, incl. the `lib.kdl.serialize` call at :87), `home/nixos/niri-laptop.nix` (37), `modules/nixos/niri.nix` (111), `lib/capabilities.nix` (niri-emitting portion), plus side-effect dependents `greetd.nix`, `libsecret.nix`, `xdg-portal.nix`, `polkit-agent.nix`, `pointer-icons.nix`, `theme-menu.nix`.
-- Affected hosts confirmed from `hosts/*/default.nix`: alcyone, alnair, metis import the desktop bundle; electra is true headless (no desktop-env, #637 decision 3); neptune is Darwin. With metis decommissioning, the target set is alcyone and alnair.
+- **nixpkgs ships `niri-26.04`** — `nix eval .#nixosConfigurations.alcyone.pkgs.niri.version`. This is the version floor `include optional=true` requires, and it clears the note's largest open risk. It is also *better* than the status quo: `modules/nixos/niri.nix:46-53` currently reaches for niri-flake's `niri-unstable` slot precisely because its stable slot is still 25.08.
+- **`kdl.nix` is self-contained and MIT.** 224 lines; `grep` for `import`, `pkgs`, `inputs`, or relative paths returns nothing — its only argument is `lib`. Licence: MIT, Copyright (c) 2024 sodiboo. Vendoring it carries no transitive dependency.
+- **The schema mapper is separate and large.** `settings.nix` is 3785 lines; `render` begins at :3297 and is niri-schema-specific. This is the measurement that decided ruling 2 against keeping today's authoring shape.
+- **niri-flake is already consumed as a library, not just a module** — `home/nixos/niri.nix:87` calls `inputs.niri-flake.lib.kdl.serialize.nodes` directly on the option's default. The migration formalises a coupling that already exists rather than introducing one.
+- **The nixpkgs module's contents** were read directly from the pinned nixpkgs (`nixos/modules/programs/wayland/niri.nix`): it provides `services.displayManager.sessionPackages`, `systemd.packages`, the `systemd.user.services.niri` drop-in with `enableDefaultPath = false`, the full `xdg.portal` config with `xdg-desktop-portal-gnome`, `wayland-session.nix`, and `services.gnome.gnome-keyring.enable` — the last being what `modules/nixos/libsecret.nix` documents as inherited from niri-flake. Its option surface is only `enable`, `package`, `useNautilus`.
+- **Consumer surface** enumerated by grep: `home/nixos/niri.nix` (384 lines), `home/nixos/niri-laptop.nix` (37), `modules/nixos/niri.nix` (111), the niri emitter in `lib/capabilities.nix`, plus side-effect dependents `greetd.nix`, `libsecret.nix`, `xdg-portal.nix`, `polkit-agent.nix`, `pointer-icons.nix`, `theme-menu.nix`.
 
-**Recorded in #763 but NOT re-verified here** — treat as claims, not findings: the niri-flake PR closures (#1849, #1850) and issue #1851; `libdisplay-info-sys`'s declared `>= 0.1.0, < 0.4.0` range and the 0.4 wall; the `epireyn` fork's output surface and cache; nixpkgs shipping niri 26.04 built against `libdisplay-info_0_3`.
+**Recorded in #763 but NOT re-verified here** — treat as claims, not findings: the niri-flake PR closures (#1849, #1850) and issue #1851; `libdisplay-info-sys`'s declared `>= 0.1.0, < 0.4.0` range and the 0.4 wall; the `epireyn` fork's output surface and cache.
 
-**Explicitly unverified, and blocking:**
+**Still unverified, and load-bearing:**
 
-- Whether `niri validate` can be run over generated config in a derivation to replace niri-flake's build-time validation (force 5's load-bearing assumption).
-- Whether anything in the tree still forces niri-flake's package set once the input is removed.
+- **That `niri validate` can run over generated config in a derivation** — force 5 rests on it entirely. This is the stage-4 de-risk and should be tested before any module is rewritten. A negative result does not kill the direction but does force a different validation story.
 - Whether nixpkgs' `withScreencastSupport` default matches what the desktop bundle needs.
-- Whether nixpkgs' niri version tracks the 26.04 line that `modules/nixos/niri.nix:45-51` requires for `include optional=true` — the theme-menu include depends on it.
+- Whether anything else in the tree forces niri-flake's package set once the input is removed.
+- Whether `niri validate` accepts a config containing an `include` of a file that does not exist at build time (the theme-menu include is `optional=true`, but validate's behaviour on it is unconfirmed).
 
 ## Drawbacks
 
-The strongest argument against this direction is that it converts a maintained-by-someone-else surface into a maintained-by-us one. niri-flake's typed settings surface, its KDL serializer and its build-time validation are real engineering that this repo would now own, and the compositor config is not a place where a subtle regression is cheap.
+The strongest argument against this direction is that it converts a maintained-by-someone-else surface into a maintained-by-us one. The KDL serializer and the config's structural correctness become this repo's problem, and the compositor config is not a place where a subtle regression is cheap.
 
-nixpkgs' niri may also lag upstream releases in a way niri-flake's `niri-unstable` slot did not, and this repo has a hard version floor: the theming include needs the 26.04 line. Trading a stalled flake for a version cadence we do not control is a real exposure, not a hypothetical one.
+Authoring as KDL nodes is more verbose than the attrset form and less familiar to read. `home/nixos/niri.nix` is the most-edited desktop module in the repo; every future edit pays a small legibility tax so that no future niri release costs a schema migration.
 
-Finally, the change lands on the login path for the only two graphical hosts remaining after metis retires. A wrong session entry means greetd offers nothing and recovery is the physical console.
+The change lands on the login path for both remaining graphical hosts. A wrong session entry means greetd offers nothing and recovery is the physical console at alcyone.
+
+One drawback anticipated at stage 2 has been **refuted rather than accepted**: the worry that nixpkgs' niri would lag the 26.04 line the theming include needs. It does not — nixpkgs is at 26.04 while niri-flake's own stable slot is at 25.08.
 
 ## Cost
 
-Standing price of the direction once chosen: this repo owns niri config generation and its validation permanently. Every niri release that changes KDL syntax becomes our migration to absorb, where previously it arrived as an upstream flake bump. That cost is accepted knowingly — it is the price of force 1 — but it does not go away after the migration lands.
+Standing price once chosen: this repo owns `lib/kdl.nix` (224 vendored lines) and the node-shaped authoring of niri config permanently. A niri release that changes KDL syntax becomes our migration to absorb rather than an upstream flake bump — though `niri validate` makes that arrive as a failed build rather than a broken desktop.
+
+The eval-time diagnostic is permanently worse: a misspelled key is caught by `niri validate` against generated KDL, not by the module system against a Nix line. Accepted knowingly under ruling 1.
 
 ## Rationale & alternatives
 
 The route was ruled by the operator on 2026-08-11: **no posture that keeps this repo reliant on an abandoned flake**, with the additional effort accepted explicitly. Against the forces:
 
-- **Migrate to `epireyn/niri-flake`** (the fork carrying the fix) — fails force 2. It substitutes one single-maintainer flake for another whose last twelve commits are almost entirely bot lockfile updates, and swaps `niri.cachix.org` for a newer, less-proven single-maintainer cache. Same dependency shape, same failure available later.
+- **Migrate to `epireyn/niri-flake`** — fails force 2. It substitutes one single-maintainer flake for another whose recent commits are almost entirely bot lockfile updates, and swaps `niri.cachix.org` for a newer, less-proven single-maintainer cache. Same dependency shape, same failure available later.
 - **Wait for upstream** — fails force 3. The fix has been written twice and closed twice with no maintainer response; there is no event to wait for.
-- **Carry a local patch or overlay** — fails force 1 as a destination. The flake stays, and we pin ourselves to patching someone else's stale assert indefinitely. Viable only as a stopgap if the bump must be unblocked before this note lands.
-- **Package from nixpkgs, retain niri-flake for its modules** (#763's original framing of route (a)) — fails force 1. The unmaintained input remains load-bearing for the config surface, so the gate is narrowed rather than removed.
+- **Carry a local patch or overlay** — fails force 1 as a destination. The flake stays and we pin ourselves to patching someone else's stale assert indefinitely. Viable only as a stopgap.
+- **Package from nixpkgs, retain niri-flake for its modules** (#763's original reading of route (a)) — fails force 1. The unmaintained input remains load-bearing for the config surface; the gate is narrowed, not removed.
+
+Within the chosen route, three sub-decisions were weighed:
+
+- **Keep a typed option surface** (vendor `settings.nix`'s option tree) — rejected. It is the largest and fastest-moving part of niri-flake and duplicates what `niri validate` checks authoritatively. Owning a schema mirror means re-chasing every niri release; owning a serializer does not.
+- **Vendor `kdl.nix` + `render` and keep the attrset authoring shape** — rejected as internally inconsistent. It re-imports the schema-mirror maintenance the first ruling rejected, through the back door: a new niri key would need `render` extended.
+- **Write our own serializer** — rejected. It re-derives the same 224 lines including the subtle parts (escaping, int-versus-float stringification — the reason today's config coerces corner radii with `+ 0.0`, properties-versus-arguments folding) for no compensating benefit over vendoring MIT code from a frozen upstream.
+- **Pin niri explicitly rather than ride nixpkgs' cadence** — rejected. It reintroduces a bespoke pin, a smaller version of what is being removed, and buys delay rather than safety once build-time validation is in place.
+
+Vendoring is normally objectionable because it forks from a moving upstream. That objection does not apply here: upstream has stopped merging, so there is no divergence to track.
 
 **Doing nothing** leaves the weekly bump failing every Monday and #770 blocked behind it.
 
-Decision 2 of #763 resolves as a consequence rather than a separate choice: `niri.cachix.org` is **dropped, not replaced**, and the explicit trust delegation at `modules/nixos/niri.nix:57-67` goes with it — one fewer single-maintainer cache key under the whitelist-over-blanket stance (relates #579 / #568).
+#763's decision 2 resolves as a consequence rather than a separate choice: `niri.cachix.org` is **dropped, not replaced**, and the explicit trust delegation at `modules/nixos/niri.nix:57-67` goes with it — one fewer single-maintainer cache key under the whitelist-over-blanket stance (relates #579 / #568).
 
 ## Prior art
 
 niri-flake's own README, and the fork's, name `programs.niri.package = pkgs.niri;` as the supported escape hatch for operators who do not want the maintainer's cache — the migration path is one upstream anticipated, even if it does not cover the settings surface.
 
-This repo has already rendered KDL from Nix without niri-flake: `home/nixos/theme-menu.nix` emits `niri-{dark,light}.kdl` artefacts consumed through the conductor's include. That is a working precedent for the local-serializer route, at a much smaller scale.
+This repo has already rendered KDL from Nix without niri-flake: `home/nixos/theme-menu.nix` emits `niri-{dark,light}.kdl` artefacts consumed through the conductor's include. That is a working precedent at smaller scale, and its flat colour blocks are what showed a hand-rolled renderer would not generalise to the full config.
 
-The closest procedural precedent in-tree is [`docs/research/noctalia-v5-native-theming.md`](../research/noctalia-v5-native-theming.md): a source-level audit of a pinned upstream that concluded *not yet* on a migration, with the trigger conditions written down. The lesson carried here is its correction history — an upstream read that was accurate at its pin and wrong three weeks later. Claims about niri-flake and nixpkgs in this note are dated for the same reason.
+The closest procedural precedent in-tree is [`docs/research/noctalia-v5-native-theming.md`](../research/noctalia-v5-native-theming.md): a source-level audit of a pinned upstream whose §4 finding was accurate at its pin and wrong three weeks later. Every upstream claim in this note is therefore dated, and the ones carried from #763 are flagged as un-re-verified rather than absorbed.
 
 ## Unresolved questions
 
-**Live loop state (paused 2026-08-11, mid-stage-2).** The design loop is dialogue-centric and agreement-gated; it stays open through implementation and runtime validation, not closed at this note.
+**Loop state (dialogue-centric; the loop stays open through implementation and runtime validation, not closed at this note).**
 
 - **Stage 1 — Intent: agreed.** Scoped to niri only, abandoned-flake framing, no generalised stance about other inputs.
-- **Stage 2 — Size: heavy loop, full note.** Agreed. Login-path surface, two hosts, one sticky sub-decision. **Open within this stage:** whether the change gets a VM reboot rehearsal before hardware, per CLAUDE.md's non-waivable rule for auth/boot-path surface. Author's lean: yes.
-- **Stage 3 — Design: not started.** The KDL authoring fork above is the first subject.
-- **Stages 4–7** — de-risk, build, peer review, reconcile + runtime validation: not started.
+- **Stage 2 — Size: heavy loop, full note.** Login-path surface, two hosts. **VM rehearsal ruled out** (2026-08-12): alcyone has a physical console attached, and a VM could only have proven the boot-to-login path anyway, never GPU behaviour or alnair's laptop specifics.
+- **Stage 3 — Design: ruled.** Questions 1 (plain data over typed surface), 2 (vendor `kdl.nix` only, author as nodes), 3 (nixpkgs cadence, validate as guard).
+- **Stage 4 — De-risk: next.** The `niri validate`-in-a-derivation assumption above.
+- **Stages 5–7** — build, peer review, reconcile + runtime validation on alcyone: not started.
 
-**Deferred from #763 into this loop:** version cadence (its decision 3) given the 26.04 floor, and whether the change crosses the `selecting-tooling` threshold (its decision 4).
+**Deferred from #763:** whether this crosses the `selecting-tooling` threshold (its decision 4). It reads as a sourcing change for an already-selected tool rather than a tool selection, so the working assumption is no; revisit if the build says otherwise.
+
+**Expected to resolve at implementation:** where the vendored serializer lives and how its attribution is recorded; whether `home/nixos/niri-laptop.nix`'s merge survives unchanged under node authoring; how much of `polkit-agent.nix`'s rationale is retired with niri-flake's KDE agent.
 
 **Out of scope:** any other flake input, the compositor selection itself (ADR-029 stands), and what niri does functionally.
 
 ## Future possibilities
 
-If the local-serializer route wins and matures, the repo-owned Nix→KDL renderer would be a candidate for extraction — either as a shared lib unit alongside the existing `lib/` constructors, or upstreamed to nixpkgs' niri module, which today has no settings surface at all and would be the natural home for one.
+If the node-authoring shape proves comfortable, the vendored serializer is a candidate for a proper `lib/` unit with its own tests alongside the existing constructors — or for upstreaming to nixpkgs' niri module, which today has no settings surface at all and would be the natural home for one.
 
 Removing the input also simplifies the #770 theming decision: with `config.kdl` unambiguously owned by this repo, the question of whether Noctalia's niri template can append its `include` line has a definite answer rather than an inferred one.
