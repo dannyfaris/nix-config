@@ -299,18 +299,6 @@ let
         "launch"
       ];
     })
-    (mkAppLaunch {
-      id = "open-1password";
-      key = "Slash";
-      app = "1Password";
-      label = "Open 1Password";
-      keywords = [
-        "1password"
-        "passwords"
-        "vault"
-        "launch"
-      ];
-    })
     {
       id = "layout-toggle";
       label = "Toggle tiles/accordion";
@@ -879,6 +867,37 @@ let
       platforms.linux = {
         realization = "niri-action";
         action.spawn = "claude-desktop";
+      };
+    }
+    {
+      id = "open-1password";
+      label = "Open 1Password";
+      description = "Focus 1Password, or launch it if not running";
+      keywords = [
+        "1password"
+        "passwords"
+        "vault"
+        "launch"
+        "focus"
+      ];
+      chord = {
+        tier = "hyper";
+        key = "Slash";
+      };
+      # Focus-or-spawn via the helper; app-id pinned lowercase from a live
+      # window probe. 1Password is Electron single-instance, so the spawn
+      # fallback raises the running tray instance's window when one exists.
+      platforms.linux = {
+        realization = "niri-action";
+        action.spawn = [
+          "niri-focus-or-spawn"
+          "1password"
+          "1password"
+        ];
+      };
+      platforms.darwin = {
+        realization = "aerospace-action";
+        action = "exec-and-forget open -a 1Password";
       };
     }
 
