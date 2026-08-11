@@ -1,5 +1,5 @@
 # mobility — host is a battery-powered portable, so it needs laptop
-# posture (power, backlight, Bluetooth peripherals). Hardware-agnostic:
+# posture (power, backlight, roaming privacy). Hardware-agnostic:
 # it sets how *any* laptop behaves, so a future portable reuses it
 # unchanged.
 #
@@ -13,14 +13,12 @@
 #   - power.nix           — power posture (upower telemetry, platform
 #                           profiles, s2idle suspend, lid handling).
 #   - backlight.nix       — screen + keyboard backlight control.
-#   - bluetooth.nix       — Bluetooth for laptop peripherals.
 #   - roaming-privacy.nix — the identifiers a portable broadcasts on every
 #                           network it joins (Wi-Fi MAC, DHCP hostname).
 {
   imports = [
     ../power.nix
     ../backlight.nix
-    ../bluetooth.nix
     ../roaming-privacy.nix
   ];
 }
