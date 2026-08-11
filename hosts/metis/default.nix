@@ -31,7 +31,6 @@
     ../../modules/nixos/docker.nix # Rootless Docker — see ADR-021.
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
     ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199).
-    ../../modules/nixos/ntfy-server.nix # Self-hosted ntfy receiver for the fleet's failure notifications (#199).
     inputs.wiki-infra.nixosModules.wiki-pipeline # Wiki timer family, state dir, R1 exclusion record (wiki repo: deployment-packaging.md).
     ../../modules/nixos/ephemeral-root.nix # Probe-only for now — see ephemeralRoot below; enforcement flips per docs/design/ephemeral-root.md §Rollout.
     ../../modules/nixos/persist-os-core.nix # OS-core persist whitelist (machine-id, /var/lib/nixos, systemd timers/coredump, /var/log, /var/db/sudo, /root).

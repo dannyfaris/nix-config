@@ -1,12 +1,11 @@
 # NixOS systemd unit-failure surfacing (#199). Darwin parallel: modules/darwin/launchd-failure-notifier.nix (#346).
 #
-# Headless hosts (electra) have no human watching
-# `systemctl --failed`, so a failed nix-gc or btrfs scrub is invisible
-# until something downstream breaks. This module defines a generic
-# OnFailure notifier: any unit opts in with
+# Headless hosts have no human watching `systemctl --failed`, so a failed
+# nix-gc or btrfs scrub is invisible until something downstream breaks.
+# This module defines a generic OnFailure notifier: any unit opts in with
 #   systemd.services.<name>.onFailure = [ "notify-failure@%n.service" ];
 # and a one-shot POSTs the failure (plus a journal tail) to the
-# self-hosted ntfy instance on metis, reached over the tailnet.
+# self-hosted ntfy instance on electra, reached over the tailnet.
 #
 # Transport rationale (recorded here per the repo's infra-module-comment
 # convention rather than an ADR — cf. btrfs-scrub.nix, this module's
@@ -17,9 +16,9 @@
 # authenticated transport for free. ntfy listens only on the Tailscale
 # interface (modules/nixos/ntfy-server.nix), so tailnet membership IS the
 # auth — no token/secret is introduced (#199's acceptance constraint).
-# Receiver is metis: an always-on node already on the tailnet, with a
-# human + an on-screen notification daemon (Noctalia) at its own console
-# so the receiver's own failures aren't blind.
+# Receiver is electra: an always-on, headless node (relocated from metis,
+# #688), so the receiver's own failures are as blind as any other
+# headless host's — #569's dead-man's layer is the answer to that residual.
 #
 # Not covered, deliberately: sops-install-secrets. On a running host
 # sops-nix installs secrets via an activation script / initrd, not a
@@ -31,11 +30,11 @@
 # Prometheus/node-exporter unless a metrics need is independently established.
 { config, pkgs, ... }:
 let
-  # The self-hosted ntfy endpoint on metis, addressed by its MagicDNS name
-  # over the tailnet. One constant: every sender targets the same receiver
-  # (metis reaches its own instance over the tunnel too). Moving the
-  # receiver or renaming metis is a one-line edit here.
-  ntfyUrl = "http://metis:8090/fleet-failures";
+  # The self-hosted ntfy endpoint, addressed by its MagicDNS name over the
+  # tailnet. Single-sourced from lib/ntfy-endpoint.nix (#688) — every
+  # sender targets the same receiver; relocating it is a one-line edit
+  # there, not here.
+  ntfyUrl = (import ../../lib/ntfy-endpoint.nix).failuresUrl;
 
   notify = pkgs.writeShellApplication {
     name = "notify-unit-failure";

@@ -47,7 +47,9 @@
 # cannot report its own death; #569's dead-man's layer is the answer there.
 { config, pkgs, ... }:
 let
-  ntfyUrl = "http://metis:8090/fleet-failures";
+  # Single-sourced from lib/ntfy-endpoint.nix (#688) — see
+  # modules/nixos/unit-failure-notifier.nix for the transport rationale.
+  ntfyUrl = (import ../../lib/ntfy-endpoint.nix).failuresUrl;
 
   operator = import ../../lib/operator.nix;
 

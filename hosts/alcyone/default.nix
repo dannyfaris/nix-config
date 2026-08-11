@@ -6,7 +6,8 @@
 # Composes foundation + capability bundles + standalone modules directly
 # (ADR-027). Personal-only dev box: single personal git identity + full
 # agent-CLI set. Mirrors metis's desktop composition MINUS its log-host
-# roles (wiki-pipeline, ntfy-server) and PLUS the NVIDIA GPU module.
+# roles (wiki-pipeline, ntfy-server — the latter now on electra, #688) and
+# PLUS the NVIDIA GPU module.
 #
 # Bootstrap via nixos-anywhere + disko (ADR-022); three-file host
 # structure (ADR-023). Host key pre-generated on the operator
@@ -32,7 +33,7 @@
     ../../modules/nixos/tailscale.nix
     ../../modules/nixos/docker.nix # Rootless Docker — see ADR-021.
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
-    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to metis's ntfy over the tailnet (#199) — client only; alcyone runs no ntfy server.
+    ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199) — client only; alcyone runs no ntfy server.
     ../../modules/nixos/nvidia.nix # RTX 4060 (Ada) — open kernel module + proprietary userspace. Alcyone-only; never the shared desktop-env bundle (metis is Intel iGPU).
     ../../modules/nixos/wake-on-lan-target.nix # Arm WoL on enp5s0 (target side, #632) — interface set via wakeOnLan.interfaces below. Emitter lives on electra.
     ../../modules/nixos/ephemeral-root.nix # Enforced from first boot — see ephemeralRoot below; docs/design/ephemeral-root.md.
