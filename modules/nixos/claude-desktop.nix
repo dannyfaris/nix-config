@@ -1,8 +1,8 @@
 # Claude Desktop for Linux — Anthropic's official beta, repackaged by
 # aaddrick (github:aaddrick/claude-desktop-debian, pinned as the
 # `claude-desktop` flake input; selection rationale in #683). Imported
-# per-host (alcyone): it is a Wayland GUI app, so hosts without a desktop
-# session would carry the Electron closure for nothing.
+# per-host (alcyone, alnair): it is a Wayland GUI app, so hosts without a
+# desktop session would carry the Electron closure for nothing.
 #
 # Phase 1 ONLY — the Chat + Claude Code tabs. Cowork (the KVM-sandboxed
 # agent-in-a-VM mode) is deferred: the Linux build has no hardware-key
@@ -25,8 +25,8 @@
 # Electron/Wayland rendering (NIXOS_OZONE_WL=1) already comes from the
 # desktop-env bundle's electron-wayland.nix — not re-set here.
 #
-# App state lives in ~/.config/Claude (per-user, on alcyone's persistent
-# /home — no persist-whitelist entry needed under ephemeral root).
+# App state lives in ~/.config/Claude (per-user; both hosts persist /home
+# under ephemeral root, so no persist-whitelist entry is needed).
 { inputs, pkgs, ... }:
 {
   nixpkgs.overlays = [ inputs.claude-desktop.overlays.default ];
