@@ -6,7 +6,7 @@
 # 1.5×). Each profile couples the niri output scale + the font ramp + the
 # geometry, calibrated so all scales render at the SAME apparent size: the 1.5×
 # profile carries the on-vocab design values (Carbon spacing-05 gap 16, M3 md
-# radius 12, the agreed font band — foot 11 (stopgap: 10, #715) / dialog 12),
+# radius 12, the agreed font band — foot 11 / dialog 12),
 # and the 1× and 2× profiles scale those by ~1/scale to preserve that apparent
 # look at each scale.
 #
@@ -20,9 +20,9 @@
 # the hardware already reports native res + max refresh and only apparent size
 # can't be inferred from EDID. Rationale: docs/desktop/niri.md §Display configuration.
 let
-  # STOPGAP (#715): parked at alnair's on-metal calibration (1.5×, foot 10 —
-  # deviating from the header's agreed band) until per-host profiles land.
-  # metis/alcyone render this profile too if rebuilt before #715 — accepted.
+  # STOPGAP (#715): the knob is still fleet-wide. 1.5× is on-metal calibrated
+  # on alnair and alcyone; metis was tuned at 2× and rides this profile
+  # uncalibrated until per-host scale selection lands.
   active = "1.5"; # ← THE KNOB: "1.0" | "1.5" | "2.0"
 
   profiles = {
@@ -41,7 +41,7 @@ let
     "1.5" = {
       scale = 1.5;
       fonts = {
-        terminal = 10; # 11 in the agreed band; 10 chosen on alnair's panel (#715 evidence)
+        terminal = 11;
         popups = 12;
       };
       geometry = {
