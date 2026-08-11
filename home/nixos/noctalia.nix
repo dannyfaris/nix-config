@@ -164,9 +164,9 @@ in
             action = "screen_off";
           };
           # Guarded suspend (stance change, #644). Per-host flag: off by
-          # default fleet-wide, metis opts in, one line to exit at the #387
-          # re-role. `action` strings are NOT schema-validated (a typo
-          # silently becomes command mode) — keep these exact.
+          # default fleet-wide, metis opts in. `action` strings are NOT
+          # schema-validated (a typo silently becomes command mode) — keep
+          # these exact.
           suspend = {
             enabled = hostContext.idleSuspend;
             timeout = 1800;

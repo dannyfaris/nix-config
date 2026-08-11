@@ -31,7 +31,7 @@ ADR-044 stands: Nix is the sole theming authority; Noctalia is a themed-by-Nix s
 
 ## Idle, sleep, caffeine
 
-Declared in the baseline (`[idle]`, fade overlay off — nobody is at the desk when these fire): **lock** at 600 s, **screen-off** at 660 s, and **suspend** at 1800 s — a deliberate stance change (#644) retiring the recorded "no auto-suspend on a desktop". Suspend is a per-host `hostContext.idleSuspend` flag: on for metis (and Alcyone), one line to disable at the #387 re-role.
+Declared in the baseline (`[idle]`, fade overlay off — nobody is at the desk when these fire): **lock** at 600 s, **screen-off** at 660 s, and **suspend** at 1800 s — a deliberate stance change (#644) retiring the recorded "no auto-suspend on a desktop". Suspend is a per-host `hostContext.idleSuspend` flag, on for metis (and Alcyone).
 
 Suspend is guarded, not bare — `[idle.behavior.suspend]` runs `noctalia-idle-guard`, which stays awake if any of: **the caffeine switch is on** (see below), a live inbound SSH session exists, or detached agent workloads are running (linger is on; SSH teardown does not imply idle). Otherwise it delegates to Noctalia's own `session lock-and-suspend` — race-free, queued on the compositor's `locked` event. Failure direction is always "stays awake" *(probe S3)*. A skipped fire does not re-arm until input resets the idle timer.
 
