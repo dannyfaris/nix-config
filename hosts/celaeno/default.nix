@@ -176,6 +176,10 @@
       # registry, bodies keyed by capability id). Imported here rather than added
       # to the shared desktop-env bundle, keeping the trial off the shared surface.
       ../../home/darwin/skhd.nix
+      # TRIAL BRANCH ONLY — active-Desktop indicator in the menu bar, pushed by a
+      # yabai signal declared in modules/darwin/yabai.nix. yabai draws no bar, so
+      # without this the numbered Desktop is only visible via Mission Control.
+      ../../home/darwin/swiftbar.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream-published
       # prebuilt aarch64-darwin binary, sidestepping the heavy

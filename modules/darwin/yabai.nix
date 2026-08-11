@@ -98,7 +98,18 @@ in
       yabai -m rule --add app="^1Password$" manage=off grid=4:4:1:1:2:2
       yabai -m rule --add app="^Finder$" manage=off
       yabai -m rule --apply
+
+      yabai -m signal --add event=space_changed label=swiftbar-space \
+        action="/usr/bin/open -g 'swiftbar://refreshplugin?name=space'"
     '';
+    # The signal above pushes the menu-bar indicator in home/darwin/swiftbar.nix.
+    # It lives on the yabai side because signals exist only in yabai's own config
+    # — a home-manager module cannot inject one, and adding it imperatively would
+    # be lost the moment yabai restarts. `space_changed` fires because yabai
+    # *observes* the change, so it tracks a trackpad swipe or Mission Control just
+    # as well as `Hyper+N`. The label makes it idempotent: event_signal_add drops
+    # any existing signal of the same label first (src/event_signal.c:354), so
+    # re-running this config cannot stack duplicates the way `rule --add` does.
   };
 
   launchd.user.agents.yabai.serviceConfig = {
