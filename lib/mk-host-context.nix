@@ -43,8 +43,8 @@
           description = ''
             Linux desktop only: enable the guarded idle→suspend behaviour in the
             Noctalia shell (home/nixos/noctalia.nix). Off by default; a desktop
-            host opts in (docs/design/noctalia-v5-migration.md — one-line exit
-            at the #387 re-role, on for Alcyone).
+            host opts in (docs/design/noctalia-v5-migration.md), on for
+            Alcyone.
           '';
         };
       };

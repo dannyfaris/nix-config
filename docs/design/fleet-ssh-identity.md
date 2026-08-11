@@ -1,6 +1,6 @@
 # Fleet SSH identity — declared edges, no new trust anchor
 
-**Status:** Accepted (2026-07-07) — design note (`docs/design/`). Not built. #558 (reconciles #524; adjacent to #526, #551, #556, #570). Drafted and accepted 2026-07-07; decision frozen in [ADR-042](../decisions/ADR-042-fleet-ssh-declared-edges.md) (amends ADR-010).
+**Status:** Accepted (2026-07-07); built — design note (`docs/design/`). #558 (reconciles #524; adjacent to #526, #551, #556, #570). Drafted and accepted 2026-07-07; decision frozen in [ADR-042](../decisions/ADR-042-fleet-ssh-declared-edges.md) (amends ADR-010), and the edge map is live in `lib/operator.nix`. **Vintage — the fleet below is as of 2026-07-07 and is deliberately not updated:** jupiter, saturn, mercury and nixos-vm have since left the fleet or been superseded by [ADR-045](../decisions/ADR-045-star-host-naming.md)'s star re-key, the M720q is now named Maia (#638), and metis exits the fleet under #387 rather than moving to sink at the re-role this note predicts. `lib/operator.nix` and ADR-042 are canonical for the current edges; this note records what was proposed on its date, per the graduation convention in [README.md](./README.md).
 
 ## Summary
 
