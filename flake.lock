@@ -646,8 +646,7 @@
         "noctalia": "noctalia",
         "sops-nix": "sops-nix",
         "stylix": "stylix",
-        "treefmt-nix": "treefmt-nix_2",
-        "wiki-infra": "wiki-infra"
+        "treefmt-nix": "treefmt-nix_2"
       }
     },
     "sops-nix": {
@@ -821,21 +820,6 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "type": "github"
-      }
-    },
-    "wiki-infra": {
-      "locked": {
-        "lastModified": 1783999056,
-        "narHash": "sha256-Oh0rK3X9GzbokTJ4bwZoWIGZ6zgexJJM1kZeHIAahUo=",
-        "owner": "dannyfaris",
-        "repo": "wiki-infra",
-        "rev": "afbef4636501af4076032f885edb28c4760b45e0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "dannyfaris",
-        "repo": "wiki-infra",
         "type": "github"
       }
     },

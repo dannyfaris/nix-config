@@ -1,7 +1,7 @@
 # Headless bootstrap
 
 Operational procedure for bringing a `headless` role host from clean state (running Ubuntu / live USB / fresh hardware) to a fully-managed `nh os
-switch` target.
+switch` target, and the inverse procedure for retiring one (§Decommissioning a host).
 
 Single procedure for both AWS and bare metal — the install step is identical (`nixos-anywhere` + `disko` with pre-injected SSH host keys); only the preconditions differ.
 
@@ -16,7 +16,7 @@ Run once per fresh clone of this repo on the operator machine:
 - `nix` with flakes enabled. `just` available — not yet a home-manager package, so use ad-hoc invocation: `nix shell nixpkgs#just -c just
   <recipe>` or `nix run nixpkgs#just -- <recipe>`.
 - This repo cloned, with the devShell entered once (`nix develop`, or direnv-reload via the repo's `.envrc`). The devShell's shellHook installs `.git/hooks/pre-commit` and clears any stale `core.hooksPath` setting; the hook enforces ADR-023's "don't hand-edit `hardware-configuration.nix`" rule. See ADR-025 for the framework.
-- An existing age decryption identity for `secrets/secrets.yaml` — i.e. access to a current `.sops.yaml` recipient (docs/design/fleet-key-custody.md): either the standalone operator key (populated from the vault into `~/.config/sops/age/keys.txt` on the operator's Macs — darwin-bootstrap.md pre-bootstrap step 1) or a NixOS secret-holder's host-key identity (on metis, derive once with `just setup-sops-identity`; one-time-per-fresh-clone, idempotent). `sops updatekeys` (step 2 below) runs wherever such an identity lives. Without one, the bootstrap pre-flight will refuse to proceed.
+- An existing age decryption identity for `secrets/secrets.yaml` — i.e. access to a current `.sops.yaml` recipient (docs/design/fleet-key-custody.md): either the standalone operator key (populated from the vault into `~/.config/sops/age/keys.txt` on the operator's Macs — darwin-bootstrap.md pre-bootstrap step 1) or a NixOS secret-holder's host-key identity (on such a host, derive once with `just setup-sops-identity`; one-time-per-fresh-clone, idempotent). `sops updatekeys` (step 2 below) runs wherever such an identity lives. Without one, the bootstrap pre-flight will refuse to proceed.
 - An `~/.ssh/config.local` entry for the host being bootstrapped, so the operator can `ssh <host>` without typing the full target string. `home/shared/ssh.nix` includes this file at file scope; entries there survive `nh os switch` (unlike `~/.ssh/config`, which home-manager owns). Example for an AWS host:
 
   ```
@@ -28,13 +28,6 @@ Run once per fresh clone of this repo on the operator machine:
 
   The matchBlock is needed only during bootstrap (the `ubuntu` / `nixos` account is gone post-install and `root` SSH is disabled; you'll SSH as `dbf` from your Mac afterwards). You can leave the entry in place or remove it post-bootstrap — either is fine.
 - The new host's `sshEdges` entry in `lib/operator.nix` names the source hosts you'll SSH from, with their `hostKeys` entries current (ADR-042 — `modules/nixos/users.nix` derives each host's authorized keys from these). Once `nixos-anywhere` completes, those edge-derived keys are the sole inbound credentials — get them right before, not after.
-- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md §Private flake inputs). Nix fetches *all* inputs at eval, so both ends need it or eval dies at fetch with an HTTP 404: the operator machine (the bootstrap's `--flake .#<host>` evals locally), and the new host itself before its first on-host rebuild. One-time per machine, after `gh auth login`:
-
-  ```
-  install -d -m 700 ~/.config/nix && umask 077 && printf 'access-tokens = github.com=%s\n' "$(gh auth token)" > ~/.config/nix/nix.conf
-  ```
-
-  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the file is unmanaged and holds only this line. `gh auth token` returns a session-lifetime OAuth token: a later rebuild 404-ing on the input is the refresh signal (re-run the line). CI's equivalent, the PAT behind it, and the declarative fleet-wide alternative are in docs/ci.md §Private flake inputs.
 
 ## Per-host preconditions
 
@@ -48,7 +41,7 @@ Run once per fresh clone of this repo on the operator machine:
 - `hosts/<host>/disko.nix` references the correct `/dev` path. On Nitro hypervisor (t3.\*, m5.\*, c5.\* and later) this is `/dev/nvme0n1`. Pre-Nitro instances (t2.\*, m4.\*, c4.\*) use `/dev/xvda` — verify with `lsblk` from the target host and update `disko.nix` if needed.
 - *Optional but recommended:* snapshot the EBS volume **before** invoking `just bootstrap`. `nixos-anywhere` is destructive (wipes the disk); a pre-install snapshot gives you a true rollback option via terminate + relaunch if Instance Connect and Serial Console both fail. See Break-glass below.
 
-### Bare-metal host (Metis, future bare-metal hosts)
+### Bare-metal host
 
 > **Bare-metal hosts require physical access** until verification completes. Do not attempt to bootstrap remotely.
 
@@ -94,7 +87,7 @@ Manual; intentionally out-of-band because automated YAML editing is fragile.
 
    ```yaml
    keys:
-     - &metis    age1fum23dvym045wsc0g85lgtpvhjgekj66nkg9krslx0fa8ahmyffsu5nj2t
+     - &alcyone  age1uxca973fzxtxljv3zqttyrushl64kwrdysz78lrzxs6es350f9yqtdfdu6
      - &operator age12dv25pjp7xccjagz2mmpg0pcwutee8eut34tuaqzaqn9wvqmvysqumvgx8
      - &jupiter  age1<recipient-from-step-1>
 
@@ -102,7 +95,7 @@ Manual; intentionally out-of-band because automated YAML editing is fragile.
      - path_regex: secrets/.*\.yaml$
        key_groups:
          - age:
-             - *metis
+             - *alcyone
              - *operator
              - *jupiter
    ```
@@ -227,16 +220,10 @@ Run from the new host's `dbf` shell unless noted otherwise.
   - `docker run --rm hello-world` succeeds as `dbf` with no sudo and no `DOCKER_HOST` override.
   - `docker compose version` and `docker-compose --version` both respond.
 
-### Per-host divergences
+### Per-host verification
 
-**Metis (personal dev box):**
-
-- Dual git identity:
-  - `git config user.email` returns the personal address by default.
-  - Inside `~/grey-st/<repo>`, `git config user.email` returns the work address (via `git-identity-dual.nix`'s `gitdir` rules).
 - All four agent CLIs resolve: `which claude cursor-agent codex agy`.
-- `which gh` resolves (Metis imports `gh.nix`).
-- Tailscale up: `tailscale status` lists `metis` and its peers.
+- Tailscale up: `tailscale status` lists the host and its peers.
 - btrfs layout: `findmnt -t btrfs` shows exactly the host's declared subvolume mounts — `/`, `/home`, `/nix`, plus `/persist` on `persist.enable` hosts — each with `subvol=@<name>` and `compress=zstd:1` in the options column.
 - zram: `swapon --show` lists `/dev/zram0` (no disk swap entries); `zramctl` reports the device's algorithm and disksize.
 - Periodic scrub: `systemctl list-timers btrfs-scrub-*` shows the monthly timer armed.
@@ -245,7 +232,7 @@ Run from the new host's `dbf` shell unless noted otherwise.
 
 ### Encrypted hosts: TPM2 enrollment (alcyone-class)
 
-**Fleet default (decided 2026-07-31, #637 decision 1):** the alcyone-shape disk posture — UEFI GPT + 2 GiB ESP, LUKS2 + TPM2 auto-unseal, btrfs `@root/@home/@persist/@nix`, ephemeral root enforced from first boot — is the default for every *new* host from here on. Deviations are deliberate per-host decisions recorded in the host's disko header; the unencrypted metis-shape is that host's install era, not a template.
+**Fleet default (decided 2026-07-31, #637 decision 1):** the alcyone-shape disk posture — UEFI GPT + 2 GiB ESP, LUKS2 + TPM2 auto-unseal, btrfs `@root/@home/@persist/@nix`, ephemeral root enforced from first boot — is the default for every *new* host from here on. Deviations are deliberate per-host decisions recorded in the host's disko header; the unencrypted shape of the fleet's first bare-metal hosts is their install era, not a template.
 
 A LUKS host installs with only the recovery-passphrase keyslot (ADR-043 custody) — the first boot prompts for it at the physical console. Unattended boot requires enrolling the TPM2 keyslot **once, post-install, on-metal**:
 
@@ -313,9 +300,84 @@ The kexec installer is still alive after the failure and the disk is already par
 
 Larger instances (t3.large 8 GiB+, m5.large+) won't need this — the AWS SDK Go build fits in RAM. The justfile's `bootstrap` recipe doesn't add swap by default because most targets won't need it; this section is the documented workaround for when they do.
 
+## Decommissioning a host (#387)
+
+The inverse of this runbook, and wider than it looks: retiring a host touches roughly a dozen surfaces, not just the flake registration. Work the list in order — step 2 is one-way, and steps 3 and 4 are hard-coupled, so they land in one commit: step 3 alone breaks the retiring host's own eval, and step 4 alone leaves a dangling path that breaks every host's.
+
+Physically wiping or repurposing the hardware is out of scope here; nothing in this repo depends on it.
+
+### Step 1 — Confirm the host is finished
+
+The retiring host must not rebuild or reboot again after step 2. `dbf-password` is `neededForUsers`, so the moment its recipient is dropped from `secrets/secrets.yaml` sops-nix can no longer decrypt the user password in early boot and the host cannot activate. If you still want it as a working machine, stop here and resume when you don't.
+
+### Step 2 — Drop the sops recipient
+
+Remove the host's anchor from `.sops.yaml` `keys:` and its `*<host>` reference from every `creation_rules` `key_groups` list. The recipient set is exactly {live NixOS secret-holders} ∪ {operator} — see [ADR-043](../decisions/ADR-043-fleet-key-custody.md).
+
+The `.sops.yaml` edit alone is cryptographically inert: `secrets/secrets.yaml` keeps the retired host's wrapped data key until it is re-encrypted, no check binds the two files, and skipping this leaves the host a live decryptor with zero CI signal. Re-encrypt, then commit both files together:
+
+```bash
+nix shell nixpkgs#sops -c sops updatekeys secrets/secrets.yaml
+git add .sops.yaml secrets/secrets.yaml
+git commit -m "sops: drop <host> recipient"
+```
+
+Run this from a machine that already holds a decrypting identity (§Operator prerequisites) — the operator's Mac with the vault-populated key, or a surviving NixOS secret-holder after `just setup-sops-identity`. `updatekeys` re-wraps the data key for the surviving recipients; it does **not** rotate it, so the retired host still reads the current value from any pre-drop git revision. Accepted, per ADR-043 §Consequences — rotate the secret itself if that matters.
+
+### Step 3 — Remove the host from the flake
+
+- `hosts/<host>/` — the whole directory (`git rm -r`).
+- `parts/nixos.nix` (or `parts/darwin.nix`) — the `mkHost` registration.
+- `parts/checks.nix` — the `host-<host>` build check and the `stances-<host>` eval check.
+
+The `hosts-registration` check set-diffs these three surfaces against each other, so a half-removal fails `nix flake check` with a named message rather than merging invisibly.
+
+### Step 4 — Withdraw the host from fleet SSH
+
+Three files, and — this is the part to get right — **eval only catches one of them**. Do not trust the build to find your misses here; grep is the gate.
+
+- `modules/shared/ssh-known-hosts.nix` — the `<host>.publicKeyFile` entry. A path into the directory step 3 deletes, so this one throws at eval on *every* host, the Darwin one included. The only loud failure of the three.
+- `lib/operator.nix` — the `hostKeys.<host>` entry, the host's own `sshEdges` block, **and** its name inside every other host's source list. Failure modes differ: leaving the name in another host's source list while deleting `hostKeys.<host>` throws, but only on *that* host's eval. Leaving **both** is completely silent — every attribute still resolves, and the stance check compares two values derived from the same leftover data, so it stays green while the retired host's key remains in a live host's `authorized_keys`. That is the dangerous case, and nothing mechanical catches it.
+- `home/shared/ssh.nix` — the host's `programs.ssh.settings` block. Inert data, also silent: leaving it ships a dead `Host <host>` block into every user's `~/.ssh/config`.
+
+Surviving hosts drop the retired key from `authorized_keys` and `ssh_known_hosts` only at their own next switch, so re-switch the fleet once the change lands.
+
+### Step 5 — Remove the host from the per-host data tables
+
+- `lib/theme-families.nix` — the `defaults.<host>` boot-default entry. The `families` catalogue is fleet-global and stays; retiring a host never orphans a theme family.
+- `lib/tests/host-registration.nix` — the `clean` fixture, which is hand-written to mirror the real fleet shape. Nothing in CI catches it going stale, so it has to be edited by hand.
+
+### Step 6 — Update CLAUDE.md's census
+
+Both marked regions — `CENSUS: hosts` in §Purpose and `CENSUS: break-glass` in §Break-glass. `scripts/lint-host-census.sh` asserts two-way set equality against `hosts/`, so a missed bullet fails pre-commit and CI. Statements about the past ("X was the first desktop host") stay true and stay put; statements in the present tense do not.
+
+### Step 7 — Retire whatever the host was the sole consumer of
+
+A flake input, module, or service only the retiring host used dies with it. Grep each candidate for a second consumer before removing it, then regenerate the lock:
+
+```bash
+nix flake lock   # NOT `nix flake update` — that bumps every input and buries the diff
+```
+
+Confirm the resulting `flake.lock` diff touches only the removed input's node.
+
+### Step 8 — Verify
+
+```bash
+nix fmt
+bash scripts/lint-host-census.sh
+nix eval --raw .#nixosConfigurations.<surviving-host>.config.system.build.toplevel.drvPath
+nix flake check
+```
+
+Eval every surviving host, not just one: step 4's failure mode is fleet-wide, and the Darwin host is on the other matrix leg.
+
+### Step 9 — Sweep the residue separately
+
+Comment-only mentions in files the removal never touched functionally — module headers, justfile echoes, doc prose — are a **follow-up PR**, not this one. Fixing stale comments in files you are already editing is the repo rule; reaching into files you are not is scope creep that buries the functional diff. Frozen documents are never swept — they are dated records, and a retired host stays in them: ADRs, `docs/reviews/`, `docs/research/`, and any `docs/design/` note that is accepted or vintage-flagged per [docs/design/README.md](../design/README.md)'s graduation convention.
+
 ## What this runbook does NOT cover
 
 - BIOS recovery on bare metal if a firmware flash bricks the board (HP's recovery USB procedure — see HP support docs).
-- Disk failure / replacement (single-device btrfs on Metis; no RAID, no backup policy declared in this config yet).
-- Decommissioning a host: remove its anchor from `.sops.yaml`, run `sops updatekeys secrets/secrets.yaml`, remove its entry from `parts/nixos.nix` and its directory under `hosts/`.
+- Disk failure / replacement (single-device btrfs fleet-wide; no RAID, no backup policy declared in this config yet).
 - Moving a bare-metal host to a different physical location (Tailscale survives; ISP / NAT may need attention; static IP if you rely on one).

@@ -66,7 +66,6 @@
   # enrol at their bootstrap events.
   hostKeys = {
     neptune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEG7lLmu/lPjyPp1dW3QdA1UcPWi4+e/YEDxvj2UZaHW dbf@neptune";
-    metis = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1ho1kVtwsaB6ylZPzQfoWu9mJqA0gITxNEWpX5T9jT dbf@metis";
     alcyone = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICO05VMXeuyBNwKjN73V9zk81q9RYglnyLCLVg+aC+P5 dbf@alcyone";
     alnair = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJO5+tWeSk9j/1OZoa9x8Rvy5QuFt9Zso0kNcjbs5FKk dbf@alnair";
   };
@@ -79,33 +78,26 @@
   # (ADR-042; design note §target shape) — self-edges are deliberately
   # absent (no host SSHes itself).
   sshEdges = {
-    metis = [
-      "neptune"
-      "alcyone"
-      "alnair"
-    ];
     neptune = [
-      "metis"
       "alcyone"
       "alnair"
     ];
     # Alcyone (#631, ADR-042) — accepts neptune + alnair; a workstation
-    # *source* into metis and neptune since its fleet enrolment.
+    # *source* into neptune since its fleet enrolment.
     alcyone = [
       "neptune"
       "alnair"
     ];
     # Alnair (#636, ADR-042) — roaming laptop: accepts the operator's
-    # workstation sources alcyone + neptune (no metis edge, operator call);
-    # a source into every active host since its fleet enrolment (operator
-    # call — the laptop reaches the whole fleet from the road).
+    # workstation sources alcyone + neptune; a source into every active
+    # host since its fleet enrolment (operator call — the laptop reaches
+    # the whole fleet from the road).
     alnair = [
       "alcyone"
       "neptune"
     ];
     # Electra (#637, ADR-042) — service-tier PURE sink: accepts the
-    # operator's workstation sources (no metis edge, mirroring alnair's
-    # call — metis exits via #387/#641), and never becomes a source — no
+    # operator's workstation sources, and never becomes a source — no
     # outbound key exists on the host at all (hosts/electra/default.nix).
     electra = [
       "alcyone"

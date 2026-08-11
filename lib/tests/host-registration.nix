@@ -11,31 +11,27 @@ let
   hostReg = import ../host-registration.nix { inherit lib; };
   inherit (hostReg) failures;
 
-  # The real-fleet shape (4 nixos, 1 darwin), all four surfaces agreeing —
+  # The real-fleet shape (3 nixos, 1 darwin), all four surfaces agreeing —
   # the baseline every drift fixture perturbs by exactly one edit.
   clean = {
     dirs = [
       "alcyone"
       "alnair"
       "electra"
-      "metis"
       "neptune"
     ];
     nixosRegs = [
       "alcyone"
       "alnair"
       "electra"
-      "metis"
     ];
     darwinRegs = [
       "neptune"
     ];
     nixosChecks = [
-      "host-metis"
       "host-alcyone"
       "host-alnair"
       "host-electra"
-      "stances-metis"
       "stances-alcyone"
       "stances-alnair"
       "stances-electra"
@@ -168,13 +164,32 @@ lib.runTests {
     expected = [ ];
   };
 
-  # 11 — Prefix-pair non-masking: metis registered, metis-2 dir-only. metis-2
-  # must be flagged and metis must NOT be — a substring/hasPrefix match on
-  # "metis" would wrongly satisfy metis-2 (the census metis/metis-2 lesson).
+  # 11 — Prefix-pair non-masking: electra registered, electra-2 dir-only.
+  # electra-2 must be flagged and electra must NOT be — a substring/hasPrefix
+  # match on "electra" would wrongly satisfy electra-2 (the census
+  # metis/metis-2 lesson).
+  #
+  # Fixtures are self-contained rather than derived from `clean`: the pair's
+  # registered half must stay registered for the test to discriminate at all,
+  # and deriving it from the fleet let a host retirement silently disarm this
+  # case once already (#387 — the prior pair was metis/metis-2, and removing
+  # metis from `clean` made the assertion pass under the very bug it guards).
   testPrefixPairNonMasking = {
-    expr = failures (clean // { dirs = clean.dirs ++ [ "metis-2" ]; });
+    expr = failures {
+      dirs = [
+        "electra"
+        "electra-2"
+      ];
+      nixosRegs = [ "electra" ];
+      darwinRegs = [ ];
+      nixosChecks = [
+        "host-electra"
+        "stances-electra"
+      ];
+      darwinChecks = [ ];
+    };
     expected = [
-      "hosts/metis-2/ exists but metis-2 is registered in neither parts/nixos.nix nor parts/darwin.nix → add `metis-2 = mkHost { hostname = \"metis-2\"; };` to parts/nixos.nix, or remove hosts/metis-2/"
+      "hosts/electra-2/ exists but electra-2 is registered in neither parts/nixos.nix nor parts/darwin.nix → add `electra-2 = mkHost { hostname = \"electra-2\"; };` to parts/nixos.nix, or remove hosts/electra-2/"
     ];
   };
 }

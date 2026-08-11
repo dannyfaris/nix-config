@@ -109,10 +109,6 @@
       family = "catppuccin";
       polarity = "dark";
     };
-    metis = {
-      family = "rose-pine";
-      polarity = "dark";
-    };
     neptune = {
       family = "gruvbox";
       polarity = "dark";

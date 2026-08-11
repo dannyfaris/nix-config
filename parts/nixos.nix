@@ -10,7 +10,6 @@ let
 in
 {
   flake.nixosConfigurations = {
-    metis = mkHost { hostname = "metis"; };
     alcyone = mkHost { hostname = "alcyone"; };
     alnair = mkHost { hostname = "alnair"; };
     electra = mkHost { hostname = "electra"; };

@@ -88,7 +88,7 @@ in
     # Include renders BEFORE the blocks below and ssh takes the first
     # value per option — so a config.local block naming a fleet host
     # would shadow the declared one. The operator keeps config.local to
-    # break-glass-only entries (e.g. metis-lan) for exactly this
+    # break-glass-only entries (e.g. alcyone-lan) for exactly this
     # reason.
     includes = [ "~/.ssh/config.local" ];
 
@@ -96,7 +96,6 @@ in
     # regardless of sort; upstream ssh_config directive names).
     settings = {
       neptune = fleetHost;
-      metis = fleetHost;
       alcyone = fleetHost;
       alnair = fleetHost;
       electra = fleetHost;

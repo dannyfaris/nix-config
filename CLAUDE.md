@@ -9,7 +9,6 @@ Evergreen NixOS + nix-darwin configuration. Hosts:
 - `alcyone` — Gigabyte B550 GAMING X V2 / x86_64 bare metal, flagship desktop; first discrete GPU (RTX 4060) + first encrypted-at-rest host.
 - `alnair` — Surface Laptop 4 / x86_64 bare metal, the fleet's first Linux laptop.
 - `electra` — Lenovo ThinkCentre M920q Tiny / x86_64 bare metal, genuinely headless always-on service-tier node, role deliberately open.
-- `metis` — HP ProDesk / x86_64 shared work + personal dev box.
 - `neptune` — Apple Silicon Mac mini, first nix-darwin host, onboarded 2026-06-02.
 
 <!-- END CENSUS: hosts -->
@@ -22,7 +21,7 @@ Metis was the first desktop host; the Linux desktop now runs on the fleet's NixO
 
 ## Agent memory lives in git, not local state
 
-Work on this repo happens across every live host. Claude Code's file-based memory (`~/.claude/projects/.../memory/`) is **per-host and never synced** — a fact learned on `metis` is invisible on `neptune`. So anything durable — decisions, conventions, gotchas, host quirks — must be committed to the repo where every host sees it: this CLAUDE.md for working agreements and deliberate stances, `docs/` (ADRs, selection docs) for the *why*, and inline module comments for the *why* of a setting. Treat local agent memory as a scratchpad for the current session; if it matters tomorrow or on another host, write it down in git.
+Work on this repo happens across every live host. Claude Code's file-based memory (`~/.claude/projects/.../memory/`) is **per-host and never synced** — a fact learned on `alcyone` is invisible on `neptune`. So anything durable — decisions, conventions, gotchas, host quirks — must be committed to the repo where every host sees it: this CLAUDE.md for working agreements and deliberate stances, `docs/` (ADRs, selection docs) for the *why*, and inline module comments for the *why* of a setting. Treat local agent memory as a scratchpad for the current session; if it matters tomorrow or on another host, write it down in git.
 
 ## Structure
 
@@ -79,7 +78,6 @@ If SSH wedges or keys go wrong, recovery is host-specific:
 - **alcyone**: physical console (monitor + keyboard) or the greetd login.
 - **alnair**: physical console (built-in keyboard + display) or the greetd login.
 - **electra**: physical console (monitor + keyboard) — headless, so there is no greetd login.
-- **metis**: physical console (monitor + keyboard) or the greetd login.
 - **neptune**: Apple keyboard + display at the local login.
 
 <!-- END CENSUS: break-glass -->
@@ -127,7 +125,7 @@ In a nix-less agent/cloud session, run `scripts/fetch-lint-toolchain.sh` once, t
 - **Claims about runtime behaviour need runtime verification.** `nix flake check`, lints, and peer review confirm the *declared* (eval-time) state, not the *enforced* one — a change can pass all three and still be inert in production ("set ≠ enforced", tracked in [#303](https://github.com/dannyfaris/nix-config/issues/303)). For a change asserting a runtime, security, or network-posture property, confirm the behaviour on a host before calling it done; when it is unclear which layer actually enforces the property, probe it empirically first. Worked example: [#336](https://github.com/dannyfaris/nix-config/issues/336) removed a firewall rule that was never the gate (tailscale's `ts-input` pre-empts the NixOS firewall) — eval and a two-reviewer adversarial pass both missed it, a runtime probe caught it. This is the design loop's de-risk rung applied.
 - **PRs land via squash auto-merge.** After `gh pr create`, run `gh pr merge <num> --auto --squash` to enable auto-merge; the PR squash-merges itself once required checks pass. See [docs/workflow.md](./docs/workflow.md) §"PRs land via squash auto-merge" for rationale.
 - **Markdown is soft-wrapped** — one line per paragraph (no hard newlines mid-paragraph). Tracked `.md` files are formatted to this shape by dprint via treefmt (`nix fmt`), the mechanism chosen in [ADR-046](./docs/decisions/ADR-046-markdown-formatter.md) and wired in #435 PR B. Issue/PR *bodies* stay hand-authored soft-wrapped (the formatter cannot reach `gh` descriptions). See [docs/workflow.md](./docs/workflow.md) §"Markdown is soft-wrapped" for rationale.
-- Desktop environment runs on alcyone, alnair and metis per ADR-028 (bundle composition), amended by [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only), [ADR-036](./docs/decisions/ADR-036-noctalia-shell-linux-desktop.md) (Noctalia as the cohesive shell) and — via ADR-036 — [ADR-044](./docs/decisions/ADR-044-linux-runtime-theme-menu.md) (Nix-owned runtime theme menu; Noctalia is themed by Nix, not a theming authority). Stack: niri + foot + greetd + Noctalia — Noctalia owns bar, launcher, notifications, lock, OSD, wallpaper and idle, subsuming waybar / fuzzel / fnott / swaylock + swayidle, all decommissioned in #385. Colour comes from the theme-menu conductor and its `theme` CLI, TUIs follow the terminal palette ([ADR-041](./docs/decisions/ADR-041-terminal-authority-tui-theming.md)), and fonts resolve through the fontconfig conductor (#390); Stylix remains the palette engine plus the Firefox and GTK targets. Living documents under [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each per-tool selection, decommissioned tools included.
+- Desktop environment runs on alcyone and alnair per ADR-028 (bundle composition), amended by [ADR-029](./docs/decisions/ADR-029-niri-only-desktop.md) (niri-only), [ADR-036](./docs/decisions/ADR-036-noctalia-shell-linux-desktop.md) (Noctalia as the cohesive shell) and — via ADR-036 — [ADR-044](./docs/decisions/ADR-044-linux-runtime-theme-menu.md) (Nix-owned runtime theme menu; Noctalia is themed by Nix, not a theming authority). Stack: niri + foot + greetd + Noctalia — Noctalia owns bar, launcher, notifications, lock, OSD, wallpaper and idle, subsuming waybar / fuzzel / fnott / swaylock + swayidle, all decommissioned in #385. Colour comes from the theme-menu conductor and its `theme` CLI, TUIs follow the terminal palette ([ADR-041](./docs/decisions/ADR-041-terminal-authority-tui-theming.md)), and fonts resolve through the fontconfig conductor (#390); Stylix remains the palette engine plus the Firefox and GTK targets. Living documents under [docs/desktop/](./docs/desktop/) cover keybinds, fonts, and each per-tool selection, decommissioned tools included.
 
 ## Open work
 
