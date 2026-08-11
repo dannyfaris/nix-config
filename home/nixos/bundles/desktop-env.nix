@@ -39,6 +39,11 @@
 #   - screen-capture.nix — grim, non-interactive wlr-screencopy capture for
 #     remote/agent visual verification over SSH. niri's interactive
 #     screenshot UI stays the console path. See docs/desktop/screen-capture.md (#529).
+#   - file-manager.nix — trash purge timer + inode/directory handler for
+#     Thunar (system-side daemons in modules/nixos/file-manager.nix).
+#     See docs/desktop/file-manager.md (#762).
+#   - pointer-icons.nix — Colloid icons + phinger cursor (stylix.icons /
+#     stylix.cursor + niri cursor block). See docs/desktop/pointer-icons.md (#110).
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + the Noctalia shell
@@ -80,6 +85,8 @@
     ../polkit-agent.nix
     ../removable-media.nix
     ../screen-capture.nix
+    ../file-manager.nix
+    ../pointer-icons.nix
     # Desktop-only Stylix targets — co-located with the bundle that
     # enables them, so desktop hosts pick them up transitively. The
     # cross-platform TUI targets stay in `home/shared/stylix-targets.nix`.
