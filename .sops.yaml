@@ -1,6 +1,6 @@
 # Recipients.
 #
-# Host recipients (metis, alcyone): age keys derived from each NixOS
+# Host recipients: age keys derived from each NixOS
 # secret-holder's ssh_host_ed25519_key (under /persist/etc/ssh/ on
 # persist-enforcing hosts, /etc/ssh/ otherwise). Used at activation
 # time by sops-nix to decrypt secrets for the running host. One per
@@ -25,7 +25,6 @@
 # restored keys.txt without exposing it: `age-keygen -y <file>` must
 # print the `operator` public key below.
 keys:
-  - &metis    age1fum23dvym045wsc0g85lgtpvhjgekj66nkg9krslx0fa8ahmyffsu5nj2t
   - &alcyone  age1uxca973fzxtxljv3zqttyrushl64kwrdysz78lrzxs6es350f9yqtdfdu6
   - &alnair   age1mzlkncpz9la5yax2s4gapdu8ztter6hukgrj9cardwdwgtfmydrslzgl7k
   - &electra  age1050u3le5vkgs3l963fym8vxtkqhmupjxxg9t7le9zvx8xs8mkfeq5d8x0y
@@ -35,7 +34,6 @@ creation_rules:
   - path_regex: secrets/.*\.yaml$
     key_groups:
       - age:
-          - *metis
           - *alcyone
           - *alnair
           - *electra

@@ -125,7 +125,7 @@ let
   unsubstitutable = {
     x86_64-linux = {
       # The same attribute home/nixos/noctalia.nix reads, so this is the
-      # derivation the three desktop hosts build rather than a parallel one.
+      # derivation the desktop hosts build rather than a parallel one.
       # v5 has no binary cache anywhere (docs/design/noctalia-v5-migration.md
       # §Cost). niri, the other source-built desktop dependency, is served by
       # niri.cachix.org and so stays out.
@@ -191,11 +191,9 @@ in
   # once on the x86_64-linux runner rather than redundantly on each.
   flake.checks = {
     x86_64-linux = {
-      host-metis = self.nixosConfigurations.metis.config.system.build.toplevel;
       host-alcyone = self.nixosConfigurations.alcyone.config.system.build.toplevel;
       host-alnair = self.nixosConfigurations.alnair.config.system.build.toplevel;
       host-electra = self.nixosConfigurations.electra.config.system.build.toplevel;
-      stances-metis = mkStanceCheck "x86_64-linux" "nixos" "metis" self.nixosConfigurations.metis.config;
       stances-alcyone =
         mkStanceCheck "x86_64-linux" "nixos" "alcyone"
           self.nixosConfigurations.alcyone.config;
@@ -262,8 +260,8 @@ in
       # wholesale, so a checks entry would make every hosted runner boot the
       # six-node KVM suite per PR. As a package it is evaluated by CI (pin bumps
       # that break its eval still fail) but built only on demand —
-      # `nix build .#ephemeral-root-vm`, the locally-run gate on metis. Moves
-      # into checks when #546 self-hosts the x86_64-linux leg on metis.
+      # `nix build .#ephemeral-root-vm`, the locally-run gate. Moves into
+      # checks when #546 self-hosts the x86_64-linux leg on alcyone.
       ephemeral-root-vm = import ../tests/ephemeral-root.nix {
         pkgs = pkgsFor "x86_64-linux";
         inherit self inputs;
@@ -297,7 +295,7 @@ in
       # The registry-emitted keybinds.md fragment, exposed per-system so the
       # writer (`just gen-keybinds` → scripts/gen-keybinds-table.sh) can
       # `nix build .#keybinds-table` on whichever host the operator is on
-      # (metis/x86_64-linux, neptune/aarch64-darwin). Same source the
+      # (alcyone/x86_64-linux, neptune/aarch64-darwin). Same source the
       # keybinds-table check diffs against (#457).
       packages.keybinds-table = keybindsTableFragment pkgs;
 
