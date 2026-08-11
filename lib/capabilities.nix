@@ -798,8 +798,16 @@ let
         realization = "niri-action";
         action.toggle-window-floating = { };
       };
-      # darwin: N/A for now — AeroSpace's `layout floating tiling` is the
-      # parity lever if wanted later (ADR-040).
+      # TRIAL BRANCH: body hand-authored in home/darwin/skhd.nix (it resolves the
+      # yabai binary by package-derived path). The escape hatch for the float
+      # rules in modules/darwin/yabai.nix, matching what this chord already is for
+      # the niri open-floating rules — without it darwin's only float toggle is
+      # service mode, two keys deep inside a mode that captures the keyboard.
+      platforms.darwin = {
+        realization = "aerospace-exec";
+        label = "Toggle floating";
+        description = "Toggle the focused window between floating and the bsp tree";
+      };
     }
 
     # Base Hyper — spawn

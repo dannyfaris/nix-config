@@ -105,6 +105,9 @@ let
 
     overview = y "space --focus recent";
     layout-toggle = layoutToggle;
+    # Escape hatch for the float rules in modules/darwin/yabai.nix: `manage=off`
+    # sets the float flag rather than dropping the window, so this tiles it back.
+    toggle-window-floating = y "window --toggle float";
     # Native and reversible, unlike AeroSpace's one-way maximise-by-isolation.
     maximise-by-isolation = y "window --toggle zoom-fullscreen";
 

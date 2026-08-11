@@ -112,7 +112,7 @@ follow.
 | `Hyper+Shift+C` | Center column | — |
 | `Hyper+Shift+F` | Fullscreen window | — |
 | `Hyper+Shift+M` | Maximize column | — |
-| `Hyper+Shift+Space` | Toggle floating | — |
+| `Hyper+Shift+Space` | Toggle floating | Toggle floating |
 | `Hyper+Return` | Open terminal | Open terminal |
 | `Hyper+B` | Focus or open browser | Focus or open browser |
 | `Hyper+F` | Open file manager | Open Finder |
