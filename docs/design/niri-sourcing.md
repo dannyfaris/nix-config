@@ -1,6 +1,6 @@
 # niri sourcing after niri-flake — taking the compositor off an abandoned dependency
 
-**Status:** Proposed — design note (`docs/design/`). Not built; design ruled through stage 3, de-risk and build next. [#763](https://github.com/dannyfaris/nix-config/issues/763) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged by this note) and [#770](https://github.com/dannyfaris/nix-config/issues/770) (theming authority, which waits on the outcome).
+**Status:** Proposed — design note (`docs/design/`). Not built; design ruled and de-risked (stages 1–4), build next. [#763](https://github.com/dannyfaris/nix-config/issues/763) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged by this note) and [#770](https://github.com/dannyfaris/nix-config/issues/770) (theming authority, which waits on the outcome).
 
 ## Summary
 
@@ -44,7 +44,7 @@ This is a *smaller* vendored surface than it looks, and deliberately so: `kdl.ni
 
 **Version cadence (ruling 3).** niri rides nixpkgs' cadence with no bespoke pin; the weekly bump carries it. `niri validate` is the guard rather than a pin — a release with breaking KDL syntax becomes a failed build, which is the same protection niri-flake gave and the same failure mode we want. A release that changes *semantics* without changing syntax passes validate and would surface as behaviour on alcyone; no route protects against that, and a pin would only delay it.
 
-**How this meets the forces.** Forces 1–3 are met by construction: no flake input remains, no cache key replaces the one dropped, and every remaining failure mode is in code this repo owns. Force 4 is a build-and-verify claim, discharged at stage 7 on alcyone, not asserted here. Force 5 is met by the validate derivation — conditional on the one assumption still untested below.
+**How this meets the forces.** Forces 1–3 are met by construction: no flake input remains, no cache key replaces the one dropped, and every remaining failure mode is in code this repo owns. Force 4 is a build-and-verify claim, discharged at stage 7 on alcyone, not asserted here. Force 5 is met by the validate derivation, tested at stage 4 and confirmed to fail closed.
 
 ## De-risk evidence
 
@@ -59,12 +59,19 @@ This is a *smaller* vendored surface than it looks, and deliberately so: `kdl.ni
 
 **Recorded in #763 but NOT re-verified here** — treat as claims, not findings: the niri-flake PR closures (#1849, #1850) and issue #1851; `libdisplay-info-sys`'s declared `>= 0.1.0, < 0.4.0` range and the 0.4 wall; the `epireyn` fork's output surface and cache.
 
-**Still unverified, and load-bearing:**
+**Stage-4 de-risk — force 5's assumption tested and HELD (2026-08-12).** Probed against the pinned niri (`/nix/store/y32xfvyx99qp91s2g3d2dr8wsx7k3gb0-niri-26.04`, confirmed identical to `inputs.nixpkgs.legacyPackages.x86_64-linux.niri`):
 
-- **That `niri validate` can run over generated config in a derivation** — force 5 rests on it entirely. This is the stage-4 de-risk and should be tested before any module is rewritten. A negative result does not kill the direction but does force a different validation story.
+- **`niri validate` runs headless and in the Nix build sandbox.** A `runCommand` with `niri` in `nativeBuildInputs`, validating a config passed via `passAsFile`, builds successfully. No Wayland socket, DRM device, or display is required.
+- **The gate fails closed.** The same derivation with one character changed (`gaps` → `gpas`) fails the build with exit 1 and the parse diagnostic in the build log. This is the property force 5 needs: a bad config cannot reach a host.
+- **Coverage is broader than the design assumed.** Validate rejects unknown nodes (`layuot` → `` unexpected node `layuot` ``), misspelled bind actions (`focus-column-lefft`), and wrong value types (`gaps "sixteen"`) — all exit 1. That is most of what the discarded typed surface would have caught, which strengthens ruling 1 rather than merely excusing it.
+- **The `optional=true` theme-menu include is accepted with the target absent** — logged as `WARN optional include not found`, exit 0. The include can therefore be present in the validated document without the runtime file existing at build time.
+
+**Implementation notes from the probe:** the diagnostic cites the file it was handed, so the derivation should copy the config to a meaningfully-named path before validating rather than passing `passAsFile`'s `.attr-…` temp name, or build errors will point at an opaque filename. Separately, niri's parser requires newline-separated nodes — a single-line `layout { gaps 16 }` is rejected — so the serializer's line breaking is load-bearing, not cosmetic. A missing trailing newline at end of file is fine.
+
+**Still unverified:**
+
 - Whether nixpkgs' `withScreencastSupport` default matches what the desktop bundle needs.
 - Whether anything else in the tree forces niri-flake's package set once the input is removed.
-- Whether `niri validate` accepts a config containing an `include` of a file that does not exist at build time (the theme-menu include is `optional=true`, but validate's behaviour on it is unconfirmed).
 
 ## Drawbacks
 
@@ -119,7 +126,7 @@ The closest procedural precedent in-tree is [`docs/research/noctalia-v5-native-t
 - **Stage 1 — Intent: agreed.** Scoped to niri only, abandoned-flake framing, no generalised stance about other inputs.
 - **Stage 2 — Size: heavy loop, full note.** Login-path surface, two hosts. **VM rehearsal ruled out** (2026-08-12): alcyone has a physical console attached, and a VM could only have proven the boot-to-login path anyway, never GPU behaviour or alnair's laptop specifics.
 - **Stage 3 — Design: ruled.** Questions 1 (plain data over typed surface), 2 (vendor `kdl.nix` only, author as nodes), 3 (nixpkgs cadence, validate as guard).
-- **Stage 4 — De-risk: next.** The `niri validate`-in-a-derivation assumption above.
+- **Stage 4 — De-risk: done.** The `niri validate`-in-a-derivation assumption tested and held; coverage is broader than assumed (see De-risk evidence).
 - **Stages 5–7** — build, peer review, reconcile + runtime validation on alcyone: not started.
 
 **Deferred from #763:** whether this crosses the `selecting-tooling` threshold (its decision 4). It reads as a sourcing change for an already-selected tool rather than a tool selection, so the working assumption is no; revisit if the build says otherwise.
