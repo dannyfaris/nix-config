@@ -221,6 +221,15 @@ in
         ];
         open-floating = true;
       }
+
+      # Electron 1Password restores its last-saved window bounds, which can be
+      # a full-tile size if it ever ran tiled; pin its floating open size.
+      # Nautilus already persists a sane size itself, so it's left alone.
+      {
+        matches = [ { app-id = "^1[Pp]assword$"; } ];
+        default-column-width.proportion = 0.5;
+        default-window-height.proportion = 0.5;
+      }
     ];
 
     # The cross-platform Hyper layer (Ctrl+Alt base) is generated from the
