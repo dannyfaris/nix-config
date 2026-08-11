@@ -2,7 +2,7 @@
 
 > **Trial branch only** (`trial/yabai`). Not a fleet document. It exists because the branch is inert without the manual steps below and they are not derivable from the config. Delete it with the branch.
 
-Scope: neptune. saturn stays on AeroSpace throughout — the swap is wired in `hosts/neptune/default.nix`, not in the shared `home/darwin/bundles/desktop-env.nix`.
+Scope: neptune, the fleet's only Mac since saturn was purged (#759). The swap is wired in `hosts/neptune/default.nix`, not in the shared `home/darwin/bundles/desktop-env.nix`, so the shared macOS desktop surface stays untouched and teardown is a clean branch checkout.
 
 ## Know this before you start
 
@@ -14,7 +14,13 @@ Two behaviours differ sharply from AeroSpace and are not obvious from the config
 
 ## Before activating
 
-1. **Create Mission Control Desktops up to 9** on the main display (Mission Control → hover the top strip → `+`). Four exist today. The keymap addresses Spaces by mission-control index and, with SIP enabled, yabai *cannot* create them — `space --create` is scripting-addition-only. Until they exist, `Hyper+5‑9` and `Hyper+Shift+5‑9` are inert: **10 of the 41 binds, roughly a quarter of the keymap**, failing into `~/Library/Logs/skhd.err.log` with nothing at the keyboard. Judging the trial on a keymap with a quarter of it dead is not a fair test.
+1. **Create Mission Control Desktops up to 9** on the main display (Mission Control → hover the top strip → `+`). **One exists today**, so eight must be added — AeroSpace owns the workspace layer on a single native Space ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md)), which is the state this branch is entered from. The keymap addresses Spaces by mission-control index and, with SIP enabled, yabai *cannot* create them — `space --create` is scripting-addition-only. Until they exist, `Hyper+2‑9` and `Hyper+Shift+2‑9` are inert: **16 of the 41 binds, roughly 40% of the keymap**, failing into `~/Library/Logs/skhd.err.log` with nothing at the keyboard. Judging the trial on a keymap with that much of it dead is not a fair test.
+
+   Count them — do not eyeball Mission Control, and do not count `uuid` keys in `com.apple.spaces` (that sweeps in `Collapsed Space` records for disconnected displays and overcounts). The live display's Spaces array is the only honest source:
+
+   ```
+   defaults read com.apple.spaces | awk '/"Display Identifier" = Main/,/\);/' | grep -c ManagedSpaceID
+   ```
 2. **Confirm "Displays have separate Spaces" is on** (System Settings → Desktop & Dock → Mission Control). yabai hard-requires it and *exits successfully* if it is off, so the failure is invisible to `launchctl list`.
 3. **Confirm "Automatically rearrange Spaces" is off.** It reorders mission-control indices underneath the keymap.
 4. **Re-entering the branch after the first time only:** stop AeroSpace before switching.
@@ -60,6 +66,31 @@ cd ~/nix-config && git checkout main && nh darwin switch
 
 That restores the config but **not** the desktop state. Also:
 
-- **Delete the Desktops you added**, back to the four that existed before the trial. Deleting a Desktop migrates its windows to the adjacent one, so there is no need to move anything by hand first. AeroSpace is built around a single native Space; left as-is it resumes owning a layout containing windows it cannot see.
+- **Delete the Desktops you added**, back to the single one that existed before the trial. Deleting a Desktop migrates its windows to the adjacent one, so there is no need to move anything by hand first. AeroSpace is built around a single native Space; left as-is it resumes owning a layout containing windows it cannot see.
 - **Re-grant Accessibility to AeroSpace** if its own grant went stale.
 - Stale yabai/skhd entries can be removed from the Accessibility list.
+
+## Findings
+
+Dated log of what the live trial established, kept here because it shares the branch's lifecycle. **No verdict yet** — this records evidence, not a decision. If the trial concludes GO, this graduates into the superseding ADR's §History, the way [ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md) §History preserved the `trial/aerospace` log.
+
+### 2026-08-11 — activated on neptune, full keymap exercised
+
+**The SIP-enabled claims that documentation alone could not settle are confirmed on macOS 26.5.2.** All three had been read out of the pinned 7.1.25 source rather than observed, which is precisely the gap [CLAUDE.md](../../CLAUDE.md) §Conventions calls out ("set ≠ enforced"):
+
+- **`window --space N` moves windows** (`Hyper+Shift+1‑9`). This was the load-bearing uncertainty — 7.1.25's changelog claims the non-SA path was restored after a Sequoia-era regression, and the trial confirms it holds on Tahoe.
+- **`space --focus N` works via the synthesized gesture path** and the animated switch was judged acceptable in day-to-day use. The runbook predicted the verdict would turn on this; it did not turn out to be the obstacle expected.
+- **`window --toggle zoom-fullscreen` is a stable, reversible maximise**, which AeroSpace could not offer — its `fullscreen` drops on focus-change, forcing the one-way maximise-by-isolation hack and leaving [#491](https://github.com/dannyfaris/nix-config/issues/491) / [#492](https://github.com/dannyfaris/nix-config/issues/492) open.
+
+**Service mode verified end to end.** Capture confirmed by the only test that actually proves it — keystrokes reach no application while in the mode. `r` (`space --balance`) and `f` (`window --toggle float`) both act, and both auto-return to `default` via their trailing `skhd -k escape`. That trailer is the most fragile mechanism in the config (skhd synthesizing a keypress into its own mode machinery) and was verified separately from the actions themselves.
+
+### 2026-08-11 — corrections this trial forced on the runbook above
+
+- **One Space existed pre-trial, not four.** Eight had to be created, not five. The original figure would have left the operator four Desktops short with a quarter of the keymap silently dead — the exact failure the step exists to prevent.
+- **Counting `uuid` keys in `com.apple.spaces` is not a valid Space count.** It sweeps in `Collapsed Space` records for displays that are not connected. The Main monitor's `Spaces` array is the only honest source; the corrected probe is in step 1.
+
+### 2026-08-11 — observations carried, not yet acted on
+
+- **Service mode has no visual indicator.** AeroSpace surfaced the active mode in its menu-bar item; yabai + skhd surface nothing, and the mode captures the whole keyboard. This is the most likely future "the machine is wedged" moment and the sharpest usability regression found so far.
+- **`yabai -m query --windows` lists non-visible windows with no AX reference.** A hidden 1Password record (`is-visible: false`, `has-ax-reference: false`, empty `title`/`role`, stale `frame`) reads at a glance as an untiled window overlapping the layout, and was briefly misdiagnosed as a missing float rule during this trial. Filter on `is-visible` before drawing any conclusion about the layout from a query.
+- **Multi-display is unexercised.** neptune is single-display, so the interaction between nine fixed Spaces and a display connect/disconnect is untested — and `space --create` being scripting-addition-only means yabai cannot repair a Space shortfall itself.

@@ -14,7 +14,8 @@
   # host-specific module-conflict resolution, which PRD §8.1 #4 places in the host
   # file; the cross-boundary write into home-manager follows
   # modules/darwin/colima.nix. Editing the shared home/darwin/bundles/desktop-env.nix
-  # would reach saturn, which stays on AeroSpace. Disabling is total, not partial:
+  # would entangle a throwaway trial with the shared macOS desktop surface, so
+  # teardown would be more than a branch checkout. Disabling is total, not partial:
   # the home-manager module wraps its whole config in mkIf, so the package, the
   # TOML and the launchd agent all go with it.
   home-manager.users.dbf.programs.aerospace.enable = lib.mkForce false;
@@ -173,7 +174,7 @@
       ../../home/darwin/bundles/desktop-env.nix
       # TRIAL BRANCH ONLY — the hotkey half of the yabai swap (chords from the
       # registry, bodies keyed by capability id). Imported here rather than added
-      # to the shared desktop-env bundle so saturn stays on AeroSpace throughout.
+      # to the shared desktop-env bundle, keeping the trial off the shared surface.
       ../../home/darwin/skhd.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream-published
