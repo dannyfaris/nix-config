@@ -2,7 +2,7 @@
 #
 # Alnair-scoped, NOT shared. Imported only via hosts/alnair
 # hostContext.extraHomeModules. The shared home/nixos/niri.nix is loaded by
-# the desktop hosts (metis/alcyone), which have no touchpad and no built-in
+# the desktop host alcyone, which has no touchpad and no built-in
 # panel — so these settings must not land there (#636 placement call). Values
 # merge into programs.niri.settings (niri-flake's homeModules.config is
 # auto-imported alongside niri.nix; there is no enable option to set).

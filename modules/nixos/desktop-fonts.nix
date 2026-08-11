@@ -22,7 +22,7 @@
 # Per #390 (Part A); was Stylix-sourced per ADR-028 / #69.
 { pkgs, ... }:
 let
-  # Per-surface sizes come from the active display profile (metis: 2×), so they
+  # Per-surface sizes come from the active display profile, so they
   # stay coupled to the niri output scale. See lib/display-profiles.nix.
   profile = import ../../lib/display-profiles.nix;
 in

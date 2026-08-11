@@ -1,5 +1,5 @@
-# 1Password desktop GUI — the operator's password manager on the metis
-# Wayland desktop (browser autofill + app logins), matching macOS.
+# 1Password desktop GUI — the operator's password manager on the NixOS
+# desktop hosts' Wayland session (browser autofill + app logins), matching macOS.
 #
 # Selection, scope, and the deliberate exclusions live in
 # docs/desktop/1password.md §"NixOS desktop adoption (metis)" (#112):

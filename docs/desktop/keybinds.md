@@ -15,8 +15,8 @@
 niri's KDL writes it `Mod`; that is the same key — an implementation detail, not
 a taxonomy distinction.
 
-**Keyboards.** Both machines (metis/Linux, neptune/macOS) use **Mac-layout
-keyboards**. The physical `Cmd`-position key therefore emits `Super` on Linux and
+**Keyboards.** The operator's external keyboards and the Mac are
+**Mac-layout**. The physical `Cmd`-position key therefore emits `Super` on Linux and
 `Cmd` on macOS, and the `Option`-position key emits `Alt`/`Opt` — which is why
 `Super` (the Cmd-position key) is the natural home for macOS-convention commands
 on both platforms.

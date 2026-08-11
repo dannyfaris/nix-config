@@ -135,7 +135,7 @@ in
       # 6pt JankyBorders width so adjacent tiles' borders never touch; outer
       # clears the screen edge. NB the token is `spacing.s05`, NOT the niri
       # `layout.gap` — layout.gap is display-profile-scaled for niri's physical
-      # rendering (12 under metis's 2× profile), whereas AeroSpace works in
+      # rendering (12 under the 2× profile), whereas AeroSpace works in
       # macOS points where Retina scaling is transparent, so the unscaled
       # on-vocab value is the correct one here.
       gaps = {

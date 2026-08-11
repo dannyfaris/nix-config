@@ -3,7 +3,7 @@
 # sops-nix). Called from parts/nixos.nix.
 #
 # Usage:
-#   (import ./lib/mk-host.nix { inherit inputs; }) { hostname = "metis"; }
+#   (import ./lib/mk-host.nix { inherit inputs; }) { hostname = "alcyone"; }
 #
 # Platform: the host's `hardware-configuration.nix` sets
 # `nixpkgs.hostPlatform` per ADR-023 — that is the single

@@ -287,7 +287,7 @@ For NixOS hosts installed via `nixos-anywhere` (ADR-022), the per-host directory
 
 Examples drawn from the current and planned set of hosts:
 
-- `metis` — personal x86_64 dev box, headless-turned-first-desktop-host (ADR-028; transition landed)
+- `metis` — personal x86_64 dev box, headless-turned-first-desktop-host (ADR-028); retired 2026-08-11 (#387), its directory removed rather than renamed
 - `jupiter` — NixOS x86_64 flagship desktop tower (planned; pending hardware; celestial name per ADR-038)
 - `neptune` — Mac mini (aarch64-darwin, nix-darwin; live as of 2026-06-02, onboarded as `mac-mini` and renamed per ADR-038)
 

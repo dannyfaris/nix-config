@@ -2,7 +2,7 @@
 #
 # Imported ONLY by hosts/alcyone, the fleet's first and only discrete GPU
 # (RTX 4060, Ada Lovelace). Never add this to the shared desktop-env
-# bundle: metis is an Intel iGPU and needs none of it (#631).
+# bundle: alnair is an Intel iGPU (Iris Xe) and needs none of it (#631).
 #
 # `open = true` is not a free choice. The open kernel module supports
 # only Turing-and-newer cards AND needs a driver branch new enough to

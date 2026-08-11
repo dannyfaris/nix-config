@@ -31,7 +31,7 @@ ADR-044 stands: Nix is the sole theming authority; Noctalia is a themed-by-Nix s
 
 ## Idle, sleep, caffeine
 
-Declared in the baseline (`[idle]`, fade overlay off — nobody is at the desk when these fire): **lock** at 600 s, **screen-off** at 660 s, and **suspend** at 1800 s — a deliberate stance change (#644) retiring the recorded "no auto-suspend on a desktop". Suspend is a per-host `hostContext.idleSuspend` flag, on for metis (and Alcyone).
+Declared in the baseline (`[idle]`, fade overlay off — nobody is at the desk when these fire): **lock** at 600 s, **screen-off** at 660 s, and **suspend** at 1800 s — a deliberate stance change (#644) retiring the recorded "no auto-suspend on a desktop". Suspend is a per-host `hostContext.idleSuspend` flag, on for alcyone and alnair.
 
 Suspend is guarded, not bare — `[idle.behavior.suspend]` runs `noctalia-idle-guard`, which stays awake if any of: **the caffeine switch is on** (see below), a live inbound SSH session exists, or detached agent workloads are running (linger is on; SSH teardown does not imply idle). Otherwise it delegates to Noctalia's own `session lock-and-suspend` — race-free, queued on the compositor's `locked` event. Failure direction is always "stays awake" *(probe S3)*. A skipped fire does not re-arm until input resets the idle timer.
 
@@ -50,7 +50,7 @@ Suspend is guarded, not bare — `[idle.behavior.suspend]` runs `noctalia-idle-g
 - **Notifications**: v5 claims `org.freedesktop.Notifications` by default and throws if another daemon owns the name (fnott is long decommissioned; nothing competes).
 - **Clipboard**: native wlr-data-control implementation — no cliphist, no wl-clipboard in v5's tree. `pkgs.wl-clipboard` stays on the session PATH purely for CLI consumers (gh-dash's `y`, scripts; docs/desktop/clipboard.md #360). History is encrypted at rest against the Secret Service (gnome-keyring on metis) *(probe C3)*.
 - **Lock PAM**: hardcoded to the `login` service (`NOCTALIA_PAM_SERVICE` is gone). Fine on NixOS — `/etc/pam.d/login` exists; fingerprint is native fprintd D-Bus, not PAM-stack swapping.
-- **Polkit**: v5 ships a built-in agent, default **off** — metis keeps mate-polkit; don't enable both.
+- **Polkit**: v5 ships a built-in agent, default **off** — the desktop hosts keep mate-polkit; don't enable both.
 - **Fonts**: v5's chrome resolves through the fontconfig `sans-serif` generic (`shell.font_family` default) — the `set-font` conductor reaches it, runtime-verified (probe C6: a generic remap rendered in the bar after a shell restart). Faces are cached at process start — no live follow; `set-font`'s hint + `--reload-shell` restart (`home/nixos/set-font.nix`) is the apply path. One open observation: a restart spawned by `set-font` itself once missed a just-written remap that a compositor spawn then picked up — low-stakes follow-up, the restart machinery itself is proven.
 - **Single instance**: a second `noctalia` spawn aborts on the instance lock — benign with compositor-spawn.
 - **PipeWire + WirePlumber** are hard runtime companions (upstream-documented; both active on metis).

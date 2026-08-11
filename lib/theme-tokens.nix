@@ -55,8 +55,9 @@ let
   };
 
   # Geometry below is scaled by the active display profile (∝ 1/scale to hold
-  # apparent size), so the design language renders at metis's 2× scale. The
-  # static spacing/radius let-bindings above remain as the vocabulary.
+  # apparent size), so the design language renders at whatever scale the active
+  # profile selects. The static spacing/radius let-bindings above remain as the
+  # vocabulary.
   profile = import ./display-profiles.nix;
 in
 {

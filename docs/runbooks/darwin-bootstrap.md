@@ -12,13 +12,6 @@ Run once per fresh clone of this repo on the operator machine:
 
 - `nix` with flakes enabled. Repo cloned. devShell entered once (`nix develop`, or direnv-reload via the repo's `.envrc`). The devShell's `shellHook` installs the pre-commit hooks (ADR-025) and exports `SOPS_AGE_KEY_FILE` so `sops --decrypt` works in-repo without env-var ceremony.
 - Vault access (1Password) from the new Mac or a neighbouring signed-in device. Nothing key-shaped is carried between machines: the Mac's sops identity is populated from the vault in pre-bootstrap step 1, and its fleet SSH key is minted on-box at §Fleet SSH enrolment and lands via a normal PR (docs/design/fleet-key-custody.md).
-- **Fetch auth for private flake inputs** (`wiki-infra` — docs/ci.md §Private flake inputs). Nix fetches *all* inputs at eval, so every machine that evaluates this flake — this Mac, once it rebuilds itself — needs GitHub auth for the private inputs or the rebuild dies at fetch with an HTTP 404. One-time per machine, after `gh auth login` (gh arrives with the first activation; run this before the *second* rebuild, or on first 404):
-
-  ```
-  install -d -m 700 ~/.config/nix && umask 077 && printf 'access-tokens = github.com=%s\n' "$(gh auth token)" > ~/.config/nix/nix.conf
-  ```
-
-  Overwrites `~/.config/nix/nix.conf` — fine on fleet hosts, where the file is unmanaged and holds only this line. `gh auth token` returns a session-lifetime OAuth token: a later rebuild 404-ing on the input is the refresh signal (re-run the line). CI's equivalent, the PAT behind it, and the declarative fleet-wide alternative are in docs/ci.md §Private flake inputs.
 
 ## Pre-bootstrap (operator-side, on the Mac)
 
@@ -199,12 +192,12 @@ The app set carries non-declarable first-run ceremony beyond AeroSpace's own sec
 # live so they survive `nh darwin switch` without being clobbered.
 # See docs/decisions/ADR-010-ssh.md.
 #
-# Fleet hosts (metis, neptune, ...) are declared in git since #517
+# Fleet hosts (alcyone, neptune, ...) are declared in git since #517
 # — do NOT re-add them here: this file renders BEFORE the declared
 # blocks and would silently shadow them. Break-glass fallbacks only.
 
-Host metis-lan
-  HostName <metis's LAN IP>
+Host electra-lan
+  HostName <electra's LAN IP>
   User dbf
 ```
 
@@ -214,7 +207,7 @@ Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares them by ba
 
 Same steps as the headless runbook (see [headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment): generate this host's passphrase-less outbound user key (`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`), add its pubkey to `lib/operator.nix` `hostKeys`, add/extend the relevant `sshEdges` entries (ADR-042's declared-edge model), and commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to `hosts/<host>/` with its `ssh-known-hosts.nix` and `ssh.nix` entries. Existing hosts pick all of it up at their own next switch.
 
-A client-only host — one whose config omits `modules/darwin/sshd.nix` — runs the first three steps only: mint the key, add it to `hostKeys`, and add this host to the source lists of the destinations it should reach (metis, neptune). Committing a host public key + `ssh-known-hosts`/`ssh.nix` entries is a destination's work, which a client-only host has none of until it starts serving sshd. The enrolment lands via a normal PR: run `gh auth login` first (git is HTTPS+token per ADR-009 — nothing earlier in this runbook sets up push auth).
+A client-only host — one whose config omits `modules/darwin/sshd.nix` — runs the first three steps only: mint the key, add it to `hostKeys`, and add this host to the source lists of the destinations it should reach (alcyone, alnair, electra, neptune). Committing a host public key + `ssh-known-hosts`/`ssh.nix` entries is a destination's work, which a client-only host has none of until it starts serving sshd. The enrolment lands via a normal PR: run `gh auth login` first (git is HTTPS+token per ADR-009 — nothing earlier in this runbook sets up push auth).
 
 ## Post-activation — enable FileVault (manual, not declarable)
 
@@ -291,7 +284,7 @@ Run from the new Mac's user shell.
 
 ### Phase 2 — SSH-context stack into the fleet
 
-Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `metis` and `neptune`.
+Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `alcyone` and `neptune`.
 
 For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not** expect a terminal palette shift: ADR-041 deliberately retired the per-host palette repaint (TUIs follow the local terminal's palette; the Stylix fish target that emitted the OSC escapes was removed fleet-wide).
 
