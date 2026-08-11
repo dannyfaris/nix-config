@@ -706,6 +706,32 @@ let
       # action-analogue parity with darwin's maximise-by-isolation (its own
       # Hyper+Shift+M entry below; disjoint per-platform tables). (ADR-040.)
     }
+    {
+      id = "toggle-window-floating";
+      label = "Toggle floating";
+      description = "Toggle the focused window between floating and the ribbon";
+      keywords = [
+        "floating"
+        "float"
+        "tiling"
+        "toggle"
+        "window"
+      ];
+      # Space: the i3/sway $mod+Shift+Space convention, on the act-on-the-
+      # window escalator where window-state toggles live (fullscreen,
+      # maximize). Companion to the open-floating rules in home/nixos/niri.nix.
+      chord = {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "Space";
+      };
+      platforms.linux = {
+        realization = "niri-action";
+        action.toggle-window-floating = { };
+      };
+      # darwin: N/A for now — AeroSpace's `layout floating tiling` is the
+      # parity lever if wanted later (ADR-040).
+    }
 
     # Base Hyper — spawn
     {

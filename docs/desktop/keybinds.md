@@ -49,7 +49,8 @@ Principles:
 3. **Escalators.** `Hyper+Shift` = *act on the window* — on-screen moves (move
    column, move window-in-column), send-window-to-workspace, *and* window
    geometry (resize, preset-width, center, fullscreen, maximize — migrated from
-   base `Hyper` in #762); `Hyper+Super` = *switch workspace*. "Shift acts on
+   base `Hyper` in #762), plus the floating toggle (`Space`, the i3/sway
+   convention); `Hyper+Super` = *switch workspace*. "Shift acts on
    the window, Super switches." Bare `Hyper` is left to navigate, switch, and
    launch. Still aligned with the dominant i3/sway convention (`$mod+Shift+N`
    sends a window to workspace N).
@@ -113,6 +114,7 @@ follow.
 | `Hyper+Shift+C` | Center column | — |
 | `Hyper+Shift+F` | Fullscreen window | — |
 | `Hyper+Shift+M` | Maximize column | — |
+| `Hyper+Shift+Space` | Toggle floating | — |
 | `Hyper+Return` | Open terminal | Open terminal |
 | `Hyper+B` | Focus or open browser | Focus or open browser |
 | `Hyper+F` | Open file manager | Open Finder |
@@ -247,10 +249,11 @@ carries two kinds of bind:
 | `Super+Tab` | app switcher (`Cmd+Tab` parity) — **reserved on niri**, realization pending |
 | `Super+Space` | launcher (`Cmd+Space` parity) |
 
-> **All `<mod>+Space` chords are reserved** for spotlight-style chooser surfaces
-> ([§Chooser family](#the-chooser-family)). `Super+Tab` is likely
-> realized as a chooser provider (window/app switcher), since niri has no native
-> app-switcher.
+> **Bare `<mod>+Space` chords are reserved** for spotlight-style chooser surfaces
+> ([§Chooser family](#the-chooser-family)) — escalated forms are exempt
+> (`Hyper+Shift+Space` is the floating toggle, an act-on-the-window bind).
+> `Super+Tab` is likely realized as a chooser provider (window/app switcher),
+> since niri has no native app-switcher.
 
 ## Screenshots — native-parity, outside `Hyper`
 
