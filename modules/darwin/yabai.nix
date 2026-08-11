@@ -73,6 +73,21 @@ in
     # own detection. yabai has none, so these are hand-listed and will need
     # extending as the trial finds more.
     #
+    # 1Password and Finder float wholesale, in parity with the utility-palette
+    # rules in home/nixos/niri.nix (Nautilus + 1Password, `open-floating`): apps
+    # you summon and dismiss, not tiles. `manage=off` is the true analogue of
+    # niri's `open-floating` — it sets the float flag rather than dropping the
+    # window, so `window --toggle float` still tiles it back.
+    #
+    # Matched by app, never by title: these titles are content-derived (a Finder
+    # window is named for its folder, 1Password's for the selected vault), so no
+    # title filter can name the main window. The Finder rule subsumes the dialog
+    # titles it replaces.
+    #
+    # The 1Password grid pin is the darwin half of niri's 0.5x0.5 open size —
+    # Electron restores its last-saved bounds, which are tile-shaped for as long
+    # as it has been tiling. `grid` needs no scripting addition.
+    #
     # `rule --add` only appends, and yabai enrols every pre-existing window before
     # it runs this config (src/yabai.c:338 vs :348), so without the trailing
     # `rule --apply` these stay tiled across every mid-session agent reload.
@@ -80,8 +95,8 @@ in
       yabai -m rule --add app="^System Settings$" manage=off
       yabai -m rule --add app="^Karabiner-Elements$" manage=off
       yabai -m rule --add app="^Karabiner-EventViewer$" manage=off
-      yabai -m rule --add app="^1Password$" title="^(Quick Access|1Password)$" manage=off
-      yabai -m rule --add app="^Finder$" title="^(Copy|Connect to Server|Move|Info|Get Info)$" manage=off
+      yabai -m rule --add app="^1Password$" manage=off grid=4:4:1:1:2:2
+      yabai -m rule --add app="^Finder$" manage=off
       yabai -m rule --apply
     '';
   };
