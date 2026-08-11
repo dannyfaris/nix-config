@@ -76,6 +76,6 @@ in
   # nix-gc runs fleet-wide (nix.gc.automatic, weekly on NixOS) and is the
   # canonical "fails silently on a headless box" unit — opt it in here
   # since it exists on every host. Per-host units (e.g. btrfs scrub on
-  # metis) opt in at their own definition site.
+  # alcyone, alnair and electra) opt in at their own definition site.
   systemd.services.nix-gc.onFailure = [ "notify-failure@%n.service" ];
 }

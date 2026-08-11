@@ -99,8 +99,8 @@ in
     # See docs/desktop/keybinds.md §Screenshots.
     screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
 
-    # Output scale from the active display profile (metis runs 2×, overriding
-    # niri's auto-detected 1.5×). DP-1 is the LG UltraFine 4K. See
+    # Output scale from the active display profile, pinned rather than left to
+    # niri's auto-detection. DP-1 is the LG UltraFine 4K. See
     # lib/display-profiles.nix.
     outputs."DP-1".scale = profile.scale;
 
@@ -116,8 +116,8 @@ in
       # max-scroll-amount caps how far niri will scroll the workspace to do
       # so (as a fraction of working-area width), so a large off-screen move
       # isn't triggered by crossing the pointer over it. 17% is tuned to the
-      # 2/3 default-width geometry and pending live confirmation on metis —
-      # see docs/desktop/niri.md §Configuration.
+      # 2/3 default-width geometry and pending live confirmation on the
+      # desktop hosts — see docs/desktop/niri.md §Configuration.
       focus-follows-mouse = {
         enable = true;
         max-scroll-amount = "17%";

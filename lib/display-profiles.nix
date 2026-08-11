@@ -2,8 +2,8 @@
 # per-surface font ramp, and the geometry (gap/radius/border), driven by one
 # knob so they stay in lockstep and switchable.
 #
-# metis (the only desktop host) runs 2× (chosen after an on-panel A/B vs 1× and
-# 1.5×). Each profile couples the niri output scale + the font ramp + the
+# The 2× profile was chosen on the first desktop host after an on-panel A/B vs
+# 1× and 1.5×. Each profile couples the niri output scale + the font ramp + the
 # geometry, calibrated so all scales render at the SAME apparent size: the 1.5×
 # profile carries the on-vocab design values (Carbon spacing-05 gap 16, M3 md
 # radius 12, the agreed font band — foot 11 / dialog 12),
@@ -21,8 +21,9 @@
 # can't be inferred from EDID. Rationale: docs/desktop/niri.md §Display configuration.
 let
   # STOPGAP (#715): the knob is still fleet-wide. 1.5× is on-metal calibrated
-  # on alnair and alcyone; metis was tuned at 2× and rides this profile
-  # uncalibrated until per-host scale selection lands.
+  # on alnair and alcyone, so every current rider is calibrated — but a host
+  # wanting a different scale still can't have one until per-host scale
+  # selection lands.
   active = "1.5"; # ← THE KNOB: "1.0" | "1.5" | "2.0"
 
   profiles = {

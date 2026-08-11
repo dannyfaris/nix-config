@@ -44,7 +44,7 @@ Line 1's leading `✦ <model name>` segment is coloured by Anthropic model tier 
 
 **Review this mapping when Anthropic ships a new tier name** — a "Pro" / "Lite" between Sonnet and Opus, or a successor scheme — the case statement won't recognise it. (Exercised when Fable 5 landed as the tier above Opus.)
 
-The Opus=ORANGE and Sonnet=TEAL choices each share a hue with a line-2 role (untracked counter and branch). The dual roles are deliberate — both pair "label / attention" semantics across the two lines at distinct positions. **ORANGE and TEAL are at capacity** for line-1 categorical pairing: a future line-1 slot should take default-fg rather than triple-loading either. MAUVE is unavailable — it is the most-loaded identity slot (SSH host marker fleet-wide, deliberately sharing with the path on metis per ADR-028).
+The Opus=ORANGE and Sonnet=TEAL choices each share a hue with a line-2 role (untracked counter and branch). The dual roles are deliberate — both pair "label / attention" semantics across the two lines at distinct positions. **ORANGE and TEAL are at capacity** for line-1 categorical pairing: a future line-1 slot should take default-fg rather than triple-loading either. MAUVE is unavailable — it is the most-loaded identity slot (SSH host marker fleet-wide, deliberately sharing with the path under the rose-pine family per ADR-028).
 
 ## Account label
 

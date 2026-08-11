@@ -4,7 +4,7 @@ Mesh-VPN baseline on every host the operator uses interactively.
 
 ## Selection
 
-**NixOS hosts** — `services.tailscale.enable = true` via `modules/nixos/tailscale.nix` (see that file for the daemon / firewall configuration; out of scope for #13's cask work). Imported per-host by `hosts/metis/default.nix`, `hosts/alcyone/default.nix`, `hosts/alnair/default.nix`, and `hosts/electra/default.nix` (first activation needs an interactive `sudo tailscale up`).
+**NixOS hosts** — `services.tailscale.enable = true` via `modules/nixos/tailscale.nix` (see that file for the daemon / firewall configuration; out of scope for #13's cask work). Imported per-host by `hosts/alcyone/default.nix`, `hosts/alnair/default.nix`, and `hosts/electra/default.nix` (first activation needs an interactive `sudo tailscale up`).
 
 **Darwin hosts** — Homebrew cask `tailscale-app` (the Standalone variant, NOT the MAS sandboxed build), declared in `modules/darwin/homebrew.nix` per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s clause 1 (`pkgs.tailscale` on Darwin ships only the daemon/CLI; the `NetworkExtension`-grade GUI VPN is not in nixpkgs). Managed on `neptune`, which imports that module's fleet-shared cask list; any later Darwin host inherits it the same way.
 

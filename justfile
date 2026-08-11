@@ -82,13 +82,13 @@ gen-host-key host:
     echo "     existing anchors) and include it in the relevant key_groups."
     echo "     Resulting shape:"
     echo "       keys:"
-    echo "         - &metis      age1...                 # existing (keep)"
+    echo "         - &electra    age1...                 # existing (keep)"
     echo "         - &{{host}}    $age_recipient   # NEW"
     echo "       creation_rules:"
     echo "         - path_regex: secrets/.*\\.yaml\$"
     echo "           key_groups:"
     echo "             - age:"
-    echo "                 - *metis      # existing (keep)"
+    echo "                 - *electra    # existing (keep)"
     echo "                 - *{{host}}   # NEW"
     echo
     echo "  2. Re-encrypt secrets for the expanded recipient set:"
@@ -263,9 +263,9 @@ bootstrap-clean:
 # flake config declares (sops.age.sshKeyPaths, the gen-host-key pattern
 # pointed at self: /persist/etc/ssh under persist enforcement, /etc/ssh
 # otherwise — one source, no drift; #671). Pass a path to override.
-# On a NixOS secret-holder like metis this host key is the repo's sops
-# decryption identity, the same key sops-nix uses at activation time as
-# root. NixOS hosts only: operator Macs do NOT
+# On a NixOS secret-holder (alcyone, alnair, electra) this host key is
+# the repo's sops decryption identity, the same key sops-nix uses at
+# activation time as root. NixOS hosts only: operator Macs do NOT
 # derive keys.txt from any SSH key — they populate it from the vault
 # (docs/runbooks/darwin-bootstrap.md pre-bootstrap step 1;
 # docs/design/fleet-key-custody.md).
@@ -285,9 +285,10 @@ bootstrap-clean:
 # passed (host key by default, user key when overridden). For it to
 # actually decrypt secrets/secrets.yaml, the derived age recipient
 # must be on .sops.yaml + sops updatekeys re-encrypted from a host
-# that already has decryption capability. Current seed-holders: metis
-# (host-key identity) and the operator's Macs (standalone operator key,
-# from the vault — docs/design/fleet-key-custody.md); a new operator
+# that already has decryption capability. Current seed-holders: alcyone,
+# alnair and electra (host-key identities) and the operator's Macs
+# (standalone operator key, from the vault —
+# docs/design/fleet-key-custody.md); a new operator
 # (or new key) needs the derived recipient added + sops updatekeys run
 # from any current seed-holder (see
 # docs/runbooks/headless-bootstrap.md "Operator prerequisites").

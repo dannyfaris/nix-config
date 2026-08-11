@@ -1,6 +1,6 @@
 # Bluetooth — BlueZ peripherals on the desktop hosts
 
-Bluetooth peripherals (headphones, keyboards, mice) for every NixOS desktop host — alcyone, alnair, metis — via `modules/nixos/bluetooth.nix` in the system `desktop-env` bundle (#773). Born as a laptop concern in the mobility bundle (#636); promoted fleet-wide when alcyone's fully-functional adapter turned out to have no userspace stack behind it. electra (headless) and neptune (Darwin) carry none of this.
+Bluetooth peripherals (headphones, keyboards, mice) for every NixOS desktop host — alcyone, alnair — via `modules/nixos/bluetooth.nix` in the system `desktop-env` bundle (#773). Born as a laptop concern in the mobility bundle (#636); promoted fleet-wide when alcyone's fully-functional adapter turned out to have no userspace stack behind it. electra (headless) and neptune (Darwin) carry none of this.
 
 ## Premise
 

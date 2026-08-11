@@ -17,7 +17,7 @@
 # (electron-wayland, greetd, …): the CLI is a desktop-host capability,
 # available regardless of which user is logged in. Closure cost is
 # small — libsecret is already pulled in by libsecret-using daemons and
-# clients on metis; this just exposes the CLI binaries.
+# clients on the desktop hosts; this just exposes the CLI binaries.
 #
 # Per #104. The gnome-keyring activation itself is accepted as
 # inherited from niri-flake's nixosModule (same precedent as

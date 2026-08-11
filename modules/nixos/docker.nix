@@ -1,5 +1,5 @@
 # Rootless Docker — per-user dockerd for the operator. Imported per-host
-# (alcyone and metis); NOT in foundation — hosts that don't run
+# (alcyone); NOT in foundation — hosts that don't run
 # containers (alnair, electra) shouldn't pay the closure for nothing.
 #
 # Resolves the deferred decision in ADR-006 § "Tool-vs-runtime split"

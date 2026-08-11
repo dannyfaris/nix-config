@@ -43,7 +43,7 @@
   nixpkgs.config.allowUnfreePredicate =
     pkg:
     builtins.elem (lib.getName pkg) [
-      "1password" # 1Password desktop GUI on metis (lib.getName of _1password-gui; #112). See docs/desktop/1password.md
+      "1password" # 1Password desktop GUI on the NixOS desktop hosts (lib.getName of _1password-gui; #112). See docs/desktop/1password.md
       "antigravity-cli" # Google Antigravity CLI (`agy`), replaced Gemini CLI in the agent-clis extras; ADR-008 (#433)
       "claude-code"
       "claude-desktop" # Claude Desktop for Linux (Anthropic beta, repackaged) on the NixOS desktop hosts. See modules/nixos/claude-desktop.nix
@@ -51,7 +51,7 @@
       "cursor-cli"
       "nvidia-settings" # NVIDIA control-panel util pulled by the driver on alcyone (#631). See modules/nixos/nvidia.nix
       "nvidia-x11" # NVIDIA proprietary userspace driver — alcyone's RTX 4060 (#631); the open kernel module is free, userspace is not
-      "obsidian" # Obsidian PKM / notes GUI on metis (#506). See docs/desktop/obsidian.md
+      "obsidian" # Obsidian PKM / notes GUI on the NixOS desktop hosts (#506). See docs/desktop/obsidian.md
       "typora" # Typora markdown editor on the NixOS desktop hosts. See docs/desktop/typora.md
     ];
 }

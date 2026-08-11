@@ -5,7 +5,7 @@ Paid markdown editor (one document = one window, WYSIWYG render in place rather 
 ## Selection
 
 - **Darwin:** Homebrew cask `typora`, declared in `modules/darwin/homebrew.nix` per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s **clause 2** (this doc owns the carve-out — see §Darwin). Update stance: **Sparkle silent**.
-- **NixOS:** `pkgs.typora` from nixpkgs, added to `home.packages` in `home/nixos/typora.nix` (imported by the desktop-env bundle, so it lands on the NixOS desktop hosts — metis, alcyone, alnair). Set as the default markdown handler via `xdg.mimeApps`; update cadence is flake bumps.
+- **NixOS:** `pkgs.typora` from nixpkgs, added to `home.packages` in `home/nixos/typora.nix` (imported by the desktop-env bundle, so it lands on the NixOS desktop hosts — alcyone, alnair). Set as the default markdown handler via `xdg.mimeApps`; update cadence is flake bumps.
 
 The two platforms diverge on install path because the Darwin degradation that drives the Homebrew carve-out (§Darwin) does not exist on Linux — the Linux package carries no Sparkle updater to break against an immutable store, so nixpkgs is the plain choice there.
 

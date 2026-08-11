@@ -56,9 +56,9 @@ The mapping is a *global generic* remap, not a per-surface override; a single su
 
 ## Sizing
 
-The per-surface font sizes are **display-profile-driven**, not fixed literals — a NixOS desktop host's sizes track its niri output scale. metis (the first such host) runs a **2× scale** (chosen after an on-panel A/B against 1× and 1.5× — see visual-identity.md §Typography and niri.md), and one switchable knob, `lib/display-profiles.nix`, couples the scale to the surface sizes (and the geometry) so they move in lockstep. The profiles hold *apparent* size constant across scales: the 1.5× profile carries the on-vocab band, and the 1× / 2× profiles scale those values by ≈1/scale to render at the same apparent size.
+The per-surface font sizes are **display-profile-driven**, not fixed literals — a NixOS desktop host's sizes track its niri output scale. The 2× scale was chosen on the first such host after an on-panel A/B against 1× and 1.5× (see visual-identity.md §Typography and niri.md), and one switchable knob, `lib/display-profiles.nix`, couples the scale to the surface sizes (and the geometry) so they move in lockstep. The profiles hold *apparent* size constant across scales: the 1.5× profile carries the on-vocab band, and the 1× / 2× profiles scale those values by ≈1/scale to render at the same apparent size.
 
-At metis's active **2×** profile the Nix-managed rendered sizes are:
+At the **2×** profile the Nix-managed rendered sizes are:
 
 - **foot** (terminal) — `terminal` slot, **8**, read from the profile directly in `home/nixos/foot.nix`.
 - **GTK dialogs** (the polkit prompt, file pickers, app dialogs) — `popups` slot, **9**, a `gtk.font` `lib.mkForce` in `home/nixos/stylix-targets-desktop.nix`.

@@ -35,7 +35,7 @@
     ../../modules/nixos/claude-desktop.nix # Claude Desktop for Linux, Phase 1 (Chat + Claude Code); Cowork deferred upstream (#683).
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
     ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199) — client only; alcyone runs no ntfy server.
-    ../../modules/nixos/nvidia.nix # RTX 4060 (Ada) — open kernel module + proprietary userspace. Alcyone-only; never the shared desktop-env bundle (metis is Intel iGPU).
+    ../../modules/nixos/nvidia.nix # RTX 4060 (Ada) — open kernel module + proprietary userspace. Alcyone-only; never the shared desktop-env bundle (alnair is Intel iGPU).
     ../../modules/nixos/wake-on-lan-target.nix # Arm WoL on enp5s0 (target side, #632) — interface set via wakeOnLan.interfaces below. Emitter lives on electra.
     ../../modules/nixos/ephemeral-root.nix # Enforced from first boot — see ephemeralRoot below; docs/design/ephemeral-root.md.
     ../../modules/nixos/persist-os-core.nix # OS-core persist whitelist (machine-id, /var/lib/nixos, systemd timers/coredump, /var/log, /var/db/sudo, /root).

@@ -154,9 +154,9 @@ pkgs.testers.runNixOSTest {
 
         ephemeralRoot.probe = {
           enable = true;
-          # Point at the local sink below, not metis. A path the delta scan
-          # can never itself produce, so the sink's own request-log files don't
-          # feed back as drift.
+          # Point at the local sink below, not the real fleet receiver. A path
+          # the delta scan can never itself produce, so the sink's own
+          # request-log files don't feed back as drift.
           ntfyUrl = "http://127.0.0.1:8199/fleet-state";
           # Glob suppressing a planted random-suffixed residue path (assertion m).
           extraIgnorePatterns = [ "/var/probe-glob-*" ];

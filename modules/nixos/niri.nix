@@ -13,7 +13,8 @@
 # niri-flake.cache.enable = false so the implicit add doesn't happen,
 # and nix.settings then explicitly whitelists the same cache with the
 # same upstream key. The delegation is recorded in source, dated, and
-# only applies on hosts that import this module (currently metis).
+# only applies on hosts that import this module (currently alcyone and
+# alnair).
 #
 # Trust footprint: sodiboo (maintainer) on a single Cachix signing key,
 # bounded to niri-stable + niri-unstable + xwayland-satellite (x86_64

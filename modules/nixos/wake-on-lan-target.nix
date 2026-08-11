@@ -1,8 +1,7 @@
 # Wake-on-LAN target arming (#632). The passive half of the wake
 # primitive: it makes a host's wired NIC listen for the magic packet in
-# its sleep state. Reusable across the fleet — metis reuses this when #650
-# lands; wire any host by importing this module and listing its wired
-# interface(s) in `wakeOnLan.interfaces`.
+# its sleep state. Reusable across the fleet — wire any host by importing
+# this module and listing its wired interface(s) in `wakeOnLan.interfaces`.
 #
 # NM-vs-nixos decision (the load-bearing correctness call for #632):
 # Alcyone runs NetworkManager, so the obvious worry is that NM re-manages

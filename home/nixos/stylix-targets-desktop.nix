@@ -66,10 +66,10 @@ in
     # inert on non-desktop hosts).
     # Gated locally on `desktopSession` so a future desktop-less host
     # importing this file (unlikely under the desktop-env bundle) won't
-    # pull adw-gtk3 / gtk+3 (~42 MiB) for theming it can't render. On
-    # metis the gate fires and GTK app chrome (file pickers, settings
-    # dialogs, GTK apps generally) follows the base16 palette instead of
-    # default Adwaita-light.
+    # pull adw-gtk3 / gtk+3 (~42 MiB) for theming it can't render. On the
+    # NixOS desktop hosts the gate fires and GTK app chrome (file pickers,
+    # settings dialogs, GTK apps generally) follows the base16 palette
+    # instead of default Adwaita-light.
     #
     # The `qt` target was dropped (#103). The polkit-kde agent was the
     # only Qt app on metis; swapping it for mate-polkit (GTK) left zero
