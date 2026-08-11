@@ -14,8 +14,9 @@
 #                            focus-ring/border/shadow/tab-indicator/
 #                            insert-hint + recent-windows/highlight)
 #   gtk3-{dark,light}.css  — 34 @define-color keys for GTK3 theming
-#   gtk4-{dark,light}.css  — same 34 keys + :root { --*-color } libadwaita
-#                            custom-property block for GTK4
+#   gtk4-{dark,light}.css  — window { --*-color } libadwaita custom-property
+#                            block only (#777 — @define-color/:root are inert
+#                            on gtk 4.22 + libadwaita 1.9; window {} paints)
 #   noctalia.json          — Noctalia v5 custom palette: dark + light objects,
 #                            each 16 M3-role keys + the mandatory terminal
 #                            block (polarity-independent — v5 selects the
@@ -247,10 +248,14 @@ let
     @define-color theme_unfocused_selected_fg_color @accent_fg_color;
   '';
 
-  # GTK4 — same 34 @define-color keys + the :root {} libadwaita custom-
-  # property block. Slot mapping same as GTK3; :root mirrors the @define-color
-  # values as CSS custom properties.
-  # Additional :root-only keys (from live file):
+  # GTK4 — libadwaita custom-property block, scoped on `window {}` rather
+  # than `:root {}`: on gtk 4.22 + libadwaita 1.9, `:root` loses the
+  # cascade to libadwaita's own variable definitions but `window {}`
+  # paints (verified empirically on Nautilus, #777). The `@define-color`
+  # block GTK3 still relies on is dropped here — inert on this pin, and
+  # GTK3 theming (a separate file, renderGtk3) is unaffected. Slot mapping
+  # otherwise matches GTK3 (see renderGtk3 above).
+  # Additional keys beyond the GTK3 set (from live file):
   #   --warning-bg   = base0E (magenta family as warning accent)
   #   --warning-fg   = base07 (bright-white, readable on magenta bg)
   #   --warning      = base0E
@@ -258,61 +263,61 @@ let
   #   --success-bg   = base02 (dark green-tinted surface)
   #   --success-fg   = base07
   #   --shade-color  = rgba fixed (semi-transparent black)
-  renderGtk4 =
-    c:
-    renderGtk3 c
-    + ''
+  # The three backdrop/border aliases use var(--window-bg-color) rather
+  # than the GTK3 render's `@window_bg_color` — that named-color reference
+  # is part of the now-dropped @define-color mechanism, so it's rewritten
+  # to the custom-property equivalent, same resolved value.
+  renderGtk4 = c: ''
+    window {
+        --accent-color: #${c.base0D};
+        --accent-bg-color: #${c.base0D};
+        --accent-fg-color: #${c.base00};
 
-      :root {
-          --accent-color: #${c.base0D};
-          --accent-bg-color: #${c.base0D};
-          --accent-fg-color: #${c.base00};
+        --destructive-bg-color: #${c.base08};
+        --destructive-fg-color: #${c.base00};
 
-          --destructive-bg-color: #${c.base08};
-          --destructive-fg-color: #${c.base00};
+        --error-bg-color: #${c.base08};
+        --error-fg-color: #${c.base00};
+        --error-color: #${c.base08};
 
-          --error-bg-color: #${c.base08};
-          --error-fg-color: #${c.base00};
-          --error-color: #${c.base08};
+        --window-bg-color: #${c.base00};
+        --window-fg-color: #${c.base05};
 
-          --window-bg-color: #${c.base00};
-          --window-fg-color: #${c.base05};
+        --view-bg-color: #${c.base00};
+        --view-fg-color: #${c.base05};
 
-          --view-bg-color: #${c.base00};
-          --view-fg-color: #${c.base05};
+        --headerbar-bg-color: #${c.base00};
+        --headerbar-fg-color: #${c.base05};
+        --headerbar-backdrop-color: var(--window-bg-color);
 
-          --headerbar-bg-color: #${c.base00};
-          --headerbar-fg-color: #${c.base05};
-          --headerbar-backdrop-color: @window_bg_color;
+        --popover-bg-color: #${c.base01};
+        --popover-fg-color: #${c.base05};
 
-          --popover-bg-color: #${c.base01};
-          --popover-fg-color: #${c.base05};
+        --card-bg-color: #${c.base01};
+        --card-fg-color: #${c.base05};
 
-          --card-bg-color: #${c.base01};
-          --card-fg-color: #${c.base05};
+        --dialog-bg-color: #${c.base00};
+        --dialog-fg-color: #${c.base05};
 
-          --dialog-bg-color: #${c.base00};
-          --dialog-fg-color: #${c.base05};
+        --overview-bg-color: #${c.base01};
+        --overview-fg-color: #${c.base05};
 
-          --overview-bg-color: #${c.base01};
-          --overview-fg-color: #${c.base05};
+        --sidebar-bg-color: #${c.base01};
+        --sidebar-fg-color: #${c.base05};
+        --sidebar-backdrop-color: var(--window-bg-color);
+        --sidebar-border-color: var(--window-bg-color);
 
-          --sidebar-bg-color: #${c.base01};
-          --sidebar-fg-color: #${c.base05};
-          --sidebar-backdrop-color: @window_bg_color;
-          --sidebar-border-color: @window_bg_color;
+        --warning-bg-color: #${c.base0E};
+        --warning-fg-color: #${c.base07};
+        --warning-color: #${c.base0E};
 
-          --warning-bg-color: #${c.base0E};
-          --warning-fg-color: #${c.base07};
-          --warning-color: #${c.base0E};
+        --success-color: #${c.base0B};
+        --success-bg-color: #${c.base02};
+        --success-fg-color: #${c.base07};
 
-          --success-color: #${c.base0B};
-          --success-bg-color: #${c.base02};
-          --success-fg-color: #${c.base07};
-
-          --shade-color: rgba(0, 0, 0, 0.36);
-      }
-    '';
+        --shade-color: rgba(0, 0, 0, 0.36);
+    }
+  '';
 
   # noctalia.json — Noctalia v5 custom palette. ONE file per family carrying
   # BOTH mode objects (v5 selects dark/light in-process via theme.mode, so
