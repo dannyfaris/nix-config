@@ -478,14 +478,15 @@ let
     }
     {
       id = "focus-window-up";
-      label = "Focus window up";
-      description = "Move focus up within the current column";
+      label = "Focus window or workspace up";
+      description = "Move focus up within the column; at the top of the column, switch to the workspace above";
       keywords = [
         "focus"
         "navigate"
         "up"
         "window"
         "stack"
+        "workspace"
       ];
       chord = {
         tier = "hyper";
@@ -493,10 +494,13 @@ let
       };
       platforms.linux = {
         realization = "niri-action";
-        action.focus-window-up = { };
+        # Edge behaviour here differs from darwin's; see
+        # docs/desktop/keybinds.md's "Focus & navigation" note for the comparison.
+        action.focus-window-or-workspace-up = { };
       };
       platforms.darwin = {
         realization = "aerospace-action";
+        label = "Focus window up";
         action = "focus up";
         description = "Move focus to the window above";
         keywords = [
@@ -509,14 +513,15 @@ let
     }
     {
       id = "focus-window-down";
-      label = "Focus window down";
-      description = "Move focus down within the current column";
+      label = "Focus window or workspace down";
+      description = "Move focus down within the column; at the bottom of the column, switch to the workspace below";
       keywords = [
         "focus"
         "navigate"
         "down"
         "window"
         "stack"
+        "workspace"
       ];
       chord = {
         tier = "hyper";
@@ -524,10 +529,11 @@ let
       };
       platforms.linux = {
         realization = "niri-action";
-        action.focus-window-down = { };
+        action.focus-window-or-workspace-down = { };
       };
       platforms.darwin = {
         realization = "aerospace-action";
+        label = "Focus window down";
         action = "focus down";
         description = "Move focus to the window below";
         keywords = [
