@@ -24,6 +24,7 @@
   lib,
   options,
   inputs,
+  pkgs,
   ...
 }:
 let
@@ -35,6 +36,28 @@ let
   # spawns below — same idiom as spawn-at-startup, so these don't depend on
   # session PATH.
   noctalia = lib.getExe config.programs.noctalia.package;
+
+  # Focus-or-spawn helper for the registry's app binds (spawn-browser):
+  # focus the first window matching the app-id, else exec the fallback
+  # command. On the session PATH via home.packages below so the registry can
+  # spawn it by bare name (the #360 wl-clipboard idiom); `niri` itself is
+  # resolved the same way — the session that presses the bind always has it.
+  focusOrSpawn = pkgs.writeShellApplication {
+    name = "niri-focus-or-spawn";
+    runtimeInputs = [ pkgs.jq ];
+    text = ''
+      app_id="$1"
+      shift
+      # Prefer the focused match: niri's window list is unordered, and with
+      # two matching windows a bare first-match could yank focus away from
+      # the one already focused. Focused match → focus it again (no-op).
+      id="$(niri msg --json windows | jq -r --arg a "$app_id" 'first(.[] | select(.app_id == $a and .is_focused).id) // first(.[] | select(.app_id == $a).id) // empty')"
+      if [ -n "$id" ]; then
+        exec niri msg action focus-window --id "$id"
+      fi
+      exec "$@"
+    '';
+  };
 
   # Merge the registry-generated binds with the hand-authored remainder,
   # asserting no hand-authored chord silently shadows a generated one via `//`
@@ -66,6 +89,8 @@ in
 
       include optional=true "~/.local/state/theme-menu/niri.kdl"
     '';
+
+  home.packages = [ focusOrSpawn ];
 
   programs.niri.settings = {
     # Capture target, set explicitly so it stays in lockstep with the
@@ -128,7 +153,7 @@ in
       # Auto-centering (#366) — center the focused column only when it
       # doesn't fit on screen alongside the previously-focused column
       # (on-overflow), and always center a lone column rather than scroll
-      # it to an edge. The manual Hyper+C center-column bind is separate.
+      # it to an edge. The manual Hyper+Shift+C center-column bind is separate.
       # See docs/desktop/niri.md §Configuration.
       center-focused-column = "on-overflow";
       always-center-single-column = true;

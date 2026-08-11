@@ -745,23 +745,30 @@ let
     }
     {
       id = "spawn-browser";
-      label = "Open browser";
-      description = "Open the default web browser";
+      label = "Focus or open browser";
+      description = "Focus the browser window, or open the browser";
       keywords = [
         "browser"
         "web"
         "internet"
         "default"
+        "focus"
       ];
       chord = {
         tier = "hyper";
         key = "B";
       };
-      # A neutral https URL resolves through xdg-open to the registered default
-      # handler, so the bind follows the default rather than pinning a browser.
+      # Focus-or-spawn (a fresh xdg-open opened a NEW window every press —
+      # the focus half must go through the compositor). The focus target pins
+      # the selected browser's app-id (firefox, ADR-029) while the spawn
+      # fallback still follows the xdg default; niri-focus-or-spawn is the
+      # home.packages helper in home/nixos/niri.nix, resolved via the
+      # session PATH like every other bare spawn name here.
       platforms.linux = {
         realization = "niri-action";
         action.spawn = [
+          "niri-focus-or-spawn"
+          "firefox"
           "xdg-open"
           "https://"
         ];
@@ -816,6 +823,30 @@ let
           "files"
           "launch"
         ];
+      };
+    }
+    {
+      id = "spawn-claude";
+      label = "Focus or open Claude";
+      description = "Focus the Claude Desktop window, or launch the app";
+      keywords = [
+        "claude"
+        "ai"
+        "assistant"
+        "chat"
+        "focus"
+      ];
+      chord = {
+        tier = "hyper";
+        key = "C";
+      };
+      # Plain spawn IS focus-or-open: the app is single-instance — a re-spawn
+      # makes the running instance raise + focus its window. Regression lever:
+      # niri-focus-or-spawn with app-id com.anthropic.Claude. Linux-only; on
+      # niri hosts without the app (#683) the chord is a silent no-op.
+      platforms.linux = {
+        realization = "niri-action";
+        action.spawn = "claude-desktop";
       };
     }
 
