@@ -40,8 +40,8 @@
 #     remote/agent visual verification over SSH. niri's interactive
 #     screenshot UI stays the console path. See docs/desktop/screen-capture.md (#529).
 #   - file-manager.nix — trash purge timer + inode/directory handler for
-#     Thunar (system-side daemons in modules/nixos/file-manager.nix).
-#     See docs/desktop/file-manager.md (#762).
+#     Nautilus (system-side package + gvfs in modules/nixos/file-manager.nix).
+#     See docs/desktop/file-manager.md (#771).
 #   - pointer-icons.nix — Colloid icons + phinger cursor (stylix.icons /
 #     stylix.cursor + niri cursor block). See docs/desktop/pointer-icons.md (#110).
 #

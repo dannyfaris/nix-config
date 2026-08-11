@@ -1,6 +1,6 @@
 # Removable media access
 
-Plug in a USB drive → it auto-mounts → it's browsable, on the niri desktop on metis (#105). Scope is *removable* block storage (USB sticks, SD cards, external disks). Virtual backends (phone MTP/PTP, SMB/NFS network shares, `trash://`) were originally out of scope; they landed later via gvfs + Thunar when the need became real — see [file-manager.md](./file-manager.md) (#762).
+Plug in a USB drive → it auto-mounts → it's browsable, on the niri desktop on metis (#105). Scope is *removable* block storage (USB sticks, SD cards, external disks). Virtual backends (phone MTP/PTP, SMB/NFS network shares, `trash://`) were originally out of scope; they landed later via gvfs + Nautilus when the need became real — see [file-manager.md](./file-manager.md) (#762).
 
 ## Premise correction — mostly independent of #103
 
@@ -10,7 +10,7 @@ The issue framed this as depending on the graphical-authentication agent (#103).
 
 - **System: `services.udisks2.enable`** — the daemon that exposes block devices and performs the mount (to `/run/media/$USER/<label>`), plus the userspace filesystem helpers it shells out to: **`exfatprogs`** (exFAT), **`ntfs3g`** (NTFS), **`dosfstools`** (FAT). In `modules/nixos/removable-media.nix`, via the system desktop-env bundle.
 - **Home: `services.udiskie`** (`automount`, `notify`, **`tray = "never"`**) — the user daemon that auto-mounts on insert and pops fnott notifications. Plus the **`mount.yazi`** plugin for in-yazi unmount/eject. In `home/nixos/removable-media.nix`, via the home desktop-env bundle.
-- **Browse surface: yazi** — already installed; auto-mounts land at `/run/media/$USER/<label>` and yazi browses them like any path. (Since #762, Thunar is the complementary GUI surface — [file-manager.md](./file-manager.md); yazi keeps the terminal-browse and `mount.yazi` eject roles recorded here.)
+- **Browse surface: yazi** — already installed; auto-mounts land at `/run/media/$USER/<label>` and yazi browses them like any path. (Since #762, Nautilus is the complementary GUI surface — [file-manager.md](./file-manager.md); yazi keeps the terminal-browse and `mount.yazi` eject roles recorded here.)
 
 ## Rationale
 

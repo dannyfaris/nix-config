@@ -1,5 +1,5 @@
 # File manager (home side) — trash semantics + the directory handler.
-# System side (Thunar/gvfs/tumbler daemons): modules/nixos/file-manager.nix.
+# System side (Nautilus/gvfs): modules/nixos/file-manager.nix.
 # Trash policy rationale: docs/desktop/file-manager.md §Trash (#762).
 { pkgs, ... }:
 {
@@ -27,5 +27,5 @@
 
   # Only the practically-exercised type (firefox.md precedent); rides the
   # xdg.mimeApps.enable already set by firefox.nix in this bundle.
-  xdg.mimeApps.defaultApplications."inode/directory" = "thunar.desktop";
+  xdg.mimeApps.defaultApplications."inode/directory" = "org.gnome.Nautilus.desktop";
 }
