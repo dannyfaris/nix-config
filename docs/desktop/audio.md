@@ -71,7 +71,7 @@ A v5-capability probe on alnair decided it. `noctalia msg` **does** expose the v
 
 **Not a patchbay.** `pwvucontrol` (and `pavucontrol`) are mixers — per-app/device volume and routing to a sink. Routing one app's output into another app's input is a patchbay concern (`qpwgraph` / `helvum`), out of scope here and added only if that need ever appears.
 
-**Bluetooth audio is out of scope.** BlueZ now runs on every desktop host (`hardware.bluetooth` via the desktop-env bundle, #773), but no `services.pipewire` Bluetooth (`wireplumber` BT config) is wired. A separate concern if BT audio is ever wanted.
+**Bluetooth audio is out of scope here.** BlueZ runs on every desktop host (`hardware.bluetooth` via the desktop-env bundle, #773), and no explicit `services.pipewire` Bluetooth config is wired — none proved necessary: WirePlumber's stock bluez monitor covers A2DP on its own (verified on alcyone). The capability, its surfaces and its sharp edges live in [bluetooth.md](./bluetooth.md).
 
 ## References
 
