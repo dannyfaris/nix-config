@@ -1,8 +1,6 @@
 # Cursor IDE — Darwin install path
 
-**Scope note.** Cursor-vs-alternatives (Helix, VSCode, Zed, etc.) is settled and lives in the module head comments at [`home/nixos/cursor-ide.nix`](../../home/nixos/cursor-ide.nix) per the [README §"Deliberate no-doc"](./README.md#index) exception — Cursor is a foregone install across all the operator's hosts, not a selection weighed against alternatives. **This doc covers only the Darwin install-path selection under [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)** — cask vs. `pkgs.code-cursor`. The IDE-selection question is not re-litigated here.
-
-Picked because it's the IDE the operator uses at work; the IDE-selection rationale itself is the foregone-install case recorded upstairs.
+**Scope note.** Cursor-vs-alternatives (Helix, VSCode, Zed, etc.) was never weighed: Cursor is a foregone install, picked because it's the IDE the operator uses at work — the [README §"Deliberate no-doc"](./README.md#index) exception, not a selection. That rationale lived in the head comments of `home/nixos/cursor-ide.nix` until Cursor was removed from the Linux desktop (see §History); with Darwin now the only platform installing it, the rationale lives here. **The rest of this doc covers the Darwin install-path selection under [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)** — cask vs. `pkgs.code-cursor`.
 
 ## Selection
 
@@ -71,8 +69,12 @@ defaults domains | tr , '\n' | grep -i todesktop
 
 **Migration candidate to nixpkgs.** Per §Rationale's verification path: if a contributor lands a clean updater- disable path for `pkgs.code-cursor` on Darwin AND the operator accepts flake-bump cadence on an AI IDE, the clause-2 carve- out's premise weakens and ADR-031 Migration trigger 1 may fire. Reconciling Cursor's release cadence with flake-bump cadence is the harder half of that test.
 
+## History
+
+Cursor was installed on the NixOS desktop hosts via `home/nixos/cursor-ide.nix` (`pkgs.code-cursor`, a `home.packages` addition from #77) until that module was removed and the `cursor` entry dropped from the `allowUnfreePredicate` whitelist. Darwin (neptune, homebrew cask) is now the only platform in the fleet that installs Cursor, so this doc absorbed the foregone-install rationale the deleted module's head comments used to carry. `git log` carries the rest.
+
 ## References
 
-- [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md) — boundary rule placing Cursor on the Mac via cask under clause 2; this doc owns the Darwin install-path carve-out justification only (the IDE-selection rationale lives in [`home/nixos/cursor-ide.nix`](../../home/nixos/cursor-ide.nix) per the README "Deliberate no-doc" precedent).
+- [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md) — boundary rule placing Cursor on the Mac via cask under clause 2; this doc owns the Darwin install-path carve-out justification.
 - Homebrew `cursor` cask source (JSON livecheck against `api2.cursor.sh`) — https://github.com/Homebrew/homebrew-cask/blob/master/Casks/c/cursor.rb
 - ToDesktop (Cursor's app-distribution platform) — context for the `com.todesktop.*` bundle-ID pattern.

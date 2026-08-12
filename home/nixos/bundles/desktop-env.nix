@@ -19,9 +19,6 @@
 #   - thunderbird.nix — programs.thunderbird.enable (install only;
 #     accounts runtime/GUI-managed; Gecko Wayland auto-detect; see
 #     docs/desktop/thunderbird.md). Personal Gmail + iCloud (#388).
-#   - cursor-ide.nix — home.packages addition for pkgs.code-cursor
-#     (AI-coding-focused vscode fork; Wayland via host-wide
-#     NIXOS_OZONE_WL set in modules/nixos/electron-wayland.nix).
 #   - theme-menu.nix — Nix-declared runtime theme menu: renders one entry dir
 #     per declared family (lib/theme-families.nix), maintains the per-target
 #     resolved symlinks in $XDG_STATE_HOME/theme-menu/, seeds them at first
@@ -48,8 +45,8 @@
 # First occupant of home/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + the Noctalia shell
 # all carry Linux paths; firefox's xdg.mimeApps wiring is Linux-only
-# even though pkgs.firefox builds on Darwin; cursor-ide's launcher
-# integration is Linux-only although pkgs.code-cursor builds on
+# even though pkgs.firefox builds on Darwin; obsidian's launcher
+# integration is Linux-only although pkgs.obsidian builds on
 # Darwin) so per scripts/lint-shared-purity.sh this lives under
 # nixos/, not shared/.
 #
@@ -69,7 +66,6 @@
     ../noctalia.nix
     ../firefox.nix
     ../thunderbird.nix
-    ../cursor-ide.nix
     # obsidian.nix — home.packages addition for pkgs.obsidian (the PKM /
     # notes GUI; unfree, whitelisted in modules/shared/nix-daemon.nix).
     # GUI only; the git-synced ~/wiki vault is separate. See
