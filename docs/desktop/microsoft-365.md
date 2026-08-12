@@ -1,6 +1,6 @@
 # Microsoft 365 — Word, Excel, PowerPoint, Outlook
 
-Operator's work-supplied productivity suite on `neptune`. Picked because it is the suite the operator's workplace runs on — work documents, work email, work calendar all live there. Selection-by-incumbency; no comparison weigh-up needed.
+Operator's work-supplied productivity suite on `celaeno`. Picked because it is the suite the operator's workplace runs on — work documents, work email, work calendar all live there. Selection-by-incumbency; no comparison weigh-up needed.
 
 Scope is Word, Excel, PowerPoint, Outlook. **Teams, OneDrive, OneNote, and any other Office app are intentionally out of scope.** Teams in particular is documented under §Sharp edges below — its MAS install failed on the 2026-06-03 mac-mini bring-up, and the operator chose to use the Chrome web client at teams.microsoft.com rather than chase a fix. Adding any of the out-of-scope apps is a one-line `masApps` entry plus a doc amendment recording the numeric ID and any per-app sandboxing note.
 

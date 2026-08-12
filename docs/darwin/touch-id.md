@@ -1,14 +1,14 @@
 # Touch ID for sudo
 
-Operator's authentication shortcut for `sudo` on every Darwin host that has Touch ID hardware available. On `neptune` the hardware reaches macOS through the Apple Magic Keyboard with Touch ID; the same wiring carries over to any future MacBook with built-in Touch ID. The Apple Watch "approve with Watch" prompt is enabled by the same option as a free side-effect — `pam_tid.so` natively offers the Apple Watch as an approval channel when a paired Watch is present and no fingerprint is given, so `touchIdAuth` alone covers both (nix-darwin's separate `watchIdAuth`/`pam_watchid.so` option is not set here).
+Operator's authentication shortcut for `sudo` on every Darwin host that has Touch ID hardware available. On `celaeno` the hardware reaches macOS through the Apple Magic Keyboard with Touch ID; the same wiring carries over to any future MacBook with built-in Touch ID. The Apple Watch "approve with Watch" prompt is enabled by the same option as a free side-effect — `pam_tid.so` natively offers the Apple Watch as an approval channel when a paired Watch is present and no fingerprint is given, so `touchIdAuth` alone covers both (nix-darwin's separate `watchIdAuth`/`pam_watchid.so` option is not set here).
 
 ## Selection
 
-`security.pam.services.sudo_local.touchIdAuth = true;` and `security.pam.services.sudo_local.reattach = true;`, set in `modules/darwin/touch-id.nix` and imported per-host by any Darwin host that wants it (today: `neptune`). The module is a single-capability standalone per ADR-027 — capabilities, even universally desired ones, do not belong in `foundation.nix`.
+`security.pam.services.sudo_local.touchIdAuth = true;` and `security.pam.services.sudo_local.reattach = true;`, set in `modules/darwin/touch-id.nix` and imported per-host by any Darwin host that wants it (today: `celaeno`). The module is a single-capability standalone per ADR-027 — capabilities, even universally desired ones, do not belong in `foundation.nix`.
 
 ## Rationale
 
-`sudo` defaults to password authentication on macOS. Without Touch ID wiring, every `nh darwin switch`, every `sudo -v`, every script-driven elevation prompts the operator for the account password. neptune's day-to-day workload is rebuild-and-activate-heavy; the password friction is real.
+`sudo` defaults to password authentication on macOS. Without Touch ID wiring, every `nh darwin switch`, every `sudo -v`, every script-driven elevation prompts the operator for the account password. celaeno's day-to-day workload is rebuild-and-activate-heavy; the password friction is real.
 
 **`sudo_local` vs `sudo` is the load-bearing selection.** Apple introduced `/etc/pam.d/sudo_local.template` in macOS Sonoma 14.0 as the *sanctioned* extension point for adding modules to the `sudo` PAM stack. The previous-generation pattern — editing `/etc/pam.d/sudo` directly to add `auth sufficient pam_tid.so` — works mechanically but is overwritten by every macOS update because `/etc/pam.d/sudo` is part of the macOS system bundle. Operators using the old pattern have to re-edit `/etc/pam.d/sudo` after every Software Update, which is exactly the imperative-step-per-mac the rest of #208 exists to eliminate.
 
@@ -20,7 +20,7 @@ Naming the module `touch-id.nix` rather than `pam-touchid.nix` or `sudo-touch-id
 
 ## Prerequisite: fingerprint enrolment
 
-This option only makes `sudo` *accept* Touch ID. It does not — and cannot — enroll fingerprints. Enrolment is a one-time physical step per Mac via System Settings → Touch ID & Password → "Add Fingerprint." On `neptune`, enrolment uses the Magic Keyboard's Touch ID sensor; the operator completed this manually before the module landed.
+This option only makes `sudo` *accept* Touch ID. It does not — and cannot — enroll fingerprints. Enrolment is a one-time physical step per Mac via System Settings → Touch ID & Password → "Add Fingerprint." On `celaeno`, enrolment uses the Magic Keyboard's Touch ID sensor; the operator completed this manually before the module landed.
 
 For new Macs the bootstrap runbook (`docs/runbooks/darwin-bootstrap.md`) covers this — §0's Setup Assistant note and the post-activation first-run-grants checklist both point at enrolment. Without fingerprint enrolment, the option is inert — `sudo` falls back to password.
 

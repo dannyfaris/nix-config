@@ -6,7 +6,7 @@ Wayland-native terminal emulator. Lightweight, minimal closure, used on Linux de
 
 **foot** on metis. Enabled via `home/nixos/foot.nix` (HM module `programs.foot.enable = true`). Colours come from the theme-menu conductor, not Stylix (ADR-044, #609 — replacing Noctalia per ADR-036) — see Configuration.
 
-The terminfo entry `xterm-ghostty` ships on every NixOS host via `modules/nixos/ghostty-terminfo.nix` so SSH'ing from a Ghostty-on-Mac terminal into any Linux host renders cleanly. Darwin hosts can't ship the entry from nixpkgs (`pkgs.ghostty` is Linux-only); inbound Ghostty SSH into neptune relies on Ghostty's shell-integration ssh-terminfo push or falls back to `xterm-256color`. Foot's own terminfo is in the standard ncurses database — no module required.
+The terminfo entry `xterm-ghostty` ships on every NixOS host via `modules/nixos/ghostty-terminfo.nix` so SSH'ing from a Ghostty-on-Mac terminal into any Linux host renders cleanly. Darwin hosts can't ship the entry from nixpkgs (`pkgs.ghostty` is Linux-only); inbound Ghostty SSH into celaeno relies on Ghostty's shell-integration ssh-terminfo push or falls back to `xterm-256color`. Foot's own terminfo is in the standard ncurses database — no module required.
 
 ## Rationale
 

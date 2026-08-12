@@ -21,7 +21,7 @@
 # bring-up.
 {
   programs.ssh.knownHosts = {
-    neptune.publicKeyFile = ../../hosts/neptune/ssh_host_ed25519_key.pub;
+    celaeno.publicKeyFile = ../../hosts/celaeno/ssh_host_ed25519_key.pub;
     alcyone.publicKeyFile = ../../hosts/alcyone/ssh_host_ed25519_key.pub;
     alnair.publicKeyFile = ../../hosts/alnair/ssh_host_ed25519_key.pub;
     electra.publicKeyFile = ../../hosts/electra/ssh_host_ed25519_key.pub;

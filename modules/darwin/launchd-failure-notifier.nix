@@ -40,7 +40,7 @@
 #
 # Import by the host file, not foundation: the 10-minute poll only yields
 # signal on a machine that stays awake, so a battery-powered Mac that
-# sleeps most of the day has no use for it. Neptune — always-on — is the
+# sleeps most of the day has no use for it. Celaeno — always-on — is the
 # only importer today.
 #
 # Limitation: if the tailnet is down the POST fails and no dedup state is
@@ -54,7 +54,7 @@ let
 
   operator = import ../../lib/operator.nix;
 
-  # Operator UID for the gui domain. Neptune assigns UID 501 to the first
+  # Operator UID for the gui domain. Celaeno assigns UID 501 to the first
   # macOS user (verified against `id -u dbf`); the host file asserts
   # `users.users.dbf.uid = 501` for nix-darwin's tracking.
   operatorUid = toString config.users.users.${operator.name}.uid;

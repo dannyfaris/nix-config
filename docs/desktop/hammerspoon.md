@@ -89,19 +89,19 @@ defaults read org.hammerspoon.Hammerspoon SUAutomaticallyUpdate     # → 1
 **`hs` CLI shim is wired by the cask; the port is opened by the config.** Hammerspoon ships a tiny CLI at `/Applications/Hammerspoon.app/Contents/Frameworks/hs/hs` that the cask's `binary` stanza puts on PATH (`/opt/homebrew/bin/hs`). The shim is only half of it: it talks to a Mach message port that exists only when the running instance has loaded `hs.ipc`. The `init.lua` therefore calls `require("hs.ipc")` (a bare `require` opens the port; the cask already provides the binary, so no `hs.ipc.cliInstall()`). With both halves present, `hs -c
 "hs.reload()"` (the reload fallback above) and on-box Lua spikes (`hs -c "hs.inspect(hs.spaces.allSpaces())"`, e.g. the #453 `hs.spaces` reliability check) work.
 
-**Posture.** The IPC port lets any *same-user, local* process eval arbitrary Lua inside Hammerspoon, which holds Accessibility (full input/window control) — a deliberately-accepted local attack-surface widening for this single-operator box. It is local-only (no network surface). Revisit if neptune ever becomes multi-user.
+**Posture.** The IPC port lets any *same-user, local* process eval arbitrary Lua inside Hammerspoon, which holds Accessibility (full input/window control) — a deliberately-accepted local attack-surface widening for this single-operator box. It is local-only (no network surface). Revisit if celaeno ever becomes multi-user.
 
-**macOS Ventura floor.** Cask `depends_on macos: :ventura`. Not a constraint for neptune.
+**macOS Ventura floor.** Cask `depends_on macos: :ventura`. Not a constraint for celaeno.
 
 **Multi-monitor + native fullscreen.** macOS native fullscreen on multi-monitor setups depends on System Settings → Desktop & Stage Manager → "Displays have separate Spaces":
 
 - **On (default since Mavericks):** `Hyper+Return` / `Hyper+B`'s fullscreened window lives on a new Space on the *window's current display*; other displays remain usable with their own Spaces.
 - **Off:** the fullscreened window creates a Space spanning all displays; other displays show the linen-pattern wallpaper while the fullscreen lasts.
 
-neptune today is single-display so this is theoretical; the doc records it because the binds are evergreen and will travel to multi-monitor Macs.
+celaeno today is single-display so this is theoretical; the doc records it because the binds are evergreen and will travel to multi-monitor Macs.
 
-**Display-name app identification is locale-sensitive.** `hs.window.filter:setAppFilter` keys per-app filters off `hs.application:name()`, which returns the *localized* display name on non-English macOS locales. Today's binds (`GHOSTTY.name = "Ghostty"`, `CHROME.name = "Google Chrome"`) work because (a) neptune's locale is English and (b) neither vendor localizes its app name. Adding a localizing app (Microsoft Word, Outlook, Pages) on a non-English Mac would silently break its filter — the filter registers but never matches, and the bind appears dead. If/when this becomes relevant, switch the affected app's filter to bundle-ID matching via `hs.window.filter.new(function(win) return
-win:application():bundleID() == BUNDLE_ID end)` instead of `setAppFilter`. Theoretical on neptune today; flagged because the binds are evergreen.
+**Display-name app identification is locale-sensitive.** `hs.window.filter:setAppFilter` keys per-app filters off `hs.application:name()`, which returns the *localized* display name on non-English macOS locales. Today's binds (`GHOSTTY.name = "Ghostty"`, `CHROME.name = "Google Chrome"`) work because (a) celaeno's locale is English and (b) neither vendor localizes its app name. Adding a localizing app (Microsoft Word, Outlook, Pages) on a non-English Mac would silently break its filter — the filter registers but never matches, and the bind appears dead. If/when this becomes relevant, switch the affected app's filter to bundle-ID matching via `hs.window.filter.new(function(win) return
+win:application():bundleID() == BUNDLE_ID end)` instead of `setAppFilter`. Theoretical on celaeno today; flagged because the binds are evergreen.
 
 **Hammerspoon must be running for binds to fire.** Stating the obvious: if Hammerspoon is quit (Cmd+Q from the menubar), no binds fire. The cask doesn't configure launch-at-login; this is left as a one-time operator step (Hammerspoon's Preferences → General → "Launch Hammerspoon at login"). Declarative configuration of launch-at-login is *not* via `init.lua` — it's a plist key Hammerspoon writes to its own preferences. Not in scope; flagged as a one-time operator step.
 

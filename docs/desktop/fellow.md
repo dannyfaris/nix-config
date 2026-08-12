@@ -44,7 +44,7 @@ No `CustomUserPreferences` keys in the default configuration — the updater is 
 
 **Bundle ID is `com.electron.fellow`** (the `com.electron.*` prefix is a generic Electron-app default — Fellow's developers didn't rebrand their bundle ID). Verified against the upstream cask's `zap` block (`~/Library/Preferences/com.electron.fellow.plist`).
 
-**macOS Ventura or later required.** The cask declares `depends_on macos: :ventura`. neptune's Sequoia install meets this comfortably.
+**macOS Ventura or later required.** The cask declares `depends_on macos: :ventura`. celaeno's Sequoia install meets this comfortably.
 
 **Migration candidate to nixpkgs.** Not viable today — there is no `pkgs.fellow` for Darwin. If a future packaging lands, the install-path question reopens; the existing Electron-in-store clause-2 shape (Obsidian, Cursor, Claude desktop) would probably apply, with the in-app updater fighting the immutable store path.
 

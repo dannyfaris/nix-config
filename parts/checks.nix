@@ -179,10 +179,10 @@ in
   #
   # The Darwin entry closes the CI-coverage gap that issue #190 named —
   # before this entry, modules/darwin/*, home/darwin/*, and the
-  # hosts/neptune composition had zero structural verification. The
+  # hosts/celaeno composition had zero structural verification. The
   # README's "CI builds every host on every PR" claim becomes true again
   # alongside (the same PR fixes the README's stale "Three hosts today"
-  # line that lagged the 2026-06-02 onboarding of neptune, then named
+  # line that lagged the 2026-06-02 onboarding of celaeno, then named
   # mac-mini). The matching macOS runner is declared in the ci.yaml matrix
   # (see that file for the runner-pinning + cache-budget rationale).
   # Each host carries a `host-*` toplevel build (does it compile?) and a
@@ -244,10 +244,10 @@ in
       keybinds-table = mkKeybindsTableCheck "x86_64-linux";
     };
     aarch64-darwin = {
-      host-neptune = self.darwinConfigurations.neptune.system;
-      stances-neptune =
-        mkStanceCheck "aarch64-darwin" "darwin" "neptune"
-          self.darwinConfigurations.neptune.config;
+      host-celaeno = self.darwinConfigurations.celaeno.system;
+      stances-celaeno =
+        mkStanceCheck "aarch64-darwin" "darwin" "celaeno"
+          self.darwinConfigurations.celaeno.config;
     };
   };
 
@@ -295,7 +295,7 @@ in
       # The registry-emitted keybinds.md fragment, exposed per-system so the
       # writer (`just gen-keybinds` → scripts/gen-keybinds-table.sh) can
       # `nix build .#keybinds-table` on whichever host the operator is on
-      # (alcyone/x86_64-linux, neptune/aarch64-darwin). Same source the
+      # (alcyone/x86_64-linux, celaeno/aarch64-darwin). Same source the
       # keybinds-table check diffs against (#457).
       packages.keybinds-table = keybindsTableFragment pkgs;
 
@@ -503,7 +503,7 @@ in
 
           # Guards against two tracked paths differing only by case, which
           # cannot coexist in a checkout on a case-insensitive filesystem
-          # (APFS: neptune, the macos-15 CI leg) — one silently
+          # (APFS: celaeno, the macos-15 CI leg) — one silently
           # clobbers the other, and the Linux box that authored the pair
           # cannot see the breakage. The lint reads the index itself, so
           # `files` matches everything and no filenames are passed. git is

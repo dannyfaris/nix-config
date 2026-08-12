@@ -10,11 +10,11 @@ Operator stance on the OS-and-App-Store update channels Apple owns: both auto-in
 - `system.defaults.CustomUserPreferences."com.apple.commerce".AutoUpdate = true;` — App Store apps auto-download.
 - `system.defaults.CustomUserPreferences."com.apple.commerce".AutoUpdateRestartRequired = true;` — App Store apps that need a restart-to-install auto-install without prompting.
 
-Standalone module imported per-host (`hosts/neptune/default.nix`). Not in foundation per ADR-027 — auto-updates are a capability, not a posture: a host with audit/compliance constraints could legitimately want manual control.
+Standalone module imported per-host (`hosts/celaeno/default.nix`). Not in foundation per ADR-027 — auto-updates are a capability, not a posture: a host with audit/compliance constraints could legitimately want manual control.
 
 ## Rationale
 
-neptune is the operator's personal daily driver and the always-on SSH-target for the rest of the fleet. Update friction translates directly into "I'll do it later," which on a security-load-bearing host (neptune hosts a Chrome with Keystone, a 1Password, an SSH server) is the wrong default. The operator's existing stance for cask-managed apps via Sparkle (silent download + silent install, documented in the Sparkle silent-update header section of `modules/darwin/homebrew.nix`) extends naturally to the two update channels Apple owns end-to-end.
+celaeno is the operator's personal daily driver and the always-on SSH-target for the rest of the fleet. Update friction translates directly into "I'll do it later," which on a security-load-bearing host (celaeno hosts a Chrome with Keystone, a 1Password, an SSH server) is the wrong default. The operator's existing stance for cask-managed apps via Sparkle (silent download + silent install, documented in the Sparkle silent-update header section of `modules/darwin/homebrew.nix`) extends naturally to the two update channels Apple owns end-to-end.
 
 **Why `com.apple.commerce` (not `com.apple.SoftwareUpdate`) for App Store updates.** Apple's `softwareupdate(8)` machinery has two distinct surfaces:
 
@@ -34,7 +34,7 @@ nix-darwin does *not* expose `com.apple.commerce` as a first-class options modul
 
 ## Manual-control fallback
 
-If a future situation calls for manual update control (e.g. enrolling in a beta seed, debugging a regression, freezing during a critical project) the override path is to disable just the relevant key, not to un-wire the module. From `hosts/neptune/default.nix` or a host-specific override:
+If a future situation calls for manual update control (e.g. enrolling in a beta seed, debugging a regression, freezing during a critical project) the override path is to disable just the relevant key, not to un-wire the module. From `hosts/celaeno/default.nix` or a host-specific override:
 
 ```nix
 # Temporarily disable App Store auto-update during the X migration.
@@ -66,4 +66,4 @@ Cross-check by opening System Settings → General → Software Update. The "Aut
 
 **`AutomaticallyInstallMacOSUpdates` does not bypass major-version upgrades.** macOS 15 → 26 (Tahoe) and equivalent major releases require explicit operator action regardless of this setting. The key covers point releases, security responses, and configuration data updates within a major version — exactly the "weekly CVE patch" class of update where unattended install matters most.
 
-**Server / unattended hosts.** If a future Darwin host is genuinely unattended (e.g. CI / build mac mini in a rack somewhere), auto- install + auto-restart can interrupt long-running tasks. For that class of host, override `AutoUpdateRestartRequired = false;` in the host file, deferring restart-required installs to operator-driven maintenance windows. neptune today is operator-attended, so this caveat doesn't apply.
+**Server / unattended hosts.** If a future Darwin host is genuinely unattended (e.g. CI / build mac mini in a rack somewhere), auto- install + auto-restart can interrupt long-running tasks. For that class of host, override `AutoUpdateRestartRequired = false;` in the host file, deferring restart-required installs to operator-driven maintenance windows. celaeno today is operator-attended, so this caveat doesn't apply.

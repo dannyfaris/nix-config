@@ -109,7 +109,7 @@
       family = "catppuccin";
       polarity = "dark";
     };
-    neptune = {
+    celaeno = {
       family = "gruvbox";
       polarity = "dark";
     };

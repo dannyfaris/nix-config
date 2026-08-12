@@ -18,7 +18,7 @@ let
       "alcyone"
       "alnair"
       "electra"
-      "neptune"
+      "celaeno"
     ];
     nixosRegs = [
       "alcyone"
@@ -26,7 +26,7 @@ let
       "electra"
     ];
     darwinRegs = [
-      "neptune"
+      "celaeno"
     ];
     nixosChecks = [
       "host-alcyone"
@@ -41,8 +41,8 @@ let
       "treefmt"
     ];
     darwinChecks = [
-      "host-neptune"
-      "stances-neptune"
+      "host-celaeno"
+      "stances-celaeno"
       "pre-commit"
       "treefmt"
     ];
@@ -106,9 +106,9 @@ lib.runTests {
 
   # 6 — A darwin host's host-* check placed under the x86_64-linux set.
   testWrongPlatformPlacement = {
-    expr = failures (clean // { nixosChecks = clean.nixosChecks ++ [ "host-neptune" ]; });
+    expr = failures (clean // { nixosChecks = clean.nixosChecks ++ [ "host-celaeno" ]; });
     expected = [
-      "host-neptune appears under checks.x86_64-linux but neptune is a darwinConfiguration → move it to flake.checks.aarch64-darwin"
+      "host-celaeno appears under checks.x86_64-linux but celaeno is a darwinConfiguration → move it to flake.checks.aarch64-darwin"
     ];
   };
 

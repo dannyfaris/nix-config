@@ -104,7 +104,7 @@ None of these have a nix-darwin-declarative path. Documented in the bootstrap ru
 
 **Pkg-shaped Sparkle ≠ silent.** Unlike Ghostty's `.zip`-enclosure Sparkle path, Karabiner's `.dmg`-enclosure-with-`sparkle:installationType="package"` path **cannot be silent** per Sparkle's own docs. SU\* keys are honest hedges, not a silent posture. Tailscale's pkg-bearing path is the closest precedent in this repo.
 
-**macOS Ventura floor.** Cask `depends_on macos: ">= :ventura"` for v16.x. Not a constraint for neptune (current OS).
+**macOS Ventura floor.** Cask `depends_on macos: ">= :ventura"` for v16.x. Not a constraint for celaeno (current OS).
 
 **Conflict with macOS native caps-lock remap.** macOS's System Settings → Keyboard → Modifier Keys lets you remap caps_lock system-wide. Karabiner intercepts at a lower layer (DriverKit) and wins. To avoid confusion: leave the macOS setting at "Caps Lock" (default) — Karabiner handles the remap exclusively.
 

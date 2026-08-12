@@ -4,7 +4,7 @@ GPU-accelerated terminal emulator. macOS-only in this configuration; foot is the
 
 ## Selection
 
-**Ghostty** on `neptune` via Homebrew cask `ghostty`, declared in `modules/darwin/homebrew.nix` per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s clause 1 (upstream `pkgs.ghostty.meta.platforms` is Linux-only). User config managed via home-manager at `home/darwin/ghostty.nix`.
+**Ghostty** on `celaeno` via Homebrew cask `ghostty`, declared in `modules/darwin/homebrew.nix` per [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md)'s clause 1 (upstream `pkgs.ghostty.meta.platforms` is Linux-only). User config managed via home-manager at `home/darwin/ghostty.nix`.
 
 Any later Mac host inherits the same composition.
 

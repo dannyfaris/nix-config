@@ -1,6 +1,6 @@
 # Logi Tune
 
-Logitech peripheral-management app — configures webcam settings (exposure, field of view, Right Sight auto-framing), firmware updates, and video-meeting presets for Logitech webcams and Logi Dock. Installed on Neptune to manage the operator's Logitech webcam.
+Logitech peripheral-management app — configures webcam settings (exposure, field of view, Right Sight auto-framing), firmware updates, and video-meeting presets for Logitech webcams and Logi Dock. Installed on Celaeno to manage the operator's Logitech webcam.
 
 ## Selection
 

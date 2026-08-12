@@ -1,6 +1,6 @@
 # Google Chrome
 
-Operator's daily-driver browser on `neptune`. Picked because it is the browser the operator already uses day-to-day — Workspace, Meet, work SSO, the bookmark set, the extension set all already live there. Selection-by-incumbency; no comparison weigh-up needed.
+Operator's daily-driver browser on `celaeno`. Picked because it is the browser the operator already uses day-to-day — Workspace, Meet, work SSO, the bookmark set, the extension set all already live there. Selection-by-incumbency; no comparison weigh-up needed.
 
 ## Selection
 

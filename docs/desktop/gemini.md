@@ -29,7 +29,7 @@ The cask declares two hard requirements (verified against the upstream cask sour
 - **Apple Silicon only** (`arch arm: ...` with no Intel fallback).
 - **macOS Sequoia (15) or later** (`depends_on macos: ">= :sequoia"`).
 
-neptune meets both. A future Intel Mac or pre-Sequoia host would need an alternative (Gemini in Chrome covers the gap).
+celaeno meets both. A future Intel Mac or pre-Sequoia host would need an alternative (Gemini in Chrome covers the gap).
 
 ## Configuration
 

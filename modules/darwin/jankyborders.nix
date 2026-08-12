@@ -1,5 +1,5 @@
 # JankyBorders — the focused-window border for AeroSpace-tiled windows on
-# neptune (ADR-040 Stage 2, #494). AeroSpace draws no active-window chrome of
+# celaeno (ADR-040 Stage 2, #494). AeroSpace draws no active-window chrome of
 # its own, so a border is what makes the focused tile legible; it is the macOS
 # analogue of the window border niri draws (home/nixos/niri.nix).
 #
@@ -34,6 +34,6 @@ in
     # Carbon spacing-05) stays > 2× it so adjacent windows' borders never touch.
     width = 6.0;
     style = "round"; # echoes the niri / M3 rounded-corner language
-    hidpi = true; # neptune is Retina — draw the border at native backing scale (crisp)
+    hidpi = true; # celaeno is Retina — draw the border at native backing scale (crisp)
   };
 }

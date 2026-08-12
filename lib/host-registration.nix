@@ -92,7 +92,7 @@ in
 
       # (4) Cross-platform placement: a host-*/stances-* check for one
       # platform's host must not sit under the other platform's check set
-      # (e.g. host-neptune, a darwinConfiguration, under checks.x86_64-linux).
+      # (e.g. host-celaeno, a darwinConfiguration, under checks.x86_64-linux).
       wrongPlatform =
         kind: system: otherSystem: checkNames: otherRegs:
         map (

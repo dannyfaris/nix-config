@@ -4,7 +4,7 @@ CLI/daemon, not a GUI tool. This doc lives alongside the GUI per-tool docs in `d
 
 ## Selection
 
-Darwin: `pkgs.colima` + `pkgs.docker` + `pkgs.docker-compose` via `modules/darwin/colima.nix`, imported by `hosts/neptune/default.nix`. ADR-031's §Boundary rule nixpkgs-by-default baseline applies directly — none of the three clauses fires: `pkgs.colima` ships on `aarch64-darwin` (clause 1 N/A); colima is a CLI/daemon with no `/Applications/`-rooted bundle and no Sparkle auto-updater, so the clause-2 shape that governs the GUI casks doesn't apply; colima isn't on MAS (clause 3 N/A).
+Darwin: `pkgs.colima` + `pkgs.docker` + `pkgs.docker-compose` via `modules/darwin/colima.nix`, imported by `hosts/celaeno/default.nix`. ADR-031's §Boundary rule nixpkgs-by-default baseline applies directly — none of the three clauses fires: `pkgs.colima` ships on `aarch64-darwin` (clause 1 N/A); colima is a CLI/daemon with no `/Applications/`-rooted bundle and no Sparkle auto-updater, so the clause-2 shape that governs the GUI casks doesn't apply; colima isn't on MAS (clause 3 N/A).
 
 The colima-vs-Docker-Desktop-vs-OrbStack walk lives in [ADR-021](../decisions/ADR-021-docker-on-headless.md) (amended 2026-06-03 to cover Darwin). Short version: colima is FOSS, declarative, lightweight, and mirrors the rootless-Docker mental model the Linux side adopted; Docker Desktop and OrbStack both carry commercial-use licensing for company-funded work and buy a GUI premium the operator wouldn't use (lazydocker is the established TUI client per ADR-006).
 
@@ -32,7 +32,7 @@ docker run --rm hello-world
 
 **Daily, after reboot:** nothing for keyboard logins — the launchd agent handles `colima start` on the first GUI session establishment. SSH-only access on a freshly-rebooted Mac that hasn't had a GUI login yet finds colima not running; see §Sharp edges for the auto-login mitigation.
 
-**TUI client:** [lazydocker](https://github.com/jesseduffield/lazydocker) is on `neptune` per [`home/shared/cli-utils.nix`](../../home/shared/cli-utils.nix); just run `lazydocker` once colima is up.
+**TUI client:** [lazydocker](https://github.com/jesseduffield/lazydocker) is on `celaeno` per [`home/shared/cli-utils.nix`](../../home/shared/cli-utils.nix); just run `lazydocker` once colima is up.
 
 **Stopping / pausing:**
 
