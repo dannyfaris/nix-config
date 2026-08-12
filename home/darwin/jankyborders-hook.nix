@@ -6,7 +6,7 @@
 #
 # Stage 2 shape: the colour pairs live pre-baked in every theme-menu
 # entry dir (home/darwin/theme-menu.nix renders `borders-{dark,light}`
-# as complete `borders` argv strings, same roles + 0xAARRGGBB format as
+# as complete `borders` argv strings, same roles + per-state alphas as
 # the service module); this hook resolves the active entry — the
 # $XDG_STATE_HOME pointer, else the boot-default family — and applies
 # the DARKMODE half. One hook path for both gestures: the watcher fires

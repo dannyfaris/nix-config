@@ -1,7 +1,7 @@
 # Unit tests for lib/capabilities.nix's real codegen logic — chord rendering
-# (niri + AeroSpace), the niri + AeroSpace emitters, and the collision lints. A
-# silent bug in any of these would mis-generate every bind or let a chord clash
-# slip through CI. Evaluated via pkgs.lib.runTests, which returns a list of
+# (niri + skhd), the niri emitter, and the collision lints. A silent bug in
+# any of these would mis-generate every bind or let a chord clash slip
+# through CI. Evaluated via pkgs.lib.runTests, which returns a list of
 # failure records ({ name; expected; result; }); parts/checks.nix renders that
 # list into a CI-gated derivation. See ADR-033 and lib/tests/auto-gen-paths.nix.
 { lib }:
@@ -10,12 +10,15 @@ let
   inherit (caps)
     niriChord
     niriBindsFor
-    aerospaceChord
-    aerospaceBindsFor
+    skhdChord
+    skhdChordsFor
+    skhdCollisionsFor
     collisionsFor
-    darwinCollisionsFor
     validationFailuresFor
     descriptiveFor
+    skhdKeyShapeFailuresFor
+    renderedChordFailuresFor
+    workspaceFamilyFailuresFor
     ;
 
   # A minimal niri-action capability for fixtures.
@@ -30,27 +33,14 @@ let
     };
   };
 
-  # A minimal aerospace-action capability (emitted verbatim) for darwin fixtures.
-  mkAsCap = id: chord: action: {
+  # A minimal skhd-exec capability (chord only — the body is hand-authored in
+  # home/darwin/skhd.nix, ADR-047) for darwin fixtures.
+  mkSkhdCap = id: chord: {
     inherit id chord;
     label = id;
     description = id;
     keywords = [ ];
-    platforms.darwin = {
-      realization = "aerospace-action";
-      inherit action;
-    };
-  };
-
-  # An aerospace-exec capability (hand-authored body in aerospace.nix; the
-  # emitter skips it but the collision lint counts its chord — the merged
-  # namespace, ADR-040 / #494).
-  mkAsExecCap = id: chord: {
-    inherit id chord;
-    label = id;
-    description = id;
-    keywords = [ ];
-    platforms.darwin.realization = "aerospace-exec";
+    platforms.darwin.realization = "skhd-exec";
   };
 in
 lib.runTests {
@@ -217,158 +207,156 @@ lib.runTests {
     expected = [ ];
   };
 
-  # ── AeroSpace chord rendering (ADR-040) ───────────────────────────────────
-  # Base tier renders to the darwin mod tokens (Ctrl+Opt → ctrl-alt), hyphen-
-  # joined, key lowercased.
-  testAerospaceChordBase = {
-    expr = aerospaceChord {
+  # ── skhd chord rendering ────────────────────────────────────────────────────
+  # skhd joins modifiers with " + " and separates the key with " - ".
+  testSkhdChordBase = {
+    expr = skhdChord {
       tier = "hyper";
-      key = "F";
+      key = "B";
     };
-    expected = "ctrl-alt-f";
+    expected = "ctrl + alt - b";
   };
 
-  # Arrows map to AeroSpace's explicit key names.
-  testAerospaceChordArrow = {
-    expr = aerospaceChord {
+  testSkhdChordArrow = {
+    expr = skhdChord {
       tier = "hyper";
+      mods = [ "Shift" ];
       key = "Left";
     };
-    expected = "ctrl-alt-left";
+    expected = "ctrl + alt + shift - left";
   };
 
-  # Return maps to AeroSpace's `enter` (verified against the pinned
-  # keysMap.swift) — a wrong key name is a whole-config parse error.
-  testAerospaceChordReturn = {
-    expr = aerospaceChord {
+  # `return`, not AeroSpace's `enter` — skhd's own literal table.
+  testSkhdChordReturn = {
+    expr = skhdChord {
       tier = "hyper";
       key = "Return";
     };
-    expected = "ctrl-alt-enter";
+    expected = "ctrl + alt - return";
   };
 
-  # Punctuation tokens map to AeroSpace's key names (not literal symbols).
-  testAerospaceChordPunct = {
-    expr = aerospaceChord {
+  # Punctuation has no literal spelling in skhd; it must render as an UPPERCASE
+  # ANSI keycode. A lowercase hex digit would truncate in eat_hex and bind a
+  # different key silently, so the case is asserted, not just the value.
+  testSkhdChordPunctIsUppercaseHex = {
+    expr = skhdChord {
       tier = "hyper";
       key = "Comma";
     };
-    expected = "ctrl-alt-comma";
+    expected = "ctrl + alt - 0x2B";
   };
 
-  # The Super escalator maps to "cmd"; mods render in canonical order
-  # (ctrl, alt, cmd, shift), so the set — not declaration order — fixes the string.
-  testAerospaceChordSuperEscalator = {
-    expr = aerospaceChord {
+  testSkhdChordSuperEscalator = {
+    expr = skhdChord {
       tier = "hyper";
       mods = [ "Super" ];
       key = "Up";
     };
-    expected = "ctrl-alt-cmd-up";
+    expected = "ctrl + alt + cmd - up";
   };
 
-  # The emitter keys each aerospace-action bind by its rendered chord and maps
-  # it to the verbatim command string — exactly a mode.main.binding entry.
-  testAerospaceBindsShape = {
-    expr = aerospaceBindsFor [
-      (mkAsCap "focus-window-up" {
+  # The emitter keys by capability id (not by chord — the module looks bodies up
+  # by id): every darwin-realized cap is skhd-exec, so every one needs a chord
+  # here regardless of how its body is authored.
+  testSkhdChordsShape = {
+    expr = skhdChordsFor [
+      (mkSkhdCap "focus-window-up" {
         tier = "hyper";
         key = "Up";
-      } "focus up")
+      })
+      (mkSkhdCap "maximise-by-isolation" {
+        tier = "hyper";
+        mods = [ "Shift" ];
+        key = "M";
+      })
     ];
     expected = {
-      "ctrl-alt-up" = "focus up";
+      focus-window-up = "ctrl + alt - up";
+      maximise-by-isolation = "ctrl + alt + shift - m";
     };
   };
 
-  # aerospace-exec caps are NOT emitted (their body is hand-authored in
-  # aerospace.nix) — the emitter's output omits them.
-  testAerospaceBindsSkipsExec = {
-    expr = aerospaceBindsFor [
-      (mkAsExecCap "maximise-by-isolation" {
+  testSkhdCollisionsCleanIsEmpty = {
+    expr = skhdCollisionsFor [
+      (mkSkhdCap "a" {
         tier = "hyper";
-        mods = [ "Shift" ];
-        key = "M";
+        key = "A";
       })
-    ];
-    expected = { };
-  };
-
-  # A clean darwin registry produces no collision failures.
-  testDarwinCollisionsCleanIsEmpty = {
-    expr = darwinCollisionsFor [
-      (mkAsCap "a" {
+      (mkSkhdCap "b" {
         tier = "hyper";
-        key = "F";
-      } "exec-and-forget open -a Finder")
-      (mkAsCap "b" {
-        tier = "hyper";
-        key = "M";
-      } "exec-and-forget open -a Messages")
+        key = "B";
+      })
     ];
     expected = [ ];
   };
 
-  # Two aerospace-action binds resolving to one chord is reported.
-  testDarwinCollisionsDuplicateFires = {
-    expr = builtins.length (darwinCollisionsFor [
-      (mkAsCap "a" {
+  # skhd resolves a duplicate chord silently first-wins with no diagnostic, so
+  # this lint is the only thing standing between a collision and a dead bind.
+  testSkhdCollisionsDuplicateFires = {
+    expr = builtins.length (skhdCollisionsFor [
+      (mkSkhdCap "a" {
         tier = "hyper";
-        key = "F";
-      } "exec-and-forget open -a Finder")
-      (mkAsCap "b" {
+        key = "A";
+      })
+      (mkSkhdCap "b" {
         tier = "hyper";
-        key = "F";
-      } "focus up")
-    ]);
-    expected = 1;
-  };
-
-  # The MERGED namespace is linted: an emitted (aerospace-action) bind and a
-  # hand-authored (aerospace-exec) bind resolving to the same chord is reported.
-  # This is the Stage-1 requirement (#494) — a hand-authored complex bind can't
-  # silently double-bind a chord the emitter already claims.
-  testDarwinCollisionsMergedNamespaceFires = {
-    expr = builtins.length (darwinCollisionsFor [
-      (mkAsCap "emitted" {
-        tier = "hyper";
-        mods = [ "Shift" ];
-        key = "M";
-      } "move up")
-      (mkAsExecCap "hand-authored" {
-        tier = "hyper";
-        mods = [ "Shift" ];
-        key = "M";
+        key = "A";
       })
     ]);
     expected = 1;
   };
 
-  # Guard: the live darwin registry stays collision-free across the merged
-  # namespace — a real clash should fail this in CI.
-  testLiveRegistryCleanDarwin = {
-    expr = caps.darwinCollisions;
+  # Declaration order of `mods` must not hide a collision: both render to the
+  # same canonical string, so the lint must group them together.
+  testSkhdCollisionsModOrderNormalised = {
+    expr = builtins.length (skhdCollisionsFor [
+      (mkSkhdCap "a" {
+        tier = "hyper";
+        mods = [
+          "Shift"
+          "Super"
+        ];
+        key = "A";
+      })
+      (mkSkhdCap "b" {
+        tier = "hyper";
+        mods = [
+          "Super"
+          "Shift"
+        ];
+        key = "A";
+      })
+    ]);
+    expected = 1;
+  };
+
+  # Guard: the live darwin namespace stays collision-free (a real clash should
+  # fail this in CI, not just the fixtures above).
+  testLiveRegistrySkhdClean = {
+    expr = caps.skhdCollisions;
     expected = [ ];
   };
 
-  # The spawn binds (Hyper+Return/B) are emitted as aerospace-action values, so
-  # the live darwin output binds them (and darwinCollisions sees the chords).
-  # Ghostty spawns a new window via `open -na`; Chrome focus-or-launches via
-  # `open -a` (ADR-040).
-  testLiveRegistryEmitsSpawnDarwinBinds = {
+  # Guard: the spawn chords are present in the live darwin output. This only
+  # asserts the *chord* — the command bodies are asserted by skhd.nix's own
+  # both-directions completeness throw (home/darwin/skhd.nix), not here.
+  # Deliberately NOT a golden test over all live chords: chord-value drift is
+  # gated by the keybinds-table CI diff (a human-visible doc change), and a
+  # full golden attrset would tax every intentional remap (mutation audit A1).
+  testLiveRegistryEmitsSpawnDarwinChords = {
     expr = {
-      ghostty = caps.aerospaceBinds."ctrl-alt-enter" or null;
-      chrome = caps.aerospaceBinds."ctrl-alt-b" or null;
+      terminal = caps.skhdChords."spawn-terminal" or null;
+      browser = caps.skhdChords."spawn-browser" or null;
     };
     expected = {
-      ghostty = "exec-and-forget open -na Ghostty.app";
-      chrome = ''exec-and-forget open -a "Google Chrome"'';
+      terminal = "ctrl + alt - return";
+      browser = "ctrl + alt - b";
     };
   };
 
   # The Karabiner Mission-Control / Space-jump remaps are retired (ADR-040):
   # karabinerHyperRemapKeys is emptied permanently so Hyper+arrows / Hyper+1‑9
-  # fall through to AeroSpace. karabiner.nix still reads this (now-empty) attr.
+  # fall through to the skhd keymap instead (ADR-047).
   testKarabinerHyperRemapKeys = {
     expr = caps.karabinerHyperRemapKeys;
     expected = {
@@ -562,33 +550,33 @@ lib.runTests {
     expected = 1;
   };
 
-  # A darwin-realized cap with a key token AeroSpace can't parse fails at
-  # eval — not at the runtime config reload (whole-file rejection).
+  # A darwin-realized cap with a key token skhd can't parse fails at eval —
+  # not at the runtime config reload (whole-file rejection).
   testValidationDarwinKeyTokenFires = {
     expr = validationFailuresFor [
-      (mkAsCap "a" {
+      (mkSkhdCap "a" {
         tier = "hyper";
         key = "Enter";
-      } "focus up")
+      })
     ];
     expected = [
-      "a: chord key \"Enter\" is not a verified AeroSpace key token (asKey ∪ single [A-Za-z0-9])"
+      "a: chord key \"Enter\" is not a verified skhd key token (skhdKey ∪ single [A-Za-z0-9])"
     ];
   };
 
-  # aerospace-exec bodies are hand-authored; a payload here would be silently
+  # skhd-exec bodies are hand-authored; a payload here would be silently
   # ignored, so it's a violation.
   testValidationExecActionFires = {
     expr = builtins.length (validationFailuresFor [
       (
-        (mkAsExecCap "a" {
+        (mkSkhdCap "a" {
           tier = "hyper";
           mods = [ "Shift" ];
           key = "M";
         })
         // {
           platforms.darwin = {
-            realization = "aerospace-exec";
+            realization = "skhd-exec";
             action = "stray";
           };
         }
@@ -598,9 +586,134 @@ lib.runTests {
   };
 
   # Guard: the live registry stays shape-valid — a malformed entry should
-  # fail this in CI, not just the fixtures above.
+  # fail this in CI, not just the fixtures above. Wired into
+  # validationFailuresFor, this now also covers I1 (id uniqueness), I2
+  # (skhdKey shape) and I3 (rendered chord grammar) for the live registry.
   testLiveRegistryShapeValid = {
     expr = caps.validationFailures;
+    expected = [ ];
+  };
+
+  # ── I1 — registry id uniqueness ───────────────────────────────────────────
+  # lib.listToAttrs (skhdChordsFor/niriBindsFor) resolves a duplicate id
+  # last-wins with no diagnostic; the validator must name the id instead of
+  # letting one bind vanish invisibly.
+  testValidationDuplicateIdFires = {
+    expr = validationFailuresFor [
+      (mkCap "dup" {
+        tier = "hyper";
+        key = "Left";
+      } { focus-column-left = { }; })
+      (mkCap "dup" {
+        tier = "hyper";
+        key = "Right";
+      } { focus-column-right = { }; })
+    ];
+    expected = [ "duplicate capability id \"dup\"" ];
+  };
+
+  # ── I2 — skhdKey value shape ──────────────────────────────────────────────
+  # A lowercased hex digit truncates in skhd's eat_hex and binds a different
+  # key silently; an unmapped name tokenizes as an identifier and discards
+  # the whole keymap at parse. Both must be caught.
+  testSkhdKeyShapeBadValuesFire = {
+    expr = skhdKeyShapeFailuresFor {
+      Comma = "0x2b"; # lowercase hex — truncates to 0x2 in eat_hex
+      Enter = "enter"; # not one of skhd's own literal_keycode_str names
+    };
+    expected = [
+      "skhdKey.Comma = \"0x2b\" is neither uppercase hex (^0x[0-9A-F]+$) nor a pinned skhd literal name (left, right, up, down, return, tab, space, escape)"
+      "skhdKey.Enter = \"enter\" is neither uppercase hex (^0x[0-9A-F]+$) nor a pinned skhd literal name (left, right, up, down, return, tab, space, escape)"
+    ];
+  };
+
+  # A well-formed map (uppercase hex + pinned literals only) is clean.
+  testSkhdKeyShapeCleanIsEmpty = {
+    expr = skhdKeyShapeFailuresFor {
+      Left = "left";
+      Comma = "0x2B";
+    };
+    expected = [ ];
+  };
+
+  # ── I3 — rendered chord grammar ───────────────────────────────────────────
+  # The only gate over the FULL rendered skhd chord string — proves it would
+  # catch a mutated darwinMod token ("ctl") without touching skhdChord
+  # itself (fixture hands the helper an already-rendered string directly).
+  testRenderedChordGrammarMutatedModFires = {
+    expr = renderedChordFailuresFor [
+      {
+        id = "a";
+        rendered = "ctl + alt - m";
+      }
+    ];
+    expected = [ "a: rendered skhd chord \"ctl + alt - m\" fails the skhd chord grammar" ];
+  };
+
+  # A broken join (missing the " + "/" - " separators) is caught the same way.
+  testRenderedChordGrammarBrokenJoinFires = {
+    expr = builtins.length (renderedChordFailuresFor [
+      {
+        id = "a";
+        rendered = "ctrl+alt-b";
+      }
+    ]);
+    expected = 1;
+  };
+
+  # A lowercase-hex-shaped key ("0x2b") is rejected — [a-z0-9]+ used to admit
+  # it, but it truncates silently in skhd's eat_hex (only 0-9A-F is accepted).
+  testRenderedChordGrammarLowercaseHexFires = {
+    expr = renderedChordFailuresFor [
+      {
+        id = "a";
+        rendered = "ctrl + alt - 0x2b";
+      }
+    ];
+    expected = [ "a: rendered skhd chord \"ctrl + alt - 0x2b\" fails the skhd chord grammar" ];
+  };
+
+  # A correctly-rendered chord is clean.
+  testRenderedChordGrammarCleanIsEmpty = {
+    expr = renderedChordFailuresFor [
+      {
+        id = "a";
+        rendered = "ctrl + alt - b";
+      }
+    ];
+    expected = [ ];
+  };
+
+  # ── I4 — workspace-family completeness ────────────────────────────────────
+  # An off-by-one range mutation (lib.range 1 8 instead of 1 9) silently
+  # drops a workspace-family member; no emitter or other lint would
+  # otherwise notice.
+  testWorkspaceFamilyMissingMemberFires = {
+    expr = workspaceFamilyFailuresFor (
+      (map (
+        n:
+        mkCap "focus-workspace-${toString n}" {
+          tier = "hyper";
+          key = toString n;
+        } { focus = n; }
+      ) (lib.range 1 8))
+      ++ (map (
+        n:
+        mkCap "move-window-to-workspace-${toString n}" {
+          tier = "hyper";
+          mods = [ "Shift" ];
+          key = toString n;
+        } { move = n; }
+      ) (lib.range 1 9))
+    );
+    expected = [ "workspace family incomplete: missing focus-workspace-9" ];
+  };
+
+  # Guard: the live registry's workspace families are exactly complete (I4).
+  # Not wired into validationFailuresFor itself (see its comment in
+  # capabilities.nix) — this is the dedicated live test for I4.
+  testLiveRegistryWorkspaceFamilyComplete = {
+    expr = workspaceFamilyFailuresFor caps.registry;
     expected = [ ];
   };
 }

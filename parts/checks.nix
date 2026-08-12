@@ -227,10 +227,13 @@ in
         mkReportCheck "x86_64-linux" "keybind-collisions"
           "Keybind chord collisions (lib/capabilities.nix; ADR-039 §8)"
           capabilities.collisions;
-      keybind-collisions-darwin =
-        mkReportCheck "x86_64-linux" "keybind-collisions-darwin"
-          "Keybind chord collisions — darwin/AeroSpace (lib/capabilities.nix; ADR-039 §8, ADR-040)"
-          capabilities.darwinCollisions;
+      # The darwin chord lint on celaeno (ADR-047): skhd resolves a duplicate
+      # chord silently first-wins with no diagnostic (src/hashtable.h:94-97)
+      # — so this lint is the only thing that can catch one.
+      keybind-collisions-skhd =
+        mkReportCheck "x86_64-linux" "keybind-collisions-skhd"
+          "Keybind chord collisions — darwin/skhd (lib/capabilities.nix)"
+          capabilities.skhdCollisions;
       # Registry shape gate: a malformed entry (typo'd realization tag,
       # misspelled field, unmapped darwin key) is silently dropped by the
       # emitters, so its absence must fail here instead (#535).

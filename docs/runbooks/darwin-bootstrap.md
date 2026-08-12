@@ -169,9 +169,9 @@ nh darwin switch   # self-elevates
 
 ## Post-activation — first-run grants, sign-ins, and staged installers (manual, per-tool)
 
-The app set carries non-declarable first-run ceremony beyond AeroSpace's own section below. Walk these once per Mac; each per-tool doc has the detail:
+The app set carries non-declarable first-run ceremony beyond yabai + skhd's own section below. Walk these once per Mac; each per-tool doc has the detail:
 
-- **Karabiner-Elements — without this, every Hyper bind is dead.** Three prompts (docs/desktop/karabiner.md §Sharp edges): the pkg installer's admin password; **DriverKit driver-extension approval** — System Settings → General → Login Items & Extensions → Driver Extensions → enable `Karabiner-DriverKit-VirtualHIDDevice`; and **Input Monitoring** for `karabiner_grabber`, `karabiner_observer`, and the Karabiner-Elements UI. Until the driver extension is approved, Karabiner runs but no remaps fire — Caps→Hyper never happens and every AeroSpace chord is silently inert, the same "running but does nothing" failure mode as the AeroSpace Accessibility grant.
+- **Karabiner-Elements — without this, every Hyper bind is dead.** Three prompts (docs/desktop/karabiner.md §Sharp edges): the pkg installer's admin password; **DriverKit driver-extension approval** — System Settings → General → Login Items & Extensions → Driver Extensions → enable `Karabiner-DriverKit-VirtualHIDDevice`; and **Input Monitoring** for `karabiner_grabber`, `karabiner_observer`, and the Karabiner-Elements UI. Until the driver extension is approved, Karabiner runs but no remaps fire — Caps→Hyper never happens and every Hyper/skhd chord is silently inert, the same "running but does nothing" failure mode as the yabai/skhd Accessibility grant.
 - **Tailscale — sign the Mac into the tailnet and approve its NetworkExtension** on first launch (docs/desktop/tailscale.md). Fleet SSH and Verification Phase 2's MagicDNS names depend on this.
 - **Installer-manual casks are staged, never run** (Homebrew records the receipt regardless — docs/desktop/logi-tune.md §Sharp edges). Today that's Logi Tune: `open "$(ls -d /opt/homebrew/Caskroom/logitune/*/LogiTuneInstaller.app | tail -1)"`, click through, expect the one-time Camera TCC prompt on first app launch.
 - **colima — one-time first start with explicit resources** (`colima start --cpu 4 --memory 4 --disk 100`; flag-less defaults are usually too tight, and the flags persist in the profile — docs/desktop/colima.md). Verify: `colima status` and `docker run --rm hello-world`.
@@ -244,29 +244,62 @@ Notes:
 
 - No access-control step is needed for the operator. The `com.apple.access_screensharing` group nests the `admin` group, and `dbf` is an admin, so the login password authenticates the VNC session. A non-admin account *would* need adding (`dseditgroup -o edit -a <user> -t user com.apple.access_screensharing`).
 - No firewall change is needed. The host ALF (`modules/darwin/firewall.nix`) runs with `allowSigned = true`, and the screen-sharing daemon is Apple-signed, so inbound VNC (5900) passes without a rule.
-- **Hyper hotkeys don't fire over Screen Sharing — use the literal `Ctrl+Opt` chord.** Karabiner remaps the *physical* keyboard (DriverKit virtual-HID); Screen Sharing *injects* CGEvents that bypass Karabiner's grab, so `Caps Lock → Hyper` never happens remotely (Caps is also a locking key, delivered as a state-toggle). Workaround, confirmed working on celaeno: press the literal `Ctrl+Opt+<key>` on the remote keyboard — the window manager's global hotkeys catch the injected chord directly. This is WM-independent (a property of the Karabiner Hyper substrate, true of any Hyper hotkey — AeroSpace or otherwise).
+- **Hyper hotkeys don't fire over Screen Sharing — use the literal `Ctrl+Opt` chord.** Karabiner remaps the *physical* keyboard (DriverKit virtual-HID); Screen Sharing *injects* CGEvents that bypass Karabiner's grab, so `Caps Lock → Hyper` never happens remotely (Caps is also a locking key, delivered as a state-toggle). Workaround, confirmed working on celaeno: press the literal `Ctrl+Opt+<key>` on the remote keyboard — skhd's global hotkeys catch the injected chord directly. This is WM-independent (a property of the Karabiner Hyper substrate, true of any Hyper hotkey regardless of window manager).
 
-## Post-activation — grant AeroSpace Accessibility + Mission Control settings (manual, not declarable)
+## Post-activation — grant yabai + skhd Accessibility + Mission Control settings (manual, not declarable)
 
-The Darwin window manager is **AeroSpace** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md); `home/darwin/aerospace.nix`), with **JankyBorders** drawing the focus-border (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts both, but AeroSpace needs one manual grant before it can tile, and one Mission Control setting cleared. Neither is declarable — the grant is TCC-gated (same wall as Screen Sharing above), the setting is a per-user Dock preference AeroSpace reads at runtime.
+The Darwin window manager is **yabai + skhd** ([ADR-047](../decisions/ADR-047-macos-window-manager-yabai.md); `modules/darwin/yabai.nix` + `home/darwin/skhd.nix`), with **JankyBorders** drawing the focus-border unchanged (`modules/darwin/jankyborders.nix`). Activation installs and launchd-starts all three, but the workspace layer needs Mission Control Desktops created and two Mission Control settings set *before* first use, and both yabai and skhd need a manual Accessibility grant before either does anything. None of this is declarable — the grants are TCC-gated (same wall as Screen Sharing above), the Mission Control settings are per-user Dock/Desktop preferences read at runtime, and yabai cannot create Spaces itself (`space --create` is scripting-addition-only, and this config runs `enableScriptingAddition = false`).
 
-### AeroSpace needs the Accessibility permission
+### Before anything else — create Mission Control Desktops up to nine
 
-AeroSpace moves windows through the macOS Accessibility (AX) API, so it **cannot tile anything** until it is granted Accessibility. Until then it launches and its menu-bar item appears, but windows stay where they are — the failure mode is "AeroSpace is running but does nothing," not a crash. AeroSpace prompts on first launch; approve via:
+Native Mission Control Desktops are the workspace layer (ADR-047 reverses ADR-040's single-native-Space model): the keymap addresses them by index (`Hyper+1‑9`), so `Hyper+2‑9` are inert on a fresh Mac until the Desktops exist. Create them first, on the main display (Mission Control → hover the top strip → `+`), before touching anything else below.
 
-- **System Settings → Privacy & Security → Accessibility → enable AeroSpace.**
+**Count them — do not eyeball Mission Control, and do not count `uuid` keys in `com.apple.spaces`.** That key sweeps in `Collapsed Space` records for disconnected displays and overcounts. The live display's `Spaces` array is the only honest source:
 
-**The grant is lost on every AeroSpace upgrade — expect to re-grant.** The `pkgs.aerospace` bundle is **ad-hoc signed with no Team Identifier** (verified: `codesign -dv` reports `flags=…(adhoc,linker-signed)`, `TeamIdentifier=not set`), so macOS keys the Accessibility grant to the binary's *store path + cdhash* rather than a stable signing identity. Both change whenever `pkgs.aerospace` bumps version, so after a `nix flake update` that moves AeroSpace, the old grant no longer matches and tiling silently stops. Fix: in the Accessibility list, remove the stale AeroSpace entry (`−`) and re-add / re-toggle the new one, then relaunch AeroSpace (`aerospace reload-config` is not enough — the *process* needs the grant). This is intrinsic to running a store-path-installed unsigned app under TCC; it is not a misconfiguration.
+```
+defaults read com.apple.spaces | awk '/"Display Identifier" = Main/,/\);/' | grep -c ManagedSpaceID
+```
 
-### JankyBorders needs no grant
+### Two Mission Control settings
 
-Deliberately called out so a future operator doesn't hunt for a missing permission: **JankyBorders requires no Accessibility (or any TCC) grant** in this config. By design it tracks windows through the window-server API rather than the AX API (that is its speed advantage), and `ax_focus` — the one option that would opt into the slower Accessibility path — is left off. Borders render immediately after activation with no prompt.
+- **Turn ON "Displays have separate Spaces"** (System Settings → Desktop & Dock → Mission Control). yabai **hard-requires** this — it exits *successfully* if it's off, which is invisible to `launchctl list` (the same "running but does nothing" failure class as a missing Accessibility grant, below). **This requirement flipped from the prior AeroSpace-era text**, which said the setting wasn't needed; under yabai it must be on.
+- **Turn OFF "Automatically rearrange Spaces based on most recent use"** (same pane). Equivalent from the shell: `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (`mru-spaces` = `0` when disabled). Left on, macOS reorders Desktop indices out from under the keymap's index-addressed binds.
 
-### Disable "Automatically rearrange Spaces based on most recent use"
+### Mission Control shortcuts — declared, nothing to do, but load-bearing
 
-- **System Settings → Desktop & Dock → Mission Control → turn *off* "Automatically rearrange Spaces based on most recent use"** (verified on macOS 26 Tahoe). Equivalent from the shell: `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (`mru-spaces` = `0` when disabled).
+The "Switch to Desktop N" shortcuts `Hyper+1‑9` synthesizes are **declared** in `home/darwin/symbolic-hotkeys.nix` and re-applied at every activation, including the RunAtLoad `activate-system` nix-darwin performs at boot before login — there is no manual step here. But they are load-bearing: without them, `Hyper+1‑9` goes **silently dead** — skhd fires a shortcut macOS no longer listens for, with nothing in any log. And an **absent** `com.apple.symbolichotkeys` entry does **not** mean the shortcut is enabled — it means macOS has recorded no deviation from its own default, and the effective state can still be off. Trust the declared state, not a plist read.
 
-AeroSpace recommends this so macOS doesn't reorder Spaces out from under the tiler's Space-index tracking. The Mac runs a **single** native Space (AeroSpace owns the workspace layer — ADR-040), so there is little for macOS to rearrange, but the setting is cleared as a precaution and to match AeroSpace's documented baseline. AeroSpace's guide lists further optional macOS tweaks (e.g. "Displays have separate Spaces", "Group windows by application") aimed at multi-monitor setups; none are needed on a single-display host.
+### Grant Accessibility to both yabai and skhd
+
+Both binaries prompt on first launch (System Settings → Privacy & Security → Accessibility → enable both). Until granted, yabai tiles nothing and skhd binds nothing. Both agents are configured `KeepAlive.SuccessfulExit = false` precisely so a missing grant does **not** respawn-prompt in a loop — so after granting, start them by hand:
+
+```
+launchctl kickstart -k gui/$(id -u)/org.nixos.yabai
+launchctl kickstart -k gui/$(id -u)/org.nix-community.home.skhd
+```
+
+### Verify they are actually alive
+
+`launchctl list` is **not** evidence — both binaries exit with status 0 when their preconditions fail (missing Accessibility, "Displays have separate Spaces" off), so a dead daemon reports healthy and the fleet's `launchd-failure-notifier` stays silent:
+
+```
+pgrep -xl yabai skhd            # both must appear
+yabai -m query --displays       # must return JSON
+tail ~/Library/Logs/yabai.err.log ~/Library/Logs/skhd.err.log
+```
+
+**The grant is keyed to the store path and is lost on every version bump.** Both binaries are ad-hoc signed with no Team Identifier, so macOS keys the Accessibility grant to the binary's store path rather than a stable signing identity — after any `nix flake update` that moves either package, re-grant Accessibility for both and re-run the two kickstart commands above.
+
+### Service mode looks exactly like a wedged session
+
+`Hyper+Shift+Semicolon` enters skhd's service mode, and while active it captures **every** keystroke — nothing reaches any application. It has no visual indicator. If the machine appears to stop responding to the keyboard, press **Escape** first — that returns to the default mode.
+
+### SwiftBar's two out-of-band behaviours
+
+SwiftBar drives the menu-bar Desktop indicator (pushed by a yabai `space_changed` signal). Two of its behaviours sit outside home-manager's control:
+
+- **The launchd agent only `open`s the app — unloading the agent does not quit it.** The running process survives until it is quit directly or the session ends: `osascript -e 'quit app "SwiftBar"'`.
+- **`PluginDirectory` is a one-way `defaults write`** — home-manager tracks no state for this preference and never reverts it, so it keeps pointing at the plugin directory even after that directory is removed. To fully remove SwiftBar: quit it, `defaults delete com.ameba.SwiftBar`, then `rmdir` the plugin directory if it's empty (the plugin symlink itself is home-manager-owned and is removed on its own).
 
 ## Verification
 

@@ -8,7 +8,8 @@
 # to NixOS hosts only).
 #
 # Bootstrap runbook: docs/runbooks/darwin-bootstrap.md.
-_: {
+{ ... }:
+{
   imports = [
     # Foundation — bundle every Darwin host imports by convention.
     ../../modules/darwin/foundation.nix
@@ -68,11 +69,16 @@ _: {
     # docs/desktop/keybinds.md §Screenshots.
     ../../modules/darwin/keyboard-shortcuts.nix
 
-    # JankyBorders — the focused-window border for AeroSpace tiles (the macOS
+    # JankyBorders — the focused-window border for yabai tiles (the macOS
     # analogue of the window border niri draws). Colours source from the design
     # tokens; runs as a launchd user agent. See the module header and
-    # docs/design/macos-deterministic-tiling.md (ADR-040 Stage 2, #494).
+    # ADR-047.
     ../../modules/darwin/jankyborders.nix
+
+    # yabai per ADR-047, SIP left enabled. Paired with home/darwin/skhd.nix
+    # (the hotkey half, in the bundle's imports below). JankyBorders above is
+    # unaffected: it tracks the window server, not the window manager.
+    ../../modules/darwin/yabai.nix
 
     # Power / sleep / recovery for the always-on SSH-bastion role.
     # Auto-restart after outage, never sleep the computer,
@@ -135,7 +141,8 @@ _: {
   # (personal dev box: cli-tooling + git-multi-identity + full agent CLI set)
   # with NixOS-only modules swapped for Darwin equivalents:
   #   - home/nixos/bundles/desktop-env.nix → home/darwin/bundles/desktop-env.nix
-  #     (the macOS GUI surface: Ghostty, Karabiner, AeroSpace, theme-switching).
+  #     (the macOS GUI surface: Ghostty, Karabiner, skhd/yabai's hotkey
+  #     surface, theme-switching).
   #   - home/nixos/macchina-shell-init.nix → home/darwin/macchina-shell-init.nix
   #     (Apple-logo ASCII + `route -n get default` interface detection).
   #
@@ -150,7 +157,7 @@ _: {
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix
       ../../home/darwin/macchina-shell-init.nix
-      # macOS desktop workflow — Ghostty, Karabiner (Hyper), AeroSpace, the
+      # macOS desktop workflow — Ghostty, Karabiner (Hyper), skhd/yabai, the
       # screenshots dir, and the runtime theme-switching trio. The Darwin
       # parallel of home/nixos/bundles/desktop-env.nix; per-module rationale
       # lives in the bundle.

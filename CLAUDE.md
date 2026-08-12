@@ -44,7 +44,7 @@ home/shared/                   # cross-platform standalone home-manager modules
 home/nixos/bundles/            # NixOS-specific home-manager bundles
 home/nixos/                    # NixOS-specific home-manager modules (e.g. macchina-shell-init)
 home/darwin/bundles/           # Darwin-specific home-manager bundles
-home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, aerospace)
+home/darwin/                   # Darwin-specific home-manager modules (e.g. karabiner, skhd)
 ```
 
 Composition follows the foundation + bundles model (ADR-027): every host imports `foundation.nix` (identity + admin + posture), opts into capability bundles for what the host does, and imports standalone modules for capabilities that don't yet have a bundle home. A new host is a new directory under `hosts/` that composes these directly — no role layer. Per-host values (e.g. flake path, hostname for nixd) flow from each host's `_module.args.hostContext` into home-manager modules via the wiring in `modules/nixos/home-manager.nix` (body in `lib/mk-home-manager.nix`); see ADR-019.

@@ -4,34 +4,37 @@
 # Phase 1 (#384) delivered: the three-dimension schema, the `Hyper` modifier
 # constant, the niri emitter, and the eval-time collision lint. The macOS
 # window-management slice (#440) added the `Ctrl+Opt` darwin base; ADR-040
-# (#494) then replaced the original pure-Hammerspoon realization with AeroSpace,
-# so `platforms.darwin` now carries `aerospace-action` (emitted verbatim) and
-# `aerospace-exec` (hand-authored body) realizations alongside its descriptive
-# overrides. #457 adds the keybinds.md table emitter (the human-facing surface,
-# generated from the descriptive dimension). The unified palette (#442) and the
-# actions.json dataset (#437) remain later phases.
+# (#494) replaced the original pure-Hammerspoon realization with AeroSpace,
+# then ADR-047 replaced AeroSpace with yabai + skhd, collapsing
+# `platforms.darwin` to a single `skhd-exec` realization — chords in the
+# registry, every command body hand-authored in home/darwin/skhd.nix — since
+# skhd has no verb emitter to parallel `niri-action`. #457 adds the
+# keybinds.md table emitter (the human-facing surface, generated from the
+# descriptive dimension). The unified palette (#442) and the actions.json
+# dataset (#437) remain later phases.
 #
 # Repo-decoupled by design (ADR-039 §9 — extraction-ready): this unit takes
 # only { lib } and imports no repo modules, so packaging it standalone later
-# stays cheap. The AeroSpace emitter emits only pure binding *values*
-# (`aerospace-action`); the `aerospace-exec` complex bodies (which need the
-# package-derived `aerospace` path) are hand-authored in home/darwin/
-# aerospace.nix, mirroring how `niriBinds` emits binds the niri module composes
-# — the codegen stays pure (ADR-039 §2).
+# stays cheap. Every darwin capability is `skhd-exec`: the registry emits
+# only the chord (`skhdChords`); the command body (which needs the
+# package-derived yabai path) is hand-authored in home/darwin/skhd.nix,
+# mirroring how `niriBinds` emits binds the niri module composes — the
+# codegen stays pure (ADR-039 §2).
 #
 # Consumers:
 #   - home/nixos/niri.nix         → `niriBinds` (the generated bind attrset)
-#   - home/darwin/aerospace.nix   → `aerospaceBinds` (the emitted
-#                                    mode.main.binding attrset) + `aerospaceExecCaps`
-#                                    + `aerospaceChord` (the hand-authored exec
-#                                    bodies are keyed by cap id and chorded from
-#                                    the registry entries, #537)
 #   - modules/nixos/keyd.nix      → `tiers.hyper.linux` (substrate reads the
 #                                    same constant — base shape is one edit, §4)
 #   - home/darwin/karabiner.nix   → `tiers.hyper.darwin` (the Ctrl+Opt substrate)
 #                                    + `karabinerHyperRemapKeys` (now emptied —
-#                                    the Mission-Control remaps retired, ADR-040)
-#   - parts/checks.nix            → `collisions` + `darwinCollisions` +
+#                                    the chords fall through to the skhd
+#                                    keymap, ADR-047; the remaps were first
+#                                    retired under ADR-040)
+#   - home/darwin/skhd.nix        → `skhdChords` (chord per darwin-realized
+#                                    cap; the module keys its command bodies
+#                                    by cap id and asserts the two sets
+#                                    match, the #537 pattern)
+#   - parts/checks.nix            → `collisions` + `skhdCollisions` +
 #                                    `validationFailures` (mkReportCheck, #535)
 #                                    + `keybindsTable` (the
 #                                    fragment package + the generate-and-diff
@@ -53,8 +56,8 @@ let
       "Ctrl"
       "Alt"
     ];
-    # Consumed by the AeroSpace chord renderer (below) and the Karabiner
-    # Ctrl+Opt substrate (home/darwin/karabiner.nix), #440 / ADR-040.
+    # Consumed by the skhd chord renderer (below) and the Karabiner
+    # Ctrl+Opt substrate (home/darwin/karabiner.nix), #440 / ADR-047.
     hyper.darwin = [
       "Ctrl"
       "Option"
@@ -95,7 +98,7 @@ let
   # ── darwin chord rendering ─────────────────────────────────────────────────
   # The tier's base modifiers (Ctrl+Opt) plus any escalator `mods` map to the
   # darwin mod-token set (ctrl/alt/shift/cmd — Option→alt, Super→cmd), shared by
-  # the AeroSpace chord renderer below. (Hammerspoon's `hs.hotkey.bind` renderer
+  # the skhd chord renderer below. (Hammerspoon's `hs.hotkey.bind` renderer
   # was retired with Hammerspoon itself, ADR-040.)
   darwinMod = {
     Ctrl = "ctrl";
@@ -105,7 +108,7 @@ let
     Shift = "shift";
   };
   # Canonical mod order for a deterministic chord string (the dedup lint groups
-  # on it). AeroSpace treats the mods as a set, so any fixed order binds the same.
+  # on it). skhd treats the mods as a set, so any fixed order binds the same.
   darwinModRank = {
     ctrl = 0;
     alt = 1;
@@ -123,35 +126,75 @@ let
   darwinModTokens =
     chord: sortDarwinMods (map (m: darwinMod.${m}) (tiers.${chord.tier}.darwin ++ (chord.mods or [ ])));
 
-  # ── AeroSpace (darwin) chord rendering ─────────────────────────────────────
-  # AeroSpace's `[mode.main.binding]` keys are hyphen-joined lowercase tokens
-  # (e.g. `ctrl-alt-shift-left`). The tier's base modifiers (Ctrl+Opt) plus any
-  # escalator `mods` map to AeroSpace's mod tokens (same set as hs: ctrl/alt/
-  # shift/cmd — Option→alt, Super→cmd); the key token maps to AeroSpace's key
-  # name. The key names are verified against the pinned AeroSpace source
-  # (v0.20.3-Beta, Sources/AppBundle/config/keysMap.swift): Return→`enter`,
-  # arrows/comma/slash/semicolon/minus/equal/tab as below, letters/digits
-  # lowercased. A wrong key name is a whole-config parse error (not a silent
-  # no-op), so these are pinned to that source. AeroSpace treats the modifier
-  # set order-independently; the fixed ctrl/alt/shift/cmd order (sortDarwinMods)
-  # keeps the emitted string deterministic so the dedup lint groups on it.
-  asKey = {
+  # ── skhd (darwin) chord rendering ──────────────────────────────────────────
+  # skhd's grammar is `<mod> + <mod> - <key> : <command>`. darwinModTokens (the
+  # Ctrl+Opt base plus any escalator `mods`, mapped to ctrl/alt/shift/cmd) feeds
+  # this renderer directly; only the join and the key spelling are skhd's own.
+  #
+  # NO punctuation key has a literal spelling. skhd's `literal_keycode_str`
+  # (src/tokenize.h:13-32) is entirely alphabetic, and `resolve_identifier_type` is
+  # only reached from the tokenizer's `isalpha` branch — so every punctuation key
+  # must be an ANSI keycode, whether or not the character is also a reserved
+  # grammar token. Uppercase hex is mandatory: eat_hex accepts 0-9A-F only
+  # (src/tokenize.c:55-63), so a lowercased `0x2b` truncates to `0x2` and binds a
+  # different key silently. Values are the kVK_ANSI_* constants.
+  #
+  # Named literals are pinned to skhd's table rather than guessed (`return`, not
+  # `enter`): an unmapped name tokenizes as an identifier, which the key position
+  # rejects (src/parse.c:298-308), and a parse error discards the ENTIRE mode map
+  # (src/parse.c:496-500) — so one wrong name costs every bind on the host, not
+  # just its own.
+  #
+  # `skhdKey` is the sole darwin key map and the validation gate: `validDarwinKey`
+  # (below) checks every darwin-realized chord key against it, because a token
+  # missing from this map renders a bare `lib.toLower` identifier and takes the
+  # whole keymap down while CI stays green.
+  skhdKey = {
     Left = "left";
     Right = "right";
     Up = "up";
     Down = "down";
-    Return = "enter";
+    Return = "return";
     Tab = "tab";
-    Minus = "minus";
-    Equal = "equal";
-    Comma = "comma";
-    Slash = "slash";
-    Semicolon = "semicolon";
     Space = "space";
+    Minus = "0x1B";
+    Equal = "0x18";
+    Semicolon = "0x29";
+    Comma = "0x2B";
+    Slash = "0x2C";
   };
-  asKeyFor = k: asKey.${k} or (lib.toLower k);
-  aerospaceChord =
-    chord: lib.concatStringsSep "-" (darwinModTokens chord ++ [ (asKeyFor chord.key) ]);
+  skhdKeyFor = k: skhdKey.${k} or (lib.toLower k);
+  skhdChord =
+    chord: "${lib.concatStringsSep " + " (darwinModTokens chord)} - ${skhdKeyFor chord.key}";
+
+  # Every capability carrying a darwin realization. `skhdChords` is an attrset, so
+  # consumers iterating it get alphabetical id order, not registry order — the
+  # generated skhdrc is grouped by that, not by the registry's reading order. The
+  # skhd.nix keys its command bodies by these ids and asserts the two
+  # sets match exactly (the #537 pattern), so the registry owns every darwin
+  # *chord* and a chord change moves the bind with it.
+  darwinRealizedCapsFor = reg: lib.filter (c: (c.platforms.darwin.realization or null) != null) reg;
+  skhdChordsFor =
+    reg:
+    lib.listToAttrs (map (c: lib.nameValuePair c.id (skhdChord c.chord)) (darwinRealizedCapsFor reg));
+  skhdChords = skhdChordsFor registry;
+
+  # skhd resolves duplicate chords silently, first-wins, with no diagnostic
+  # (src/hashtable.h:94-97) — so a collision is invisible at runtime and this lint
+  # is the only thing that can catch it.
+  skhdCollisionsFor =
+    reg:
+    let
+      entries = map (c: {
+        inherit (c) id;
+        chord = skhdChord c.chord;
+      }) (darwinRealizedCapsFor reg);
+      byChord = lib.groupBy (e: e.chord) entries;
+    in
+    lib.mapAttrsToList (
+      chord: es: "duplicate skhd chord ${chord}: claimed by ${lib.concatMapStringsSep ", " (e: e.id) es}"
+    ) (lib.filterAttrs (_c: es: lib.length es > 1) byChord);
+  skhdCollisions = skhdCollisionsFor registry;
 
   # ── Workspace families — generated, not hand-listed (one per workspace 1–9) ─
   focusWorkspaces = map (n: {
@@ -173,13 +216,12 @@ let
       action.focus-workspace = n;
     };
     platforms.darwin = {
-      # AeroSpace workspaces (ADR-040) — "Space" prose kept: AeroSpace's
-      # workspaces are the user-facing "spaces" on macOS. All nine bound
-      # (operator decision, #494) — the trial exercised 1‑4.
-      realization = "aerospace-action";
-      action = "workspace ${toString n}";
-      label = "Switch to workspace ${toString n}";
-      description = "Switch to the numbered AeroSpace workspace";
+      # Native macOS Desktops (ADR-047) — yabai's CLI term "Space" and
+      # Mission Control's "Desktop" name the same object. All nine bound
+      # (operator decision, #494).
+      realization = "skhd-exec";
+      label = "Switch to Desktop ${toString n}";
+      description = "Switch to the numbered Desktop";
       keywords = [
         "workspace"
         "space"
@@ -213,10 +255,9 @@ let
       action.move-window-to-workspace = n;
     };
     platforms.darwin = {
-      realization = "aerospace-action";
-      action = "move-node-to-workspace ${toString n}";
+      realization = "skhd-exec";
       label = "Move window to workspace ${toString n}";
-      description = "Move the focused window to the numbered AeroSpace workspace";
+      description = "Move the focused window to the numbered Desktop";
       keywords = [
         "move"
         "window"
@@ -227,19 +268,19 @@ let
     };
   }) (lib.range 1 9);
 
-  # ── darwin-only capabilities (ADR-040) ─────────────────────────────────────
-  # macOS-only binds with no niri twin: app-launch, the tiles↔accordion toggle,
-  # the service-mode leader, maximise-by-isolation, and cycle-terminal-windows.
-  # They live in the
+  # ── darwin-only capabilities (ADR-047) ─────────────────────────────────────
+  # macOS-only binds with no niri twin: app-launch, the bsp/stack layout
+  # toggle, the service-mode leader, maximise (zoom-fullscreen), and
+  # cycle-terminal-windows. They live in the
   # registry (not hand-authored) so the future palette/cheatsheet (ADR-039 §6,
   # registry-only dataset) can show them and the collision lint covers them.
   # `platforms.linux` is omitted (structural "linux: N/A"); the keybinds.md
   # table renders "—" for the unrealized platform.
   #
-  # App-launch: `open -a` is focus-or-launch; `/usr/bin/open` is on the
-  # exec-and-forget default PATH, so no nix-store path is needed (only the
-  # `aerospace` CLI itself needs the package-derived path — that's the
-  # aerospace-exec binds, hand-authored in aerospace.nix).
+  # App-launch: skhd-exec — body hand-authored in home/darwin/skhd.nix
+  # (`/usr/bin/open -a`, on the exec-and-forget default PATH, so no nix-store
+  # path is needed for `open` itself), like every darwin realization now
+  # (ADR-047).
   mkAppLaunch =
     {
       id,
@@ -255,10 +296,7 @@ let
         tier = "hyper";
         inherit key;
       };
-      platforms.darwin = {
-        realization = "aerospace-action";
-        action = "exec-and-forget open -a ${lib.escapeShellArg app}";
-      };
+      platforms.darwin.realization = "skhd-exec";
     };
   darwinWmExtras = [
     # open-finder was folded into spawn-file-manager (below) when the freed
@@ -301,27 +339,24 @@ let
     })
     {
       id = "layout-toggle";
-      label = "Toggle tiles/accordion";
-      description = "Toggle the focused workspace between tiles and accordion layout";
+      label = "Toggle bsp/stack layout";
+      description = "Toggle the focused Space between bsp and stack layout";
       keywords = [
         "layout"
-        "tiles"
-        "accordion"
+        "bsp"
+        "stack"
         "toggle"
       ];
       chord = {
         tier = "hyper";
         key = "Comma";
       };
-      platforms.darwin = {
-        realization = "aerospace-action";
-        action = "layout tiles accordion";
-      };
+      platforms.darwin.realization = "skhd-exec";
     }
     {
       id = "service-mode";
       label = "Service mode";
-      description = "Enter the AeroSpace service mode (reload / flatten-tree / float-toggle / close-others)";
+      description = "Enter the service mode (balance / float-toggle)";
       keywords = [
         "service"
         "mode"
@@ -333,19 +368,17 @@ let
         mods = [ "Shift" ];
         key = "Semicolon";
       };
-      platforms.darwin = {
-        realization = "aerospace-action";
-        action = "mode service";
-      };
+      platforms.darwin.realization = "skhd-exec";
     }
     {
-      # aerospace-exec: body hand-authored in home/darwin/aerospace.nix (it
-      # shells out to the `aerospace` CLI by absolute path). AeroSpace has no
-      # stable maximize (`fullscreen` drops on focus-change), so this isolates
-      # the focused window onto its own empty workspace instead.
+      # skhd-exec: body hand-authored in home/darwin/skhd.nix (it shells out
+      # to the yabai binary by absolute path). yabai's zoom-fullscreen is a
+      # stable, reversible maximise (ADR-047) — AeroSpace had none, forcing
+      # the isolate-onto-empty-workspace workaround this id name still
+      # reflects; the realization no longer isolates.
       id = "maximise-by-isolation";
-      label = "Maximise (isolate)";
-      description = "Move the focused window to its own empty workspace (the focus-stable maximize)";
+      label = "Maximise";
+      description = "Toggle a stable, reversible maximise for the focused window (zoom-fullscreen)";
       keywords = [
         "maximize"
         "maximise"
@@ -358,14 +391,14 @@ let
         mods = [ "Shift" ];
         key = "M";
       };
-      platforms.darwin.realization = "aerospace-exec";
+      platforms.darwin.realization = "skhd-exec";
     }
     {
-      # aerospace-exec: body hand-authored in home/darwin/aerospace.nix (it
-      # shells out to the `aerospace` CLI by absolute path). Cycles focus
-      # through all Ghostty windows across workspaces; from a non-Ghostty
-      # window it focuses the first. Pairs with spawn-terminal (Hyper+Return
-      # = new window; +Shift = cycle existing).
+      # skhd-exec: body hand-authored in home/darwin/skhd.nix (it shells out
+      # to the yabai binary by absolute path). Cycles focus through all
+      # Ghostty windows across Desktops; from a non-Ghostty window it focuses
+      # the first. Pairs with spawn-terminal (Hyper+Return = new window;
+      # +Shift = cycle existing).
       id = "cycle-terminal-windows";
       label = "Cycle terminal windows";
       description = "Focus the next Ghostty window, across workspaces (wraps; from elsewhere, focuses the first)";
@@ -381,7 +414,7 @@ let
         mods = [ "Shift" ];
         key = "Return";
       };
-      platforms.darwin.realization = "aerospace-exec";
+      platforms.darwin.realization = "skhd-exec";
     }
   ];
 
@@ -412,16 +445,17 @@ let
         realization = "niri-action";
         action.focus-column-left = { };
       };
-      # aerospace-exec: the edge-scroll fallthrough is a *complex* bind (it
-      # shells out to the `aerospace` CLI by absolute path), so its body is
-      # hand-authored in home/darwin/aerospace.nix; here it contributes the
+      # skhd-exec: the edge-scroll fallthrough is a *complex* bind (it shells
+      # out to the yabai binary by absolute path), so its body is
+      # hand-authored in home/darwin/skhd.nix; here it contributes the
       # chord + descriptive for the palette/table/collision-lint. Darwin-
       # specific behaviour (not a faithful focus-column mirror): at the edge it
-      # switches workspace (wrap-around) and lands on the far column.
+      # steps to the adjacent Space (wrapping at the ends) and lands on that
+      # Space's last-focused window.
       platforms.darwin = {
-        realization = "aerospace-exec";
+        realization = "skhd-exec";
         label = "Focus window left";
-        description = "Move focus left; at the left edge, wrap to the previous workspace's far column";
+        description = "Move focus left; at the left edge, step to the previous Space (wrapping from the first to the last)";
         keywords = [
           "focus"
           "navigate"
@@ -449,12 +483,12 @@ let
         realization = "niri-action";
         action.focus-column-right = { };
       };
-      # aerospace-exec (edge-scroll) — see focus-column-left. Body hand-authored
-      # in home/darwin/aerospace.nix.
+      # skhd-exec (edge-scroll) — see focus-column-left. Body hand-authored
+      # in home/darwin/skhd.nix.
       platforms.darwin = {
-        realization = "aerospace-exec";
+        realization = "skhd-exec";
         label = "Focus window right";
-        description = "Move focus right; at the right edge, wrap to the next workspace's far column";
+        description = "Move focus right; at the right edge, step to the next Space (wrapping from the last to the first)";
         keywords = [
           "focus"
           "navigate"
@@ -487,9 +521,8 @@ let
         action.focus-window-or-workspace-up = { };
       };
       platforms.darwin = {
-        realization = "aerospace-action";
+        realization = "skhd-exec";
         label = "Focus window up";
-        action = "focus up";
         description = "Move focus to the window above";
         keywords = [
           "focus"
@@ -520,9 +553,8 @@ let
         action.focus-window-or-workspace-down = { };
       };
       platforms.darwin = {
-        realization = "aerospace-action";
+        realization = "skhd-exec";
         label = "Focus window down";
-        action = "focus down";
         description = "Move focus to the window below";
         keywords = [
           "focus"
@@ -551,8 +583,7 @@ let
         action.toggle-overview = { };
       };
       platforms.darwin = {
-        realization = "aerospace-action";
-        action = "workspace-back-and-forth";
+        realization = "skhd-exec";
         label = "Last workspace";
         description = "Toggle to the previously-focused workspace";
         keywords = [
@@ -567,9 +598,10 @@ let
     # Hyper+Shift — window geometry (migrated from base Hyper in #762: bare
     # Hyper = navigate/switch/launch, Hyper+Shift = act on the window; see
     # keybinds.md §The spatial model). On macOS these are structurally
-    # "darwin: N/A" (no platforms.darwin): AeroSpace auto-tiles, so
-    # per-window geometry is superseded (ADR-040, superseding ADR-039 §7's
-    # Hammerspoon geometry handlers). The capability IDs + their niri
+    # "darwin: N/A" (no platforms.darwin): yabai auto-tiles (BSP), so
+    # per-window geometry is superseded (ADR-047, continuing ADR-040's same
+    # call, itself superseding ADR-039 §7's Hammerspoon geometry handlers).
+    # The capability IDs + their niri
     # realization stay — the Linux side still uses them, and a future
     # Hyprland move could re-realize center/maximize (design note §Future).
     # The freed Hyper+F gives spawn-file-manager exact Finder parity with
@@ -593,7 +625,7 @@ let
         realization = "niri-action";
         action.set-column-width = "-10%";
       };
-      # darwin: N/A (AeroSpace auto-tiles; ADR-040).
+      # darwin: N/A (yabai auto-tiles; ADR-047).
     }
     {
       id = "grow-column";
@@ -614,7 +646,7 @@ let
         realization = "niri-action";
         action.set-column-width = "+10%";
       };
-      # darwin: N/A (AeroSpace auto-tiles; ADR-040).
+      # darwin: N/A (yabai auto-tiles; ADR-047).
     }
     {
       id = "cycle-column-width";
@@ -635,7 +667,7 @@ let
         realization = "niri-action";
         action.switch-preset-column-width = { };
       };
-      # darwin: N/A — niri-ism, no AeroSpace equivalent (ADR-040).
+      # darwin: N/A — niri-ism, no yabai equivalent (ADR-047).
     }
     {
       id = "center-column";
@@ -655,7 +687,7 @@ let
         realization = "niri-action";
         action.center-column = { };
       };
-      # darwin: N/A — niri-ism, no AeroSpace equivalent (ADR-040).
+      # darwin: N/A — niri-ism, no yabai equivalent (ADR-047).
     }
     {
       id = "fullscreen-window";
@@ -675,8 +707,8 @@ let
         realization = "niri-action";
         action.fullscreen-window = { };
       };
-      # darwin: N/A — AeroSpace `fullscreen` drops on focus-change; the focus-
-      # stable equivalent is maximise-by-isolation (Hyper+Shift+M, below).
+      # darwin: N/A — the stable, reversible equivalent is maximise-by-isolation
+      # (yabai zoom-fullscreen, Hyper+Shift+M, below; ADR-047).
     }
     {
       id = "maximize-column";
@@ -698,7 +730,7 @@ let
       };
       # darwin: N/A here as an entry — but the chord now sits in exact
       # action-analogue parity with darwin's maximise-by-isolation (its own
-      # Hyper+Shift+M entry below; disjoint per-platform tables). (ADR-040.)
+      # Hyper+Shift+M entry below; disjoint per-platform tables). (ADR-047.)
     }
     {
       id = "toggle-window-floating";
@@ -723,8 +755,16 @@ let
         realization = "niri-action";
         action.toggle-window-floating = { };
       };
-      # darwin: N/A for now — AeroSpace's `layout floating tiling` is the
-      # parity lever if wanted later (ADR-040).
+      # skhd-exec: body hand-authored in home/darwin/skhd.nix (it resolves the
+      # yabai binary by package-derived path). The escape hatch for the float
+      # rules in modules/darwin/yabai.nix, matching what this chord already is for
+      # the niri open-floating rules — without it darwin's only float toggle is
+      # service mode, two keys deep inside a mode that captures the keyboard.
+      platforms.darwin = {
+        realization = "skhd-exec";
+        label = "Toggle floating";
+        description = "Toggle the focused window between floating and the bsp tree";
+      };
     }
 
     # Base Hyper — spawn
@@ -753,8 +793,7 @@ let
       # instances don't linger windowless. `open` is on the exec-and-forget
       # PATH (/usr/bin), so no nix-store path needed.
       platforms.darwin = {
-        realization = "aerospace-action";
-        action = "exec-and-forget open -na Ghostty.app";
+        realization = "skhd-exec";
         keywords = [
           "terminal"
           "shell"
@@ -805,8 +844,7 @@ let
           "internet"
           "chrome"
         ];
-        realization = "aerospace-action";
-        action = ''exec-and-forget open -a "Google Chrome"'';
+        realization = "skhd-exec";
       };
     }
     {
@@ -834,8 +872,7 @@ let
       # macOS: focus-or-launch Finder (subsumed the former open-finder
       # mkAppLaunch entry). ADR-040.
       platforms.darwin = {
-        realization = "aerospace-action";
-        action = ''exec-and-forget open -a "Finder"'';
+        realization = "skhd-exec";
         label = "Open Finder";
         description = "Focus Finder, or launch it if not running";
         keywords = [
@@ -895,10 +932,7 @@ let
           "1password"
         ];
       };
-      platforms.darwin = {
-        realization = "aerospace-action";
-        action = "exec-and-forget open -a 1Password";
-      };
+      platforms.darwin.realization = "skhd-exec";
     }
 
     # Hyper+Shift — on-screen move (move-column + move-window-in-column)
@@ -922,8 +956,7 @@ let
         action.move-column-left = { };
       };
       platforms.darwin = {
-        realization = "aerospace-action";
-        action = "move left";
+        realization = "skhd-exec";
         label = "Move window left";
         description = "Move the focused window left within the workspace";
         keywords = [
@@ -954,8 +987,7 @@ let
         action.move-column-right = { };
       };
       platforms.darwin = {
-        realization = "aerospace-action";
-        action = "move right";
+        realization = "skhd-exec";
         label = "Move window right";
         description = "Move the focused window right within the workspace";
         keywords = [
@@ -987,8 +1019,7 @@ let
         action.move-window-up = { };
       };
       platforms.darwin = {
-        realization = "aerospace-action";
-        action = "move up";
+        realization = "skhd-exec";
         description = "Move the focused window up";
         keywords = [
           "move"
@@ -1019,8 +1050,7 @@ let
         action.move-window-down = { };
       };
       platforms.darwin = {
-        realization = "aerospace-action";
-        action = "move down";
+        realization = "skhd-exec";
         description = "Move the focused window down";
         keywords = [
           "move"
@@ -1032,9 +1062,9 @@ let
     }
 
     # Hyper+Super — switch-workspace (the move-to-workspace family lives on the
-    # Hyper+Shift "move" tier). darwin: N/A — under AeroSpace, workspace
-    # switching is Hyper+1‑9 / the Hyper+←/→ edge-scroll / Hyper+Tab, and there
-    # is no Mission Control to open (ADR-040). The capability IDs + niri
+    # Hyper+Shift "move" tier). darwin: N/A — workspace switching is
+    # Hyper+1‑9 / the Hyper+←/→ edge-scroll / Hyper+Tab (ADR-047); there is no
+    # up/down-relative stepping bind on macOS. The capability IDs + niri
     # realization stay for the Linux side.
     {
       id = "switch-workspace-up";
@@ -1055,7 +1085,7 @@ let
         realization = "niri-action";
         action.focus-workspace-up = { };
       };
-      # darwin: N/A (ADR-040).
+      # darwin: N/A (ADR-047).
     }
     {
       id = "switch-workspace-down";
@@ -1076,7 +1106,7 @@ let
         realization = "niri-action";
         action.focus-workspace-down = { };
       };
-      # darwin: N/A (ADR-040).
+      # darwin: N/A (ADR-047).
     }
   ]
   ++ focusWorkspaces
@@ -1097,42 +1127,6 @@ let
       )
     );
   niriBinds = niriBindsFor registry;
-
-  # ── AeroSpace (darwin) emitter ─────────────────────────────────────────────
-  # Darwin window management is realized by AeroSpace (ADR-040, superseding
-  # ADR-039 §7's pure-Hammerspoon realization). Two darwin realization types:
-  #   • `aerospace-action` — a pure AeroSpace binding value the emitter writes
-  #     verbatim into `[mode.main.binding]` (`focus up`, `workspace 1`, or an
-  #     `exec-and-forget open …` app-launch). The payload is `platforms.darwin.
-  #     action` (a string). App-launch uses bare `open` (/usr/bin/open is on the
-  #     `exec-and-forget` bash default PATH — no nix profile needed).
-  #   • `aerospace-exec` — a *complex* bind whose body must call the `aerospace`
-  #     CLI by an absolute (package-derived) path, which this repo-decoupled unit
-  #     (only `{ lib }`, ADR-039 §9) cannot form. Its body is hand-authored in
-  #     home/darwin/aerospace.nix (`lib.getExe cfg.package`); here it contributes
-  #     only its *chord + descriptive* so the palette/table/collision-lint see
-  #     it. The emitter does NOT emit it. Today: the `Hyper+←/→` edge-scroll,
-  #     `Hyper+Shift+M` maximise-by-isolation, and `Hyper+Shift+Return`
-  #     cycle-terminal-windows.
-  # `aerospaceBinds` is the attrset home/darwin/aerospace.nix merges into
-  # `programs.aerospace.settings.mode.main.binding` (the hand-authored
-  # aerospace-exec bodies are merged alongside it). Parametrised over a registry
-  # so the unit tests can drive it with fixtures.
-  isAerospaceAction = c: (c.platforms.darwin.realization or null) == "aerospace-action";
-  isAerospaceExec = c: (c.platforms.darwin.realization or null) == "aerospace-exec";
-  isAerospaceBind = c: isAerospaceAction c || isAerospaceExec c;
-  aerospaceBindsFor =
-    reg:
-    lib.listToAttrs (
-      map (c: lib.nameValuePair (aerospaceChord c.chord) c.platforms.darwin.action) (
-        lib.filter isAerospaceAction reg
-      )
-    );
-  aerospaceBinds = aerospaceBindsFor registry;
-  # The exec-realized caps themselves, exported for home/darwin/aerospace.nix:
-  # it keys its hand-authored bodies by these ids, renders their chords from
-  # these entries, and asserts its body set matches this list exactly (#537).
-  aerospaceExecCaps = lib.filter isAerospaceExec registry;
 
   # ── Collision lint (ADR-039 §8) ────────────────────────────────────────────
   # Pure: returns a list of human-legible failure strings (empty = ok), which
@@ -1171,50 +1165,25 @@ let
     dupFailures ++ fRowFailures;
   collisions = collisionsFor registry;
 
-  # ── Collision lint — darwin (ADR-039 §8; ADR-040) ──────────────────────────
-  # The macOS chord space is now owned by AeroSpace alone (Hammerspoon retired,
-  # ADR-040). The lint operates on the **merged** AeroSpace namespace — every
-  # darwin bind, whether the emitter writes it (`aerospace-action`) or
-  # home/darwin/aerospace.nix hand-authors it (`aerospace-exec`) — so a
-  # hand-authored complex bind cannot silently double-bind a chord the emitter
-  # already claims (the Stage-1 requirement in #494). Because both realization
-  # types are declared in *this* registry, the lint reads one source and needs
-  # no cross-module knowledge of aerospace.nix. No darwin F-row rule: macOS
-  # Ctrl+Opt+F1‑12 is not niri's unbindable VT switch, so that reservation is
-  # Linux-only.
-  #
-  # The Karabiner Mission-Control / Space-jump remaps are gone (ADR-040): Hyper+
-  # arrows / Hyper+1‑9 fall through to AeroSpace instead of native Spaces, so
-  # `karabinerHyperRemapKeys` is emptied permanently and the old reserved-chord
-  # logic is dropped. home/darwin/karabiner.nix still reads this attr to build
-  # its (now empty) remap manipulators — #488's empty-manipulator filter drops
-  # the resulting empty rules — so the attr is kept, not deleted.
+  # The Karabiner Mission-Control / Space-jump remaps are gone (ADR-040, and
+  # unchanged by ADR-047): Hyper+arrows / Hyper+1‑9 fall through to the skhd
+  # keymap instead of native Spaces, so `karabinerHyperRemapKeys` is emptied
+  # permanently and the old reserved-chord logic is dropped.
+  # home/darwin/karabiner.nix still reads this attr to build its (now empty)
+  # remap manipulators — #488's empty-manipulator filter drops the resulting
+  # empty rules — so the attr is kept, not deleted.
   karabinerHyperRemapKeys = {
     arrows = [ ];
     numbers = [ ];
   };
-  darwinCollisionsFor =
-    reg:
-    let
-      entries = map (c: {
-        inherit (c) id;
-        chord = aerospaceChord c.chord;
-      }) (lib.filter isAerospaceBind reg);
-      byChord = lib.groupBy (e: e.chord) entries;
-      dupFailures = lib.mapAttrsToList (
-        chord: es:
-        "duplicate darwin chord ${chord}: claimed by ${lib.concatMapStringsSep ", " (e: e.id) es}"
-      ) (lib.filterAttrs (_chord: es: lib.length es > 1) byChord);
-    in
-    dupFailures;
-  darwinCollisions = darwinCollisionsFor registry;
 
   # ── Registry shape validation (#535) ───────────────────────────────────────
   # The emitters and lints above SELECT entries by matching known field values
-  # (isNiriAction, isAerospaceBind, …), so a malformed entry — typo'd
-  # realization tag, misspelled field, unmapped key token — is an *absence*,
-  # not an error: dropped from emission and invisible to the collision lint
-  # (docs/reviews/engineering-review-2026-07-06.md §1). This pass makes the
+  # (isNiriAction, skhd-exec's realization tag, …), so a malformed entry —
+  # typo'd realization tag, misspelled field, unmapped key token — is an
+  # *absence*, not an error: dropped from emission and invisible to the
+  # collision lint (docs/reviews/engineering-review-2026-07-06.md §1). This
+  # pass makes the
   # registry's shape a contract: every entry either emits exactly as declared
   # or fails eval with a named violation. Pure failure-string list (empty =
   # ok), parametrised for unit fixtures — the collisionsFor house pattern;
@@ -1245,23 +1214,147 @@ let
   ];
   knownRealizations = {
     linux = [ "niri-action" ];
-    darwin = [
-      "aerospace-action"
-      "aerospace-exec"
-    ];
+    darwin = [ "skhd-exec" ];
   };
   # The escalator tokens BOTH chord renderers can map (darwinMod's domain);
   # the niri renderer passes unknown tokens through and defers to build-time
   # `niri validate`, so this stricter cross-platform set is the gate.
   knownChordMods = lib.attrNames darwinMod;
-  # A darwin-bindable key token: an explicit asKey name, or a single
-  # letter/digit (asKeyFor lowercases those). Anything else would be
-  # lowercased into the config and reject the WHOLE file at AeroSpace's
-  # runtime parse — this check moves that failure to eval.
-  validDarwinKey = k: lib.hasAttr k asKey || builtins.match "[A-Za-z0-9]" k != null;
+  # A darwin-bindable key token: an explicit skhdKey name, or a single
+  # letter/digit (skhdKeyFor lowercases those). Anything else would be
+  # lowercased into the config and reject the WHOLE file at skhd's runtime
+  # parse — this check moves that failure to eval.
+  validDarwinKey = k: lib.hasAttr k skhdKey || builtins.match "[A-Za-z0-9]" k != null;
+
+  # I1 — registry id uniqueness. skhdChordsFor/niriBindsFor both key their
+  # output via lib.listToAttrs, which resolves a duplicate id last-wins with
+  # no diagnostic — a duplicated id silently drops one capability's bind
+  # while every emitter and every other lint stays green.
+  idDuplicateFailuresFor =
+    reg:
+    let
+      byId = lib.groupBy lib.id (lib.filter (i: i != null) (map (c: c.id or null) reg));
+      dup = lib.filterAttrs (_id: matches: lib.length matches > 1) byId;
+    in
+    lib.mapAttrsToList (id: _matches: "duplicate capability id \"${id}\"") dup;
+
+  # I2 — skhdKey value shape (registry-independent; evaluated unconditionally
+  # over skhdKey itself). Pinned to the literal names skhd's tokenizer
+  # actually maps (src/tokenize.h): an unmapped name tokenizes as an
+  # identifier and discards the ENTIRE keymap at parse (src/parse.c:298-308,
+  # 496-500). Non-literal values must be uppercase hex — eat_hex accepts
+  # 0-9A-F only (src/tokenize.c:55-63), so a lowercased `0x2b` truncates to
+  # `0x2` and binds a different key silently.
+  skhdLiteralKeyNames = [
+    "left"
+    "right"
+    "up"
+    "down"
+    "return"
+    "tab"
+    "space"
+    "escape"
+  ];
+  skhdKeyShapeFailuresFor =
+    keyMap:
+    lib.concatLists (
+      lib.mapAttrsToList (
+        tok: v:
+        lib.optional (builtins.match "0x[0-9A-F]+" v == null && !lib.elem v skhdLiteralKeyNames)
+          "skhdKey.${tok} = \"${v}\" is neither uppercase hex (^0x[0-9A-F]+$) nor a pinned skhd literal name (${lib.concatStringsSep ", " skhdLiteralKeyNames})"
+      ) keyMap
+    );
+  skhdKeyShapeFailures = skhdKeyShapeFailuresFor skhdKey;
+
+  # I3 — rendered chord grammar. The only gate over the FULL rendered skhd
+  # chord string, so it's the one that would catch a mutated darwinMod token
+  # ("ctl") or a broken join — either discards the whole keymap at skhd parse
+  # while every structural (pre-render) check above stays green.
+  # POSIX ERE (Nix's builtins.match dialect); verified against skhdChord's
+  # own live output before landing.
+  #
+  # The key alternative is exactly uppercase hex / all-alphabetic / a single
+  # digit — not a blanket [a-z0-9]+, which would also admit lowercase-hex-
+  # shaped strings ("0x2b") that truncate silently in skhd's eat_hex.
+  # The `+` repeat deliberately requires ≥2 mods: tiers.hyper.darwin pins a
+  # 2-mod base, so a single-mod rendering can only mean tier/renderer
+  # corruption — relaxing to `*` would let that class pass.
+  chordGrammar = "^((ctrl|alt|shift|cmd) \\+ )+(ctrl|alt|shift|cmd) - (0x[0-9A-F]+|[a-z]+|[0-9])$";
+  # Fixture-drivable: takes id→rendered-string pairs directly (not a
+  # registry), so a test can hand it a deliberately-mutated string without
+  # touching the real renderer.
+  renderedChordFailuresFor =
+    entries:
+    map (e: "${e.id}: rendered skhd chord \"${e.rendered}\" fails the skhd chord grammar") (
+      lib.filter (e: builtins.match chordGrammar e.rendered == null) entries
+    );
+  # The live wiring: every darwin-realized capability's ACTUAL rendered chord
+  # via the real skhdChord/darwinRealizedCapsFor — what validationFailuresFor
+  # calls. Guarded so a fixture with an already-flagged bad tier/mods can't
+  # crash this pass; that entry's own structural failure is reported instead.
+  darwinChordEntriesFor =
+    reg:
+    map
+      (c: {
+        inherit (c) id;
+        rendered = skhdChord c.chord;
+      })
+      (
+        lib.filter (
+          c:
+          (c.platforms.darwin.realization or null) != null
+          && (c.chord or { }) ? tier
+          && lib.hasAttr c.chord.tier tiers
+          && (tiers.${c.chord.tier} ? darwin)
+          && (c.chord or { }) ? key
+          && lib.subtractLists knownChordMods (c.chord.mods or [ ]) == [ ]
+        ) reg
+      );
+
+  # I4 — workspace-family completeness. Guards the `lib.range 1 9` generation
+  # in focusWorkspaces/moveToWorkspaces against an off-by-one or range
+  # mutation that would silently shrink (or misgrow) the keymap — no emitter
+  # or other lint would otherwise notice a missing family member. Asserts
+  # completeness against a fixed 18-id set, so — unlike I1-I3 — it is only
+  # meaningful for the whole registry; kept out of validationFailuresFor's
+  # generic per-fixture pipeline (every small fixture elsewhere in the unit
+  # tests would otherwise fail it) and applied instead directly to the top-
+  # level `validationFailures` binding below.
+  workspaceFamilyPrefixes = [
+    "focus-workspace"
+    "move-window-to-workspace"
+  ];
+  isWorkspaceFamilyId =
+    id: lib.any (p: builtins.match "${p}-[0-9]+" id != null) workspaceFamilyPrefixes;
+  workspaceFamilyFailuresFor =
+    reg:
+    let
+      ids = map (c: c.id or null) reg;
+      expected = lib.concatMap (
+        prefix: map (n: "${prefix}-${toString n}") (lib.range 1 9)
+      ) workspaceFamilyPrefixes;
+      actualFamily = lib.filter isWorkspaceFamilyId (lib.filter (i: i != null) ids);
+      countOf = id: lib.length (lib.filter (i: i == id) actualFamily);
+      missing = lib.filter (id: countOf id == 0) expected;
+      duplicated = lib.filter (id: countOf id > 1) expected;
+      unexpected = lib.subtractLists expected actualFamily;
+    in
+    lib.optional (
+      missing != [ ]
+    ) "workspace family incomplete: missing ${lib.concatStringsSep ", " missing}"
+    ++ lib.optional (
+      duplicated != [ ]
+    ) "workspace family id(s) duplicated: ${lib.concatStringsSep ", " duplicated}"
+    ++ lib.optional (
+      unexpected != [ ]
+    ) "workspace family has unexpected id(s): ${lib.concatStringsSep ", " unexpected}";
+
   validationFailuresFor =
     reg:
-    lib.concatLists (
+    idDuplicateFailuresFor reg
+    ++ skhdKeyShapeFailures
+    ++ renderedChordFailuresFor (darwinChordEntriesFor reg)
+    ++ lib.concatLists (
       lib.imap0 (
         i: c:
         let
@@ -1289,11 +1382,8 @@ let
             ++ lib.optional (p == "linux" && r == "niri-action" && !lib.isAttrs (entry.action or null)) (
               err "niri-action requires a typed `action` attrset"
             )
-            ++ lib.optional (p == "darwin" && r == "aerospace-action" && !lib.isString (entry.action or null)) (
-              err "aerospace-action requires a verbatim `action` string"
-            )
-            ++ lib.optional (p == "darwin" && r == "aerospace-exec" && entry ? action) (
-              err "aerospace-exec must not carry an `action` — its body is hand-authored in home/darwin/aerospace.nix"
+            ++ lib.optional (p == "darwin" && r == "skhd-exec" && entry ? action) (
+              err "skhd-exec must not carry an `action` — its body is hand-authored in home/darwin/skhd.nix"
             );
         in
         map (f: err "missing required field `${f}`") (lib.filter (f: !(lib.hasAttr f c)) requiredCapFields)
@@ -1313,11 +1403,14 @@ let
         )
         ++ lib.concatMap checkPlatform declaredPlatforms
         ++ lib.optional (platforms ? darwin && chord ? key && !validDarwinKey chord.key) (
-          err "chord key \"${chord.key}\" is not a verified AeroSpace key token (asKey ∪ single [A-Za-z0-9])"
+          err "chord key \"${chord.key}\" is not a verified skhd key token (skhdKey ∪ single [A-Za-z0-9])"
         )
       ) reg
     );
-  validationFailures = validationFailuresFor registry;
+  # I4 (workspace-family completeness) is whole-registry-only (see its
+  # comment above) so it's combined here rather than inside
+  # validationFailuresFor itself.
+  validationFailures = validationFailuresFor registry ++ workspaceFamilyFailuresFor registry;
 
   # ── Descriptive resolution (per-platform override → shared default) ─────────
   # The contract for the future palette/doc consumers (#442/#437): a platform's
@@ -1443,16 +1536,21 @@ in
     niriChord
     niriBinds
     niriBindsFor
-    aerospaceChord
-    aerospaceBinds
-    aerospaceBindsFor
-    aerospaceExecCaps
+    skhdChord
+    skhdChords
+    skhdChordsFor
+    skhdCollisions
+    skhdCollisionsFor
+    darwinRealizedCapsFor
     collisions
     collisionsFor
-    darwinCollisions
-    darwinCollisionsFor
     validationFailures
     validationFailuresFor
+    idDuplicateFailuresFor
+    skhdKeyShapeFailuresFor
+    renderedChordFailuresFor
+    darwinChordEntriesFor
+    workspaceFamilyFailuresFor
     karabinerHyperRemapKeys
     descriptiveFor
     tierChordDisplay
