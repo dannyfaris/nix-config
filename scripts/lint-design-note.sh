@@ -33,9 +33,13 @@
 
 set -euo pipefail
 
-# Canonical required H2 sections, in template order. "Cost" is intentionally
-# absent: it is the one optional section (see _template.md), allowed wherever
-# it appears but never required.
+# Canonical required H2 sections, in template order. "Cost" and "Premises" are
+# intentionally absent: they are the optional sections (see _template.md),
+# allowed wherever they appear but never required. Premises is optional rather
+# than required so the every-note backfill it would otherwise force does not
+# become padding — the template carries the slot so new notes get it by
+# construction, and the peer-review checklist judges whether it is honest
+# (ADR-032: the lightest mechanism that holds the guarantee).
 REQUIRED=(
   "summary"
   "motivation"
@@ -110,7 +114,7 @@ lint_file() {
   local -a observed=()
   local h known r
   for h in "${hnorm[@]}"; do
-    [[ $h == "cost" ]] && continue
+    [[ $h == "cost" || $h == "premises" ]] && continue
     known=0
     for r in "${REQUIRED[@]}"; do [[ $h == "$r" ]] && known=1 && break; done
     if [[ $known -eq 1 ]]; then
