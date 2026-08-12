@@ -71,7 +71,7 @@ defaults domains | tr , '\n' | grep -i todesktop
 
 ## History
 
-Cursor was installed on the NixOS desktop hosts via `home/nixos/cursor-ide.nix` (`pkgs.code-cursor`, a `home.packages` addition from #77) until that module was removed and the `cursor` entry dropped from the `allowUnfreePredicate` whitelist. Darwin (neptune, homebrew cask) is now the only platform in the fleet that installs Cursor, so this doc absorbed the foregone-install rationale the deleted module's head comments used to carry. `git log` carries the rest.
+Cursor was installed on the NixOS desktop hosts via `home/nixos/cursor-ide.nix` (`pkgs.code-cursor`, a `home.packages` addition from #77) until that module was removed and the `cursor` entry dropped from the `allowUnfreePredicate` whitelist. Darwin (celaeno, homebrew cask) is now the only platform in the fleet that installs Cursor, so this doc absorbed the foregone-install rationale the deleted module's head comments used to carry. `git log` carries the rest.
 
 ## References
 
