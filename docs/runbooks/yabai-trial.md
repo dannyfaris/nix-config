@@ -23,13 +23,11 @@ Two behaviours differ sharply from AeroSpace and are not obvious from the config
    ```
 2. **Confirm "Displays have separate Spaces" is on** (System Settings → Desktop & Dock → Mission Control). yabai hard-requires it and *exits successfully* if it is off, so the failure is invisible to `launchctl list`.
 3. **Confirm "Automatically rearrange Spaces" is off.** It reorders mission-control indices underneath the keymap.
-4. **Verify "Switch to Desktop 1" through "Switch to Desktop 9" are enabled** (System Settings → Keyboard → Keyboard Shortcuts… → Mission Control, expand the collapsed *Mission Control* group). They bind `Ctrl+1‑9` and are **on by default** on macOS 26, so this is a check, not a change. Confirm from the shell instead if preferred — the absence of `118`-and-up entries under `AppleSymbolicHotKeys` means *at system default*, because only a deviation is ever written:
+4. **Nothing to do — the Mission Control shortcuts are declared** in `home/darwin/symbolic-hotkeys.nix` and re-imported at every activation, including the one nix-darwin's RunAtLoad `activate-system` performs at boot, before login.
 
-   ```
-   defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys | grep -E '^\s{4}[0-9]+ ='
-   ```
+   This step previously said they were on by default and needed only a check. That was wrong, and the correction cost a keymap: on the first cold boot the whole Mission Control group came back **unticked**, killing `Hyper+1‑9` and the edge-scroll's space step — 11 of 41 binds — with nothing in any log. The reasoning that failed is worth keeping, because the same trap is available to anyone reading `com.apple.symbolichotkeys`: **an absent entry does not mean "enabled by default"**. It means macOS has recorded no deviation, and the effective state can still be off. Both times the plist was empty of `118`-and-up entries; the first time the shortcuts worked and the second they did not.
 
-   Order matters: a `Ctrl+N` does nothing when Desktop N does not exist, and System Settings lists only as many entries as there are Desktops — so step 1 has to come first, and testing these before it will mislead.
+   Order still matters if you are testing by hand: a `Ctrl+N` does nothing when Desktop N does not exist, and System Settings lists only as many entries as there are Desktops — so step 1 comes first, and probing these before it will mislead you into thinking they are off.
 
    `Hyper+1‑9` synthesizes these rather than calling `yabai -m space --focus`, because yabai's SIP-free path deliberately skips the macOS slide (`space_manager.c:956` posts dock swipes at a hardcoded 9999 velocity) and the slide is wanted. **They are therefore load-bearing**: switch them off and `Hyper+1‑9` goes *silently* dead — skhd fires a shortcut macOS no longer listens for, with nothing in any log. They are left **undeclared deliberately**. Being correct by default, the only thing a declaration would buy is a guard against someone disabling them; and hand-authoring the `com.apple.symbolichotkeys` structure (symbolic-hotkey ids plus `(charCode, keyCode, modifier)` triples, whose keycodes for 1‑9 are non-sequential) risks *breaking* a working default to defend against something that has not happened. The lightest mechanism that holds the guarantee is this paragraph ([ADR-032](../decisions/ADR-032-proportionate-enforcement-and-rationale.md)).
 
@@ -109,6 +107,18 @@ Dated log of what the live trial established, kept here because it shares the br
 - **One Space existed pre-trial, not four.** Eight had to be created, not five. The original figure would have left the operator four Desktops short with a quarter of the keymap silently dead — the exact failure the step exists to prevent.
 - **Counting `uuid` keys in `com.apple.spaces` is not a valid Space count.** It sweeps in `Collapsed Space` records for displays that are not connected. The Main monitor's `Spaces` array is the only honest source; the corrected probe is in step 1.
 - **"Switch to Desktop N" is on by default, not off.** Step 4 briefly said otherwise, and the commit that introduced the native-shortcut binds ([`3b5d374`](https://github.com/dannyfaris/nix-config/commit/3b5d374)) argues from the same wrong premise — read its message with that in mind. The error came from probing the shortcuts while only **one** Desktop existed: `Ctrl+1` was already the current Desktop and Desktop 3 did not exist, so both were no-ops regardless of whether anything was bound. The control test that seemed to clear the mechanism (`ctrl + alt - 2` switching correctly) proved only that *synthesis* worked — that chord was caught by skhd, so it said nothing about macOS's own bindings. **A negative result from a probe run against absent state is not evidence.** Nine Desktops later the same probe passes with no plist entry present at all, which is what "at system default" looks like.
+
+### 2026-08-12 — first cold boot: everything came back except the borrowed shortcuts
+
+**The daemons survived; the settings did not.** yabai, skhd, JankyBorders and SwiftBar all started, and every bind that talks to yabai directly worked — app launch, focus, move-column, move-window-to-workspace. What died was exactly the set that synthesizes a macOS shortcut: `Hyper+1‑9` and the edge-scroll's space step, 11 of 41 binds, because the entire Mission Control shortcut group had reverted to **unticked**. Silent: no log line, no error, no failed exit.
+
+That is a cost of the native-slide design specifically ([`3b5d374`](https://github.com/dannyfaris/nix-config/commit/3b5d374)), not of yabai. Borrowing macOS's own shortcuts bought the animation at the price of depending on user-settings state that does not survive a reboot. The instant-cut `yabai -m space --focus N` it replaced had no such dependency. Now declared in `home/darwin/symbolic-hotkeys.nix`; the trade is that the Keyboard Shortcuts panel is no longer authoritative on this host.
+
+**yabai lost its Accessibility grant at boot and recovered by itself.** `yabai.err.log` holds `could not access accessibility features! abort..` — the TCC race the agent design anticipated. Because launchd reports a signal/abort death as a *non-zero* exit, `KeepAlive.SuccessfulExit = false` respawned it, and the later attempt succeeded. The setting suppresses respawn only on a clean exit, which is the precondition-failure case where respawning would just loop. Worth knowing that the recovery is real and automatic rather than assumed.
+
+**Two `borders` processes were running** (pids 803 and 1002) after boot. Unexplained, harmless in appearance, not investigated.
+
+**Diagnosis on this host cannot rely on synthesized keystrokes.** `skhd -k` from an interactive shell silently stopped posting events after the reboot, so every "the chord did nothing" reading taken that way was uninformative — including one that prompted a pointless skhd restart. Ground truth for a keybind is a finger on the key.
 
 ### 2026-08-11 — observations carried, not yet acted on
 

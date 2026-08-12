@@ -180,6 +180,10 @@
       # yabai signal declared in modules/darwin/yabai.nix. yabai draws no bar, so
       # without this the numbered Desktop is only visible via Mission Control.
       ../../home/darwin/swiftbar.nix
+      # TRIAL BRANCH ONLY — the macOS shortcuts skhd synthesizes for space
+      # navigation. They reset to off across a reboot, which silently killed 11
+      # of 41 binds; declaring them restores the set before login.
+      ../../home/darwin/symbolic-hotkeys.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream-published
       # prebuilt aarch64-darwin binary, sidestepping the heavy
