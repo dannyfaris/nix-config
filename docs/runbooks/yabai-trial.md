@@ -90,7 +90,24 @@ That restores the config but **not** the desktop state. Also:
 
 ## Findings
 
-Dated log of what the live trial established, kept here because it shares the branch's lifecycle. **No verdict yet** — this records evidence, not a decision. If the trial concludes GO, this graduates into the superseding ADR's §History, the way [ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md) §History preserved the `trial/aerospace` log.
+Dated log of what the live trial established, kept here because it shares the branch's lifecycle. This graduates into the superseding ADR's §History, the way [ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md) §History preserved the `trial/aerospace` log.
+
+### 2026-08-12 — verdict: GO
+
+**yabai is adopted as celaeno's window manager**, superseding [ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md)'s AeroSpace decision. The operator's assessment after two days of daily-driver use: *"very happy … the native macOS spaces integration is working well and it generally feels less flakey than AeroSpace did."*
+
+The measured case behind that:
+
+- **Stability.** 18h+ continuous uptime at 0.0% CPU for yabai, skhd and SwiftBar alike, with **zero bytes** ever written to yabai's stderr during normal operation. Two cold boots, both clean.
+- **Crash recovery is real, not assumed.** `SIGTERM` and `SIGKILL` both respawn, because launchd reports a signal death as a non-zero exit and `KeepAlive.SuccessfulExit = false` only suppresses respawn on a *clean* exit — precisely the precondition-failure case where respawning would loop. The respawned daemon re-reads its config: rules, layout and the SwiftBar signal all return.
+- **The SIP-enabled claims hold on macOS 26.5.2** — `window --space`, `space --focus`, and a stable reversible `zoom-fullscreen`, the last of which AeroSpace could not offer at all.
+- **Everything yabai owns survived both reboots.** Every bind that talks to yabai directly came back correctly, both times.
+
+**What failed was never yabai.** Each defect found was in something bolted *around* it: the borrowed macOS shortcuts that reset on reboot, SwiftBar's Sparkle updater fighting a read-only store, a menu-bar plugin that is not nix-aware. That distinction is the substance of the verdict — a tiler that has not misbehaved once, wearing accessories that have.
+
+**Accepted costs**, recorded so the ADR does not have to rediscover them: the SIP-free paths are private-SkyLight-heavy (`modules/darwin/yabai.nix` header), so macOS point releases are a live risk in a way they were not for AeroSpace's public-API design; the Keyboard Shortcuts panel is no longer authoritative on this host; float rules are hand-maintained; and `Hyper+Tab` keeps an instant cut, having no native equivalent to borrow.
+
+**On how this was validated.** Four diagnoses during the trial were wrong — the `is-visible` filter, home-manager's symlink swap, a TCC posting permission, and "on by default" — and three would have shipped as fixes. Every one was caught by running something on the box, never by reasoning or review; the two conclusions held most confidently from source-reading were among those falsified. The one deliberately written to *confirm* a fix instead disproved it and found the real cause. ADR-040 was itself reversed on the strength of a live trial; this trial says the same thing more sharply, and the superseding ADR should say so rather than treat it as method boilerplate.
 
 ### 2026-08-11 — activated on neptune, full keymap exercised
 
@@ -114,9 +131,9 @@ Dated log of what the live trial established, kept here because it shares the br
 
 That is a cost of the native-slide design specifically ([`3b5d374`](https://github.com/dannyfaris/nix-config/commit/3b5d374)), not of yabai. Borrowing macOS's own shortcuts bought the animation at the price of depending on user-settings state that does not survive a reboot. The instant-cut `yabai -m space --focus N` it replaced had no such dependency. Now declared in `home/darwin/symbolic-hotkeys.nix`; the trade is that the Keyboard Shortcuts panel is no longer authoritative on this host.
 
-**yabai lost its Accessibility grant at boot and recovered by itself.** `yabai.err.log` holds `could not access accessibility features! abort..` — the TCC race the agent design anticipated. Because launchd reports a signal/abort death as a *non-zero* exit, `KeepAlive.SuccessfulExit = false` respawned it, and the later attempt succeeded. The setting suppresses respawn only on a clean exit, which is the precondition-failure case where respawning would just loop. Worth knowing that the recovery is real and automatic rather than assumed.
+**yabai did *not* hit the Accessibility race at boot** — a claim first recorded here and then withdrawn. `yabai.err.log` does hold `could not access accessibility features! abort..`, but its mtime is 2026-08-11 18:53: yabai's first start of the trial, before the grant was given. Both cold boots wrote nothing to it. Reading a log line without reading its timestamp turned a day-old first-run message into an imagined boot-time race.
 
-**Two `borders` processes were running** (pids 803 and 1002) after boot. Unexplained, harmless in appearance, not investigated.
+**Two `borders` processes appeared after the first boot** (pids 803 and 1002) and a single one after the second. One-off, cause unknown, not investigated.
 
 **Diagnosis on this host cannot rely on synthesized keystrokes.** `skhd -k` from an interactive shell silently stopped posting events after the reboot, so every "the chord did nothing" reading taken that way was uninformative — including one that prompted a pointless skhd restart. Ground truth for a keybind is a finger on the key.
 
