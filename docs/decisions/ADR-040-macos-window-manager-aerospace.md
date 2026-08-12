@@ -1,6 +1,6 @@
 ---
 date: 2026-07-02
-status: Accepted, Implementation pending (Phase B — #494)
+status: Superseded by [ADR-047](./ADR-047-macos-window-manager-yabai.md) (2026-08-12) — AeroSpace decision reversed after a live yabai trial (GO); native macOS Spaces return
 ---
 
 # ADR-040: AeroSpace as the macOS window manager
