@@ -1,4 +1,4 @@
-# yabai — trial window manager on neptune, replacing AeroSpace for the duration
+# yabai — trial window manager on celaeno, replacing AeroSpace for the duration
 # of the trial branch. Its hotkey half is home/darwin/skhd.nix.
 #
 # This re-opens the yabai rejection in docs/design/macos-deterministic-tiling.md

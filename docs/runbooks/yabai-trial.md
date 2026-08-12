@@ -1,8 +1,8 @@
-# Runbook — yabai trial bootstrap and teardown (neptune)
+# Runbook — yabai trial bootstrap and teardown (celaeno)
 
 > **Trial branch only** (`trial/yabai`). Not a fleet document. It exists because the branch is inert without the manual steps below and they are not derivable from the config. Delete it with the branch.
 
-Scope: neptune, the fleet's only Mac since saturn was purged (#759). The swap is wired in `hosts/neptune/default.nix`, not in the shared `home/darwin/bundles/desktop-env.nix`, so the shared macOS desktop surface stays untouched and teardown is a clean branch checkout.
+Scope: celaeno, the fleet's only Mac since saturn was purged (#759) — and named `neptune` until the ADR-045 re-key landed mid-trial (#804/#807), which is why the dated entries under §Findings say so. The swap is wired in `hosts/celaeno/default.nix`, not in the shared `home/darwin/bundles/desktop-env.nix`, so the shared macOS desktop surface stays untouched and teardown is a clean branch checkout.
 
 ## Know this before you start
 
@@ -69,7 +69,7 @@ Two behaviours differ sharply from AeroSpace and are not obvious from the config
 
 ## If activation fails partway
 
-If home-manager's activation dies between removing AeroSpace and starting skhd, there is no window manager and no hotkeys. This is recoverable and nothing is lost: the mouse, Dock, Spotlight and Mission Control all still work. Roll back with `cd ~/nix-config && git checkout main && nh darwin switch`, or use neptune's break-glass (local keyboard and display at the login screen) if the shell is unreachable.
+If home-manager's activation dies between removing AeroSpace and starting skhd, there is no window manager and no hotkeys. This is recoverable and nothing is lost: the mouse, Dock, Spotlight and Mission Control all still work. Roll back with `cd ~/nix-config && git checkout main && nh darwin switch`, or use celaeno's break-glass (local keyboard and display at the login screen) if the shell is unreachable.
 
 ## Teardown
 
@@ -114,7 +114,7 @@ Dated log of what the live trial established, kept here because it shares the br
 
 - **Service mode has no visual indicator.** AeroSpace surfaced the active mode in its menu-bar item; yabai + skhd surface nothing, and the mode captures the whole keyboard. This is the most likely future "the machine is wedged" moment and the sharpest usability regression found so far.
 - **`yabai -m query --windows` lists phantom window records.** A hidden 1Password record (`has-ax-reference: false`, empty `title`/`role`, stale `frame`) reads at a glance as an untiled window overlapping the layout, and was briefly misdiagnosed as a missing float rule during this trial. **`has-ax-reference` is the discriminator, not `is-visible`** — the latter means only "on a Space that is not currently visible" and is false for every window on every other Space, so filtering on it discards most of the fleet of windows rather than the phantoms.
-- **Multi-display is unexercised.** neptune is single-display, so the interaction between nine fixed Spaces and a display connect/disconnect is untested — and `space --create` being scripting-addition-only means yabai cannot repair a Space shortfall itself.
+- **Multi-display is unexercised.** celaeno is single-display, so the interaction between nine fixed Spaces and a display connect/disconnect is untested — and `space --create` being scripting-addition-only means yabai cannot repair a Space shortfall itself.
 - **Native fullscreen suspends the edge-scroll wrap — accepted as-is.** A native-fullscreen app takes its own Space at the end of the nine, so while it is open the display holds ten. The wrap target is `jq length` over `--spaces --display`, which counts that tenth, giving two behaviours for as long as the app stays fullscreen:
   - `Hyper+←` at Desktop 1 synthesizes `Ctrl+10`. No such shortcut is bound, so it is a **silent no-op** — no wrap.
   - `Hyper+→` at Desktop 9 compares index 9 against count 10, does not recognise the edge, and so steps `Ctrl+→` **into the fullscreen Space** rather than wrapping to 1.
