@@ -68,4 +68,31 @@ in
       RunAtLoad = true;
     };
   };
+
+  # SwiftBar builds its plugin list at launch and drops a plugin when the file
+  # disappears, without re-adding it when a replacement appears. Home-manager
+  # never edits in place — every activation that changes home-manager-files
+  # deletes and recreates this symlink against a new store path — so without
+  # this the indicator dies on essentially every `nh darwin switch` and stays
+  # dead. Verified on-box: neither `swiftbar://refreshallplugins` nor
+  # `refreshplugin` recovers it; only a relaunch rebuilds the list.
+  #
+  # Ordered after `linkGeneration` (home-manager modules/files.nix:187), not
+  # merely after `writeBoundary` — linkGeneration is itself an entryAfter
+  # writeBoundary, so anchoring there leaves the two unordered and the restart
+  # could race the symlink it exists to react to.
+  #
+  # `pgrep` guards the quit because `quit app` will *launch* a non-running app
+  # just to quit it; the wait loop stops `open` racing an app still tearing
+  # down, and is bounded so a wedged quit cannot hang activation.
+  home.activation.restartSwiftBar = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    if /usr/bin/pgrep -xq SwiftBar 2>/dev/null; then
+      run /usr/bin/osascript -e 'quit app "SwiftBar"' || true
+      for _ in 1 2 3 4 5 6 7 8 9 10; do
+        /usr/bin/pgrep -xq SwiftBar 2>/dev/null || break
+        sleep 0.2
+      done
+    fi
+    run /usr/bin/open -a ${pkgs.swiftbar}/Applications/SwiftBar.app
+  '';
 }
