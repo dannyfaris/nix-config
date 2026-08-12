@@ -1,6 +1,6 @@
 # niri sourcing — off the abandoned flake, onto the maintained fork
 
-**Status:** Accepted — design note (`docs/design/`). Built; **not yet activated** — no host has run a session from it, so the runtime claim below is undischarged. [#763](https://github.com/dannyfaris/nix-config/issues/763) · amends [ADR-028](../decisions/ADR-028-stylix-foundation-and-desktop-env.md) slice 3b.5 (the `niri.cachix.org` whitelist, now retired) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged) and [#770](https://github.com/dannyfaris/nix-config/issues/770).
+**Status:** Accepted — design note (`docs/design/`). Built and **runtime-verified on both niri hosts** (2026-08-12); see De-risk evidence for what was actually exercised and what was not. [#763](https://github.com/dannyfaris/nix-config/issues/763) · amends [ADR-028](../decisions/ADR-028-stylix-foundation-and-desktop-env.md) slice 3b.5 (the `niri.cachix.org` whitelist, now retired) · relates [ADR-029](../decisions/ADR-029-niri-only-desktop.md) (niri-only desktop, unchanged) and [#770](https://github.com/dannyfaris/nix-config/issues/770).
 
 ## Summary
 
@@ -50,7 +50,15 @@ The blast radius is disproportionate to the defect. One stalled third-party repo
 - **The login path is intact in the built system:** `niri.desktop` (`Exec=niri-session`) present in the `desktops` derivation; `/etc/systemd/user/niri.service` linked with `ExecStart=…/niri-26.04/bin/niri --session` and the `overrides.conf` drop-in alongside, so the ADR-029 §67 stub-unit failure mode is absent.
 - **niri 26.04 accepts `include optional=true`** with the target absent — warning, exit 0 — so the theme-menu include survives.
 
-**Not verified — the residual:** nothing has been activated. greetd actually launching the session, the live compositor, screencast delivering frames, mate-polkit now unopposed, and alnair's touchpad are all unproven. Per the repo's set-≠-enforced stance ([#303](https://github.com/dannyfaris/nix-config/issues/303)) force 3 stays open until a session runs on both hosts.
+**Runtime-verified 2026-08-12 — force 3 discharged.** Activated on alcyone first (physical console available for recovery), then alnair. Both took the switch with the running session intact, as `restartIfChanged = false` predicts, so the compositor swap took effect at the next login rather than mid-session.
+
+Exercised on **both** hosts: greetd offered and launched the Niri session; `niri msg version` reports `26.04 (Nixpkgs)` for compositor and CLI, confirming the nixpkgs build rather than a flake build; the `theme` CLI switched families and colours followed, which exercises the `include optional=true` directive the whole 26.04 floor exists for; the Hyper keybind set responded.
+
+Exercised on **alcyone**: screen sharing through Google Meet — the picker appeared and delivered frames. This is the runtime half of the `cargoBuildFeatures` → `xdg-desktop-portal-gnome` branch that was otherwise only checked by evaluation.
+
+Exercised on **alnair** (the laptop-fragment surface alcyone cannot prove): tap-to-click correctly *off*; two-finger tap → right-click (`clickfinger`); natural scroll direction; disable-while-typing suppressing the pad, with the expected `dwt` window leaving sustained deliberate input through; three-finger swipe gestures working — the question that motivated checking, since neither document declares a `gestures` node and both therefore fall through to niri's defaults; eDP-1 panel scale correct at greetd and in-session; a single power-key press inert, confirming logind still owns it and niri's own handling stays disabled (the #636 un-wakeable-laptop loop).
+
+**Still unexercised:** the lock screen, idle timers and suspend paths, and notification delivery. Nothing in this change touches them — they ride Noctalia and logind, both unchanged — but they were not tested, and this note does not claim them.
 
 ## Drawbacks
 
@@ -83,7 +91,7 @@ Both niri-flake's README and the fork's name `programs.niri.package = pkgs.niri`
 
 ## Unresolved questions
 
-**Runtime validation on alcyone then alnair** — greetd offering and launching the session, the theme conductor's include resolving and `theme` reloading, screencast delivering frames, mate-polkit unopposed, alnair's touchpad. Alcyone first because it has the physical console; alnair second because it is the host whose laptop-specific config is exercised.
+~~Runtime validation on alcyone then alnair.~~ **Done 2026-08-12** — see De-risk evidence for what was exercised. The lock/idle/suspend paths and notifications remain untested, though nothing here touches them.
 
 **Whether the fork stays healthy** is the standing bet. The trigger to revisit is the same failure that started this: a bump blocked on an unmerged upstream fix. The answer then is the parked branch, not another evaluation.
 
