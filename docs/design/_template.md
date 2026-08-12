@@ -18,6 +18,10 @@ Design-note template. Copy this file to docs/design/<descriptive-name>.md and fi
 
 *The mechanism in enough detail to implement: how it works, how it interacts with what already exists, corner cases by example. One explanation — no separate "teach it" vs "spec it" levels. Close with how the design meets the forces from Motivation.*
 
+## Premises
+
+*Optional but strongly encouraged where the design turns on facts about the outside world. List the external claims this note rests on — an upstream is abandoned, a project is unmaintained, a tool cannot do X — each with what was checked, where, and on what date. Prioritise the claims that **eliminated an option**: verification effort follows the route you chose, so those are the ones that go unchecked (design-loop.md §De-risk evidence, the #763 scorecard).*
+
 ## De-risk evidence
 
 *The load-bearing assumptions, tested* before *building — what was verified, where (file/rev/host), and the result. A design note is a proposal, not a guarantee; this section is where it earns confidence. State what is still unverified rather than implying coverage you do not have.*
