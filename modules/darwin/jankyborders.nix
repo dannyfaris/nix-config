@@ -1,7 +1,8 @@
-# JankyBorders — the focused-window border for AeroSpace-tiled windows on
-# celaeno (ADR-040 Stage 2, #494). AeroSpace draws no active-window chrome of
-# its own, so a border is what makes the focused tile legible; it is the macOS
-# analogue of the window border niri draws (home/nixos/niri.nix).
+# JankyBorders — the focused-window border for yabai-tiled windows on celaeno
+# (ADR-047; originally added for AeroSpace, ADR-040 Stage 2, #494). Neither
+# window manager draws active-window chrome of its own, so a border is what
+# makes the focused tile legible; it is the macOS analogue of the window
+# border niri draws (home/nixos/niri.nix).
 #
 # Active/inactive colours source from the shared design-token roles
 # (lib/theme-tokens.nix): active = the focus role (base0D), inactive = muted
@@ -20,7 +21,7 @@
 # AX API (that's its speed advantage), and `ax_focus` — the one option that would
 # opt into the slower Accessibility path — is left off. See
 # docs/runbooks/darwin-bootstrap.md for the window-management bootstrap (only
-# AeroSpace itself needs an Accessibility grant).
+# yabai itself needs an Accessibility grant).
 { config, ... }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
@@ -32,7 +33,7 @@ in
     enable = true;
     active_color = withAlpha "ff" tokens.color.role.focus; # base0D — the tile that holds focus
     inactive_color = withAlpha "80" tokens.color.role.muted; # base03 — inactive tiles
-    # 3pt: thick enough to read at a glance, and the AeroSpace inner gap (16,
+    # 3pt: thick enough to read at a glance, and the yabai window_gap (16,
     # Carbon spacing-05) stays > 2× it so adjacent windows' borders never touch.
     width = 3.0;
     style = "round"; # echoes the niri / M3 rounded-corner language

@@ -6,10 +6,10 @@
 > registry (`lib/capabilities.nix`; [ADR-039](../decisions/ADR-039-capability-registry.md),
 > #384, Epic F #428), which generates every surface from one source. The Linux
 > Hyper layer (niri + keyd) has cut over to the `Ctrl+Alt` base. macOS now runs
-> **AeroSpace** as its window manager ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md),
-> #494, superseding ADR-039 §7): the Hyper binds are realized by the
-> `aerospace-action` emitter, and Hammerspoon is retired — see
-> [§Implementation status](#implementation-status).
+> **yabai + skhd** as its window manager ([ADR-047](../decisions/ADR-047-macos-window-manager-yabai.md),
+> superseding [ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md)): the Hyper binds are realized by
+> hand-authored `skhd-exec` bodies (skhd has no verb emitter), and Hammerspoon
+> remains retired — see [§Implementation status](#implementation-status).
 
 **Terminology.** We say **`Super`** for the Cmd-position modifier throughout.
 niri's KDL writes it `Mod`; that is the same key — an implementation detail, not
@@ -82,8 +82,9 @@ window models, so the taxonomy is built on it and macOS follows:
 - **Windows-in-column** — the vertical stack within a column (inner vertical). No
   macOS analogue.
 - **Workspaces** — the vertical stack of workspaces (outer vertical), numbered.
-  On macOS these are **AeroSpace workspaces** (`Hyper+1‑9`), tiler-owned rather
-  than native Spaces (ADR-040).
+  On macOS these are **native Mission Control Desktops** (`Hyper+1‑9`
+  synthesizes macOS's own "Switch to Desktop N" shortcuts), reversing ADR-040's
+  tiler-owned single-native-Space model (ADR-047).
 
 `Hyper` navigates the *immediate* level (columns, windows-in-column) — on niri, `Hyper+↑/↓` additionally falls through to the workspace above/below once it runs out of column to traverse, so the outer level stays one chord away without a modifier; `Hyper+Shift` *acts on the window* — moves (column, window-in-column, send-to-workspace `1‑9`) and geometry; `Hyper+Super` *switches* workspace (`↑/↓`) unconditionally regardless of position in the column, which is why both binds survive alongside the fallthrough.
 
@@ -124,14 +125,14 @@ follow.
 | `Hyper+Shift+↓` | Move window down | Move window down |
 | `Hyper+Super+↑` | Switch workspace up | — |
 | `Hyper+Super+↓` | Switch workspace down | — |
-| `Hyper+1‑9` | Focus workspace N | Switch to workspace N |
+| `Hyper+1‑9` | Focus workspace N | Switch to Desktop N |
 | `Hyper+Shift+1‑9` | Move window to workspace N | Move window to workspace N |
 | `Hyper+M` | — | Open Messages |
 | `Hyper+E` | — | Open Outlook |
 | `Hyper+S` | — | Open Slack |
-| `Hyper+,` | — | Toggle tiles/accordion |
+| `Hyper+,` | — | Toggle bsp/stack layout |
 | `Hyper+Shift+;` | — | Service mode |
-| `Hyper+Shift+M` | — | Maximise (isolate) |
+| `Hyper+Shift+M` | — | Maximise |
 | `Hyper+Shift+Return` | — | Cycle terminal windows |
 <!-- END GENERATED: hyper-bindings -->
 
@@ -144,7 +145,7 @@ no chord→action realization to generate from, so they stay hand-listed here.
 
 ### Focus & navigation
 
-> Both platforms carry an edge fallthrough, on different axes and with different edge behaviour. On niri, `Hyper+↑/↓` moves focus within the column (window-in-column) — or, when a floating window holds focus, to the nearest floating window in that direction, since niri's directional focus dispatches through whichever layer is active — and, once there is nothing further that way, falls through to the workspace above/below. This **clamps** at the first/last workspace, it does not wrap. Note the floating consequence: a lone floating window (the `open-floating` utility-palette rule) has nothing above or below it, so `Hyper+↑/↓` switches workspace and leaves it behind — where the old non-fallthrough bind was simply inert. On macOS these are **AeroSpace** binds (ADR-040): `Hyper+↑/↓` = `focus up/down` — vertical focus within a tiling stack (the niri within-column analogue; niche under AeroSpace's flat i3 tiling until you nest windows), with no workspace fallthrough. `Hyper+←/→` carry a darwin-specific **edge-scroll fallthrough**: `focus left/right`, but at the workspace edge they **wrap** to the adjacent workspace (`--wrap-around`) and land on the far column — *not* a faithful `focus-column` mirror, a deliberate reconstruction of continuous scroll at *workspace* granularity (the design note's no-scrollable-columns limitation). The Karabiner Mission-Control remaps that once occupied these chords are retired.
+> Both platforms carry an edge fallthrough, on different axes and with different edge behaviour. On niri, `Hyper+↑/↓` moves focus within the column (window-in-column) — or, when a floating window holds focus, to the nearest floating window in that direction, since niri's directional focus dispatches through whichever layer is active — and, once there is nothing further that way, falls through to the workspace above/below. This **clamps** at the first/last workspace, it does not wrap. Note the floating consequence: a lone floating window (the `open-floating` utility-palette rule) has nothing above or below it, so `Hyper+↑/↓` switches workspace and leaves it behind — where the old non-fallthrough bind was simply inert. On macOS these are **yabai** binds via skhd (ADR-047): `Hyper+↑/↓` = `window --focus north/south` — vertical focus within the BSP tree, with no workspace fallthrough. `Hyper+←/→` carry a darwin-specific **edge-scroll fallthrough**: `window --focus west/east`, but at the space edge they fall through to a synthesized native shortcut instead of a yabai command — the plain step synthesizes macOS's own Move-a-space (`Ctrl+←/→`), and the wrap (last Desktop back to first) synthesizes a numbered Switch-to-Desktop, because Move-a-space does not wrap. This is a deliberate inconsistency (ADR-047 §Decision): within-space focus rides yabai's instant SIP-free cut, while the edge-of-space step/wrap ride the slower native Mission Control slide. The Karabiner Mission-Control remaps that once occupied these chords remain retired.
 
 ### Move (`Hyper+Shift`) & switch-workspace (`Hyper+Super`)
 
@@ -161,28 +162,31 @@ no chord→action realization to generate from, so they stay hand-listed here.
 > `close-window` — so there is no such powerup. Window-close lives on `Super+W`
 > (see [§App commands](#app-commands--superletter)).
 >
-> On macOS the move binds are **AeroSpace** `move left/right/up/down` (reorder the
-> focused window within the workspace tree). `Hyper+Super+←/→/↑/↓` (switch-workspace)
-> is **darwin-N/A** — under AeroSpace, workspace switching is `Hyper+1‑9`, the
-> `Hyper+←/→` edge-scroll, and `Hyper+Tab`; there is no Mission Control to open
-> (ADR-040).
+> On macOS the move binds are **yabai** `window --swap north/south/west/east`
+> (swap the focused window with its BSP-tree neighbour). `Hyper+Super+←/→/↑/↓`
+> (switch-workspace) is **darwin-N/A** — workspace switching is `Hyper+1‑9`
+> (synthesized native Switch-to-Desktop), the `Hyper+←/→` edge-scroll, and
+> `Hyper+Tab` (`space --focus recent`, yabai's SIP-free gesture path); native
+> Mission Control itself is back as the Desktop switcher, reversing ADR-040's
+> single-native-Space model (ADR-047).
 
 ### Window geometry
 
 > The geometry cluster lives on `Hyper+Shift` (migrated from base `Hyper` in
 > #762 — "Shift acts on the window"). macOS geometry is **darwin-N/A** under
-> AeroSpace (ADR-040): the tiler auto-tiles, so the per-window geometry cluster
-> (resize `−/=`, preset-width `R`, center `C`) is dropped there. Bare `Hyper+M`
-> is reused on macOS for app-launch (Messages); the focus-stable "maximize" is
-> **maximise-by-isolation** (`Hyper+Shift+M` — move the window to its own empty
-> workspace, since AeroSpace's `fullscreen` drops on focus-change — sharing its
-> chord with niri's Maximize column as the action-analogue). The niri geometry
-> capability IDs stay for the Linux side. History:
-> [macos-window-management.md](./macos-window-management.md).
+> yabai's auto-balanced BSP layout (ADR-047): the tiler auto-tiles, so the
+> per-window geometry cluster (resize `−/=`, preset-width `R`, center `C`) is
+> dropped there. Bare `Hyper+M` is reused on macOS for app-launch (Messages);
+> the focus-stable "maximize" (`Hyper+Shift+M`) is a stable, reversible
+> `window --toggle zoom-fullscreen` — replacing AeroSpace's one-way
+> maximise-by-isolation workaround and answering #491/#492 (ADR-047
+> §Rationale; shares its chord with niri's Maximize column as the
+> action-analogue). The niri geometry capability IDs stay for the Linux side.
+> History: [macos-window-management.md](./macos-window-management.md).
 
 ### Spawn & session
 
-> `Hyper+Return` opens a terminal (floating foot on niri; on macOS an `exec-and-forget open -na Ghostty.app` — always a *new* window, a new app instance per window); `Hyper+B` focus-or-opens the browser (niri: focus the existing Firefox window via `niri-focus-or-spawn`, else `xdg-open` the default browser; `open -a "Google Chrome"` focus-or-launch on macOS); `Hyper+F` opens the file surface — one capability, exact chord parity: Nautilus on niri, focus-or-launch Finder on macOS (see docs/desktop/file-manager.md); `Hyper+C` focus-or-opens Claude Desktop (niri only, on the hosts that carry it — the app is single-instance, so a plain re-spawn raises and focuses the existing window; #683); `Hyper+/` focus-or-opens 1Password (niri: focus the existing window via `niri-focus-or-spawn`, app-id pinned from a live probe, else spawn the tray app — single-instance, so the spawn raises the existing window if one is open; `open -a 1Password` focus-or-launch on macOS). macOS also adds app-launch on `Hyper+M/E/S` (Messages/Outlook/Slack) — all `aerospace-action` binds (ADR-040).
+> `Hyper+Return` opens a terminal (floating foot on niri; on macOS `open -na Ghostty.app` — always a *new* window, a new app instance per window); `Hyper+B` focus-or-opens the browser (niri: focus the existing Firefox window via `niri-focus-or-spawn`, else `xdg-open` the default browser; `open -a "Google Chrome"` focus-or-launch on macOS); `Hyper+F` opens the file surface — one capability, exact chord parity: Nautilus on niri, focus-or-launch Finder on macOS (see docs/desktop/file-manager.md); `Hyper+C` focus-or-opens Claude Desktop (niri only, on the hosts that carry it — the app is single-instance, so a plain re-spawn raises and focuses the existing window; #683); `Hyper+/` focus-or-opens 1Password (niri: focus the existing window via `niri-focus-or-spawn`, app-id pinned from a live probe, else spawn the tray app — single-instance, so the spawn raises the existing window if one is open; `open -a 1Password` focus-or-launch on macOS). macOS also adds app-launch on `Hyper+M/E/S` (Messages/Outlook/Slack) — all hand-authored `skhd-exec` bodies (ADR-047).
 
 ## The `Super` layer — the Cmd-position modifier
 
@@ -196,7 +200,7 @@ carries two kinds of bind:
   `Ctrl+key` there means SIGINT / delete-word / flow-control; the terminal
   handles its own analogues, or doesn't).
 - **App access** (launcher, terminal, app-switch) — custom spawns/handlers (niri
-  + Noctalia on Linux, AeroSpace `exec-and-forget` on macOS), *not* remaps.
+  + Noctalia on Linux, hand-authored `skhd-exec` bodies on macOS), *not* remaps.
 
 ### App commands — `Super+letter`
 
@@ -309,10 +313,13 @@ extensible) vs unified `hs.chooser` (full family, more work). See
   consume.
 - **`Super`-command remaps + text nav** — xremap (app-aware, terminal-excluded);
   **pending verification** of niri app-detection.
-- **Handlers** — niri actions (Linux); **AeroSpace** `aerospace-action` binds (macOS — focus/move/workspace/app-launch, emitted verbatim; the edge-scroll, maximise-by-isolation and cycle-terminal-windows binds hand-authored as `aerospace-exec`); the action menu.
-- **macOS terminal** (`Hyper+Return`) — `exec-and-forget open -na Ghostty.app`
-  (AeroSpace then tiles the new window); a new app instance per window, paired
-  with `quit-after-last-window-closed = true` in `ghostty.nix`.
+- **Handlers** — niri actions (Linux); **skhd** hand-authored `skhd-exec`
+  bodies (macOS — focus/move/workspace/app-launch/edge-scroll/maximise/
+  cycle-terminal-windows, all hand-authored since skhd has no verb emitter to
+  parallel `niri-action` — ADR-047 §Decision); the action menu.
+- **macOS terminal** (`Hyper+Return`) — `open -na Ghostty.app` (yabai then
+  tiles the new window); a new app instance per window, paired with
+  `quit-after-last-window-closed = true` in `ghostty.nix`.
 - **Generation** — every surface is emitted from the single-source registry
   (#384; Epic F #428); the new base shape lands **atomically** (never
   half-migrated).
@@ -325,12 +332,24 @@ single-source capability registry (`lib/capabilities.nix`; ADR-039, #384). The
 (binds generated by the registry) and `modules/nixos/keyd.nix` (the Caps→Hyper
 substrate reading the same constant).
 
-The **macOS Hyper layer runs on AeroSpace** (ADR-040, #494, superseding ADR-039 §7): `home/darwin/karabiner.nix` (Caps→`Ctrl+Opt`, reading the same `tiers.hyper.darwin` constant; the Mission-Control/Space-jump remaps retired — `karabinerHyperRemapKeys` emptied) and `home/darwin/aerospace.nix` (the full Hyper keymap — focus/move/workspace/app-launch via the `aerospace-action` emitter, plus the hand-authored edge-scroll, maximise-by-isolation and cycle-terminal-windows `aerospace-exec` binds). `modules/darwin/keyboard-shortcuts.nix` carries **no `Hyper` base** — it owns only the screenshot chord swap. The native `Ctrl+1‑9` "Switch to Desktop N" targets it used to declare were removed once AeroSpace landed: the Karabiner `Hyper+N → Ctrl+N` remap that drove them is retired, and AeroSpace owns workspaces on a single native Space, so they were inert.
+The **macOS Hyper layer runs on yabai + skhd** (ADR-047, superseding ADR-040
+and ADR-039 §7): `home/darwin/karabiner.nix` (Caps→`Ctrl+Opt`, reading the
+same `tiers.hyper.darwin` constant; the Mission-Control/Space-jump remaps stay
+retired — `karabinerHyperRemapKeys` emptied) and `home/darwin/skhd.nix` (the
+full Hyper keymap — every darwin-realized capability is a hand-authored
+`skhd-exec` body, since skhd has no verb emitter to parallel `niri-action`).
+`modules/darwin/keyboard-shortcuts.nix` carries **no `Hyper` base** — it owns
+only the screenshot chord swap. The native `Ctrl+1‑9` "Switch to Desktop N"
+shortcuts are declared instead in `home/darwin/symbolic-hotkeys.nix`
+(re-applied at every activation) and are load-bearing again: `Hyper+1‑9`
+synthesizes them rather than calling `yabai -m space --focus`, to keep the
+native Mission Control slide (ADR-047 §Decision).
 
 The focus/move binds are **shipped** (no longer a deferred mirror): `Hyper+↑/↓`
-= AeroSpace `focus up/down`, `Hyper+←/→` = focus with edge-scroll fallthrough,
-`Hyper+Shift+arrows` = `move`. Bind *inventory* grows incrementally on the
-registry; the base *shape* is atomic per platform.
+= yabai `window --focus north/south`, `Hyper+←/→` = focus with edge-scroll
+fallthrough to a synthesized native shortcut at the space edge,
+`Hyper+Shift+arrows` = `window --swap`. Bind *inventory* grows incrementally
+on the registry; the base *shape* is atomic per platform.
 
 ## Open questions
 
@@ -344,8 +363,8 @@ registry; the base *shape* is atomic per platform.
 - **`Super+Return` (`Cmd+Return`) collision** — used for "submit/send" in some
   macOS apps; accept, or app-exclude via Karabiner.
 - **macOS Chrome cross-workspace focus** — `Hyper+B` (`open -a "Google Chrome"`)
-  when a Chrome window is parked on another AeroSpace workspace: verify AeroSpace
-  *follows* to that workspace rather than leaving focus split (on-box check).
+  when a Chrome window is parked on another Desktop: verify macOS *follows*
+  to that Desktop rather than leaving focus split (on-box check).
 
 ## Audit notes — deliberate calls & deviations
 

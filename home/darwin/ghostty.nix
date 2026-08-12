@@ -156,7 +156,7 @@ in
       # to; inert unless opacity < 1 (set via stylix.opacity.terminal above).
       background-blur = 20;
 
-      # Under AeroSpace (ADR-040), `Hyper+Return` spawns a new Ghostty window
+      # Under the skhd keymap (ADR-047), `Hyper+Return` spawns a new Ghostty window
       # via `open -na Ghostty.app`, which starts a new app *instance* per
       # window. Quitting each instance when its last window closes keeps the
       # process count == the open-window count (clean process-per-window)

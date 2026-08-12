@@ -8,18 +8,8 @@
 # to NixOS hosts only).
 #
 # Bootstrap runbook: docs/runbooks/darwin-bootstrap.md.
-{ lib, ... }:
+{ ... }:
 {
-  # TRIAL BRANCH ONLY — yabai replaces AeroSpace on this host. The override is a
-  # host-specific module-conflict resolution, which PRD §8.1 #4 places in the host
-  # file; the cross-boundary write into home-manager follows
-  # modules/darwin/colima.nix. Editing the shared home/darwin/bundles/desktop-env.nix
-  # would entangle a throwaway trial with the shared macOS desktop surface, so
-  # teardown would be more than a branch checkout. Disabling is total, not partial:
-  # the home-manager module wraps its whole config in mkIf, so the package, the
-  # TOML and the launchd agent all go with it.
-  home-manager.users.dbf.programs.aerospace.enable = lib.mkForce false;
-
   imports = [
     # Foundation — bundle every Darwin host imports by convention.
     ../../modules/darwin/foundation.nix
@@ -79,15 +69,14 @@
     # docs/desktop/keybinds.md §Screenshots.
     ../../modules/darwin/keyboard-shortcuts.nix
 
-    # JankyBorders — the focused-window border for AeroSpace tiles (the macOS
+    # JankyBorders — the focused-window border for yabai tiles (the macOS
     # analogue of the window border niri draws). Colours source from the design
     # tokens; runs as a launchd user agent. See the module header and
-    # docs/design/macos-deterministic-tiling.md (ADR-040 Stage 2, #494).
+    # ADR-047.
     ../../modules/darwin/jankyborders.nix
 
-    # TRIAL BRANCH ONLY — yabai in place of AeroSpace, SIP left enabled.
-    # Paired with home/darwin/skhd.nix (the hotkey half) and the AeroSpace
-    # override in hostContext.extraHomeModules below. JankyBorders above is
+    # yabai per ADR-047, SIP left enabled. Paired with home/darwin/skhd.nix
+    # (the hotkey half, in the bundle's imports below). JankyBorders above is
     # unaffected: it tracks the window server, not the window manager.
     ../../modules/darwin/yabai.nix
 
@@ -152,7 +141,8 @@
   # (personal dev box: cli-tooling + git-multi-identity + full agent CLI set)
   # with NixOS-only modules swapped for Darwin equivalents:
   #   - home/nixos/bundles/desktop-env.nix → home/darwin/bundles/desktop-env.nix
-  #     (the macOS GUI surface: Ghostty, Karabiner, AeroSpace, theme-switching).
+  #     (the macOS GUI surface: Ghostty, Karabiner, skhd/yabai's hotkey
+  #     surface, theme-switching).
   #   - home/nixos/macchina-shell-init.nix → home/darwin/macchina-shell-init.nix
   #     (Apple-logo ASCII + `route -n get default` interface detection).
   #
@@ -167,23 +157,11 @@
       ../../home/shared/ssh.nix
       ../../home/shared/macchina.nix
       ../../home/darwin/macchina-shell-init.nix
-      # macOS desktop workflow — Ghostty, Karabiner (Hyper), AeroSpace, the
+      # macOS desktop workflow — Ghostty, Karabiner (Hyper), skhd/yabai, the
       # screenshots dir, and the runtime theme-switching trio. The Darwin
       # parallel of home/nixos/bundles/desktop-env.nix; per-module rationale
       # lives in the bundle.
       ../../home/darwin/bundles/desktop-env.nix
-      # TRIAL BRANCH ONLY — the hotkey half of the yabai swap (chords from the
-      # registry, bodies keyed by capability id). Imported here rather than added
-      # to the shared desktop-env bundle, keeping the trial off the shared surface.
-      ../../home/darwin/skhd.nix
-      # TRIAL BRANCH ONLY — active-Desktop indicator in the menu bar, pushed by a
-      # yabai signal declared in modules/darwin/yabai.nix. yabai draws no bar, so
-      # without this the numbered Desktop is only visible via Mission Control.
-      ../../home/darwin/swiftbar.nix
-      # TRIAL BRANCH ONLY — the macOS shortcuts skhd synthesizes for space
-      # navigation. They reset to off across a reboot, which silently killed 11
-      # of 41 binds; declaring them restores the set before login.
-      ../../home/darwin/symbolic-hotkeys.nix
       ../../home/shared/agent-clis.nix
       # Darwin variant — overrides `codex` to the upstream-published
       # prebuilt aarch64-darwin binary, sidestepping the heavy

@@ -1,11 +1,12 @@
 # macOS symbolic hotkeys — the system keyboard shortcuts under System Settings →
 # Keyboard → Keyboard Shortcuts, declared rather than left to the settings panel.
 #
-# Declared because they do not survive a reboot. On celaeno's first cold boot of
-# the yabai trial the entire Mission Control group came back unticked, taking
-# `Hyper+1‑9` and the edge-scroll's space step with it — 11 of 41 binds, silently:
-# no log line, no error, the chords simply did nothing while every bind that
-# talks to yabai directly kept working. See docs/runbooks/yabai-trial.md §Findings.
+# Declared because they do not survive a reboot. On celaeno's first cold boot
+# after adopting yabai (ADR-047), the entire Mission Control group came back
+# unticked, taking `Hyper+1‑9` and the edge-scroll's space step with it — 11 of
+# 41 binds, silently: no log line, no error, the chords simply did nothing
+# while every bind that talks to yabai directly kept working. See
+# docs/runbooks/darwin-bootstrap.md.
 #
 # Load-bearing here (home/darwin/skhd.nix synthesizes these rather than calling
 # `yabai -m space --focus`, to keep the macOS slide):
@@ -44,36 +45,37 @@
         };
       };
       ctrl = 262144;
-      # Screenshot entries pair a shift+cmd mask with its ctrl-added variant
-      # (copy-to-clipboard), which is why they come in twos.
-      shiftCmd = 1441792;
-      ctrlShiftCmd = 1179648;
+      # Screenshot masks, matching modules/darwin/keyboard-shortcuts.nix's swap
+      # (bare ⇧⌘ = clipboard, ⌃⇧⌘ = file): shift 131072 + cmd 1048576, plus
+      # ctrl 262144 for the ctrl-added variant.
+      shiftCmd = 1179648;
+      ctrlShiftCmd = 1441792;
       # Move-a-space masks: ctrl+fn, and the same with shift (moves the window).
       ctrlFn = 8650752;
       ctrlShiftFn = 8781824;
     in
     {
-      # Screenshots — not trial-related, carried so the import cannot drop them.
+      # Screenshots — not WM-related, carried so the import cannot drop them.
       "28" = key 1 [
         51
         20
-        shiftCmd
-      ]; # picture of screen → file
+        ctrlShiftCmd
+      ]; # picture of screen → file (⌃⌘⇧3)
       "29" = key 1 [
         51
         20
-        ctrlShiftCmd
-      ]; # picture of screen → clipboard
+        shiftCmd
+      ]; # picture of screen → clipboard (⌘⇧3)
       "30" = key 1 [
         52
         21
-        shiftCmd
-      ]; # picture of selection → file
+        ctrlShiftCmd
+      ]; # picture of selection → file (⌃⌘⇧4)
       "31" = key 1 [
         52
         21
-        ctrlShiftCmd
-      ]; # picture of selection → clipboard
+        shiftCmd
+      ]; # picture of selection → clipboard (⌘⇧4)
 
       # Mission Control — move a space. 79/81 back the edge-scroll step.
       "79" = key true [

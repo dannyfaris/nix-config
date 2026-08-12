@@ -12,7 +12,7 @@
 #
 # Args:
 #   pinned  — version string the overlay is pinning to (e.g. "0.21.2-Beta")
-#   channel — the nixpkgs package to compare against (e.g. prev.aerospace)
+#   channel — the nixpkgs package to compare against (e.g. prev.yabai)
 #   retire  — human-legible string naming the retirement action
 #
 # `lib.versionAtLeast` handles "0.21.2-Beta"-style strings: it splits on

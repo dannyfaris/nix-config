@@ -227,14 +227,8 @@ in
         mkReportCheck "x86_64-linux" "keybind-collisions"
           "Keybind chord collisions (lib/capabilities.nix; ADR-039 §8)"
           capabilities.collisions;
-      keybind-collisions-darwin =
-        mkReportCheck "x86_64-linux" "keybind-collisions-darwin"
-          "Keybind chord collisions — darwin/AeroSpace (lib/capabilities.nix; ADR-039 §8, ADR-040)"
-          capabilities.darwinCollisions;
-      # TRIAL BRANCH ONLY — the skhd namespace neptune actually runs. Separate
-      # from the AeroSpace lint above because skhd renders chords differently
-      # (`ctrl + alt - 0x2B`, not `ctrl-alt-comma`) and, unlike AeroSpace, resolves
-      # a duplicate silently first-wins with no diagnostic (src/hashtable.h:94-97)
+      # The darwin chord lint on celaeno (ADR-047): skhd resolves a duplicate
+      # chord silently first-wins with no diagnostic (src/hashtable.h:94-97)
       # — so this lint is the only thing that can catch one.
       keybind-collisions-skhd =
         mkReportCheck "x86_64-linux" "keybind-collisions-skhd"

@@ -26,14 +26,19 @@
     # Cask owns the .app + DriverKit system extension + launchd jobs; this
     # module owns the declarative remap config. Realizes the Hyper modifier
     # (caps_lock → Ctrl+Opt); the Mission-Control / Space-jump remaps are
-    # retired (ADR-040 — those chords fall through to AeroSpace). See
+    # retired — those chords fall through to the skhd keymap (ADR-047). See
     # docs/desktop/karabiner.md.
     ../karabiner.nix
-    # AeroSpace window manager (~/.config/aerospace/aerospace.toml + launchd).
-    # Owns macOS window management (tiling, workspaces, the Hyper keymap) via
-    # the aerospace-action registry emitter. Supersedes the retired
-    # Hammerspoon layer (ADR-040). See docs/design/macos-deterministic-tiling.md.
-    ../aerospace.nix
+    # skhd — the hotkey half of the yabai window manager (ADR-047). Chords come
+    # from the capability registry; bodies are hand-authored per capability id.
+    ../skhd.nix
+    # SwiftBar menu-bar Desktop indicator, pushed by yabai's space_changed
+    # signal (ADR-047).
+    ../swiftbar.nix
+    # Declared Mission Control shortcuts skhd synthesizes for space navigation
+    # (ADR-047) — they reset across a reboot undeclared, which silently killed
+    # 11 of 41 binds.
+    ../symbolic-hotkeys.nix
     # Ensures ~/Pictures/Screenshots exists; pairs with screencapture.location
     # in modules/darwin/system-prefs.nix.
     ../screenshots-dir.nix

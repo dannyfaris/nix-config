@@ -1,19 +1,13 @@
-# yabai — trial window manager on celaeno, replacing AeroSpace for the duration
-# of the trial branch. Its hotkey half is home/darwin/skhd.nix.
+# yabai — celaeno's window manager (ADR-047), superseding AeroSpace. Its hotkey
+# half is home/darwin/skhd.nix.
 #
-# This re-opens the yabai rejection in docs/design/macos-deterministic-tiling.md
-# §Rationale, which recorded yabai as failing immovable force 2. That force is
-# only PARTIALLY met here, and the difference is worth being exact about. Its
-# first clause — SIP stays enabled — holds: `enableScriptingAddition = false`
-# means no Dock injection and no SIP change. Its second clause, "Accessibility-API
-# only", does not: this config exercises private SkyLight throughout —
+# Posture rationale (why SIP-enabled-but-private-API-heavy is acceptable here)
+# lives in ADR-047 §Context, not here. The per-call-site private-API citations
+# that ADR points back to this file for:
 # SLSMoveWindowsToManagedSpace / SLSSpaceSetCompatID (space_manager.c:679-696),
 # _SLPSSetFrontProcessWithOptions (window_manager.c:2104), SLSGetSpaceManagementMode
 # (yabai.c:275), plus a synthesized private gesture stream for space switching
-# (space_manager.c:920-945). The note draws exactly this contrast for AeroSpace at
-# line 89: "Public Accessibility API + one private window-ID call". So the posture
-# question the trial actually asks is whether SIP-enabled-but-private-API-heavy is
-# acceptable, not whether yabai is Accessibility-only. It is not.
+# (space_manager.c:920-945).
 #
 # Foregone without the scripting addition: space create/destroy/reorder,
 # sticky/pip/shadow, opacity and window layers — none of which this config uses.
@@ -22,8 +16,8 @@
 # the criterion modules/darwin/jankyborders.nix records for its own placement.
 #
 # Needs an Accessibility grant, keyed to the store path (ad-hoc signed, no Team
-# Identifier), so it is lost on every version bump. Trial bootstrap steps are in
-# docs/runbooks/yabai-trial.md.
+# Identifier), so it is lost on every version bump. Bootstrap steps are in
+# docs/runbooks/darwin-bootstrap.md.
 { config, lib, ... }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
@@ -74,7 +68,7 @@ in
     # Windows that must never be tiled. NET-NEW behaviour: the AeroSpace config
     # had no float rules at all (no `on-window-detected`), relying on AeroSpace's
     # own detection. yabai has none, so these are hand-listed and will need
-    # extending as the trial finds more.
+    # extending as new apps are added.
     #
     # 1Password and Finder float wholesale, in parity with the utility-palette
     # rules in home/nixos/niri.nix (Nautilus + 1Password, `open-floating`): apps

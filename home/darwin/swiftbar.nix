@@ -1,11 +1,11 @@
-# SwiftBar — active-Desktop indicator in the macOS menu bar, for the yabai
-# trial. yabai ships no bar, and the numbered Desktops the keymap addresses are
-# otherwise only visible by entering Mission Control.
+# SwiftBar — active-Desktop indicator in the macOS menu bar, adopted per
+# ADR-047. yabai ships no bar, and the numbered Desktops the keymap addresses
+# are otherwise only visible by entering Mission Control.
 #
 # Deliberately a menu-bar *item*, not a bar: SwiftBar adds a status item to the
 # menu bar macOS already draws, where sketchybar would replace the bar wholesale.
 # That is a desktop-environment decision on its own merits (the Noctalia-parity
-# question, ADR-036) and is not being pre-empted by a trial indicator.
+# question, ADR-036) and is not being pre-empted by this indicator.
 #
 # The agent starts the app through `open -a`, NOT by exec'ing the binary under
 # launchd. The refresh path depends on the `swiftbar://` URL scheme, which

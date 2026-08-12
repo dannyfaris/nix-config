@@ -1,15 +1,15 @@
-# skhd — hotkey daemon for the yabai trial. yabai has no hotkey engine, so this
-# module owns every chord AeroSpace used to own.
+# skhd — the adopted hotkey daemon per ADR-047. yabai has no hotkey engine, so
+# this module owns every chord AeroSpace used to own.
 #
 # Chords come from lib/capabilities.nix (ADR-039): `caps.skhdChords` renders one
 # per darwin-realized capability, and `bodies` below supplies each command keyed
 # by capability id, with a both-directions assert so a registry change moves the
 # bind with it. Bodies live here rather than in the registry because every one
 # resolves the yabai binary by package-derived absolute path, which the
-# repo-decoupled registry (only `{ lib }`) cannot form — the same constraint that
-# put the `aerospace-exec` bodies in home/darwin/aerospace.nix. Trade-off, stated:
-# the registry owns the chords, not the actions, which is weaker than the
-# AeroSpace arrangement where simple verbs lived in the registry too.
+# repo-decoupled registry (only `{ lib }`) cannot form — a constraint that
+# stands on its own (the trade is recorded in ADR-047 §Decision). Trade-off,
+# stated: the registry owns the chords, not the actions, which is weaker than
+# the AeroSpace arrangement where simple verbs lived in the registry too.
 #
 # Three skhd properties this module works around:
 #
@@ -132,7 +132,7 @@ let
       # Synthesizes macOS's own "Switch to Desktop N" rather than calling
       # `space --focus`: yabai's SIP-free path posts dock swipes at a hardcoded
       # 9999 velocity to *skip* the slide (space_manager.c:956), and the slide is
-      # wanted. Depends on nine System Settings shortcuts — docs/runbooks/yabai-trial.md.
+      # wanted. Depends on nine System Settings shortcuts — docs/runbooks/darwin-bootstrap.md.
       (lib.nameValuePair "focus-workspace-${toString n}" ''${skhd} -k "ctrl - ${toString n}"'')
       (lib.nameValuePair "move-window-to-workspace-${toString n}" (y "window --space ${toString n}"))
     ]) (lib.range 1 9)
