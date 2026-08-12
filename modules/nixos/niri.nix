@@ -1,35 +1,23 @@
 # niri — Wayland scrollable-tiling compositor.
 #
-# Imports niri-flake's nixosModule (package + polkit + dconf + OpenGL +
-# xdg.portal + the wayland-sessions/niri.desktop entry that greetd
-# discovers) and enables programs.niri at the system layer.
+# Imports niri-flake's nixosModule (settings surface + polkit + dconf + OpenGL
+# + xdg.portal + the wayland-sessions entry greetd discovers) and enables
+# programs.niri at the system layer.
 #
-# Binary cache: niri-flake.cache.enable defaults to true upstream, which
-# would silently add `niri.cachix.org` to nix.settings.substituters —
-# one implicit trust delegation per host that imports the module.
-# CLAUDE.md's whitelist > blanket stance says every trust delegation
-# should be deliberate. The principled shape is therefore to *own* the
-# delegation here rather than let niri-flake own it implicitly:
-# niri-flake.cache.enable = false so the implicit add doesn't happen,
-# and nix.settings then explicitly whitelists the same cache with the
-# same upstream key. The delegation is recorded in source, dated, and
-# only applies on hosts that import this module (currently alcyone and
-# alnair).
+# The flake is `epireyn/niri-flake`, the maintained fork — sodiboo's original
+# stopped merging and its stale libdisplay-info pin blocked every weekly
+# lockfile bump fleet-wide. Why the fork rather than owning the config
+# outright: docs/design/niri-sourcing.md §Rationale (#763).
 #
-# Trust footprint: sodiboo (maintainer) on a single Cachix signing key,
-# bounded to niri-stable + niri-unstable + xwayland-satellite (x86_64
-# only — niri.cachix.org does not serve aarch64, which is fine here
-# because no aarch64 host imports this module). See
-# github.com/sodiboo/niri-flake README "Binary cache" section. Revoke
-# by removing this module from any host's imports, or by deleting the
-# substituter/key lines below; cache.enable = false ensures niri-flake
-# does not re-add it.
-#
-# Without the substituter, niri rebuilds from source on every
-# niri-flake bump (~10-30 min on metis-class hardware), and nixpkgs's
-# Rust crate fetcher currently 403s on some crates.io paths
-# (rust-lang/crates.io#13482, NixOS/nixpkgs#512735 in flight). Both
-# costs disappear once the cache is trusted.
+# The *package* is nixpkgs', not the flake's, which is what keeps this to a
+# module dependency with no binary and no signing key behind it. Two
+# consequences worth stating: niri now rides the 26.04 *release* line instead
+# of niri-unstable's master snapshots (the reason for tracking master was
+# niri-flake's stable slot sitting at 25.08, which nixpkgs having 26.04
+# retires); and no cachix trust is needed at all, since cache.nixos.org
+# already serves it. 26.04 still carries `include optional=true`, which is
+# what lets the theme conductor reach niri through a declared include — see
+# ADR-044 and docs/desktop/noctalia.md.
 #
 # Per ADR-028.
 {
@@ -43,29 +31,15 @@
 
   programs.niri.enable = true;
 
-  # niri 26.04 line, via niri-flake's *unstable* channel — niri-flake still
-  # pins its `stable` slot to 25.08, and 26.04 is where `include optional=true`
-  # landed. That directive lets Noctalia theme niri through a declared include
-  # (we own the include line; Noctalia writes the colour file) without anyone
-  # rewriting the read-only config.kdl. Pinned in flake.lock + served by
-  # niri.cachix.org, so "unstable" here means a pinned, cached release commit,
-  # not a moving target. See ADR-036 and docs/desktop/noctalia.md.
-  programs.niri.package = inputs.niri-flake.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
+  programs.niri.package = pkgs.niri;
 
-  # Own the trust delegation explicitly in nix.settings below; do not
-  # let niri-flake add `niri.cachix.org` implicitly via this module's
-  # default-true behaviour.
+  # Load-bearing, and NOT vestigial now that the substituter block is gone:
+  # this option defaults to *true* upstream, so removing it would have the
+  # fork silently add `niri-epireyn.cachix.org` plus its signing key to every
+  # host importing this module — a single-maintainer trust delegation nobody
+  # chose, which is exactly what the fork migration set out not to take on
+  # (CLAUDE.md, whitelist > blanket).
   niri-flake.cache.enable = false;
-
-  # Explicit whitelist (2026-05-28) — replaces the implicit
-  # niri-flake.cache.enable = true. Public key sourced from upstream
-  # niri-flake `flake.nix` (the same key niri-flake would have added).
-  nix.settings = {
-    substituters = [ "https://niri.cachix.org" ];
-    trusted-public-keys = [
-      "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
-    ];
-  };
 
   # Register niri's package-shipped systemd user units (niri.service +
   # niri-shutdown.target, at `$out/{lib,share}/systemd/user/` — hardlinked)

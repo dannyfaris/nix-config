@@ -4,7 +4,9 @@ Wayland compositor. Scrollable-tiling paradigm — windows arrange in a horizont
 
 ## Selection
 
-**niri 25.08** (the `niri-stable` channel from [`niri-flake`](https://github.com/sodiboo/niri-flake)) on metis. Enabled at the system layer via `modules/nixos/niri.nix`; user settings (binds, layout) at `home/nixos/niri.nix` via niri-flake's auto-injected `homeModules.config`.
+**niri 26.04 from nixpkgs**, with the NixOS/home integration from [`epireyn/niri-flake`](https://github.com/epireyn/niri-flake) — the maintained fork, blessed by the original maintainer after `sodiboo/niri-flake` stopped merging (#763, [niri-sourcing.md](../design/niri-sourcing.md)). Runs on alcyone and alnair. Enabled at the system layer via `modules/nixos/niri.nix`; user settings (binds, layout) at `home/nixos/niri.nix` via the flake's auto-injected `homeModules.config`.
+
+The package/module split is deliberate: taking the binary from nixpkgs means the flake dependency is eval-time module code with no binary and no signing key behind it, which is what let the `niri.cachix.org` trust delegation retire outright rather than move to the fork's cache.
 
 ## Rationale
 
@@ -12,7 +14,7 @@ Wayland compositor. Scrollable-tiling paradigm — windows arrange in a horizont
 
 **Recent, actively maintained, narrowly scoped.** niri's author (YaLTeR) ships releases regularly. The codebase deliberately avoids feature creep common to larger compositors — no extensions, no scripting layer, no plugin manifest. The narrow scope means fewer breaking changes per upgrade.
 
-**`niri-flake` provides the NixOS integration.** sodiboo's niri-flake gives us the package + nixosModule + homeModules-based settings interface. Sharp edges discovered (see below) but the integration works and is in active development.
+**`niri-flake` provides the NixOS integration.** The flake gives us the nixosModule + homeModules-based settings interface (the package now comes from nixpkgs). Sharp edges discovered (see below) but the integration works. Originally sodiboo's; since #763 the maintained `epireyn` fork, which sodiboo pinned as the successor after ceasing to merge.
 
 ## Alternatives considered
 
@@ -27,7 +29,8 @@ Wayland compositor. Scrollable-tiling paradigm — windows arrange in a horizont
 **System layer** — `modules/nixos/niri.nix`:
 
 - Imports `inputs.niri-flake.nixosModules.niri` and enables `programs.niri.enable = true`.
-- Owns the cachix trust delegation explicitly (`niri-flake.cache.enable = false`; `nix.settings.substituters` + `trusted-public-keys` carry `niri.cachix.org` deliberately per CLAUDE.md's "whitelist > blanket" stance).
+- Sets `programs.niri.package = pkgs.niri` (nixpkgs' 26.04) rather than the flake's own build.
+- Keeps `niri-flake.cache.enable = false`. No substituter replaces it — `cache.nixos.org` serves `pkgs.niri`. The line is load-bearing, not vestigial: the option defaults to *true*, so removing it would have the fork add its maintainer's cachix and signing key to every host importing the module.
 - Registers niri's package-shipped systemd user units via `systemd.packages = [ config.programs.niri.package ]`. Load-bearing — without it, niri.service is invisible to systemd-user. See sharp edges.
 
 **User layer** — `home/nixos/niri.nix`:
@@ -51,7 +54,7 @@ Wayland compositor. Scrollable-tiling paradigm — windows arrange in a horizont
 **The `include` directive is unsupported in niri 25.08.** Documenting the historical gotcha: DMS's HM module generated `include
 "hm.kdl"`-style directives expecting niri to parse them; niri 25.08 returns `unexpected node include`. niri-flake's PR #1548 (unmerged) plans to add support; meanwhile, DMS's approach was untenable for our niri pin. Captured in [ADR-029](../decisions/ADR-029-niri-only-desktop.md) §Context.
 
-**Trust delegation for `niri.cachix.org`.** niri-flake's default (`niri-flake.cache.enable = true`) would silently add the substituter to `nix.settings`. We override to `false` and add the substituter + trusted-public-key explicitly so the trust delegation is recorded in source, dated, and revokable in one place. The substituter is necessary in practice — without it, niri rebuilds from source on every niri-flake bump (~10–30 min on metis-class hardware), and the nixpkgs Rust-crate fetcher has been unreliable with crates.io 403 cascades. See `modules/nixos/niri.nix:7-32` for the inline rationale.
+**The flake's cache default is a trust trap.** `niri-flake.cache.enable` defaults to *true*, which silently adds its maintainer's cachix substituter and signing key to `nix.settings` on every host importing the module. We pin it to `false`. Since #763 nothing replaces it: the package comes from nixpkgs, so `cache.nixos.org` serves it and no delegation is taken at all. The trap is that the `false` line looks vestigial once the substituter block is gone — deleting it re-takes the delegation under the fork's name. Caught in adversarial review, not by design.
 
 ## References
 
