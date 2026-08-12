@@ -9,7 +9,9 @@
 # (visual-identity.md §Colour). (This is role-parity, not wire-parity with niri:
 # niri's border colour is Noctalia-driven at runtime, not token-sourced.)
 # JankyBorders wants 0xAARRGGBB and the tokens give RRGGBB, so each is prefixed
-# with an opaque `ff` alpha (a deliberate solid border, not a format constraint).
+# with an alpha: active opaque (full-strength focus signal), inactive 50% —
+# deliberately translucent so inactive tiles recede; the two states differ in
+# solidity as well as hue.
 #
 # This is a nix-darwin *system* service (launchd user agent, KeepAlive), not a
 # home-manager module — hence it lives here and is imported in the host's
@@ -22,17 +24,17 @@
 { config, ... }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
-  # RRGGBB token -> 0xAARRGGBB with an opaque alpha (the format borders expects).
-  opaque = role: "0xff${role.hex}";
+  # RRGGBB token -> 0xAARRGGBB (the format borders expects), alpha stated per state.
+  withAlpha = alpha: role: "0x${alpha}${role.hex}";
 in
 {
   services.jankyborders = {
     enable = true;
-    active_color = opaque tokens.color.role.focus; # base0D — the tile that holds focus
-    inactive_color = opaque tokens.color.role.muted; # base03 — inactive tiles
-    # 6pt: thick enough to read at a glance, and the AeroSpace inner gap (16,
+    active_color = withAlpha "ff" tokens.color.role.focus; # base0D — the tile that holds focus
+    inactive_color = withAlpha "80" tokens.color.role.muted; # base03 — inactive tiles
+    # 3pt: thick enough to read at a glance, and the AeroSpace inner gap (16,
     # Carbon spacing-05) stays > 2× it so adjacent windows' borders never touch.
-    width = 6.0;
+    width = 3.0;
     style = "round"; # echoes the niri / M3 rounded-corner language
     hidpi = true; # celaeno is Retina — draw the border at native backing scale (crisp)
   };

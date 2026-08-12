@@ -53,7 +53,10 @@ in
       # The gap/border relationship is single-sourced in
       # modules/darwin/jankyborders.nix.
       window_gap = tokens.spacing.s05;
-      top_padding = 10;
+      # 4, not 10: macOS reserves ~30pt for a menu bar that only draws ~24pt,
+      # so ~6pt of dead space sits above yabai's canvas — this compensates to a
+      # visible ~10pt gap. Display-tuned (1920x1080); re-tune if metrics change.
+      top_padding = 4;
       bottom_padding = 10;
       left_padding = 10;
       right_padding = 10;
