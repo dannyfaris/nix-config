@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fails if two tracked paths differ only by ASCII case. Such a pair cannot
-# both exist in a checkout on a case-insensitive filesystem (APFS: neptune
+# both exist in a checkout on a case-insensitive filesystem (APFS: celaeno
 # and the macos-15 CI leg), where one silently clobbers the other.
 # The Linux legs are the real enforcers — on Darwin the collision is already
 # collapsed by the time the source reaches the store, so the check cannot

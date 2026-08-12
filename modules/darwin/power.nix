@@ -3,13 +3,13 @@
 #
 #   - `power.restartAfterPowerFailure = true;` — host auto-reboots
 #     when AC returns after an outage. Essential for the always-on
-#     SSH-bastion role neptune fills; otherwise a power
+#     SSH-bastion role celaeno fills; otherwise a power
 #     blip during operator-elsewhere hours leaves the host off until
 #     someone walks to it and presses the power button.
 #
 #   - `power.sleep.computer = "never";` — host never sleeps. Other
-#     fleet hosts SSH into neptune for shared-state work (the inbound
-#     set is lib/operator.nix sshEdges.neptune); computer sleep would
+#     fleet hosts SSH into celaeno for shared-state work (the inbound
+#     set is lib/operator.nix sshEdges.celaeno); computer sleep would
 #     break those flows. nix-darwin's `power.sleep.computer` type accepts either
 #     a positive integer (minutes) or the literal "never" — verified
 #     against the pinned input.

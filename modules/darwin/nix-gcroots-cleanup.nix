@@ -12,7 +12,7 @@
 #
 #   1. Stale temproots (> 10 days): PIDs written by active builds. On a
 #      crashed or killed build the file is never cleaned up; after 10 days
-#      the PID has certainly exited. Verified present on neptune
+#      the PID has certainly exited. Verified present on celaeno
 #      (/nix/var/nix/temproots exists; files named by PID).
 #
 #   2. Dangling symlinks (-xtype l) anywhere under gcroots: the target no

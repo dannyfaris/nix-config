@@ -46,9 +46,9 @@ No `CustomUserPreferences` keys in the default configuration — the updater is 
 
 **Bundle ID is `com.electron.wispr-flow`** (the `com.electron.*` prefix is a generic Electron-app default — Wispr Flow's developers didn't rebrand their bundle ID, same shape as Fellow's `com.electron.fellow`). Verified against the upstream cask's `zap` block.
 
-**ARM64 + x64 both supported.** The cask publishes per-arch `.dmg` URLs; neptune's Apple Silicon takes the ARM64 build. No manual arch flag needed.
+**ARM64 + x64 both supported.** The cask publishes per-arch `.dmg` URLs; celaeno's Apple Silicon takes the ARM64 build. No manual arch flag needed.
 
-**Requires macOS Monterey (12) or later.** The cask declares `depends_on macos: :monterey`; neptune is well past this floor, so it's a non-issue today — recorded for the day a host on an older macOS would join the fleet.
+**Requires macOS Monterey (12) or later.** The cask declares `depends_on macos: :monterey`; celaeno is well past this floor, so it's a non-issue today — recorded for the day a host on an older macOS would join the fleet.
 
 **Migration candidate to nixpkgs.** Not viable today — there is no `pkgs.wispr-flow` for Darwin. If future packaging lands, expect the Electron-in-store clause-2 shape to apply (in-app updater fighting the immutable store path).
 

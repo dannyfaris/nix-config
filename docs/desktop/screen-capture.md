@@ -45,7 +45,7 @@ With the guard and discovery both neutral the gap is narrower than it first appe
 **The remote invocation.** `WAYLAND_DISPLAY` is not set in an SSH shell and must be supplied; `XDG_RUNTIME_DIR` normally is, via `pam_systemd`.
 
 ```bash
-# From a host with an SSH edge into alcyone (neptune, alnair — lib/operator.nix sshEdges).
+# From a host with an SSH edge into alcyone (celaeno, alnair — lib/operator.nix sshEdges).
 ssh alcyone 'export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"; \
   WAYLAND_DISPLAY=$(systemctl --user show-environment | sed -n "s/^WAYLAND_DISPLAY=//p"); \
   if [ -z "$WAYLAND_DISPLAY" ]; then \
@@ -91,7 +91,7 @@ Declaring `grim` in the flake proves nothing about capture working — the eval-
 
 1. **App-id first (pre-merge).** With 1Password open, `niri msg windows` — read the real app-id and pin the window-rule regex to it (native Wayland and XWayland report different identities).
 2. **Eval + install.** `nix build .#nixosConfigurations.alcyone.config.system.build.toplevel --no-link`, then `nh os switch`; `command -v grim` resolves in the session.
-3. **Capture off-host.** From neptune or alnair, run the documented one-liner; the local file is a non-empty PNG (`file`) at the output's native dimensions.
+3. **Capture off-host.** From celaeno or alnair, run the documented one-liner; the local file is a non-empty PNG (`file`) at the output's native dimensions.
 4. **The image is real.** Open a foot window containing a known unique string, capture, and read the image — the string is legible. This is the whole point of the capability, and it is what catches an NVIDIA black/garbled frame.
 5. **Discovery is not hardcoded.** From the SSH session, `systemctl --user show-environment | grep WAYLAND_DISPLAY` returns the live value (expect `wayland-1`, not `wayland-0`).
 6. **The guard binds.** With 1Password open and visible: the `grim` capture shows a blank block where its window is, and so does the image left on disk by `niri msg action screenshot-screen` (check the action's own flag spelling with `niri msg action screenshot-screen --help` before running it). Then `Super+Shift+4` (the interactive UI) over the same window — its contents *are* legible. That asymmetry, automatic-blocked / interactive-visible, is the model §Rationale asserts. If `grim` does not block it, the rule is not matching (back to step 1).

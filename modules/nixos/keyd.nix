@@ -20,7 +20,7 @@
 # only reachable by pressing it on purpose. See docs/desktop/keybinds.md
 # §Inherited reservations.
 #
-# neptune's Karabiner still produces the pre-cutover all-four Hyper; it migrates
+# celaeno's Karabiner still produces the pre-cutover all-four Hyper; it migrates
 # to Ctrl+Opt in the macOS emitter phase (#440). Until then the two hosts' Hyper
 # bases differ — parity-not-identity is restored when that lands.
 #

@@ -85,7 +85,7 @@ let
   # so the emitted `to` event carries only the modifiers we list there. This
   # relies on Karabiner counting the key_code-as-modifier (left_control,
   # emitted by capsLockToHyper) toward a `mandatory` match the same way it
-  # counted the previous rule's left_shift — verify at the neptune keyboard
+  # counted the previous rule's left_shift — verify at the celaeno keyboard
   # (it cannot be exercised from Linux).
   fromHyper = keyCode: {
     key_code = keyCode;

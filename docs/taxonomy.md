@@ -166,20 +166,20 @@ The collective fleet is called **Sidera** (Latin, *the stars*) — see ADR-045.
 
 ## The fleet
 
-> Upkeep: this section is a roadmap (live targets plus reserve and prospect pools), not a census — it is a deliberate superset of `hosts/`, so it is not bound to the host-census lint (#583). Correct the `hosts/` dir today cells at each onboarding/rename; a generated census remains the recorded end state (#583's revisit trigger; the registry-carrier question lives with #562). As of 2026-08-11 the live dirs are `alcyone`, `alnair`, `electra`, `neptune`.
+> Upkeep: this section is a roadmap (live targets plus reserve and prospect pools), not a census — it is a deliberate superset of `hosts/`, so it is not bound to the host-census lint (#583). Correct the `hosts/` dir today cells at each onboarding/rename; a generated census remains the recorded end state (#583's revisit trigger; the registry-carrier question lives with #562). As of 2026-08-12 the live dirs are `alcyone`, `alnair`, `electra`, `celaeno`.
 
-The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today can lag its target name until that host's rename lands. The re-key is early: hosts onboarded since ADR-045 (`alcyone`, `alnair`, `electra`) already sit under their star name, while the planet-named holdover (`neptune`) still awaits its star rename.
+The picks below are the operator's current choices; per ADR-045 they are non-binding and roll out one host at a time, so the `hosts/<dir>` a machine lives under today can lag its target name until that host's rename lands. The `hosts/` re-key is fully landed: every live dir (`alcyone`, `alnair`, `electra`, `celaeno`) now sits under its star name — `neptune`'s repo-side rename landed 2026-08-12 (#804); the celaeno on-box macOS/tailnet cutover is tracked there and is the re-key's last outstanding step.
 
 ### Main homelab — the Pleiades
 
-| Target name | Machine                             | `hosts/` dir today                         |
-| ----------- | ----------------------------------- | ------------------------------------------ |
-| **Alcyone** | NixOS x86_64 flagship desktop tower | `alcyone`                                  |
-| **Celaeno** | darwin home Mac (mini)              | `neptune` (deployed — the one live re-key) |
-| **Maia**    | mini PC (M720q)                     | — (upcoming)                               |
-| **Electra** | mini PC (M920q)                     | `electra`                                  |
-| **Taygeta** | Raspberry Pi 4                      | — (upcoming)                               |
-| **Atlas**   | NAS (6-bay)                         | — (upcoming)                               |
+| Target name | Machine                             | `hosts/` dir today                        |
+| ----------- | ----------------------------------- | ----------------------------------------- |
+| **Alcyone** | NixOS x86_64 flagship desktop tower | `alcyone`                                 |
+| **Celaeno** | darwin home Mac (mini)              | `celaeno` (on-box cutover pending — #804) |
+| **Maia**    | mini PC (M720q)                     | — (upcoming)                              |
+| **Electra** | mini PC (M920q)                     | `electra`                                 |
+| **Taygeta** | Raspberry Pi 4                      | — (upcoming)                              |
+| **Atlas**   | NAS (6-bay)                         | — (upcoming)                              |
 
 Reserve sisters: **Merope, Asterope, Pleione**.
 

@@ -1,4 +1,4 @@
-# Host-specific configuration for neptune (Apple Silicon Mac mini,
+# Host-specific configuration for celaeno (Apple Silicon Mac mini,
 # aarch64-darwin). First Darwin host in the fleet; the operator's
 # primary SSH client into the NixOS hosts (per lib/operator.nix sshEdges).
 #
@@ -95,15 +95,17 @@ _: {
   ];
 
   # All three macOS name facets are set together so they agree after the
-  # mac-mini → neptune rename (ADR-038 / #403): hostName is the primary name;
-  # computerName is the System Settings > Sharing name (the genuinely-unset
-  # facet before this); localHostName is the Bonjour/.local name. The sticky
-  # tailnet registration is re-pointed separately by the operator
-  # (`tailscale up --hostname=neptune`).
+  # mac-mini → neptune (ADR-038 / #403) → celaeno (ADR-045 / #804)
+  # renames: hostName is the primary name; computerName is the System
+  # Settings > Sharing name (the genuinely-unset facet before this);
+  # localHostName is the Bonjour/.local name. The sticky tailnet
+  # registration is re-pointed separately by the operator
+  # (`tailscale set --hostname=celaeno` — `set` touches only the named
+  # pref, where `tailscale up` demands the complete flag set).
   networking = {
-    hostName = "neptune";
-    computerName = "Neptune";
-    localHostName = "neptune";
+    hostName = "celaeno";
+    computerName = "Celaeno";
+    localHostName = "celaeno";
   };
 
   # Integer stateVersion (Darwin's form; distinct from NixOS's "25.11"
@@ -140,7 +142,7 @@ _: {
   # flakePath omitted — host-context.nix's Darwin default
   # ("/Users/dbf/nix-config") matches this host.
   hostContext = {
-    hostName = "neptune";
+    hostName = "celaeno";
     extraHomeModules = [
       ../../home/shared/bundles/cli-tooling.nix
       ../../home/shared/bundles/git-multi-identity.nix

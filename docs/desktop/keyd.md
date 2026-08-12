@@ -2,7 +2,7 @@
 
 Key-remapping daemon for Linux. Picked as the **metis-side realization of the Hyper modifier** from [keybinds.md](./keybinds.md): keyd remaps `caps_lock` to the Hyper base, `Ctrl+Alt` ([ADR-039](../decisions/ADR-039-capability-registry.md) §3). The modifier set is read from the single-source capability registry (`lib/capabilities.nix`, `tiers.hyper.linux`), the same constant the niri emitter consumes — so the base shape is one edit (ADR-039 §4).
 
-This is **parity-not-identity** with neptune's macOS Hyper (ADR-039 §3): same UX — Caps Lock becomes a layer with `Shift`/`Super` free to stack as escalators — but each platform uses its best-fit chord (Linux `Ctrl+Alt`, macOS `Ctrl+Opt`). The macOS counterpart migrates to `Ctrl+Opt` in the macOS emitter phase (#440); until then neptune still produces the pre-cutover all-four `Super+Ctrl+Alt+Shift`, so the two hosts' bases differ in the interim.
+This is **parity-not-identity** with celaeno's macOS Hyper (ADR-039 §3): same UX — Caps Lock becomes a layer with `Shift`/`Super` free to stack as escalators — but each platform uses its best-fit chord (Linux `Ctrl+Alt`, macOS `Ctrl+Opt`). The macOS counterpart migrates to `Ctrl+Opt` in the macOS emitter phase (#440); until then celaeno still produces the pre-cutover all-four `Super+Ctrl+Alt+Shift`, so the two hosts' bases differ in the interim.
 
 Scope: keyd produces the Hyper *modifier*; the chord→action binds are generated from the registry (`home/nixos/niri.nix` consumes `caps.niriBinds`) and recorded in [keybinds.md](./keybinds.md). keyd owns substrate production only — the registry owns chord→action (ADR-039 §4).
 
@@ -79,7 +79,7 @@ The load-bearing choice recorded here is the mapping (`caps_lock → Ctrl+Alt`, 
 
 - [ADR-039](../decisions/ADR-039-capability-registry.md) — the capability-registry architecture; §3 fixes the Hyper base shape (`Ctrl+Alt`, parity-not-identity), §4 the substrate boundary this doc sits on.
 - [keybinds.md](./keybinds.md) — the Hyper taxonomy this realizes; its §Implementation-status records the Linux cutover to the `Ctrl+Alt` base.
-- [karabiner.md](./karabiner.md) — the neptune-side parallel; its Hyper migrates to `Ctrl+Opt` in the macOS emitter phase (#440), still the pre-cutover all-four until then.
+- [karabiner.md](./karabiner.md) — the celaeno-side parallel; its Hyper migrates to `Ctrl+Opt` in the macOS emitter phase (#440), still the pre-cutover all-four until then.
 - `home/darwin/karabiner.nix` — the `capsLockToHyper` rule (pre-cutover; migrates under #440).
 - `modules/nixos/keyd.nix` — the implementation; `modules/nixos/bundles/desktop-env.nix` — where it is imported.
 - keyd upstream (modifier layers, `ids`, `monitor`, the `backspace+escape+enter` recovery) — https://github.com/rvaiya/keyd

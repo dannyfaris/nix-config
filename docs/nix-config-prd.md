@@ -289,7 +289,7 @@ Examples drawn from the current and planned set of hosts:
 
 - `metis` — personal x86_64 dev box, headless-turned-first-desktop-host (ADR-028); retired 2026-08-11 (#387), its directory removed rather than renamed
 - `jupiter` — NixOS x86_64 flagship desktop tower (planned; pending hardware; celestial name per ADR-038)
-- `neptune` — Mac mini (aarch64-darwin, nix-darwin; live as of 2026-06-02, onboarded as `mac-mini` and renamed per ADR-038)
+- `celaeno` — Mac mini (aarch64-darwin, nix-darwin; live as of 2026-06-02, onboarded as `mac-mini`, renamed to `neptune` per ADR-038, renamed to `celaeno` per ADR-045)
 
 These names are accepted under the rule: each refers unambiguously to a specific physical machine. A replacement (e.g., upgrading the MacBook Air to a MacBook Pro) gets its own host directory and a fresh name.
 

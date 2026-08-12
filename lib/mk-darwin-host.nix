@@ -1,11 +1,11 @@
 # Host constructor for Darwin hosts. Thin wrapper over nix-darwin's
 # darwinSystem. Sibling of lib/mk-host.nix.
 #
-# Called from parts/darwin.nix (neptune, onboarded 2026-06-02 as mac-mini
-# per epic #11; renamed per ADR-038).
+# Called from parts/darwin.nix (celaeno, onboarded 2026-06-02 as mac-mini
+# per epic #11; renamed neptune per ADR-038, renamed celaeno per ADR-045).
 #
 # Usage:
-#   (import ./lib/mk-darwin-host.nix { inherit inputs; }) { hostname = "neptune"; }
+#   (import ./lib/mk-darwin-host.nix { inherit inputs; }) { hostname = "celaeno"; }
 #
 # Unlike nixpkgs.lib.nixosSystem, nix-darwin's darwinSystem does NOT
 # derive `system` from the module-set's hostPlatform — it must be passed

@@ -65,7 +65,7 @@
   # state. Only enrolled hosts appear; the rest
   # enrol at their bootstrap events.
   hostKeys = {
-    neptune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEG7lLmu/lPjyPp1dW3QdA1UcPWi4+e/YEDxvj2UZaHW dbf@neptune";
+    celaeno = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEG7lLmu/lPjyPp1dW3QdA1UcPWi4+e/YEDxvj2UZaHW dbf@celaeno";
     alcyone = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICO05VMXeuyBNwKjN73V9zk81q9RYglnyLCLVg+aC+P5 dbf@alcyone";
     alnair = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJO5+tWeSk9j/1OZoa9x8Rvy5QuFt9Zso0kNcjbs5FKk dbf@alnair";
   };
@@ -78,23 +78,23 @@
   # (ADR-042; design note §target shape) — self-edges are deliberately
   # absent (no host SSHes itself).
   sshEdges = {
-    neptune = [
+    celaeno = [
       "alcyone"
       "alnair"
     ];
-    # Alcyone (#631, ADR-042) — accepts neptune + alnair; a workstation
-    # *source* into neptune since its fleet enrolment.
+    # Alcyone (#631, ADR-042) — accepts celaeno + alnair; a workstation
+    # *source* into celaeno since its fleet enrolment.
     alcyone = [
-      "neptune"
+      "celaeno"
       "alnair"
     ];
     # Alnair (#636, ADR-042) — roaming laptop: accepts the operator's
-    # workstation sources alcyone + neptune; a source into every active
+    # workstation sources alcyone + celaeno; a source into every active
     # host since its fleet enrolment (operator call — the laptop reaches
     # the whole fleet from the road).
     alnair = [
       "alcyone"
-      "neptune"
+      "celaeno"
     ];
     # Electra (#637, ADR-042) — service-tier PURE sink: accepts the
     # operator's workstation sources, and never becomes a source — no
@@ -102,7 +102,7 @@
     electra = [
       "alcyone"
       "alnair"
-      "neptune"
+      "celaeno"
     ];
   };
 

@@ -1,6 +1,6 @@
 # Slack
 
-Operator's daily-driver chat client for work. Managed today on `neptune` only; no Linux desktop adoption planned in this configuration (work is macOS-side).
+Operator's daily-driver chat client for work. Managed today on `celaeno` only; no Linux desktop adoption planned in this configuration (work is macOS-side).
 
 ## Selection
 

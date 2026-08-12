@@ -82,7 +82,7 @@ Then update AltTab manually via `brew update && brew upgrade --cask --greedy alt
 
 **No `SUScheduledCheckInterval` override.** Upstream's Info.plist pins the check interval at 604800 (weekly), distinct from Sparkle's general "≈daily" default referenced in [ADR-031](../decisions/ADR-031-nix-homebrew-boundary.md) §Update mechanism stance. User-defaults written via `system.defaults.CustomUserPreferences` would override Info.plist values, but we deliberately do not set this key — upstream's weekly cadence is acceptable, and silence on the third common Sparkle key avoids surprising future readers comparing this doc to the cask source.
 
-**macOS floor.** Upstream's `depends_on macos: ">= :ventura"` for the v11.x series; not a constraint on neptune (current OS) but relevant for any older Mac considering this cask.
+**macOS floor.** Upstream's `depends_on macos: ">= :ventura"` for the v11.x series; not a constraint on celaeno (current OS) but relevant for any older Mac considering this cask.
 
 **Hotkey conflicts.** If another window-switcher is installed (Raycast's window-switcher, Mission Control bindings, a future Rectangle pane), hotkey conflicts are operator-resolved in AltTab's Preferences → Controls. Not a packaging concern.
 

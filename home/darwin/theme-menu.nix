@@ -25,7 +25,7 @@
 # computed from the appearance preference: one hook code path for every
 # gesture. Signals go to an explicit PID list because BSD pkill/pgrep
 # exclude ancestor processes — a pkill would skip the very window the
-# operator typed the command in (probed on neptune, 2026-07-13).
+# operator typed the command in (probed on celaeno, 2026-07-13).
 #
 # Polarity flips (theme dark | theme light) write the macOS appearance
 # via sls-set-appearance (SkyLight private API) and do NOT invoke the

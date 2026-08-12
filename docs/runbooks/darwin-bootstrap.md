@@ -15,7 +15,7 @@ Run once per fresh clone of this repo on the operator machine:
 
 ## Pre-bootstrap (operator-side, on the Mac)
 
-Applies to every Darwin host (neptune today). Steps must run in order — each depends on the previous.
+Applies to every Darwin host (celaeno today). Steps must run in order — each depends on the previous.
 
 ### 0 — macOS Setup Assistant
 
@@ -192,7 +192,7 @@ The app set carries non-declarable first-run ceremony beyond AeroSpace's own sec
 # live so they survive `nh darwin switch` without being clobbered.
 # See docs/decisions/ADR-010-ssh.md.
 #
-# Fleet hosts (alcyone, neptune, ...) are declared in git since #517
+# Fleet hosts (alcyone, celaeno, ...) are declared in git since #517
 # — do NOT re-add them here: this file renders BEFORE the declared
 # blocks and would silently shadow them. Break-glass fallbacks only.
 
@@ -207,11 +207,11 @@ Fleet hosts need **no entry here** — `home/shared/ssh.nix` declares them by ba
 
 Same steps as the headless runbook (see [headless-bootstrap.md](./headless-bootstrap.md) §Fleet SSH enrolment): generate this host's passphrase-less outbound user key (`ssh-keygen -t ed25519 -N "" -C dbf@<host> -f ~/.ssh/id_ed25519 -q`), add its pubkey to `lib/operator.nix` `hostKeys`, add/extend the relevant `sshEdges` entries (ADR-042's declared-edge model), and commit this host's `/etc/ssh/ssh_host_ed25519_key.pub` to `hosts/<host>/` with its `ssh-known-hosts.nix` and `ssh.nix` entries. Existing hosts pick all of it up at their own next switch.
 
-A client-only host — one whose config omits `modules/darwin/sshd.nix` — runs the first three steps only: mint the key, add it to `hostKeys`, and add this host to the source lists of the destinations it should reach (alcyone, alnair, electra, neptune). Committing a host public key + `ssh-known-hosts`/`ssh.nix` entries is a destination's work, which a client-only host has none of until it starts serving sshd. The enrolment lands via a normal PR: run `gh auth login` first (git is HTTPS+token per ADR-009 — nothing earlier in this runbook sets up push auth).
+A client-only host — one whose config omits `modules/darwin/sshd.nix` — runs the first three steps only: mint the key, add it to `hostKeys`, and add this host to the source lists of the destinations it should reach (alcyone, alnair, electra, celaeno). Committing a host public key + `ssh-known-hosts`/`ssh.nix` entries is a destination's work, which a client-only host has none of until it starts serving sshd. The enrolment lands via a normal PR: run `gh auth login` first (git is HTTPS+token per ADR-009 — nothing earlier in this runbook sets up push auth).
 
 ## Post-activation — enable FileVault (manual, not declarable)
 
-`modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters on every Darwin host, and the stake scales with what the host holds: on neptune, the SSH bastion carrying shared fleet state, physical possession of the box otherwise hands that state over intact.
+`modules/darwin/system-prefs.nix` declares the screen-lock posture (`screensaver.askForPassword` + `askForPasswordDelay = 0`), but that only defends against shoulder-surfing a woken screen. At-rest disk encryption is orthogonal and **cannot be declared** — nix-darwin has no FileVault toggle; it is enabled out-of-band and the recovery key is generated once at enable time. A host with screen-lock-on but FileVault-off is still exposed to physical theft: on Apple Silicon the internal volume is always hardware-encrypted, but **without FileVault the Secure Enclave releases the volume key with no password gate**, so anyone with physical access reads the data by booting into macOS Recovery or Share Disk mode. That matters on every Darwin host, and the stake scales with what the host holds: on celaeno, the SSH bastion carrying shared fleet state, physical possession of the box otherwise hands that state over intact.
 
 Enable it once, after first activation — or take Setup Assistant's offer at §0 and make this step verify-only:
 
@@ -228,13 +228,13 @@ fdesetup status
 Notes:
 
 - On Apple Silicon, FileVault keys to the Secure Enclave, so encryption is effectively instant (no multi-hour conversion pass) and the operator login already unlocks the disk at boot.
-- On an always-on host that imports `modules/darwin/power.nix` (neptune): `restartAfterPowerFailure = true` still auto-reboots after an outage, but with FileVault on the host stops at the boot-time unlock screen (shown before macOS finishes booting) and waits for an operator to authenticate — it will not reach a logged-in, SSH-serving state unattended. `sudo fdesetup authrestart` caches the unlock key for a single *planned* restart, but does nothing for an unexpected power-failure reboot; accept the manual unlock as the cost of at-rest security on an always-on host.
+- On an always-on host that imports `modules/darwin/power.nix` (celaeno): `restartAfterPowerFailure = true` still auto-reboots after an outage, but with FileVault on the host stops at the boot-time unlock screen (shown before macOS finishes booting) and waits for an operator to authenticate — it will not reach a logged-in, SSH-serving state unattended. `sudo fdesetup authrestart` caches the unlock key for a single *planned* restart, but does nothing for an unexpected power-failure reboot; accept the manual unlock as the cost of at-rest security on an always-on host.
 
 ## Post-activation — enable Screen Sharing (manual, not declarable)
 
-Inbound Screen Sharing (reach this host's desktop from another Mac over the tailnet, e.g. `vnc://neptune`) **cannot be declared.** nix-darwin has no option for it, and while the underlying `com.apple.screensharing` LaunchDaemon *is* loadable from the command line (`launchctl enable system/com.apple.screensharing`), that only brings the daemon up to listen on 5900 — it does **not** authorize the service. Apple changed Screen Sharing / Remote Management handling in macOS Monterey 12.1 and the "permitted" state is now TCC-gated: it can only be written through the System Settings UI, not by `sudo`, `launchctl`, `defaults`, or `kickstart`. A daemon-only enable connects, then fails with *"Screen Sharing is not permitted on this Mac. Disable and re-enable Screen Sharing or Remote Management in System Settings."* This was verified on neptune (macOS 26 Tahoe); a `launchctl`-driven activation module was prototyped and dropped for exactly this reason.
+Inbound Screen Sharing (reach this host's desktop from another Mac over the tailnet, e.g. `vnc://celaeno`) **cannot be declared.** nix-darwin has no option for it, and while the underlying `com.apple.screensharing` LaunchDaemon *is* loadable from the command line (`launchctl enable system/com.apple.screensharing`), that only brings the daemon up to listen on 5900 — it does **not** authorize the service. Apple changed Screen Sharing / Remote Management handling in macOS Monterey 12.1 and the "permitted" state is now TCC-gated: it can only be written through the System Settings UI, not by `sudo`, `launchctl`, `defaults`, or `kickstart`. A daemon-only enable connects, then fails with *"Screen Sharing is not permitted on this Mac. Disable and re-enable Screen Sharing or Remote Management in System Settings."* This was verified on celaeno (macOS 26 Tahoe); a `launchctl`-driven activation module was prototyped and dropped for exactly this reason.
 
-**Per-host: enable on neptune** (the always-on mini serving inbound desktop access); leave it off on any host whose declared posture is outbound-only, because once enabled, inbound VNC:5900 passes the ALF unconditionally (Apple-signed daemon).
+**Per-host: enable on celaeno** (the always-on mini serving inbound desktop access); leave it off on any host whose declared posture is outbound-only, because once enabled, inbound VNC:5900 passes the ALF unconditionally (Apple-signed daemon).
 
 Where wanted, enable it once, after first activation:
 
@@ -244,7 +244,7 @@ Notes:
 
 - No access-control step is needed for the operator. The `com.apple.access_screensharing` group nests the `admin` group, and `dbf` is an admin, so the login password authenticates the VNC session. A non-admin account *would* need adding (`dseditgroup -o edit -a <user> -t user com.apple.access_screensharing`).
 - No firewall change is needed. The host ALF (`modules/darwin/firewall.nix`) runs with `allowSigned = true`, and the screen-sharing daemon is Apple-signed, so inbound VNC (5900) passes without a rule.
-- **Hyper hotkeys don't fire over Screen Sharing — use the literal `Ctrl+Opt` chord.** Karabiner remaps the *physical* keyboard (DriverKit virtual-HID); Screen Sharing *injects* CGEvents that bypass Karabiner's grab, so `Caps Lock → Hyper` never happens remotely (Caps is also a locking key, delivered as a state-toggle). Workaround, confirmed working on neptune: press the literal `Ctrl+Opt+<key>` on the remote keyboard — the window manager's global hotkeys catch the injected chord directly. This is WM-independent (a property of the Karabiner Hyper substrate, true of any Hyper hotkey — AeroSpace or otherwise).
+- **Hyper hotkeys don't fire over Screen Sharing — use the literal `Ctrl+Opt` chord.** Karabiner remaps the *physical* keyboard (DriverKit virtual-HID); Screen Sharing *injects* CGEvents that bypass Karabiner's grab, so `Caps Lock → Hyper` never happens remotely (Caps is also a locking key, delivered as a state-toggle). Workaround, confirmed working on celaeno: press the literal `Ctrl+Opt+<key>` on the remote keyboard — the window manager's global hotkeys catch the injected chord directly. This is WM-independent (a property of the Karabiner Hyper substrate, true of any Hyper hotkey — AeroSpace or otherwise).
 
 ## Post-activation — grant AeroSpace Accessibility + Mission Control settings (manual, not declarable)
 
@@ -284,7 +284,7 @@ Run from the new Mac's user shell.
 
 ### Phase 2 — SSH-context stack into the fleet
 
-Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `alcyone` and `neptune`.
+Prerequisite: this host's §Fleet SSH enrolment PR has landed **and each destination host has run its own switch** to pick up the new key — until then every hop below is refused. Realistic targets at bring-up: `alcyone` and `celaeno`.
 
 For each target, `ssh dbf@<host>` and verify the SSH-context signals. Do **not** expect a terminal palette shift: ADR-041 deliberately retired the per-host palette repaint (TUIs follow the local terminal's palette; the Stylix fish target that emitted the OSC escapes was removed fleet-wide).
 
@@ -392,4 +392,4 @@ The Apple-logo `ascii.txt` in `home/darwin/macchina-shell-init.nix` carries clas
   ```
 
   Per-tool docs under `docs/desktop/` record both the numeric ID and the uninstall command for every managed MAS app.
-- Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is Linux-only in nixpkgs, so the Darwin side doesn't ship `xterm-ghostty` terminfo (neptune imports `modules/darwin/sshd.nix` directly; only NixOS hosts add it, via `modules/nixos/ghostty-terminfo.nix` in their remote-access bundle). Ghostty clients SSHing into a Darwin host either rely on Ghostty's shell-integration ssh-terminfo push (the client copies terminfo over on connect), fall back to `TERM=xterm-256color` with reduced rendering fidelity, or wait for a nix-homebrew Ghostty cask (#13) that ships terminfo system-wide. Operator uses Darwin hosts primarily as SSH clients, not servers — acceptable posture.
+- Ghostty inbound-SSH terminfo on Darwin. `pkgs.ghostty` is Linux-only in nixpkgs, so the Darwin side doesn't ship `xterm-ghostty` terminfo (celaeno imports `modules/darwin/sshd.nix` directly; only NixOS hosts add it, via `modules/nixos/ghostty-terminfo.nix` in their remote-access bundle). Ghostty clients SSHing into a Darwin host either rely on Ghostty's shell-integration ssh-terminfo push (the client copies terminfo over on connect), fall back to `TERM=xterm-256color` with reduced rendering fidelity, or wait for a nix-homebrew Ghostty cask (#13) that ships terminfo system-wide. Operator uses Darwin hosts primarily as SSH clients, not servers — acceptable posture.

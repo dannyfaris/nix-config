@@ -16,7 +16,7 @@
 #
 # The system-side companions (the .app installs, launchd agents, and
 # services these user configs pair with) live in modules/darwin/* and are
-# imported in each host's system `imports` — see hosts/neptune.
+# imported in each host's system `imports` — see hosts/celaeno.
 {
   imports = [
     # Ghostty user config (~/.config/ghostty/config). Cask owns the .app —

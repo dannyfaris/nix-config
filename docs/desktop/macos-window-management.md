@@ -1,8 +1,8 @@
 # macOS window management
 
-> **Superseded 2026-07-02** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md), #494). The "pure Hammerspoon, no tiling WM" decision recorded below is reversed: neptune now runs **AeroSpace** as a real tiling window manager (single native Space, tiler-owned workspaces, auto-tiling on open), and the geometry cluster + native-fullscreen-Spaces model described here is retired. A live Phase-A trial (GO) reframed scrollability as a *negotiable*, dissolving §7's paradigm objection to AeroSpace. The *why* is the design note [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md); the settled keymap is [keybinds.md](./keybinds.md). This document is retained as the selection record for the pure-Hammerspoon era.
+> **Superseded 2026-07-02** ([ADR-040](../decisions/ADR-040-macos-window-manager-aerospace.md), #494). The "pure Hammerspoon, no tiling WM" decision recorded below is reversed: celaeno now runs **AeroSpace** as a real tiling window manager (single native Space, tiler-owned workspaces, auto-tiling on open), and the geometry cluster + native-fullscreen-Spaces model described here is retired. A live Phase-A trial (GO) reframed scrollability as a *negotiable*, dissolving §7's paradigm objection to AeroSpace. The *why* is the design note [macos-deterministic-tiling.md](../design/macos-deterministic-tiling.md); the settled keymap is [keybinds.md](./keybinds.md). This document is retained as the selection record for the pure-Hammerspoon era.
 
-How the macOS host (neptune) gets niri's geometry/column *feel* — directional focus/move plus the geometry cluster (resize / preset-width / center / fullscreen / maximize) — without a tiling window manager. The decision is **pure Hammerspoon leaning on native macOS primitives**, frozen in [ADR-039 §7](../decisions/ADR-039-capability-registry.md) and scoped by [#440](https://github.com/dannyfaris/nix-config/issues/440); this doc is the canonical selection record that issue calls for.
+How the macOS host (celaeno) gets niri's geometry/column *feel* — directional focus/move plus the geometry cluster (resize / preset-width / center / fullscreen / maximize) — without a tiling window manager. The decision is **pure Hammerspoon leaning on native macOS primitives**, frozen in [ADR-039 §7](../decisions/ADR-039-capability-registry.md) and scoped by [#440](https://github.com/dannyfaris/nix-config/issues/440); this doc is the canonical selection record that issue calls for.
 
 ## Selection
 
@@ -44,7 +44,7 @@ Decided through a `selecting-tooling` exploration; the full rationale lives in [
 
 - **Electron AX misreporting.** The Electron-heavy app set (Chrome, Cursor, Claude, ChatGPT, Slack, Obsidian) is where the Accessibility API misreports windows — per-app rules and any drag-move are least reliable there. The stateless geometry handlers act on `hs.window.focusedWindow()` and are the reliable case; native apps (Ghostty, system apps) are reliable throughout.
 - **Cross-Space moves are deferred and known-fragile.** The focus/move-mirror (directional focus/move with cross-Space edge fallthrough) leans on Hammerspoon's `hs.spaces` handling — a private, flaky macOS surface. It is **not** part of this slice; see [keybinds.md §Open questions](./keybinds.md#open-questions).
-- **Runtime behaviour is on-box only.** Hammerspoon + Karabiner runtime cannot be exercised from Linux — the geometry hotkeys and the `Ctrl+Opt` substrate are verified at the neptune keyboard, not in CI (CI only evaluates that the generated `init.lua` + Karabiner JSON build).
+- **Runtime behaviour is on-box only.** Hammerspoon + Karabiner runtime cannot be exercised from Linux — the geometry hotkeys and the `Ctrl+Opt` substrate are verified at the celaeno keyboard, not in CI (CI only evaluates that the generated `init.lua` + Karabiner JSON build).
 
 ## Scope — what this slice does *not* do
 
