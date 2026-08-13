@@ -56,14 +56,13 @@ let
   dataDir = "${config.xdg.dataHome}/theme-menu";
   stateDir = "${config.xdg.stateHome}/theme-menu";
 
-  # borders argv per resolved scheme: the same roles and per-state alphas
-  # as modules/darwin/jankyborders.nix — active opaque, inactive 50% (only
-  # the static `.slot` field is read, so there is no active-polarity
-  # coupling).
+  # borders argv per resolved scheme: alphas sourced from lib/theme-tokens.nix
+  # (color.borderAlpha), the same single source modules/darwin/jankyborders.nix
+  # reads (only the static `.slot` field is read, so no active-polarity coupling).
   bordersArgs =
     colors:
-    "active_color=0xff${colors.${tokens.color.role.focus.slot}} "
-    + "inactive_color=0x80${colors.${tokens.color.role.muted.slot}}";
+    "active_color=0x${tokens.color.borderAlpha.active}${colors.${tokens.color.role.focus.slot}} "
+    + "inactive_color=0x${tokens.color.borderAlpha.inactive}${colors.${tokens.color.role.muted.slot}}";
 
   # A scheme's wallpaper pool as an indexed link farm — index names give
   # the deterministic order the activation default relies on; an
