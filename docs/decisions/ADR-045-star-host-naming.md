@@ -1,6 +1,6 @@
 ---
 date: 2026-07-25
-status: Accepted, Implementation pending — repo-side re-key complete (#804), celaeno on-box cutover outstanding
+status: Accepted, Implemented (#804)
 ---
 
 # ADR-045: Star host-naming — a flat, non-binding pool, superseding the celestial-substrate framework
@@ -55,3 +55,4 @@ Doc-before-code, then the same staged per-host rollout ADR-038 established — e
 
 - 2026-08-05 — saturn purged from the repo before it was ever deployed (its machine leaves the fleet, to be managed by hand outside it), so its pending re-key is withdrawn; the star name Acrux is retained in [taxonomy.md](../taxonomy.md#host-naming) as an unassigned reserve name.
 - 2026-08-12 (#804) — the repo-side `neptune` → `celaeno` rename landed (git mv, eval-bearing keys, macOS name facets), the last pending per-host rename this ADR's Implementation section scoped; every `hosts/` dir now sits under its star name. The operator on-box cutover this section also requires (`nh darwin switch -H celaeno`, the tailnet re-point, fleet re-switches) is tracked in #804 and completes the re-key.
+- 2026-08-12 — the celaeno on-box cutover ran and verified: all four macOS name facets agree, the tailnet answers `celaeno`, and alcyone/alnair/electra re-switched onto the renamed edge map (runtime probes recorded in #804, closing it). The fleet re-key is complete; every live host sits under its star name on-box.
