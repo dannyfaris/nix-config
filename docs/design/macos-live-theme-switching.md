@@ -108,7 +108,7 @@ Stage 2 (designed and built 2026-07-13, #605):
 
 - Ghostty repaint and include mechanics — resolved: the optional `config-file` include through the state pointer covers new windows (semantics pinned from the installed 1.3.1's docs), and SIGUSR2's hard config reload repaints open ones (source-verified), superseding the OSC-loop sketch entirely.
 - The active-theme pointer — resolved: `$XDG_STATE_HOME/theme-menu/current` → a stable HM-owned entry dir; absent or dangling falls back to the boot default; no login re-apply machinery needed (the watcher's startup run + per-spawn include resolution already cover it).
-- Still open: wallpaper-pool curation for the non-gruvbox families — saturn's solarized couplet especially — operator-taste selection, recorded at #605's close-out (the runtime-verification gate closed 2026-07-13; see §De-risk evidence).
+- Still open: wallpaper-pool curation for the non-gruvbox families — solarized especially — operator-taste selection, recorded at #605's close-out (the runtime-verification gate closed 2026-07-13; see §De-risk evidence).
 - Menu shape — resolved 2026-07-13 (the #605/#609 shared core slice): landed as `lib/theme-families.nix`, a fleet-global catalogue of named families (mandatory dark/light couplets, family-side slot corrections) with per-host boot defaults — one declaration read by both platforms, exposed resolved via `lib/scheme-pair.nix`'s `menu`. This also settles the per-host-identity question: host-identity theming is retired (operator call, 2026-07-13) — every desktop host offers the whole catalogue at runtime and the per-host entry is a boot default only; fuller rationale lands with #609's authority ADR.
 
 ## Future possibilities
