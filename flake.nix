@@ -87,7 +87,7 @@
     # noctalia-shell → noctalia; v4's co-locked `noctalia-qs` Quickshell
     # runtime is gone (meson-built binary, no Qt).
     noctalia = {
-      url = "github:noctalia-dev/noctalia/v5.0.0-beta.4";
+      url = "github:noctalia-dev/noctalia/v5.0.0-beta.8";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
