@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs the six packaged linters CI's pre-commit set runs, pinned to the
+# Installs the seven packaged linters CI's pre-commit set runs, pinned to the
 # versions this flake's nixpkgs supplies, so a nix-less cloud container can
 # reach the same verdicts locally. See docs/design/cloud-session-lint-toolchain.md.
 
@@ -46,8 +46,29 @@ DEADNIX_REV="ba988ddf46f1e57abe3dfacbfbd17fec5a7276d9" # tag v1.3.2 at pin time
 STATIX_REPO="https://github.com/molybdenumsoftware/statix"
 STATIX_REV="52530001bdbc8e94aae0d406a929c7ad7f09d9d1"
 
+# dprint ships no tar-extractable Linux x86_64 asset, only a .zip; the sha256
+# is transcribed from the release's published SHASUMS256.txt and was also
+# re-hashed here from a fresh download (matches).
+DPRINT_VERSION="0.55.2"
+DPRINT_URL="https://github.com/dprint/dprint/releases/download/0.55.2/dprint-x86_64-unknown-linux-gnu.zip"
+DPRINT_SHA256="d7ccde62d789dfb048717252d259e21253e32feffe4cbf2dab9954eeab492219"
+DPRINT_ZIP_MEMBER="dprint"
+
+# dprint's own wasm artefact, not part of the dprint release; sha256 confirmed
+# byte-identical to the copy pkgs.dprint-plugins vendors. See
+# docs/design/cloud-session-lint-toolchain.md.
+DPRINT_MARKDOWN_PLUGIN_VERSION="0.20.0"
+DPRINT_MARKDOWN_PLUGIN_URL="https://plugins.dprint.dev/markdown-${DPRINT_MARKDOWN_PLUGIN_VERSION}.wasm"
+DPRINT_MARKDOWN_PLUGIN_SHA256="5eb4e23248231ce0fc6b6379229b3bf7e0f649b337eacf47764ee8fe2c062257"
+
 BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
 STATE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nix-config-lint-toolchain"
+
+# The wasm plugin and the config that points at it live in STATE_DIR rather
+# than BIN_DIR — neither is an executable on PATH, and the repo deliberately
+# commits no dprint config (parts/formatter.nix is the source of truth).
+DPRINT_PLUGIN_PATH="$STATE_DIR/dprint-plugin-markdown-${DPRINT_MARKDOWN_PLUGIN_VERSION}.wasm"
+DPRINT_CONFIG_PATH="$STATE_DIR/dprint.json"
 
 # Resolved from the script's own location rather than $PWD: the fetcher installs
 # into $HOME and is useful from anywhere, but the drift check needs this repo.
@@ -119,6 +140,26 @@ install_from_archive() {
   install_atomic "$out/$member" "$tool" || return 1
 }
 
+# dprint publishes no tar-extractable Linux asset, only .zip. Try unzip
+# first, fall back to python3's stdlib zipfile (both plausible in a
+# container without the other), and fail loudly rather than silently
+# skipping dprint if neither extractor is on PATH.
+install_from_zip() {
+  local tool="$1" url="$2" sha="$3" member="$4"
+  local dl="$tmp_dir/$tool.zip" out="$tmp_dir/$tool.unpacked"
+  fetch_verified "$url" "$sha" "$dl" || return 1
+  mkdir -p "$out" || return 1
+  if command -v unzip >/dev/null; then
+    unzip -q -o "$dl" "$member" -d "$out" || return 1
+  elif command -v python3 >/dev/null; then
+    python3 -m zipfile -e "$dl" "$out" || return 1
+  else
+    echo "ERROR: $tool needs unzip or python3 to extract its .zip release asset; neither is on PATH." >&2
+    return 1
+  fi
+  install_atomic "$out/$member" "$tool" || return 1
+}
+
 # cargo builds into a staging root so that only the binary reaches $BIN_DIR —
 # its .crates.toml bookkeeping has no business in a PATH directory.
 install_from_cargo() {
@@ -136,7 +177,7 @@ install_from_cargo() {
   install_atomic "$stage/bin/$tool" "$tool" || return 1
 }
 
-# Five of the six self-report a version, which is what makes a re-run cheap.
+# Six of the seven self-report a version, which is what makes a re-run cheap.
 # Deliberately not a pipeline into grep: under `set -o pipefail` the producer's
 # SIGPIPE reads as a failure, and every run would reinstall.
 is_installed() {
@@ -182,6 +223,49 @@ statix_tool() {
   printf '%s\n' "$STATIX_REV" >"$stamp" || return 1
 }
 
+# The repo commits no dprint config; this transcribes parts/formatter.nix's
+# settings and is rewritten every run. See
+# docs/design/cloud-session-lint-toolchain.md.
+write_dprint_config() {
+  cat >"$DPRINT_CONFIG_PATH" <<EOF
+{
+  "excludes": ["docs/desktop/keybinds.md"],
+  "includes": ["*.md"],
+  "markdown": {
+    "emphasisKind": "asterisks",
+    "textWrap": "never"
+  },
+  "plugins": ["$DPRINT_PLUGIN_PATH"]
+}
+EOF
+}
+
+# Binary and plugin are fetched independently and only when missing/mismatched;
+# "changed" tracks whether either one actually did network work, so a run that
+# touches neither still reports skip even though the config is rewritten.
+dprint_tool() {
+  local changed=0
+
+  if ! is_installed dprint "$DPRINT_VERSION"; then
+    install_from_zip dprint "$DPRINT_URL" "$DPRINT_SHA256" "$DPRINT_ZIP_MEMBER" || return 1
+    changed=1
+  fi
+
+  if ! { [ -r "$DPRINT_PLUGIN_PATH" ] &&
+    printf '%s  %s\n' "$DPRINT_MARKDOWN_PLUGIN_SHA256" "$DPRINT_PLUGIN_PATH" |
+    sha256sum --check --status -; }; then
+    local dl="$tmp_dir/dprint-plugin-markdown.wasm"
+    fetch_verified "$DPRINT_MARKDOWN_PLUGIN_URL" "$DPRINT_MARKDOWN_PLUGIN_SHA256" "$dl" || return 1
+    mv -f "$dl" "$DPRINT_PLUGIN_PATH" || return 1
+    changed=1
+  fi
+
+  write_dprint_config || return 1
+
+  [ "$changed" -eq 1 ] || return 2
+  return 0
+}
+
 summary=()
 failures=0
 
@@ -198,7 +282,7 @@ record() {
 }
 
 # Per-tool isolation: a failed tool never aborts the others, so one unreachable
-# asset still leaves five usable linters and a summary that names the gap.
+# asset still leaves six usable linters and a summary that names the gap.
 rc=0
 static_tool shellcheck "$SHELLCHECK_VERSION" \
   "$SHELLCHECK_URL" "$SHELLCHECK_SHA256" "$SHELLCHECK_MEMBER" || rc=$?
@@ -225,13 +309,17 @@ rc=0
 statix_tool || rc=$?
 record "$rc" "statix @ $STATIX_REV"
 
+rc=0
+dprint_tool || rc=$?
+record "$rc" "dprint $DPRINT_VERSION + markdown plugin $DPRINT_MARKDOWN_PLUGIN_VERSION"
+
 echo
 echo "Lint toolchain in $BIN_DIR:"
 printf '  %s\n' "${summary[@]}"
 
 if [ "$failures" -gt 0 ]; then
   echo >&2
-  echo "ERROR: $failures of 6 tools failed; the lint set is incomplete." >&2
+  echo "ERROR: $failures of 7 tools failed; the lint set is incomplete." >&2
   exit 1
 fi
 
