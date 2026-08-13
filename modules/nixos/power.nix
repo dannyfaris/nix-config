@@ -18,12 +18,6 @@
     logind.settings.Login = {
       HandleLidSwitch = "suspend";
       HandleLidSwitchExternalPower = "suspend";
-      # Power button is wake-only on a laptop: upstream's poweroff default
-      # is one bumped button from data loss, and it goes live at greetd
-      # (pre-compositor) and whenever the compositor's power-key inhibitor
-      # is off — as it is on alnair (#636). The fleet-wide power-key
-      # meaning stays open (#651); this is the laptop-scoped call.
-      HandlePowerKey = "ignore";
     };
   };
 }

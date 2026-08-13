@@ -37,6 +37,30 @@ let
   # session PATH.
   noctalia = lib.getExe config.programs.noctalia.package;
 
+  # Deliberate lock blanks the displays too. Noctalia's DPMS is driven by the
+  # idle ladder (home/nixos/noctalia.nix), and a keypress resets that timer —
+  # so locking by hand would otherwise leave the panel lit for a full idle
+  # timeout, longer than if you had walked away. No `|| true`: under
+  # writeShellApplication's `set -e` a failed lock aborts before the blank,
+  # which is the safe direction — a dark but UNLOCKED session wakes straight
+  # into a live desktop.
+  lockAndBlank = pkgs.writeShellApplication {
+    name = "noctalia-lock-and-blank";
+    runtimeInputs = [
+      config.programs.noctalia.package
+      pkgs.coreutils
+    ];
+    text = ''
+      noctalia msg session lock
+      # Settle covers the niri round-trip (v5's IPC has no lock-state query to
+      # wait on) plus the key's own release event, which would otherwise wake
+      # the display straight back up. Re-tune here if a blank-then-unblank
+      # flicker shows up on metal.
+      sleep 0.5
+      noctalia msg dpms-off
+    '';
+  };
+
   # Focus-or-spawn helper for the registry's app binds (spawn-browser):
   # focus the first window matching the app-id, else exec the fallback
   # command. On the session PATH via home.packages below so the registry can
@@ -137,6 +161,12 @@ in
         # Wheel direction matches macOS's natural scrolling (operator runs a Mac).
         natural-scroll = true;
       };
+
+      # Disable niri's hardcoded XF86PowerOff-to-Suspend bind so the key
+      # falls through to the configured bind below (session lock, #651);
+      # logind stays out of it too via HandlePowerKey=ignore
+      # (modules/nixos/power-key.nix).
+      power-key-handling.enable = false;
     };
 
     # Layout primitives — column width, centering, border, and inter-window
@@ -372,6 +402,19 @@ in
         "msg"
         "brightness-down"
       ];
+
+      # Power key — locks the session and blanks the displays, instead of
+      # niri's hardcoded suspend (#651). Requires power-key-handling.enable =
+      # false above so the key falls through to this configured bind; repeat =
+      # false, since a held key would otherwise spam the lock IPC.
+      # allow-inhibiting = false so a focused client holding a shortcuts
+      # inhibitor cannot swallow the key — locking must not be a capability an
+      # application can withhold.
+      "XF86PowerOff" = {
+        repeat = false;
+        allow-inhibiting = false;
+        action.spawn = [ (lib.getExe lockAndBlank) ];
+      };
     };
   };
 

@@ -14,6 +14,7 @@
 #   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
 #   - xdg-portal.nix       — routes the portal FileChooser (and Access/Notification) to the gtk backend niri-flake omits, so file dialogs work without Nautilus.
 #   - lock-before-sleep.nix — systemd-lock-handler: logind sleep delay-inhibitor + user-level lock/sleep targets, so the Noctalia lock provably engages before any suspend (#644).
+#   - power-key.nix        — logind ignores the power key so niri's bind (session lock) is the one meaning fleet-wide (#651).
 #   - libsecret.nix        — secret-tool CLI for the (transitively-enabled) Secret Service.
 #   - removable-media.nix  — udisks2 + filesystem helpers (auto-mount is home-side udiskie). See docs/desktop/removable-media.md (#105).
 #   - file-manager.nix     — Nautilus (own thumbnails) + gvfs virtual backends (GUI complement to yazi). See docs/desktop/file-manager.md (#771).
@@ -34,6 +35,7 @@
     ../electron-wayland.nix
     ../xdg-portal.nix
     ../lock-before-sleep.nix
+    ../power-key.nix
     ../libsecret.nix
     ../removable-media.nix
     ../file-manager.nix

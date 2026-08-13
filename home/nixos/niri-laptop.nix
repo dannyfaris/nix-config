@@ -27,11 +27,5 @@ in
       dwt = true; # disable-while-typing — macOS does this implicitly
       accel-speed = 0.0; # honest starting point; the one value expected to tune on-metal
     };
-
-    # niri hard-binds XF86PowerOff → Suspend by default; the wake press is
-    # redelivered to niri after resume and key-repeats into a suspend storm —
-    # the un-wakeable-laptop loop (#636 on-metal finding). Single owner:
-    # logind (mobility bundle pins HandlePowerKey=ignore alongside this).
-    input.power-key-handling.enable = false;
   };
 }
