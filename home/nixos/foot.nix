@@ -17,7 +17,7 @@
 # Font + dpi-aware are set here because Noctalia's templating is colour-only:
 # the face is the `monospace` fontconfig generic, resolved by the conductor
 # (so a user ~/.config/fontconfig override remaps it live — docs/desktop/
-# fonts.md), size from the active display profile (lib/display-profiles.nix).
+# fonts.md), size from the display calibration (lib/display-profiles.nix).
 # foot's `dpi-aware = "no"` honours pt-based font sizing but disables
 # per-monitor DPI scaling — kept so the profile's pt sizes render as calibrated.
 #
@@ -35,7 +35,7 @@
 # to Foot, 2026-05-28); theming moved to Noctalia per ADR-036.
 _:
 let
-  profile = import ../../lib/display-profiles.nix; # active display profile — terminal size
+  profile = import ../../lib/display-profiles.nix; # display calibration — terminal size
 in
 {
   programs.foot = {

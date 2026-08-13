@@ -7,15 +7,15 @@
 # merge into programs.niri.settings (niri-flake's homeModules.config is
 # auto-imported alongside niri.nix; there is no enable option to set).
 let
-  profile = import ../../lib/display-profiles.nix; # active display profile — output scale
+  profile = import ../../lib/display-profiles.nix; # display calibration — output scale
 in
 {
   programs.niri.settings = {
     # eDP-1 is the built-in panel (2496×1664 3:2, ~201 PPI — the fleet's first
-    # built-in HiDPI). It rides the fleet display profile so scale/fonts/geometry
-    # stay in lockstep (the whole point of display-profiles.nix). Open question:
-    # whether this panel wants its OWN profile (e.g. 1.5× while desktops run 2.0×)
-    # is the on-metal tuning call and would force per-host profiles — see #636.
+    # built-in HiDPI). It rides the fleet display calibration so scale/fonts/
+    # geometry stay in lockstep. The #636 open question — whether this panel
+    # wants its OWN scale — was answered on-metal here: it wants 1.5×, which is
+    # now the fleet calibration, so no per-host seam is needed (#715).
     outputs."eDP-1".scale = profile.scale;
 
     # Touchpad — mirrors the operator's MacBook Air feel. Behavioural
