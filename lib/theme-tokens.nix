@@ -77,6 +77,14 @@ in
     muted = role "base03" "bright-black"; # inactive
   };
 
+  # JankyBorders wants 0xAARRGGBB; the stance is active-opaque /
+  # inactive-translucent; this is the single source for both consumers
+  # (modules/darwin/jankyborders.nix, home/darwin/theme-menu.nix).
+  color.borderAlpha = {
+    active = "ff";
+    inactive = "80";
+  };
+
   # Line weight & radii (visual-identity.md §Line weight & radii). Static.
   geometry = {
     borderWidth = profile.geometry.border; # display-profile-scaled; on-vocab is Carbon spacing-01

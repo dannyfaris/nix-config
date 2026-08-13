@@ -9,10 +9,8 @@
 # (base03) — so the border speaks the repo's colour vocabulary
 # (visual-identity.md §Colour). (This is role-parity, not wire-parity with niri:
 # niri's border colour is Noctalia-driven at runtime, not token-sourced.)
-# JankyBorders wants 0xAARRGGBB and the tokens give RRGGBB, so each is prefixed
-# with an alpha: active opaque (full-strength focus signal), inactive 50% —
-# deliberately translucent so inactive tiles recede; the two states differ in
-# solidity as well as hue.
+# JankyBorders wants 0xAARRGGBB; the alpha stance is defined once at
+# lib/theme-tokens.nix (color.borderAlpha).
 #
 # This is a nix-darwin *system* service (launchd user agent, KeepAlive), not a
 # home-manager module — hence it lives here and is imported in the host's
@@ -31,8 +29,8 @@ in
 {
   services.jankyborders = {
     enable = true;
-    active_color = withAlpha "ff" tokens.color.role.focus; # base0D — the tile that holds focus
-    inactive_color = withAlpha "80" tokens.color.role.muted; # base03 — inactive tiles
+    active_color = withAlpha tokens.color.borderAlpha.active tokens.color.role.focus; # base0D — the tile that holds focus
+    inactive_color = withAlpha tokens.color.borderAlpha.inactive tokens.color.role.muted; # base03 — inactive tiles
     # 3pt: thick enough to read at a glance, and the yabai window_gap (16,
     # Carbon spacing-05) stays > 2× it so adjacent windows' borders never touch.
     width = 3.0;
