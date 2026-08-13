@@ -56,15 +56,15 @@ The mapping is a *global generic* remap, not a per-surface override; a single su
 
 ## Sizing
 
-The per-surface font sizes are **display-profile-driven**, not fixed literals — a NixOS desktop host's sizes track its niri output scale. The 2× scale was chosen on the first such host after an on-panel A/B against 1× and 1.5× (see visual-identity.md §Typography and niri.md), and one switchable knob, `lib/display-profiles.nix`, couples the scale to the surface sizes (and the geometry) so they move in lockstep. The profiles hold *apparent* size constant across scales: the 1.5× profile carries the on-vocab band, and the 1× / 2× profiles scale those values by ≈1/scale to render at the same apparent size.
+The per-surface font sizes are **display-calibration-driven**, not fixed literals — they are coupled to the niri output scale in `lib/display-profiles.nix` (along with the geometry) so a scale change moves them in lockstep. The fleet's NixOS desktop hosts run **1.5×** (#715 collapsed the earlier switchable 1.0 / 1.5 / 2.0 ladder to that single calibration); its provenance lives in visual-identity.md §"Hardware is a design input". The **11pt** terminal size below is the one value independently confirmed on both panels (#767).
 
-At the **2×** profile the Nix-managed rendered sizes are:
+At the settled **1.5×** the Nix-managed rendered sizes are:
 
-- **foot** (terminal) — `terminal` slot, **8**, read from the profile directly in `home/nixos/foot.nix`.
-- **GTK dialogs** (the polkit prompt, file pickers, app dialogs) — `popups` slot, **9**, a `gtk.font` `lib.mkForce` in `home/nixos/stylix-targets-desktop.nix`.
+- **foot** (terminal) — `terminal` slot, **11**, read from the calibration directly in `home/nixos/foot.nix`.
+- **GTK dialogs** (the polkit prompt, file pickers, app dialogs) — `popups` slot, **12**, a `gtk.font` `lib.mkForce` in `home/nixos/stylix-targets-desktop.nix`.
 - **Firefox** web body — the `applications` slot (Stylix default, **12**), from which the Firefox target derives `font.size.variable.x-western`.
 
-Noctalia sizes its *own* surfaces (its `fontScale` / per-widget settings); waybar / fuzzel are gone. The 1.5× profile carries the same band one scale up (foot 11 / GTK 12) as the on-vocab reference the other profiles calibrate against.
+Noctalia sizes its *own* surfaces (its `fontScale` / per-widget settings); waybar / fuzzel are gone. This band is the on-vocab reference — foot 11 / dialog 12 — carried directly rather than derived by scaling.
 
 **Sizing philosophy: macOS-style restraint.** Close values in regular weights; hierarchy comes from layout, not a steep type scale. The size taxonomy still lives on `stylix.fonts.sizes.{terminal,popups}` (set from the active profile in `modules/nixos/desktop-fonts.nix`; the `applications` slot stays at Stylix's default) — Stylix stays enabled under E1, and the surviving GTK and Firefox targets read those size slots. A re-tune or a scale change is a one-line edit to `display-profiles.nix`.
 

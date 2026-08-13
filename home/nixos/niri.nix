@@ -29,7 +29,7 @@
 }:
 let
   tokens = import ../../lib/theme-tokens.nix { inherit config; };
-  profile = import ../../lib/display-profiles.nix; # active display profile — output scale
+  profile = import ../../lib/display-profiles.nix; # display calibration — output scale
   caps = import ../../lib/capabilities.nix { inherit lib; }; # single-source keybind registry (#384)
 
   # Store-pinned noctalia binary for the hardware media/volume/brightness
@@ -99,7 +99,7 @@ in
     # See docs/desktop/keybinds.md §Screenshots.
     screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
 
-    # Output scale from the active display profile, pinned rather than left to
+    # Output scale from the display calibration, pinned rather than left to
     # niri's auto-detection. DP-1 is the LG UltraFine 4K. See
     # lib/display-profiles.nix.
     outputs."DP-1".scale = profile.scale;

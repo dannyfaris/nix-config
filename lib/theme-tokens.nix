@@ -4,7 +4,7 @@
 # repeated across per-surface modules (the scattering that let the base0D focus
 # accent drift out of sync between modules, #333). Colour roles *alias* what
 # Stylix centralizes (Stylix stays the source); spacing and the radius ladder
-# are canonical here; geometry and layout alias the active display profile;
+# are canonical here; geometry and layout alias the display calibration;
 # motion carries structure only (values still unset; #111 closed 2026-06-18
 # without them). Surfaces reference these tokens instead of restating literals.
 #
@@ -54,10 +54,9 @@ let
     lg = 16; # M3 lg
   };
 
-  # Geometry below is scaled by the active display profile (∝ 1/scale to hold
-  # apparent size), so the design language renders at whatever scale the active
-  # profile selects. The static spacing/radius let-bindings above remain as the
-  # vocabulary.
+  # Geometry below comes from the display calibration, so the rendered values
+  # move with the output scale if that ever changes (#715 settled it at 1.5×).
+  # The static spacing/radius let-bindings above remain as the vocabulary.
   profile = import ./display-profiles.nix;
 in
 {
@@ -87,14 +86,14 @@ in
 
   # Line weight & radii (visual-identity.md §Line weight & radii). Static.
   geometry = {
-    borderWidth = profile.geometry.border; # display-profile-scaled; on-vocab is Carbon spacing-01
-    cornerRadius = profile.geometry.radius; # display-profile-scaled; on-vocab is radius.md
+    borderWidth = profile.geometry.border; # from the display calibration; on-vocab is Carbon spacing-01
+    cornerRadius = profile.geometry.radius; # from the display calibration; on-vocab is radius.md
     inherit radius; # the M3 ladder vocabulary (sm/md/lg)
   };
 
   # niri layout primitive (visual-identity.md §Spacing — niri collapses
   # gutter+margin into one gaps value, so this is not a responsive grid). Static.
-  layout.gap = profile.geometry.gap; # display-profile-scaled; on-vocab is Carbon spacing-05
+  layout.gap = profile.geometry.gap; # from the display calibration; on-vocab is Carbon spacing-05
 
   # Motion taxonomy (visual-identity.md §Motion). Structure only — duration tiers
   # and easings are still unset (#111 closed 2026-06-18 without them), to be
