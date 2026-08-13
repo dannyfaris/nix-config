@@ -275,15 +275,17 @@ Mirrors macOS's native screenshot chords on the `Super` (Cmd-parity) modifier,
 | `XF86AudioPrev` | `noctalia msg media previous` |
 | `XF86MonBrightnessUp` | `noctalia msg brightness-up` |
 | `XF86MonBrightnessDown` | `noctalia msg brightness-down` |
+| `XF86PowerOff` | `noctalia-lock-and-blank` — session lock + `dpms-off` (`repeat = false`) |
 
 The `Print` family is bound to screenshots (above).
+
+**`XF86PowerOff` locks the session and blanks the displays (#651), on niri hosts only.** niri hard-binds this key to `Suspend`; `input.power-key-handling.enable = false` — set fleet-wide in `home/nixos/niri.nix` — turns that hardcoded bind off, so the key falls through to this configured bind instead. `repeat = false` so a held key doesn't spam the lock IPC, and `allow-inhibiting = false` so a client holding a shortcuts inhibitor cannot withhold locking. The blank is a second step (`noctalia msg dpms-off`) because Noctalia's DPMS rides the *idle* ladder, which a keypress resets — without it a deliberate lock would leave the panel lit longer than simply walking away does. This is why the key no longer appears in [§Inherited reservations](#inherited-reservations--not-ours-always-live) below: it moved from an inherited default to an owned bind. Out of scope for this doc: electra (headless, no niri — keeps a declared `poweroff` at the logind layer) and celaeno (Darwin — macOS owns the key).
 
 ## Inherited reservations — not ours, always live
 
 | Chord | Action | Note |
 |---|---|---|
 | `Ctrl+Alt+F1‑F12` | VT switch (niri, **unbindable**) | **The `Ctrl+Alt` base must never bind the F-row** — the one hard collision the cutover introduces. |
-| `XF86PowerOff` | suspend | disableable via niri config |
 | macOS MC defaults (IDs 79/81/32/33) | move-space / overview / exposé | the targets of the Karabiner `Hyper+arrow` remaps — must stay enabled |
 
 ## The chooser family

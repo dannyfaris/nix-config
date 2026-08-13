@@ -107,6 +107,11 @@
   # this headless box is otherwise the physical console.
   systemd.oomd.enableUserSlices = true;
 
+  # Power key means poweroff here (#651): headless, so the button is the
+  # only physical clean-shutdown affordance — the alternative is a ~4s
+  # firmware hard cut.
+  services.logind.settings.Login.HandlePowerKey = "poweroff";
+
   # Per-host parametrisation consumed by home-manager modules (ADR-019).
   # extraHomeModules is the full HM imports list — capability bundles plus
   # standalone modules (ADR-027). Personal-only headless box: cli tooling
