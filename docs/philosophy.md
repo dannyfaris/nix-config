@@ -2,6 +2,8 @@
 
 This document captures the principles that shape every decision in this repo. Each principle has a *why* behind it — the constraint or experience that produced the rule. When a principle conflicts with convenience, the principle wins; when in doubt, prefer the option that is most aligned with these principles.
 
+Underneath all of them is one idea: **everything here is on purpose.** Whitelist over blanket is *only what you chose*; explicit over implicit is *say that you chose it*; honest tradeoffs is *admit what choosing it cost*. The principles below are that idea applied to different surfaces. The test any change has to pass is not "does this work" but "was this decided".
+
 ## Tight from the start
 
 **Rule.** Don't accumulate slack expecting to clean it up later. Configurations that are "good enough for now" become permanent for everyone except the current author, and that author's future self.
@@ -16,15 +18,23 @@ This document captures the principles that shape every decision in this repo. Ea
 
 ## Declarative over imperative
 
-**Rule.** State what should be true; let nix figure out how to get there. Avoid imperative shell scripts, runtime-only configuration, and side-effects buried in startup hooks.
+**Rule.** State what should be true; let nix figure out how to get there. Where state must be live rather than declared, it is a *declared layer with an owner* — never an accident.
 
 **Why.** Imperative configuration drifts. The state of an imperatively configured machine depends on its history — what packages were installed, when, in what order, by what scripts. A declarative configuration is the machine. `nixos-rebuild switch` produces the same result whether the machine was empty or had been running for years.
+
+But some state is genuinely *session* state rather than desired state — the colour scheme flipped ten minutes ago, the font nudged a size. Forcing it into the flake makes changing it a rebuild; leaving it undeclared lets it leak somewhere the repo cannot see. Neither is on purpose, so the boundary is drawn explicitly:
+
+**The boundary.**
+
+1. **Nix owns the mechanism and its option set; the live selection may be session state.** The theme *menu* is Nix-owned, the chosen value is not ([ADR-044](./decisions/ADR-044-linux-runtime-theme-menu.md)). The display calibration is declared, nothing about it is live (`lib/display-profiles.nix`). The persist *whitelist* is declared, the data it protects is not ([ephemeral-root.md](./design/ephemeral-root.md)).
+2. **Runtime state is sanctioned only when it has a declared home, a declared persistence policy, and exactly one writer.** One writer is why an action tree inside Noctalia's GUI-managed `settings.json` was rejected. A declared home is why `/var/lib/bluetooth` sits on the persist whitelist.
 
 **How it shows up.**
 
 - `programs.X` modules in home-manager preferred over hand-rolled rc files.
 - Settings declared inline in nix attrsets, not as separate config files we later have to remember to track.
 - Dotfiles are generated, not committed in `~/.config/...`.
+- A runtime conductor — Noctalia for colour, fontconfig for faces — is a *sanctioned* layer, declared and owned, not an exception to this rule.
 
 ## Explicit over implicit
 
