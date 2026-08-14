@@ -1,6 +1,6 @@
 ---
 date: 2026-06-16
-status: Accepted, Implemented (#385; E1). Font re-home resolved as a fontconfig runtime conductor (#390 Part A — see Amendment 2026-06-18); full colour removal E2 deferred (#390 Part B). **§Decision item 3 (Noctalia as sole theming authority) amended by [ADR-044](./ADR-044-linux-runtime-theme-menu.md) (#609)**: Nix/Stylix is now the theming authority; Noctalia's role is reduced to a themed-by-Nix shell (bar, launcher, notifications, lock, OSD, wallpaper, idle unchanged).
+status: Accepted, Implemented (#385; E1). Font re-home resolved as a fontconfig runtime conductor (#390 Part A — see Amendment 2026-06-18); full colour removal E2 deferred (#390 Part B). **§Decision item 3 (Noctalia as sole theming authority) amended by [ADR-044](./ADR-044-linux-runtime-theme-menu.md) (#609)**: Nix/Stylix is now the theming authority; Noctalia's role is reduced to a themed-by-Nix shell (bar, launcher, notifications, lock, OSD, wallpaper, idle unchanged). **Linux theming authority is restored to Noctalia again by [ADR-048](./ADR-048-noctalia-theming-delegation.md)** (#819 Epic G) — Darwin stays on the ADR-044 conductor untouched.
 ---
 
 # ADR-036: Noctalia shell on the Linux desktop — a cohesive Quickshell shell as sole theming authority

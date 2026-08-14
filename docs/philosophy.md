@@ -26,7 +26,7 @@ But some state is genuinely *session* state rather than desired state — the co
 
 **The boundary.**
 
-1. **Nix owns the mechanism and its option set; the live selection may be session state.** The theme *menu* is Nix-owned, the chosen value is not ([ADR-044](./decisions/ADR-044-linux-runtime-theme-menu.md)). The display calibration is declared, nothing about it is live (`lib/display-profiles.nix`). The persist *whitelist* is declared, the data it protects is not ([ephemeral-root.md](./design/ephemeral-root.md)).
+1. **Nix owns the mechanism and its option set; the live selection may be session state.** On Darwin, the theme *menu* is Nix-owned, the chosen value is not ([ADR-044](./decisions/ADR-044-linux-runtime-theme-menu.md)); on Linux, Nix declares no theme keys at all — the sidecar is the sole writer ([ADR-048](./decisions/ADR-048-noctalia-theming-delegation.md), reversing ADR-044 there). The display calibration is declared, nothing about it is live (`lib/display-profiles.nix`). The persist *whitelist* is declared, the data it protects is not ([ephemeral-root.md](./design/ephemeral-root.md)).
 2. **Runtime state is sanctioned only when it has a declared home, a declared persistence policy, and exactly one writer.** One writer is why an action tree inside Noctalia's GUI-managed `settings.json` was rejected. A declared home is why `/var/lib/bluetooth` sits on the persist whitelist.
 
 **How it shows up.**

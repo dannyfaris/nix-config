@@ -4,11 +4,12 @@
 #
 # A family is a paired dark/light base16 scheme couplet from the same
 # upstream theme, plus optional per-polarity slot corrections. Both
-# polarities are mandatory: polarity is a first-class runtime gesture on
-# both platforms (the macOS appearance toggle; the Linux conductor), so a
-# family missing its light half would break the flip while that theme is
-# active. Downstream pre-baking of both halves per entry fails the build
-# loudly on any gap.
+# polarities are mandatory: a first-class runtime gesture on Darwin (the
+# ADR-044 conductor) and the one-shot Stylix boot default on Linux
+# (ADR-048, #825) — kept paired so the catalogue stays platform-agnostic
+# either way. A family missing its light
+# half would break Darwin's flip while that theme is active. Downstream
+# pre-baking of both halves per entry fails the build loudly on any gap.
 #
 #   - schemes.dark / schemes.light — base16 yaml filenames under
 #     ${pkgs.base16-schemes}/share/themes/<name>.yaml.

@@ -24,7 +24,7 @@
 
 ## Sharp edges
 
-- **Icons follow build-time polarity, not the runtime flip.** The theme-menu conductor (ADR-044) switches polarity live, but `gtk.iconTheme` is baked at build — after a runtime flip, icons keep the built variant until rebuild/re-login. Consequence of ADR-044's "new colour-consuming surfaces must join the render list"; adding an icon-theme swap to the per-entry render list (and per-family Colloid scheme variants with it) is the recorded follow-up. The cursor is exempt by design (static variant).
+- **Icons follow build-time polarity, not the runtime flip.** Noctalia's own gtk builtin-template `apply.sh` ([ADR-048](../decisions/ADR-048-noctalia-theming-delegation.md), reversing ADR-044/#609 for Linux) switches GTK polarity live, but `gtk.iconTheme` is baked at build — after a runtime flip, icons keep the built variant until rebuild/re-login. Wiring an icon-theme swap into Noctalia's template/hook mechanism (and per-family Colloid scheme variants with it) is the recorded follow-up. The cursor is exempt by design (static variant).
 - **Colloid's `index.theme` declares `Inherits=hicolor,breeze`.** breeze is deliberately absent; missing icons fall through the normal fallback chain (hicolor → Adwaita). Harmless, noted so nobody "fixes" it by installing breeze.
 - **First icon-theme change may need app restarts** to repopulate GTK icon caches.
 

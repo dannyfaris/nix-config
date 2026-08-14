@@ -12,12 +12,9 @@
 #   - stylix.targets.fontconfig.enable = false — so Stylix writes no competing
 #     map.
 #
-# stylix.fonts is kept — but is no longer the font source of truth — only
-# because two surviving Stylix targets read it under E1: the Firefox target
-# (per-profile font.name + mono size; face-swap-only, so Firefox renders Inter
-# but stays pinned, not following the runtime override, until Part B) and the
-# GTK target.
-# See docs/desktop/fonts.md.
+# stylix.fonts is kept for its one surviving consumer (the GTK target's
+# `sizes.popups`); the fields the dropped Firefox target read are inert
+# residue (ADR-048, #825). See docs/desktop/fonts.md.
 #
 # Per #390 (Part A); was Stylix-sourced per ADR-028 / #69.
 { pkgs, ... }:
@@ -55,10 +52,10 @@ in
   # doesn't write a competing fonts.fontconfig.defaultFonts.
   stylix.targets.fontconfig.enable = false;
 
-  # Kept only for the surviving E1 Stylix targets (Firefox name + mono size;
-  # GTK size) — not the font source of truth. sansSerif = Inter is the face-swap
-  # that makes Firefox's pinned web body render Inter (see header). serif/emoji
-  # are unset (Stylix defaults; the surviving targets don't consume them).
+  # Kept only for the surviving GTK Stylix target's `sizes.popups` (dialog
+  # font size) — not the font source of truth. monospace / sansSerif /
+  # sizes.terminal have no live consumer post-Firefox-drop (see header); left
+  # set rather than pruned (#825 — break nothing in the font pipeline).
   stylix.fonts = {
     monospace = {
       package = pkgs.nerd-fonts.monaspace;
@@ -69,8 +66,8 @@ in
       name = "Inter";
     };
     sizes = {
-      terminal = profile.fonts.terminal; # Firefox mono size — foot reads the profile directly
-      popups = profile.fonts.popups; # GTK dialogs (sans)
+      terminal = profile.fonts.terminal; # vestigial — was Firefox mono size; foot reads the profile directly
+      popups = profile.fonts.popups; # GTK dialogs (sans) — the live consumer
     };
   };
 }

@@ -4,7 +4,7 @@ Font selections and the runtime font model for the desktop. Living document — 
 
 ## Model — fontconfig owns fonts at runtime
 
-The desktop's fonts are **conducted by fontconfig**, not pinned per-app by Stylix. Every surface that can asks for a *generic* family (`monospace`, `sans-serif`, `serif`); fontconfig resolves each generic to a concrete face through one mapping; changing that mapping re-themes every generic-consuming surface at once. This is the font analogue of how the theme-menu conductor owns colour at runtime (ADR-044): the live selection is mutable, user-space, and not re-stamped by `nh os switch`.
+The desktop's fonts are **conducted by fontconfig**, not pinned per-app by Stylix. Every surface that can asks for a *generic* family (`monospace`, `sans-serif`, `serif`); fontconfig resolves each generic to a concrete face through one mapping; changing that mapping re-themes every generic-consuming surface at once. This is the font analogue of how Noctalia's own native engine owns colour at runtime on the Linux desktop ([ADR-048](../decisions/ADR-048-noctalia-theming-delegation.md), reversing ADR-044 there): the live selection is mutable, user-space, and not re-stamped by `nh os switch`.
 
 Two consequences fall out, and both are deliberate goals (#390):
 
@@ -62,11 +62,11 @@ At the settled **1.5×** the Nix-managed rendered sizes are:
 
 - **foot** (terminal) — `terminal` slot, **11**, read from the calibration directly in `home/nixos/foot.nix`.
 - **GTK dialogs** (the polkit prompt, file pickers, app dialogs) — `popups` slot, **12**, a `gtk.font` `lib.mkForce` in `home/nixos/stylix-targets-desktop.nix`.
-- **Firefox** web body — the `applications` slot (Stylix default, **12**), from which the Firefox target derives `font.size.variable.x-western`.
+- **Firefox** — no Nix-managed size. Stylix's Firefox target (which used to derive `font.size.variable.x-western` from the `applications` slot) was dropped in the G6 Stylix-exit audit (#825, #819 Epic G) — zero decision weight, accepted collateral, no replacement wiring. Firefox renders its own stock font sizing.
 
 Noctalia sizes its *own* surfaces (its `fontScale` / per-widget settings); waybar / fuzzel are gone. This band is the on-vocab reference — foot 11 / dialog 12 — carried directly rather than derived by scaling.
 
-**Sizing philosophy: macOS-style restraint.** Close values in regular weights; hierarchy comes from layout, not a steep type scale. The size taxonomy still lives on `stylix.fonts.sizes.{terminal,popups}` (set from the active profile in `modules/nixos/desktop-fonts.nix`; the `applications` slot stays at Stylix's default) — Stylix stays enabled under E1, and the surviving GTK and Firefox targets read those size slots. A re-tune or a scale change is a one-line edit to `display-profiles.nix`.
+**Sizing philosophy: macOS-style restraint.** Close values in regular weights; hierarchy comes from layout, not a steep type scale. The size taxonomy still lives on `stylix.fonts.sizes.{terminal,popups}` (set from the active profile in `modules/nixos/desktop-fonts.nix`) — Stylix stays enabled under E1, and the surviving GTK target reads the `popups` slot (`terminal` is vestigial post-Firefox-drop, #825). A re-tune or a scale change is a one-line edit to `display-profiles.nix`.
 
 **Why foot's size is a profile value, not a bare literal (the dpi-aware story).** foot pins `dpi-aware = no` (foot 1.15.0's default, written by Stylix's foot target; documented in `home/nixos/foot.nix`). Under `no`, `:size=N` is sized by the **output scale factor**, not the monitor's physical DPI — the same factor the Wayland apps scale by — so the profile's per-scale calibration (size ∝ 1/scale) lands a consistent apparent size across surfaces and scales. Pinning `no` is a deliberate *portability* choice: under foot's former `auto` an identical `:size=N` rendered at different apparent sizes across monitors of differing DPI/scale (foot issue #714); `no` makes it reproducible. (An earlier revision claimed a fixed `11` "compensated" for the 1.15.0 `auto → no` flip; that was unfounded — `auto` already used scale-factor sizing on any scaled output, so on metis the change was a no-op. The size is a deliberate legibility choice carried by the profile, not DPI compensation.)
 
@@ -82,7 +82,7 @@ The font list stays **inline** in `desktop-fonts.nix` — the module is imported
 
 **The lockstep hazard.** The map name and the installed package must change together. If the map names a face that isn't installed, `fc-match` silently falls through to the proportional `DejaVu Sans` (the #283/#349 "DejaVu isn't monospace" class) — a *silent* downgrade, not a build error. Changing a baseline face means changing both the `fonts.packages` entry and the `defaultFonts` name in the same commit, and verifying with `fc-match` on-box.
 
-**Firefox is face-swap-only under E1.** Stylix's Firefox target writes per-profile font *and* chrome-colour prefs as one unit, with no font-only toggle. So `stylix.fonts.{monospace,sansSerif=Inter,sizes}` stay set for that target to read: Firefox's web body becomes Inter (consistent with the rest), but it is *pinned*, not generic — it does not follow a runtime `99-local.conf` override, and Stylix re-pins it on rebuild. Full Firefox font-freedom (Firefox on pure generics) rides with the colour severance that takes Stylix off the desktop entirely — the deferred E2 / Part B (#390, ADR-036).
+**Firefox has no Nix font wiring at all.** Stylix's Firefox target — which used to pin `font.name`/`font.size` prefs from `stylix.fonts.{monospace,sansSerif,sizes}` as one unit with the target's chrome-colour prefs, following neither generic nor rebuild — was dropped whole in the G6 Stylix-exit audit (#825, #819 Epic G): zero decision weight per the operator ruling, accepted collateral, no replacement wiring. Firefox renders its own stock font defaults; the earlier deferred E2/Part B severance (#390, ADR-036) is moot for Firefox now that there is nothing left to sever.
 
 The general font base comes from NixOS's `fonts.enableDefaultPackages = true` (set as `mkDefault true` by niri-flake): `dejavu_fonts`, `freefont_ttf`, `gyre-fonts`, `liberation_ttf`, `unifont`, and `noto-fonts-color-emoji`. This is what makes "drop serif" safe — `DejaVu Serif` is present regardless, so the `serif` generic still resolves. Flipping `enableDefaultPackages = false` would mean curating the entire base set ourselves; deliberately not done.
 
@@ -95,7 +95,7 @@ celaeno keeps Stylix (it is not Stylix-severed) and installs **Monaspace only** 
 - **Silent DejaVu fallback (lockstep).** A `defaultFonts` name with no matching installed package resolves silently to `DejaVu Sans`, not an error. Keep the map name and the `fonts.packages` entry in lockstep, and verify with `fc-match` on-box. (Historically this surfaced as foot's "DejaVu Sans: font does not appear to be monospace" when neither the install nor the name wire was active.)
 - **`pkgs.inter` ships two families.** A static **`Inter`** (in `Inter.ttc`) and **`Inter Variable`** (in `InterVariable.ttf`). The `sans-serif` generic and the friendly `Inter` name resolve to the static `Inter` — no alias needed. (`fc-match Inter` → `Inter`; request `Inter Variable` by that name if you want the variable build explicitly.)
 - **The override seam wins by include-order, not filename.** A user `~/.config/fontconfig/conf.d/*.conf` beats the system baseline because user `conf.d` is included early (`50-user.conf`) and `<prefer>` prepends — not because of its number. Don't reason about "higher number = higher priority."
-- **Firefox doesn't follow the runtime knob (E1).** Face-swap-only — see §Installation model. It joins the conductor at E2 / Part B.
+- **Firefox carries no Stylix font wiring.** Its target was dropped whole (G6 Stylix-exit audit, #825) rather than narrowed — see §Installation model.
 - **foot's `dpi-aware = no`.** foot 1.15.0's default, adopted via Stylix's foot target; `:size=N` is scaled by output factor, letting the display profile own terminal sizing. See §Sizing. Original landing: PR #63.
 - **No universal monospace.** The mono face lives on *GUI* hosts only — desktop NixOS hosts (via the desktop-env bundle) and Darwin hosts (via foundation). Headless NixOS hosts (electra) render nothing and install nothing.
 
@@ -112,7 +112,7 @@ Living document — same conventions as `keybinds.md`. Font changes are rare.
 - `modules/nixos/desktop-fonts.nix` — the fontconfig install + generic-map wiring for desktop NixOS hosts.
 - `modules/darwin/desktop-fonts.nix` — Darwin parallel: Monaspace-only install, Stylix-themed Ghostty, imported by Darwin foundation.
 - `home/nixos/foot.nix` — foot terminal config; uses the `monospace` generic.
-- `home/nixos/stylix-targets-desktop.nix` — the surviving GTK + Firefox Stylix targets (GTK font `mkForce`; Firefox face-swap-only under E1).
+- `home/nixos/stylix-targets-desktop.nix` — the surviving GTK Stylix target (font `mkForce`); the Firefox target was dropped in the G6 Stylix-exit audit (#825).
 - `docs/desktop/noctalia.md` — Noctalia is colour-only and self-scoped for fonts; its surfaces follow the fontconfig generics.
 - `docs/desktop/visual-identity.md` — the typography north-star this implements; the IBM-Plex-Sans reversal lives there.
 - ADR-036 — Noctalia as desktop theming authority; the runtime-state posture this extends to fonts. #390 — the font conductor + severance work.

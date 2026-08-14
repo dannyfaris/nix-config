@@ -16,8 +16,9 @@
 # niri-flake's stable slot sitting at 25.08, which nixpkgs having 26.04
 # retires); and no cachix trust is needed at all, since cache.nixos.org
 # already serves it. 26.04 still carries `include optional=true`, which is
-# what lets the theme conductor reach niri through a declared include — see
-# ADR-044 and docs/desktop/noctalia.md.
+# what lets Noctalia's own niri builtin template reach niri through a
+# pre-declared include mount-point — see ADR-048 (reversing ADR-044 for
+# Linux) and docs/desktop/noctalia.md.
 #
 # Per ADR-028.
 {
