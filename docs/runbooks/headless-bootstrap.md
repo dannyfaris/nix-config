@@ -204,6 +204,8 @@ Fleet SSH trust is a declared edge whitelist (ADR-042): `lib/operator.nix` holds
 
 Existing hosts accept the newcomer (and trust its host key) only after their *own* next switch — the authorized_keys and ssh_known_hosts files are rendered per-host at activation.
 
+**Acrux (the operator's iPhone, ADR-042) diverges from the host path.** There is no host shell to run step 1's `ssh-keygen` on — generate the key inside the [Secure ShellFish](https://secureshellfish.app/) app, choosing a Secure Enclave key; it arrives as `ecdsa-sha2-nistp256` rather than the fleet's usual `ed25519`, and cannot be exported or synced off the device — that is the point (ADR-042). Step 2 applies unchanged. Step 3 applies by halves: add `acrux` to the source list of alcyone, alnair, celaeno and electra, but give it no destination entry of its own, since it runs no sshd. Step 4 does not apply — acrux has no host key to commit, and the phone cannot receive `modules/shared/ssh-known-hosts.nix`, so host identity is checked by hand instead: compare each host's offered fingerprint against that file on first connect. Rebuild all four hosts (`nh os switch`, `nh darwin switch` on celaeno) to pick up the new edges.
+
 ## Verification
 
 Run from the new host's `dbf` shell unless noted otherwise.

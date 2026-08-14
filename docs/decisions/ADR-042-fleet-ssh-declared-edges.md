@@ -13,9 +13,9 @@ status: Accepted, Implementation pending (#524 re-scoped)
 
 ## Decision
 
-- Per-host, passphrase-less, fleet-only outbound keys (ADR-010 §History 2026-07-03) remain the credential; no CA, no certificates, no second SSH server.
+- Per-host, passphrase-less, fleet-only outbound keys (ADR-010 §History 2026-07-03) remain the credential; no CA, no certificates, no second SSH server. Acrux (#842) extends the class rather than breaking it: the credential stays static, per-device and fleet-only, and only its custody changes — see Consequences.
 - Trust edges become declared data: an `sshEdges` map (destination → sources) beside per-host `hostKeys` in `lib/`; each platform's `users.nix` derives its own `authorizedKeys` from its hostname (via the `hostContext` module argument). The first commit is behaviour-preserving; any narrowing is a reviewed, data-only change.
-- **Trust flows downhill**: workstations mesh with each other and reach the service tier; sink hosts accept only workstations, never each other, and never generate outbound fleet keys at all.
+- **Trust flows downhill**: workstations mesh with each other and reach the service tier; sink hosts accept only workstations, never each other, and never generate outbound fleet keys at all. Acrux (#842) joins as a workstation-class source — alnair's precedent, one device class further: a phone is an operator terminal, not service tier, and it runs no sshd, so it takes no `sshEdges` entry of its own and the downhill rule holds unchanged, not inverted.
 - mercury never enrols as a source and remains a workstation-only sink until decommission.
 - An eval stance asserts per host that the rendered `authorizedKeys` equals the edge-derived set; #551's registry later adds the runtime probe rung (a non-edge key is *refused*).
 
@@ -26,12 +26,14 @@ Single-sourced in the design note's Rationale & alternatives; the three decisive
 ## Consequences
 
 - ✓ Every trust edge is a reviewable line in git; any→any becomes a data question, never an architecture default.
-- ✓ At target, the standing key surface is two workstation keys on encrypted interactive machines; a compromised service box holds no SSH rail upward and none sideways.
+- ✓ At target, the standing key surface is four source keys — three workstation keys on encrypted interactive machines, plus acrux's Secure Enclave key (#842) — and a compromised service box holds no SSH rail upward and none sideways. The SEP key is non-exportable in hardware and gated behind Face ID per signature, a stronger guarantee than the on-disk files the other three still are; acrux is the fleet's best-custodied source, not a concession to enrol one.
 - ✓ One sshd posture per host — the existing stance layer (ADR-033) extends rather than forking; no new trust anchors, no new dependencies, break-glass table untouched.
-- ✗ No passive expiry: a quietly exfiltrated workstation key is valid until noticed, its line deleted, and affected hosts rebuilt. Accepted knowingly; containment is edge scope plus breach-side detection (#551/#553 lineage).
+- ✗ No passive expiry: a quietly exfiltrated workstation key is valid until noticed, its line deleted, and affected hosts rebuilt. Accepted knowingly; containment is edge scope plus breach-side detection (#551/#553 lineage). Acrux (#842) gains a channel none of the file-based keys have — a Find My erase destroys the Secure Enclave key with the device — but it fires only once the phone next comes online, so deleting the line stays the authoritative revocation and the weakness's shape is unchanged for the rest of the fleet.
 - ✗ Every trust change propagates at rebuild speed — the latency #552's convergence rings would later compress.
+- ✗ Acrux breaks the fleet's uniform ed25519: the Secure Enclave holds only P-256 keys, so `ecdsa-sha2-nistp256` joins the accepted algorithm set as a second key type. Accepted knowingly — hardware-bound, non-exportable custody outweighs algorithmic uniformity here, and sshd's compiled `PubkeyAcceptedAlgorithms` already covers it on the NixOS hosts (verified on electra against the pinned OpenSSH 10.4, #842), so no server-side change follows there. celaeno runs macOS's own sshd build rather than the pin's, where the same default is expected but unverified — checked at first connect, not assumed.
 - ⚠ Migration trigger: sshd-running fleet reaches ~8 hosts, or a second operator identity appears → re-run the CA weighing (ceremony cost inverts with scale).
 - ⚠ Migration trigger: an unattended flow needs *expiring, scoped* delegation a static key cannot express → design the online-issuance CA (step-ca is packaged in the pin).
+- ⚠ Acrux sharpens the delegation trigger above without firing it: it is the fleet's highest-loss-risk enrolled device (pocketable, not physically secured) and its client speaks short-lived CA certificates natively (Secure ShellFish, shipped ~Feb 2026, with OpenID auth) — the client-side gap the CA weighing cited is gone. Recorded as the evidence, not acted on: standing up issuance still means step-ca plus an IdP, out of scope here (#842).
 - ⚠ Migration trigger: #557 lands TPM-sealed custody that makes host-bound short-lived credentials meaningful → revisit with #526's frame.
 - ⚠ Migration trigger: #556 has tailnet ACLs in git with drift detection, the Macs run the open-source tailscaled (or mac inbound is conceded to sshd), and control-plane-down behaviour is empirically verified → Tailscale SSH becomes weighable on its merits.
 - ⚠ The fleet backup design must not silently invert the downhill rule: a pull-based backup box is a universal source; prefer push-to-sink or transport-native designs, or reopen this ADR.
@@ -44,3 +46,4 @@ Single-sourced in the design note's Rationale & alternatives; the three decisive
 
 - 2026-08-03 (#634) — mercury and nixos-vm decommissioned; their `sshEdges` entries removed from `lib/operator.nix`.
 - 2026-08-05 — saturn purged from the repo before it was ever deployed; its `sshEdges` entry removed from `lib/operator.nix` and its planned flip from client-only to destination withdrawn.
+- 2026-08-14 (#842) — acrux (operator's iPhone, Secure ShellFish) accepted as a workstation-class source into all four hosts, credentialed by a Secure Enclave key generated on-device (`ecdsa-sha2-nistp256`, Face ID-gated per signature, `SHA256:TW3KG5nY37l8fEMZmiMhNYCyDHhapIty4VW884rpdmY`); `hostKeys.acrux` and its `sshEdges` entries land in `lib/operator.nix` in the same change.
