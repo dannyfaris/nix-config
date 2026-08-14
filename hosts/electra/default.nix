@@ -1,5 +1,5 @@
 # Host-specific configuration for Electra (Lenovo ThinkCentre M920q Tiny
-# 10RRS2L700, i5-8500T Coffee Lake, 8 GiB — 16 GiB planned (#637), 256 GB
+# 10RRS2L700, i5-8500T Coffee Lake, 16 GiB (bumped from 8, #637), 256 GB
 # NVMe, x86_64-linux, bare metal). ADR-045 star name; main-homelab
 # Pleiades group (taxonomy.md). Genuinely headless, personal-only,
 # always-on service-tier node — role deliberately open (#637); the
@@ -94,15 +94,14 @@
   # and survives future refactors. Do NOT strip as redundant.
   boot.supportedFilesystems = [ "btrfs" ];
 
-  # zram-only swap — 50 % of RAM, zstd compression. Sized against today's
-  # 8 GiB (the #637 16 GiB bump is a deferred bench visit, not scaffold
-  # scope). No disk swap (no hibernate; and disk swap outside the LUKS
+  # zram-only swap — 50 % of RAM, zstd compression. No disk swap (no
+  # hibernate; and disk swap outside the LUKS
   # container would leak plaintext memory pages past encryption-at-rest).
   zramSwap.enable = true;
   swapDevices = [ ];
 
   # systemd-oomd: kills the heaviest descendant in user.slice at 80 %
-  # memory-pressure. Agent CLIs + flake evals can saturate zram on 8 GiB;
+  # memory-pressure. Agent CLIs + flake evals can saturate zram;
   # system/root slices excluded so oomd can't kill sshd — break-glass on
   # this headless box is otherwise the physical console.
   systemd.oomd.enableUserSlices = true;
