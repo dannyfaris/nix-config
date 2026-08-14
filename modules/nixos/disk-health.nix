@@ -44,6 +44,7 @@ let
       pkgs.smartmontools
       pkgs.jq
       pkgs.coreutils # `timeout`, wrapping both smartctl invocations below.
+      pkgs.systemd # `udevadm`, for the settle between scan attempts.
     ];
     text = ''
       # Discovery is best-effort: a failed or empty scan is itself
@@ -54,11 +55,22 @@ let
       # bus and block the whole run silently. `timeout` cannot kill a
       # process stuck in uninterruptible (D) state — it can only bound the
       # common cases (slow/hung-but-killable I/O).
-      scan_json=$(timeout 30s smartctl --scan-open -j 2>/dev/null) || scan_json="{}"
-      device_count=$(jq -r '.devices | length' <<<"$scan_json" 2>/dev/null) || device_count=0
-      case "$device_count" in
-        ''' | null) device_count=0 ;;
-      esac
+      # Retried once against the actual condition: a catch-up run can reach
+      # timers.target before udev has settled the device nodes, so an empty
+      # first scan is not yet evidence of a diskless host (#858).
+      for attempt in 1 2; do
+        scan_json=$(timeout 30s smartctl --scan-open -j 2>/dev/null) || scan_json="{}"
+        device_count=$(jq -r '.devices | length' <<<"$scan_json" 2>/dev/null) || device_count=0
+        case "$device_count" in
+          ''' | null) device_count=0 ;;
+        esac
+        [ "$device_count" -gt 0 ] && break
+        # `udevadm settle`, not a fixed sleep: it returns as soon as the event
+        # queue drains, so the wait matches reality instead of guessing it.
+        # Nonzero means the timeout expired with events still pending — the
+        # rescan below is then the best available answer, not a reason to abort.
+        [ "$attempt" -eq 1 ] && udevadm settle --timeout 30 || true
+      done
 
       if [ "$device_count" -eq 0 ]; then
         echo "disk-health-check: smartctl --scan-open found 0 devices — cannot confirm any drive is healthy"
@@ -178,9 +190,9 @@ in
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${diskHealthCheck}/bin/disk-health-check";
-      # Backstop above the two 30s per-invocation timeouts (scan + worst-case
-      # device count): bounds the unit itself if `timeout` can't reach a
-      # process wedged in D state.
+      # Backstop above the bounded phases (two 30s scan attempts plus a settle,
+      # then 30s per device): bounds the unit itself if `timeout` can't reach
+      # a process wedged in D state.
       TimeoutStartSec = "10m";
     };
   };
