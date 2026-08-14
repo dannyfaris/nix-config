@@ -4,7 +4,7 @@ Wayland-native terminal emulator. Lightweight, minimal closure, used on Linux de
 
 ## Selection
 
-**foot** on metis. Enabled via `home/nixos/foot.nix` (HM module `programs.foot.enable = true`). Colours come from the theme-menu conductor, not Stylix (ADR-044, #609 — replacing Noctalia per ADR-036) — see Configuration.
+**foot** on metis. Enabled via `home/nixos/foot.nix` (HM module `programs.foot.enable = true`). Colours come from Noctalia's own native theme engine via a pre-declared mount-point, not Stylix and not a Nix-rendered palette (ADR-048, reversing ADR-044/#609 for Linux — #819 Epic G) — see Configuration.
 
 The terminfo entry `xterm-ghostty` ships on every NixOS host via `modules/nixos/ghostty-terminfo.nix` so SSH'ing from a Ghostty-on-Mac terminal into any Linux host renders cleanly. Darwin hosts can't ship the entry from nixpkgs (`pkgs.ghostty` is Linux-only); inbound Ghostty SSH into celaeno relies on Ghostty's shell-integration ssh-terminfo push or falls back to `xterm-256color`. Foot's own terminfo is in the standard ncurses database — no module required.
 
@@ -24,7 +24,7 @@ The terminfo entry `xterm-ghostty` ships on every NixOS host via `modules/nixos/
 
 ## Configuration
 
-**HM module** — `home/nixos/foot.nix` sets the font, `dpi-aware`, and an `include` pointing at the theme-menu conductor's per-target resolved symlink (ADR-044, #609):
+**HM module** — `home/nixos/foot.nix` sets the font, `dpi-aware`, and an `include` pointing at Noctalia's own foot builtin template output path (ADR-048, reversing ADR-044/#609 for Linux — #819 Epic G):
 
 ```nix
 programs.foot = {
@@ -32,14 +32,14 @@ programs.foot = {
   settings.main = {
     font = "monospace:size=${toString profile.fonts.terminal}";
     "dpi-aware" = "no";
-    include = "~/.local/state/theme-menu/foot.ini";
+    include = "~/.config/foot/themes/noctalia";
   };
 };
 ```
 
-**Theming is the theme-menu conductor's** (ADR-044, #609 — replacing Noctalia per ADR-036). The Stylix `foot` target remains removed; foot's colours come from `~/.local/state/theme-menu/foot.ini`, a symlink managed by `home/nixos/theme-menu.nix`'s seed activation and the `theme` CLI. We declare the `include` ourselves — the seed guarantees the path exists before any foot window can spawn (foot exits 230 on a missing include). The font face resolves via the `monospace` fontconfig generic (the runtime font conductor, #390); the size comes from the display calibration (`lib/display-profiles.nix` — size 11 at the settled 1.5×); `dpi-aware = "no"` is set here to preserve pt-based sizing.
+**Theming is Noctalia's own native engine's**, via a pre-declared mount-point, not a runtime-hooked edit (ADR-048, reversing ADR-044/#609's conductor for Linux). The Stylix `foot` target remains removed; foot's colours come from `~/.config/foot/themes/noctalia`, a file Noctalia's foot builtin `apply.sh` renders and rewrites in place on every theme resolve (enabled via the template whitelist in `home/nixos/noctalia.nix`). We declare the `include` ourselves — foot's builtin `apply.sh` detects it via a loose `grep 'include.*noctalia'` against `foot.ini` and, finding it present, writes only its own theme file, never `foot.ini` (G3 on-metal-confirmed). foot exits 230 on a missing include; the `noctaliaFootThemeSeed` activation snippet (`home/nixos/noctalia.nix`) seeds an empty placeholder if-absent so new windows always launch — see [noctalia.md](./noctalia.md) §Sharp edges. The font face resolves via the `monospace` fontconfig generic (the runtime font conductor, #390); the size comes from the display calibration (`lib/display-profiles.nix` — size 11 at the settled 1.5×); `dpi-aware = "no"` is set here to preserve pt-based sizing.
 
-**[colors-dark] convention:** the theme-menu renders BOTH polarities under a `[colors-dark]` section header — foot's active section never flips; the conductor swaps the file content. **Never set `initial-color-theme = light`** anywhere in foot's config: doing so would invert the `[colors-dark]`-header convention and render the wrong polarity's colours. This guard is documented in `home/nixos/foot.nix` (R4 guard comment) and enforced by convention, not a lint gate. See `home/nixos/theme-menu.nix` §renderFoot.
+**[colors-dark] convention:** Noctalia's own foot template renders BOTH polarities under a `[colors-dark]` section header — foot's active section never flips; Noctalia's `apply.sh` rewrites the file's content in place on every resolve (the same convention the retired conductor used). **Never set `initial-color-theme = light`** anywhere in foot's config: doing so would invert the `[colors-dark]`-header convention and render the wrong polarity's colours. This guard is documented in `home/nixos/foot.nix` (R4 guard comment) and enforced by convention, not a lint gate. See `home/nixos/noctalia.nix`'s `repaintHook` for the terminal repaint side of this same convention.
 
 ## Sharp edges
 
@@ -55,7 +55,7 @@ programs.foot = {
 - [ADR-029](../decisions/ADR-029-niri-only-desktop.md) — Stylix/foot integration preserved through DMS retraction.
 - [`home/nixos/foot.nix`](../../home/nixos/foot.nix) — the HM module enabling foot.
 - [`modules/nixos/ghostty-terminfo.nix`](../../modules/nixos/ghostty-terminfo.nix) — terminfo for the Ghostty-on-Mac → NixOS SSH path. (NixOS-only; Darwin hosts use Ghostty's client-side ssh-terminfo push instead.)
-- [noctalia.md](./noctalia.md) — the desktop shell, themed from the same theme-menu conductor palette that owns foot's colours (ADR-044, #609); the Stylix `foot` target was removed in #385.
+- [noctalia.md](./noctalia.md) — the desktop shell, whose own native theme engine owns foot's colours via the pre-declared mount-point above (ADR-048, reversing ADR-044/#609 for Linux — #819 Epic G); the Stylix `foot` target was removed in #385.
 - [fonts.md](./fonts.md) — font configuration that affects foot's appearance + the DejaVu fallback warning that surfaced + the dpi-aware nuance.
 - [keybinds.md](./keybinds.md) — `Mod+Return` → spawn foot.
 - foot upstream — https://codeberg.org/dnkl/foot

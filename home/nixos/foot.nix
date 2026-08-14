@@ -1,18 +1,25 @@
 # foot — fast, lightweight, Wayland-native terminal emulator.
 #
-# Colours come from the theme-menu conductor, not Noctalia (ADR-044, #609).
-# foot's palette include is the per-target resolved symlink managed by
-# home/nixos/theme-menu.nix's activation seed + the `theme` CLI. We declare
-# the `include` here rather than relying on any runtime hook — it can't edit
-# foot.ini while it's a read-only home-manager symlink. (foot treats a missing
-# include as a fatal config error exit 230 — the seed activation guarantees the
-# path exists before any foot window can spawn; see theme-menu.nix.)
+# Colours come from Noctalia's own native theme engine, not a Nix-rendered
+# palette (ADR-048, reversing ADR-044/#609 for Linux — #819 Epic G,
+# docs/design/noctalia-theming-delegation.md). This is a pre-declared
+# MOUNT-POINT, not a runtime-hook edit: foot's builtin apply.sh (enabled via
+# home/nixos/noctalia.nix's template whitelist) detects this include by a
+# loose `grep 'include.*noctalia'` against foot.ini and, finding it present,
+# writes ONLY its own theme file — never foot.ini itself (G3 spike,
+# on-metal-confirmed both directions: include present → zero mutation;
+# include absent → silent symlink materialization at the next `nh os
+# switch`). foot treats a missing include as a fatal config error (exit
+# 230); the target only exists once Noctalia has resolved a theme at least
+# once — see docs/desktop/noctalia.md §Sharp edges for the state-between-
+# `nh os switch`-and-Noctalia-restart hazard this opens.
 #
-# R4 guard: NEVER set initial-color-theme anywhere in foot's config. The
-# theme-menu renders BOTH polarities under [colors-dark] section headers (foot's
-# active mode never flips; the conductor swaps file content). Setting
-# initial-color-theme=light would invert the [colors-dark]-header convention and
-# render the wrong polarity's colours. See docs/desktop/foot.md.
+# R4 guard: NEVER set initial-color-theme anywhere in foot's config. Noctalia's
+# foot template renders BOTH polarities under a [colors-dark] section header
+# (foot's active section never flips; Noctalia's own apply.sh rewrites the
+# file's content in place on every resolve — same convention the retired
+# conductor used). Setting initial-color-theme=light would invert that
+# convention and render the wrong polarity's colours. See docs/desktop/foot.md.
 #
 # Font + dpi-aware are set here because Noctalia's templating is colour-only:
 # the face is the `monospace` fontconfig generic, resolved by the conductor
@@ -43,8 +50,8 @@ in
     settings.main = {
       font = "monospace:size=${toString profile.fonts.terminal}";
       "dpi-aware" = "no";
-      # theme-menu conductor's per-target resolved symlink (see header). foot expands ~.
-      include = "~/.local/state/theme-menu/foot.ini";
+      # Noctalia's foot builtin template output_path (see header). foot expands ~.
+      include = "~/.config/foot/themes/noctalia";
     };
     # Translucent background + compositor blur, matched to Ghostty's
     # background-opacity/blur on macOS for cross-terminal parity. blur needs

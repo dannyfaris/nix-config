@@ -23,7 +23,7 @@
 # — is enabled in `home/darwin/ghostty.nix`, colocated with the rest of
 # that module rather than listed here. This whitelist stays terminal-free
 # by design: foot has carried no Stylix target since #385 (its palette
-# comes from the theme-menu conductor — see `home/nixos/foot.nix`), and
+# comes from Noctalia's foot template — see `home/nixos/foot.nix`), and
 # Ghostty is a single Darwin-only module that owns its own
 # theming toggle (#256).
 #

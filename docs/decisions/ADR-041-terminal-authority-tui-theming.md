@@ -1,6 +1,6 @@
 ---
 date: 2026-07-02
-status: Accepted
+status: Accepted. **Linux scope amended by [ADR-048](./ADR-048-noctalia-theming-delegation.md)** (2026-08-13/14, #819 Epic G) — template-first per-tool theming, with this ADR's terminal-ANSI bus surviving as the fallback authority for any Linux TUI without a passing, whitelisted template. Darwin is untouched.
 ---
 
 # ADR-041: The terminal is the TUI colour authority

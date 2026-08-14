@@ -19,14 +19,15 @@
 #   - thunderbird.nix — programs.thunderbird.enable (install only;
 #     accounts runtime/GUI-managed; Gecko Wayland auto-detect; see
 #     docs/desktop/thunderbird.md). Personal Gmail + iCloud (#388).
-#   - theme-menu.nix — Nix-declared runtime theme menu: renders one entry dir
-#     per declared family (lib/theme-families.nix), maintains the per-target
-#     resolved symlinks in $XDG_STATE_HOME/theme-menu/, seeds them at first
-#     activation, and ships the `theme` CLI (ADR-044, #609).
-#   - portal-color-scheme.nix — documentation marker for the xdg-desktop-portal
-#     color-scheme bridge. The dconf write moved into theme-menu.nix's gated
-#     seed so rebuilds no longer reset runtime polarity. Closes the gap #141
-#     left unresolved (now via theme-menu's seed + `theme` CLI).
+#   - Theming is delegated to Noctalia's own native engine (ADR-048,
+#     reversing ADR-044/#609 for Linux — #819 Epic G, docs/design/
+#     noctalia-theming-delegation.md). The theme-menu.nix conductor + its
+#     `theme` CLI + portal-color-scheme.nix's dconf bridge are DELETED, not
+#     deprecated in place — Nix now declares only the mechanism residue a
+#     surface doesn't handle natively (the template whitelist + the
+#     colors_changed repaint hook, both in noctalia.nix; the pre-declared
+#     foot/niri mount-points). Darwin's home/darwin/theme-menu.nix
+#     conductor is untouched.
 #   - polkit-agent.nix — mate-polkit (GTK3) authentication agent,
 #     replacing niri-flake's default KDE agent (disabled system-side
 #     in modules/nixos/niri.nix). See docs/desktop/polkit.md (#103).
@@ -76,8 +77,6 @@
     # modules/shared/nix-daemon.nix) plus the xdg.mimeApps default-handler
     # registration for markdown files. See docs/desktop/typora.md.
     ../typora.nix
-    ../theme-menu.nix
-    ../portal-color-scheme.nix
     ../polkit-agent.nix
     ../removable-media.nix
     ../screen-capture.nix

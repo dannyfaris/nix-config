@@ -32,8 +32,10 @@
 #     dependency, exactly as niri already does for Access/Notification.
 #
 # gnome is kept (first in `default`): it serves ScreenCast and the
-# color-scheme Settings bridge that Firefox/GTK dark-light rides on (see
-# home/nixos/portal-color-scheme.nix / ADR-044).
+# color-scheme Settings bridge that Firefox/GTK dark-light rides on — the
+# writer behind that bridge is now Noctalia's own gtk builtin template
+# (ADR-048, reversing ADR-044 for Linux; see docs/desktop/noctalia.md
+# §Theming), not a Nix-declared dconf write.
 #
 # Defining xdg.portal.config.niri makes NixOS ignore niri's configPackages
 # copy entirely and write a wholesale /etc/xdg override, so niri's other
