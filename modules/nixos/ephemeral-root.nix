@@ -308,9 +308,12 @@ let
       delta=$(comm -23 "$report" "$SEEN" || true)
 
       if [ -z "$delta" ]; then
-        # Empty delta — nothing new. Post an explicit empty-delta note so a
-        # repeated run is observable (the seen-set biting), then stop.
-        post_delta "$report_title (no new drift)" "no new undeclared paths" || true
+        # Nothing new: journal it and post nothing. A notification per quiet
+        # run is what trains an operator to stop reading the topic, which is
+        # the one thing a tripwire cannot afford — silence is the healthy
+        # signal here, and the run stays observable in the journal and in the
+        # report file this scan already wrote.
+        echo "ephemeral-root-probe: no new undeclared paths"
         exit 0
       fi
 

@@ -516,28 +516,32 @@ pkgs.testers.runNixOSTest {
           main.succeed(f"grep -qxF /probe-glob-control {report}")
           main.fail(f"grep -qxF /var/probe-glob-abc123 {report}")
 
-      with subtest("n: delta discipline — a repeated live run posts an EMPTY delta (seen-set bites)"):
+      with subtest("n: delta discipline — a repeated live run posts NOTHING (seen-set bites)"):
           # Everything undeclared planted so far (/probe-undeclared,
           # /probe-glob-control) is now in the shared seen-set. Remove every
           # unseen planted file so this run has NO new drift, then re-run: the
-          # probe must take the empty-delta branch and post the fixed
-          # "no new undeclared paths" note — NOT a content rollup. (Checking the
-          # seen-set line count cannot distinguish this: re-appending an
-          # already-seen path via `sort -u` is idempotent, so the count would be
-          # unchanged even if the delta were mis-computed as the full report.
-          # The post BODY is the discriminating observable.)
+          # probe must take the empty-delta branch and stay SILENT on the wire.
+          # A quiet run posting nothing is the property under test — a
+          # notification per quiet run is what trains the operator to ignore
+          # the topic. (Checking the seen-set line count cannot distinguish a
+          # correct empty delta from a mis-computed full one: re-appending an
+          # already-seen path via `sort -u` is idempotent, so the count is
+          # unchanged either way. An empty sink is the discriminating
+          # observable, and it subsumes the older "did not re-post an
+          # already-seen path" assertion.)
           main.succeed("grep -qxF /probe-undeclared /var/lib/ephemeral-root-probe/seen")
           main.succeed("rm -f /probe-glob-control /var/probe-glob-abc123")
           main.succeed("truncate -s0 /tmp/sink-log")
           main.succeed("systemctl start ephemeral-root-probe-live.service")
-          post = main.succeed("cat /tmp/sink-log")
-          assert "no new undeclared paths" in post, (
-              f"empty-delta run did not post the no-new-drift note; posted:\n{post}"
+          # Silence must mean "ran and found nothing", never "did not run" —
+          # so pin the run down independently of the wire before asserting it.
+          main.succeed(
+              "journalctl -u ephemeral-root-probe-live.service -b --no-pager"
+              " | grep -q 'no new undeclared paths'"
           )
-          # And it did NOT re-post an already-seen path (would appear in the
-          # rollup body). /probe-undeclared must be absent from this post.
-          assert "probe-undeclared" not in post, (
-              f"an already-seen path was re-posted on an empty-delta run:\n{post}"
+          post = main.succeed("cat /tmp/sink-log")
+          assert post.strip() == "", (
+              f"empty-delta run posted to the sink; expected silence, got:\n{post}"
           )
 
       with subtest("o: archive half reports newest-archive drift, advances marker, shares the seen-set"):
