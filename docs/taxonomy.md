@@ -158,7 +158,7 @@ A distinct concern from the module/bundle naming above: that rule names *files*;
 
 - **Southern-hemisphere sky.** Names lean toward stars of the southern sky — the operator's sky. A preference, not a fence; northern stars are fair game.
 - **A grouped site may share a constellation or cluster,** so the grouping reads at a glance. Current groupings: the main homelab as the **Pleiades**, an offsite homelab as **Centaurus**.
-- **Portable devices take unattached stars** — a phone, laptop, or other device that travels with you is a lone bright star, not a member of a grouped cluster.
+- **Portable devices take unattached stars** — a phone, laptop, or other device that travels with you is a lone bright star, not a member of a grouped cluster (so a future portable must not take Mimosa — β Crucis would pair with Acrux and quietly make Crux a third grouping).
 - **VMs are just stars,** named ad hoc; no relational rule (ADR-045 dropped ADR-038's moon→planet binding).
 - **Prospect pools** for future growth: Scorpius, Carina, and the southern birds (Grus, Pavo, Phoenix, Tucana, Apus).
 
@@ -185,11 +185,12 @@ Reserve sisters: **Merope, Asterope, Pleione**.
 
 ### Portable devices
 
-| Target name | Machine      | `hosts/` dir today |
-| ----------- | ------------ | ------------------ |
-| **Alnair**  | NixOS laptop | `alnair`           |
+| Target name | Machine                   | `hosts/` dir today  |
+| ----------- | ------------------------- | ------------------- |
+| **Alnair**  | NixOS laptop              | `alnair`            |
+| **Acrux**   | iPhone (Secure ShellFish) | — (not nix-managed) |
 
-Reserve: **Acrux**.
+Reserve: **Achernar, Atria**.
 
 ### Offsite homelab — Centaurus
 

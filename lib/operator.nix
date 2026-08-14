@@ -57,14 +57,16 @@
   # the edge model (declared-edge whitelist over the flat any→any matrix)
   # lives in docs/design/fleet-ssh-identity.md; ADR-042 freezes it.
   #
-  # hostKeys — one user key PER HOST (#524), each labelled with its origin:
-  # generated on that host, private key never moves; a compromised host
-  # revokes by deleting its one line. Per-host keys are passphrase-less
-  # (operator-endorsed carve-out, ADR-010 §History). A backup key
-  # (e.g. on a YubiKey) would append here rather than becoming parallel
-  # state. Only enrolled hosts appear; the rest
-  # enrol at their bootstrap events.
+  # hostKeys — one user key per enrolled DEVICE (#524), each labelled with
+  # its origin: generated on that device, private key never moves; a
+  # compromised device revokes by deleting its one line. Host keys are
+  # passphrase-less (operator-endorsed carve-out, ADR-010 §History);
+  # acrux's is Secure-Enclave-held instead, so non-exportable in hardware
+  # and necessarily P-256 (ADR-042). A backup key (e.g. on a YubiKey)
+  # would append here rather than becoming parallel state. Only enrolled
+  # devices appear; hosts enrol at their bootstrap events.
   hostKeys = {
+    acrux = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBA0+4ds1JP7ayfBj/ZBlzQofRrFwh6IhhekM3iDXlULAa5mq0ipNUyvcH7cDzK+n0XE3odpruwcUloSbKuYm1/s= dbf@acrux";
     celaeno = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEG7lLmu/lPjyPp1dW3QdA1UcPWi4+e/YEDxvj2UZaHW dbf@celaeno";
     alcyone = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICO05VMXeuyBNwKjN73V9zk81q9RYglnyLCLVg+aC+P5 dbf@alcyone";
     alnair = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJO5+tWeSk9j/1OZoa9x8Rvy5QuFt9Zso0kNcjbs5FKk dbf@alnair";
@@ -76,23 +78,28 @@
   # — an absent edge is a loud build failure, never a quietly keyless
   # host). This is the interim edge map toward the target topology
   # (ADR-042; design note §target shape) — self-edges are deliberately
-  # absent (no host SSHes itself).
+  # absent (no host SSHes itself). Only DESTINATIONS are indexed, so a
+  # source-only device takes no entry of its own: acrux runs no sshd
+  # (#842) and appears solely in the lists below.
   sshEdges = {
     celaeno = [
+      "acrux"
       "alcyone"
       "alnair"
     ];
-    # Alcyone (#631, ADR-042) — accepts celaeno + alnair; a workstation
-    # *source* into celaeno since its fleet enrolment.
+    # Alcyone (#631, ADR-042) — accepts acrux + celaeno + alnair; a
+    # workstation *source* into celaeno since its fleet enrolment.
     alcyone = [
+      "acrux"
       "celaeno"
       "alnair"
     ];
     # Alnair (#636, ADR-042) — roaming laptop: accepts the operator's
-    # workstation sources alcyone + celaeno; a source into every active
+    # workstation sources acrux + alcyone + celaeno; a source into every active
     # host since its fleet enrolment (operator call — the laptop reaches
     # the whole fleet from the road).
     alnair = [
+      "acrux"
       "alcyone"
       "celaeno"
     ];
@@ -100,6 +107,7 @@
     # operator's workstation sources, and never becomes a source — no
     # outbound key exists on the host at all (hosts/electra/default.nix).
     electra = [
+      "acrux"
       "alcyone"
       "alnair"
       "celaeno"
