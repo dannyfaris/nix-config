@@ -26,6 +26,7 @@
 
     # Capability bundles.
     ../../modules/nixos/bundles/remote-access.nix
+    ../../modules/nixos/bundles/storage-integrity.nix # Scrub (monthly) + SMART (daily) — the two layers storage fails at (#854).
     ../../modules/nixos/bundles/desktop-env.nix
     ../../modules/nixos/bundles/mobility.nix # Fleet's first NixOS laptop cluster — suspend/lid/backlight/power posture (#636) plus roaming-identity privacy (#753, #754).
 
@@ -34,8 +35,6 @@
     ../../modules/nixos/networking-networkmanager.nix
     ../../modules/nixos/tailscale.nix
     ../../modules/nixos/claude-desktop.nix # Claude Desktop for Linux, Phase 1 (Chat + Claude Code); Cowork deferred upstream (#683).
-    ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
-    ../../modules/nixos/disk-health.nix # Periodic SMART pre-failure disk-health check (daily, #847).
     ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199) — client only; alnair runs no ntfy server.
     ../../modules/nixos/surface.nix # Surface silicon — SAM chain (initrd + runtime), Iris Xe graphics, webcam device access. Alnair-only host-scoped hardware, never a shared bundle (#636).
     ../../modules/nixos/ephemeral-root.nix # Enforced from first boot — see ephemeralRoot below; docs/design/ephemeral-root.md.

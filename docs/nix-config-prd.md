@@ -227,7 +227,7 @@ This two-axis split (system vs. user; shared vs. platform-specific) makes every 
 
 **Foundation** is the bundle that hosts of a given platform conventionally always import. It lives at `modules/<platform>/foundation.nix` (and the parallel home tree), one level above `bundles/`. Placement at the top of the platform tree is a discoverability convention reflecting its universal-import status. Structurally it is governed by the same `bundle-purity` rule as any other bundle.
 
-**Standalone modules** sit at the top of their platform directory (e.g. `modules/nixos/btrfs-scrub.nix`) and are imported directly by the hosts that want them. A standalone module graduates to a bundle when a second module joins it under a coherent capability label.
+**Standalone modules** sit at the top of their platform directory (e.g. `modules/nixos/tailscale.nix`) and are imported directly by the hosts that want them. A standalone module graduates to a bundle when a second module joins it under a coherent capability label.
 
 The bundles-vs-standalone-modules distinction is mechanical (bundles aggregate ≥ 2 modules; standalone modules don't aggregate at all). The foundation-vs-other-bundles distinction is purely conventional (foundation is the one bundle every host imports; placement and name signal that). One structural rule — `bundle-purity` (§8.1) — covers all aggregator files; modules are just modules.
 
@@ -256,7 +256,7 @@ A host's `default.nix` is a thin module: identifying data plus an `imports` list
     ../../home/shared/bundles/agent-clis-extras.nix
 
     # Standalone modules (no bundle home yet).
-    ../../modules/nixos/btrfs-scrub.nix
+    ../../modules/nixos/tailscale.nix
   ];
 
   networking.hostName = "mothership";
