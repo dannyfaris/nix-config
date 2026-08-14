@@ -36,6 +36,7 @@
     ../../modules/nixos/networking-networkmanager.nix
     ../../modules/nixos/tailscale.nix
     ../../modules/nixos/btrfs-scrub.nix # Periodic checksum verification on btrfs subvolumes (monthly default).
+    ../../modules/nixos/disk-health.nix # Periodic SMART pre-failure disk-health check (daily, #847).
     ../../modules/nixos/wake-on-lan-emitter.nix # WoL emitter (#632) — always-on, same /24 as alcyone; provides the wake-alcyone wrapper. ADR-042: LAN broadcast, not an SSH edge.
     ../../modules/nixos/unit-failure-notifier.nix # Fan systemd unit failures to ntfy over the tailnet (#199) — client from day one.
     ../../modules/nixos/ntfy-server.nix # Self-hosted ntfy receiver for the fleet's failure notifications (#199), relocated here from metis (#688).
