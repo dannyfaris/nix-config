@@ -35,12 +35,13 @@ let
 in
 {
   stylix.targets = {
-    # foot + niri targets were removed in #385 — the theme-menu conductor
-    # (ADR-044, #609) owns both the terminal palette (foot.nix declares the
-    # include) and niri's window-border colour (niri.nix appends a runtime
-    # include; border on / focus-ring off are re-asserted there since Stylix
-    # used to set them). See docs/desktop/noctalia.md §Theming and
-    # docs/desktop/niri.md §Window decorations.
+    # foot + niri targets were removed in #385 — colour for both now comes
+    # from Noctalia's own native theme engine via a pre-declared mount-point
+    # (ADR-048, reversing ADR-044/#609 for Linux — foot.nix declares the
+    # include; niri.nix appends a runtime include, with border on /
+    # focus-ring off re-asserted there since Stylix used to set them). See
+    # docs/desktop/noctalia.md §Theming and docs/desktop/niri.md §Window
+    # decorations.
     # fuzzel/fnott/waybar targets were removed in #385 alongside their
     # modules — Noctalia now owns the launcher, notifications and bar.
     # swaylock's target was removed in #385 — swaylock + swayidle were
@@ -79,16 +80,19 @@ in
     # installed. See docs/desktop/polkit.md.
     gtk.enable = lib.mkIf desktopSession true;
 
-    # GTK colours come from the theme-menu conductor (ADR-044, #609), layered
-    # over Stylix via a relative @import at the end of gtk.css. The seed
-    # activation in theme-menu.nix creates ~/.config/gtk-{3,4}.0/theme-menu.css
-    # as a symlink to the per-target resolved state symlink, so Stylix's earlier
-    # @define-colors are overridden by cascade (GTK honours a trailing @import).
-    # The Stylix gtk target stays for settings.ini (adw-gtk3 + font); only the
-    # colours are overridden. Noctalia's stale noctalia.css files are cleanup
-    # artefacts — they are shadowed by this import and can be removed after
-    # the operator disables Noctalia's GTK template. See docs/desktop/noctalia.md.
-    gtk.extraCss = lib.mkIf desktopSession ''@import url("theme-menu.css");'';
+    # GTK colours come from Noctalia's own gtk3/gtk4 builtin templates now
+    # (ADR-048, reversing ADR-044/#609's conductor-owned @import for Linux —
+    # #819 Epic G). No declared extraCss seam: gtk's apply.sh takes a
+    # different ownership path than foot/niri's pre-declared-include pattern
+    # — it detects this target's HM-owned read-only gtk.css symlink at
+    # activation and materializes it into a plain, writable file with its
+    # own @import appended, idempotently on every re-run (G3 spike,
+    # source-confirmed and on-metal-tested; docs/design/
+    # noctalia-theming-delegation.md §De-risk). The Stylix gtk target stays
+    # enabled for settings.ini (adw-gtk3 + font) only — its own @define-color
+    # write is a transient base until Noctalia's first theme resolve
+    # overwrites the file (see docs/desktop/noctalia.md §Sharp edges for the
+    # window between `nh os switch` and that first resolve).
   };
 
   # GTK app-UI (the polkit prompt, file pickers, app dialogs) rides the `Sans`

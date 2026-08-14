@@ -97,21 +97,31 @@ let
       (generated // handAuthored);
 in
 {
-  # Hand niri's window-border colour to the theme-menu conductor at runtime
-  # (ADR-044, #609 — replacing the Noctalia-owned noctalia.kdl per ADR-036).
-  # niri-flake's `programs.niri.config` replaces `settings` wholesale and
-  # exposes no settings→KDL renderer, so we reach the rendered document via the
-  # option's own *default* — `settings.render cfg.settings`, which depends on
-  # `settings`, not `config`, so there's no cycle — serialise it, and append a
-  # top-level include. `optional=true` (niri 26.04) keeps the session up before
-  # the seed first creates the symlink; niri's inotify watch misses symlink swaps
-  # (niri#2658), so the `theme` CLI fires `niri msg action load-config-file`
-  # explicitly on every switch. See docs/desktop/noctalia.md §Sharp edges.
+  # Hand niri's window-border colour to Noctalia's own native theme engine
+  # at runtime (ADR-048, reversing ADR-044/#609 for Linux — #819 Epic G,
+  # docs/design/noctalia-theming-delegation.md). This is a pre-declared
+  # MOUNT-POINT: niri's builtin apply.sh (enabled via home/nixos/
+  # noctalia.nix's template whitelist) detects the include by a
+  # basename-anchored regex on `noctalia.kdl` and, finding it present,
+  # writes ONLY that file — relative to niri's own config directory
+  # (~/.config/niri/), never niri's HM-owned config.kdl itself (G3 spike,
+  # on-metal-confirmed both directions: include present → zero mutation;
+  # include absent + read-only → clean atomic EACCES abort, no
+  # materialization). niri-flake's `programs.niri.config` replaces
+  # `settings` wholesale and exposes no settings→KDL renderer, so we reach
+  # the rendered document via the option's own *default* —
+  # `settings.render cfg.settings`, which depends on `settings`, not
+  # `config`, so there's no cycle — serialise it, and append a top-level
+  # include. `optional=true` (niri 26.04) keeps the session up before
+  # Noctalia's first theme resolve creates the target; niri's inotify watch
+  # misses the write anyway (niri#2658), so the `colors_changed` repaint
+  # hook (home/nixos/noctalia.nix) fires `niri msg action load-config-file`
+  # explicitly on every resolve. See docs/desktop/noctalia.md §Sharp edges.
   programs.niri.config =
     inputs.niri-flake.lib.kdl.serialize.nodes options.programs.niri.config.default
     + ''
 
-      include optional=true "~/.local/state/theme-menu/niri.kdl"
+      include optional=true "noctalia.kdl"
     '';
 
   home.packages = [ focusOrSpawn ];
@@ -189,11 +199,11 @@ in
       always-center-single-column = true;
 
       # Window decorations — border on, focus-ring off (Stylix used to assert
-      # both via its niri target; re-asserted here now that the theme-menu
-      # conductor owns the colour via the runtime include above). Border width
-      # from the geometry token (Carbon spacing-01; crisp on 4K/2× — rationale in
-      # theme-tokens.nix and docs/desktop/niri.md §Window decorations); the
-      # active/inactive colours come from the conductor's niri.kdl.
+      # both via its niri target; re-asserted here now that Noctalia's niri
+      # template owns the colour via the noctalia.kdl include above). Border
+      # width from the geometry token (Carbon spacing-01; crisp on 4K/2× —
+      # rationale in theme-tokens.nix and docs/desktop/niri.md §Window
+      # decorations); the active/inactive colours come from noctalia.kdl.
       border.enable = true;
       border.width = tokens.geometry.borderWidth;
       focus-ring.enable = false;

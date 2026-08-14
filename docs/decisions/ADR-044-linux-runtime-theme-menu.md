@@ -1,6 +1,6 @@
 ---
 date: 2026-07-14
-status: Accepted, Implemented; runtime-verified on metis 2026-07-14 (#609). **Noctalia delivery mechanism amended 2026-07-25 (#644)** — see §Amendment: Noctalia v5 and §History; the copy-into-place delivery and the `colors-{dark,light}.json` artefacts described below are the v4-era mechanism, superseded by the constant-name custom palette.
+status: Accepted, Implemented; runtime-verified on metis 2026-07-14 (#609). **Noctalia delivery mechanism amended 2026-07-25 (#644)** — see §Amendment: Noctalia v5 and §History; the copy-into-place delivery and the `colors-{dark,light}.json` artefacts described below are the v4-era mechanism, superseded by the constant-name custom palette. **Reversed for Linux by [ADR-048](./ADR-048-noctalia-theming-delegation.md)** (2026-08-13/14, #819 Epic G) — theming authority moves to Noctalia's own native engine and this conductor is deleted on Linux. This ADR continues to describe the **Darwin** conductor (`home/darwin/theme-menu.nix`) unchanged.
 ---
 
 # ADR-044: Nix-owned runtime theme menu on Linux

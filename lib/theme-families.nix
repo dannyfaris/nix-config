@@ -95,6 +95,15 @@
   # dark/light signal (Stylix's third value "either" is intentionally
   # not used — leaving polarity unset is precisely the bug #123 fixed).
   #
+  # Post-#819 (ADR-048, Linux theming delegated to Noctalia's native
+  # engine): alcyone/alnair/electra's entries are Stylix BOOT-DEFAULT
+  # palette inputs ONLY — consumed solely via modules/nixos/stylix-palette.nix's
+  # `.select .polarity` (the base16Scheme a fresh build/reprovision renders
+  # before any runtime theme pick), never via the whole-catalogue `.menu`
+  # (lib/scheme-pair.nix), which is Darwin-only in practice now — no Linux
+  # consumer reads it. celaeno's entry remains fully load-bearing on both
+  # axes for the Darwin conductor (home/darwin/theme-menu.nix, unchanged).
+  #
   # New hosts get their boot-default entry here at bring-up.
   defaults = {
     alcyone = {
