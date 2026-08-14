@@ -13,9 +13,11 @@
 # over Tailscale was chosen over email-via-relay (needs an MTA + relay
 # creds = a new secret) and ntfy SaaS (a public dependency + a token)
 # because the tailnet already spans every host and gives a private,
-# authenticated transport for free. ntfy listens only on the Tailscale
-# interface (modules/nixos/ntfy-server.nix), so tailnet membership IS the
-# auth — no token/secret is introduced (#199's acceptance constraint).
+# authenticated transport for free. The tailnet is the receiver's only
+# reachable path — what binds where, and which layer actually enforces
+# that, is stated once in modules/nixos/ntfy-server.nix — so tailnet
+# membership IS the auth: no token/secret is introduced (#199's
+# acceptance constraint).
 # Receiver is electra: an always-on, headless node (relocated from metis,
 # #688), so the receiver's own failures are as blind as any other
 # headless host's — #569's dead-man's layer is the answer to that residual.
