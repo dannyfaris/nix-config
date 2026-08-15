@@ -1,6 +1,10 @@
 # Pointer & icon theme — Colloid icons + phinger cursor (#110).
 # Selection, field measurements, and the polarity/render-list sharp edges:
 # docs/desktop/pointer-icons.md.
+#
+# Icon/cursor theme *selection* is a named ADR-048 residue (#825): not a
+# colour role the delegation covers, so stylix.icons/stylix.cursor stay
+# authoritative here.
 { config, pkgs, ... }:
 {
   # Stylix resolves light/dark by build-time polarity into gtk.iconTheme;

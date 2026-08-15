@@ -1,14 +1,8 @@
 # firefox — Mozilla's web browser; Gecko engine; native Wayland.
 #
-# Stylix theming is wired centrally via
-# `stylix.targets.firefox = { enable = true; profileNames = [ "default" ]; }`
-# in home/nixos/stylix-targets-desktop.nix. Both fields are required:
-# `enable` because our foundation sets `stylix.autoEnable = false`
-# (whitelist stance per CLAUDE.md); `profileNames` because Stylix's
-# Firefox module cannot auto-detect profile names without infinite
-# recursion in the module system (documented in stylix's
-# modules/firefox/meta.nix). Stylix writes per-profile font.name +
-# font.size prefs into the `default` profile declared below.
+# Stylix's `firefox` target is dropped — zero decision weight in the theming
+# delegation, accepted collateral (ADR-048, #825). The `default` profile is
+# the settings home for the policy below, not a Stylix artifact.
 #
 # Lives under nixos/ because the desktop-registration surface
 # (xdg.mimeApps) is Linux-only. Unlike foot/fuzzel/fnott/waybar
@@ -24,15 +18,15 @@
 #
 # The `default` profile is declared as a stub — id = 0, isDefault =
 # true are explicit for clarity but both have appropriate defaults.
-# Settings, bookmarks, extensions can land here later; day 1 the
-# stub exists primarily so Stylix has a profile name to target.
+# Settings, bookmarks, extensions can land here later; it names the
+# profile the 1Password policy below targets.
 #
 # MIME registration covers the URL paths xdg-open is asked to
 # resolve in daily use: HTML/XHTML files, http/https URLs, about:
 # URIs Firefox itself emits, and unknown:// scheme fallback. See
 # docs/desktop/firefox.md for the full selection rationale and
 # sharp edges (declarative-prefs vs profile-state, XDG path
-# migration in HM 26.05, Stylix-prefs vs Firefox UI tug-of-war).
+# migration in HM 26.05).
 #
 # Per #76.
 _: {

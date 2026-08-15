@@ -4,7 +4,7 @@ Mozilla's web browser. Gecko engine. Native Wayland support. The chosen browser 
 
 ## Selection
 
-**Firefox** on metis. Enabled via `home/nixos/firefox.nix` (HM module `programs.firefox.enable = true` + a `default` profile so Stylix has somewhere to write its prefs). Registered as the default handler for HTTP/HTTPS + HTML MIME types via HM's `xdg.mimeApps.defaultApplications`. Stylix integration via `stylix.targets.firefox.enable = true` + `stylix.targets.firefox.profileNames = [ "default" ]` in `home/shared/stylix-targets.nix` — font prefs only on day 1; chrome-theming opt-ins (`colorTheme.enable`, `firefoxGnomeTheme.enable`) deferred.
+**Firefox** on the NixOS desktop hosts. Enabled via `home/nixos/firefox.nix` (HM module `programs.firefox.enable = true` + a `default` profile). Registered as the default handler for HTTP/HTTPS + HTML MIME types via HM's `xdg.mimeApps.defaultApplications`. Stylix's `firefox` target — which used to write per-profile font prefs — was **dropped whole** in the G6 Stylix-exit audit (#825, #819 Epic G): zero decision weight per the operator ruling, accepted collateral of the ADR-048 delegation, no replacement wiring. Firefox now renders its own stock font and colour defaults.
 
 ## Rationale
 
@@ -12,7 +12,7 @@ Mozilla's web browser. Gecko engine. Native Wayland support. The chosen browser 
 
 **Mature HM module.** `programs.firefox` supports per-profile declarative configuration: `settings` (about:config prefs), `extensions.packages`, `bookmarks`, `search`, `userChrome` / `userContent` CSS. Profile state lives on disk (history, cookies, sessions) — the module manages the declarative slice without fighting Firefox's profile directory.
 
-**Stylix target exists and is well-scoped.** Stylix writes per-profile font prefs (sans-serif / serif / monospace mapped to `stylix.fonts.*`) into the named profile's `settings`. The chrome theming (`colorTheme` via the Firefox Color extension; `firefoxGnomeTheme` via the `firefox-gnome-theme` upstream + a base16 overlay) is opt-in and not enabled day 1. Rationale below under Configuration.
+**Stylix target dropped, not narrowed (G6, #825).** Firefox's theming fate carries zero decision weight per the operator ruling recorded in `docs/design/noctalia-theming-delegation.md` — its loss is accepted collateral of the ADR-048 delegation, with no replacement wiring (no fontconfig follow, no Noctalia template). See §Configuration for what this doc used to describe.
 
 ## Alternatives considered
 
@@ -65,53 +65,31 @@ _: {
 
 Lives under `home/nixos/` because the desktop registration (`xdg.mimeApps`, the wider niri/foot-spawned `xdg-open` chain) is Linux-only. **Unlike foot/fuzzel/fnott** (which don't build on Darwin at all), `pkgs.firefox` does build on Darwin — placement here is gated by `xdg.mimeApps` being a Linux-only HM module surface, not by package portability. The macOS browser selection (Safari / Arc / Brave / etc.) is a separate decision deferred to the `home/darwin/` tree per epic #11.
 
-The `default` profile is declared with both fields set explicitly for clarity, though both have appropriate defaults (`id` defaults to `0`, `isDefault` defaults to `id == 0`). The stub profile exists primarily so Stylix has a profile name to target; settings, bookmarks, extensions can land here later.
+The `default` profile is declared with both fields set explicitly for clarity, though both have appropriate defaults (`id` defaults to `0`, `isDefault` defaults to `id == 0`). The stub profile names the settings home for the 1Password policy declared in `home/nixos/firefox.nix`; settings, bookmarks, extensions can land here later.
 
 **Wayland enablement** — none required. Firefox 121+ auto-detects `WAYLAND_DISPLAY` at startup. Niri sets that variable for session-spawned processes; `xdg-open https://example.com` from a foot terminal inside niri launches Firefox in Wayland mode. The verification path is `about:support` → "Window Protocol" = `wayland`. If a future regression forces a downgrade to XWayland, the lever is `MOZ_ENABLE_WAYLAND=0` (forces X11); the historical opt-in `MOZ_ENABLE_WAYLAND=1` is now a no-op.
 
-**Stylix integration** — `home/shared/stylix-targets.nix`:
-
-```nix
-stylix.targets.firefox = {
-  enable = true;
-  profileNames = [ "default" ];
-};
-```
-
-Both lines are required. The foundation sets `stylix.autoEnable = false` (the whitelist stance from [CLAUDE.md](../../CLAUDE.md)), so every Stylix target defaults to disabled and must be opted into explicitly — matching the `foot.enable`, `fuzzel.enable`, `fnott.enable`, `waybar.enable` pattern. The `profileNames` field is the operator-required input that Stylix's Firefox target cannot auto-detect (documented in stylix's `modules/firefox/meta.nix` as a module-system limitation).
-
-Stylix writes the following per-profile prefs into the profile named `default`:
-
-- `font.name.{monospace,sans-serif,serif}.x-western` — set from `stylix.fonts.{monospace,sansSerif,serif}.name`.
-- `font.size.{monospace,variable}.x-western` — set from `stylix.fonts.sizes.{terminal,applications}`, converted from pt to px with the 4/3 factor Firefox expects.
-
-Three deliberate non-enables:
-
-- `stylix.targets.firefox.colorTheme.enable = true` — would install the Firefox Color extension into the profile and configure a base16 chrome theme via extension settings. Adds an extension dependency and a settings-file that has to round-trip through Firefox at first launch. Stock chrome is fine day 1.
-- `stylix.targets.firefox.firefoxGnomeTheme.enable = true` — would import the `firefox-gnome-theme` upstream (`userChrome.css` + `userContent.css`) plus a base16 overlay template. Restyles the chrome to match GNOME aesthetics. The operator isn't a GNOME user; the stock Firefox chrome on the monospace/sans-serif font palette reads coherently enough.
-- We deliberately don't write any `programs.firefox.profiles.default.settings` ourselves. The font prefs that flow from Stylix are the only declarative prefs day 1; everything else is operator-tunable via the Firefox UI and persists into the profile state.
+**Stylix integration — dropped (G6, #825).** Firefox previously carried a `stylix.targets.firefox = { enable = true; profileNames = [ "default" ]; }` block (font prefs only; the `colorTheme`/`firefoxGnomeTheme` chrome-theming opt-ins were never enabled) writing per-profile `font.name.*`/`font.size.*` prefs from `stylix.fonts.*`. None of that survives the G6 Stylix-exit audit: the target is removed outright, not narrowed, per the operator's zero-decision-weight ruling — no fontconfig-generic follow-up replaces it. We still don't write any `programs.firefox.profiles.default.settings` ourselves; every font and colour choice in Firefox is now operator-tunable via the Firefox UI only, and persists into the profile state.
 
 **MIME registration** — `xdg.mimeApps.defaultApplications` writes `$XDG_CONFIG_HOME/mimeapps.list` and ensures `xdg-mime query
 default text/html` returns `firefox.desktop`. The six entries above cover the URL paths an `xdg-open` invocation can take: `text/html` + `application/xhtml+xml` for local HTML/XHTML files; `http`/`https` for network URLs; `about` for `about:config`-style URIs Firefox itself emits; `unknown` for `xdg-open something://opaque` cases. Tools downstream (e.g. Cursor's auth-callback flow, mail clients) hand URLs to `xdg-open` which resolves the entry here. We register only the practically-exercised types; the upstream `firefox.desktop` registers a wider list.
 
 ## Sharp edges
 
-**`profileNames` MUST match a real profile, or Stylix warns and writes nothing.** Stylix's Firefox module documents (in `modules/firefox/meta.nix`) that profile detection is unsolvable inside the module system without infinite recursion — so the profile-name list is operator-declared. If `profileNames` is `[ ]` (the default), Stylix emits `stylix: firefox:
-config.stylix.targets.firefox.profileNames is not set` at build time and produces no prefs. If `profileNames` lists a name that doesn't exist in `programs.firefox.profiles.*`, eval fails. The two surfaces (this doc's `programs.firefox.profiles.default` and `stylix.targets.firefox.profileNames = [ "default" ]`) must stay in lockstep.
+**(Historical, moot post-G6) `profileNames` used to need to match a real profile, or Stylix warned and wrote nothing.** Stylix's Firefox module documented (in `modules/firefox/meta.nix`) that profile detection was unsolvable inside the module system without infinite recursion, so the profile-name list was operator-declared and had to stay in lockstep with `programs.firefox.profiles.default`. Moot now that the target is dropped (#825); the `default` profile stub in `home/nixos/firefox.nix` remains only as the settings home for the 1Password policy.
 
-**Firefox profile state is not declarative.** Bookmarks, history, cookies, sessions, login DB, extension prefs that aren't explicitly set via Nix — all live in `~/.mozilla/firefox/default/` (the legacy path; see "Profile-config XDG path" below for why we pin this) as a stateful blob. This is by design (Firefox is a stateful application). The declarative HM module writes a small subset of `prefs.js`-equivalents and lays down extension packages; everything else is mutable runtime state. If `default/` is deleted, Firefox recreates it on next launch and Stylix re-writes the declarative prefs on next HM-switch; user state (bookmarks, sessions) is lost in that path.
+**Firefox profile state is not declarative.** Bookmarks, history, cookies, sessions, login DB, extension prefs that aren't explicitly set via Nix — all live in `~/.mozilla/firefox/default/` (the legacy path; see "Profile-config XDG path" below for why we pin this) as a stateful blob. This is by design (Firefox is a stateful application). The declarative HM module writes a small subset of `prefs.js`-equivalents and lays down extension packages; everything else is mutable runtime state. If `default/` is deleted, Firefox recreates it on next launch with its own stock defaults (no Stylix rewrite post-G6); user state (bookmarks, sessions) is lost in that path.
 
 **Profile-config XDG path moved in HM 26.05; we pin legacy.** The default `configPath` in the HM Firefox module migrated from `.mozilla/firefox` to `$XDG_CONFIG_HOME/mozilla/firefox` in HM release 26.05. Our `home.stateVersion` is `"25.11"` (set once, never change, per `modules/nixos/home-manager.nix`), so the legacy path is what HM picks — but HM also emits a per-rebuild warning asking us to choose explicitly. We pin `programs.firefox.configPath = ".mozilla/firefox"` in `home/nixos/firefox.nix` to silence the warning while preserving the current on-disk layout. Same pattern as `stylix-targets.nix`'s `gtk.gtk4.theme` pin. Migrating to the XDG path would require physically moving `~/.mozilla/firefox` → `~/.config/mozilla/firefox` (Firefox profile state is not declarative — see above); that's a deliberate future move, not something to do implicitly via a stateVersion bump.
 
-**Stylix font prefs override Firefox's own font picker UI.** The per-profile font.name and font.size prefs that Stylix writes are operator-overridable via the Firefox preferences UI (Settings → Fonts), but the next HM-switch resets them to Stylix's values. Anyone wanting permanent font tweaks should change `stylix.fonts.*` (host-wide) rather than fighting via the Firefox UI.
+**(Historical, moot post-G6) Stylix font prefs used to override Firefox's own font picker UI.** The per-profile font.name and font.size prefs Stylix wrote were operator-overridable via the Firefox preferences UI (Settings → Fonts), but the next HM-switch reset them to Stylix's values. Moot now that the target is dropped (#825) — Firefox's font pickers are fully operator-owned, permanently.
 
 ## References
 
 - [`home/nixos/firefox.nix`](../../home/nixos/firefox.nix) — the HM module enabling Firefox + `xdg.mimeApps` registration.
-- [`home/shared/stylix-targets.nix`](../../home/shared/stylix-targets.nix) — `stylix.targets.firefox.profileNames`.
+- [`home/nixos/stylix-targets-desktop.nix`](../../home/nixos/stylix-targets-desktop.nix) — where the now-dropped `firefox` Stylix target used to live (G6, #825).
 - [`home/nixos/bundles/desktop-env.nix`](../../home/nixos/bundles/desktop-env.nix) — bundle import.
-- [fonts.md](./fonts.md) — `stylix.fonts.*` selections that flow into Firefox's per-profile font prefs.
+- [fonts.md](./fonts.md) — the fontconfig conductor Firefox does not follow.
 - Firefox upstream — https://www.mozilla.org/firefox
 - HM Firefox module — `programs.firefox` options reference at https://nix-community.github.io/home-manager/options.xhtml
-- Stylix Firefox target source — https://github.com/nix-community/stylix/tree/master/modules/firefox
-- firefox-gnome-theme upstream (currently not enabled) — https://github.com/rafaelmardojai/firefox-gnome-theme.
+- firefox-gnome-theme upstream (never enabled; moot post-G6) — https://github.com/rafaelmardojai/firefox-gnome-theme.

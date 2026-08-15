@@ -3,11 +3,14 @@
 # desktop-env home bundle. Companion to `home/shared/stylix-targets.nix`
 # (which carries the cross-platform-safe TUI targets).
 #
-# Lives under `home/nixos/` because every entry here is driven by a
-# module that's Linux-only today (firefox via the launcher integration
-# in `home/nixos/`; gtk theming as part of the niri session). Imported by
-# `home/nixos/bundles/desktop-env.nix` so desktop hosts pick it up
-# transitively without needing a separate import line.
+# Lives under `home/nixos/` because the one surviving entry here (gtk) is
+# driven by a module that's Linux-only today, as part of the niri session.
+# Imported by `home/nixos/bundles/desktop-env.nix` so desktop hosts pick it
+# up transitively without needing a separate import line.
+#
+# G6 (#825): the `firefox` colour-role target is dropped — zero-weight
+# ruling, accepted collateral (ADR-048); no replacement wiring. See
+# docs/desktop/firefox.md.
 #
 # Why the split: Stylix's `autoload.nix` declares every target's
 # `enable` option universally regardless of platform, so the pre-split
@@ -28,9 +31,9 @@
 let
   # `programs.foot.enable` is true only on the hosts that import the
   # desktop-env home bundle. Used as the desktop-session proxy to gate the
-  # toolkit-level `gtk` target — Stylix's per-app `firefox` target below
-  # already gates on its own `programs.firefox.enable`, but `gtk` has no
-  # per-app gate upstream. (The `qt` target was dropped in #103 — see below.)
+  # toolkit-level `gtk` target, which has no per-app gate upstream. (The
+  # `qt` target was dropped in #103 — see below; the `firefox` target was
+  # dropped in the G6 Stylix-exit audit, #825 — see the header comment.)
   desktopSession = config.programs.foot.enable or false;
 in
 {
@@ -46,25 +49,9 @@ in
     # modules — Noctalia now owns the launcher, notifications and bar.
     # swaylock's target was removed in #385 — swaylock + swayidle were
     # decommissioned; Noctalia owns the lock surface and idle handling.
-    # firefox — gates on `programs.firefox.enable`. profileNames is
-    # operator-declared because Stylix's Firefox module can't auto-
-    # detect profile names without infinite recursion (documented in
-    # stylix's modules/firefox/meta.nix). Stylix writes per-profile
-    # font prefs (font.name.{monospace,sans-serif,serif} and
-    # font.size.{monospace,variable}) into the `default` profile
-    # declared in home/nixos/firefox.nix. Chrome-theming opt-ins
-    # (colorTheme via Firefox Color extension; firefoxGnomeTheme via
-    # the firefox-gnome-theme upstream) are NOT enabled day 1 — stock
-    # chrome is fine. The two surfaces (the profile name here and
-    # `programs.firefox.profiles.default` in firefox.nix) must stay in
-    # lockstep.
-    firefox = {
-      enable = true;
-      profileNames = [ "default" ];
-    };
-    # gtk — toolkit-level theming, no per-app gating upstream (unlike
-    # `firefox` above, which gates on `programs.firefox.enable` and becomes
-    # inert on non-desktop hosts).
+    # firefox — dropped (ADR-048 zero-weight ruling, #825); renders stock
+    # defaults.
+    # gtk — toolkit-level theming, no per-app gating upstream.
     # Gated locally on `desktopSession` so a future desktop-less host
     # importing this file (unlikely under the desktop-env bundle) won't
     # pull adw-gtk3 / gtk+3 (~42 MiB) for theming it can't render. On the

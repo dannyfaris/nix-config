@@ -76,7 +76,7 @@ The Stylix `ghostty` target writes the active base16 scheme into Ghostty's 16 AN
 
 **Font-size is pinned, deliberately.** The target also sets `font-size = fonts.sizes.terminal * 4/3` (the macOS 72→96-DPI scale); with Stylix's default terminal size (12) that lands at 16pt, larger than Ghostty's own macOS default. We adopt the palette and font *family* but keep the established size, so `lib.mkForce 13` overrides the target's value (13 is Ghostty's documented macOS default).
 
-**Placement.** The `enable` lives in `home/darwin/ghostty.nix`, colocated with the rest of the Ghostty config, rather than in a stylix-targets file. The cross-platform TUI whitelist (`home/shared/stylix-targets.nix`) is deliberately terminal-free, and there is no NixOS terminal target to sit alongside — foot's palette comes from the theme-menu conductor, not Stylix (ADR-044, #609). One terminal, one Darwin-only module: the toggle belongs with it.
+**Placement.** The `enable` lives in `home/darwin/ghostty.nix`, colocated with the rest of the Ghostty config, rather than in a stylix-targets file. The cross-platform TUI whitelist (`home/shared/stylix-targets.nix`) is deliberately terminal-free, and there is no NixOS terminal target to sit alongside — foot's palette comes from Noctalia's own native theme engine, not Stylix ([ADR-048](../decisions/ADR-048-noctalia-theming-delegation.md), reversing ADR-044/#609 for Linux). One terminal, one Darwin-only module: the toggle belongs with it.
 
 **Sparkle silent-update keys (belt-and-braces, inert today)** — `modules/darwin/homebrew.nix`:
 
