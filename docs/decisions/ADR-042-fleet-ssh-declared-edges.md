@@ -1,6 +1,6 @@
 ---
 date: 2026-07-07
-status: Accepted, Implementation pending (#524 re-scoped)
+status: Accepted, Implemented (#575, #576)
 ---
 
 # ADR-042: Fleet SSH trust — declared edges, static per-host keys
@@ -47,3 +47,4 @@ Single-sourced in the design note's Rationale & alternatives; the three decisive
 - 2026-08-03 (#634) — mercury and nixos-vm decommissioned; their `sshEdges` entries removed from `lib/operator.nix`.
 - 2026-08-05 — saturn purged from the repo before it was ever deployed; its `sshEdges` entry removed from `lib/operator.nix` and its planned flip from client-only to destination withdrawn.
 - 2026-08-14 (#842) — acrux (operator's iPhone, Secure ShellFish) accepted as a workstation-class source into all four hosts, credentialed by a Secure Enclave key generated on-device (`ecdsa-sha2-nistp256`, Face ID-gated per signature, `SHA256:TW3KG5nY37l8fEMZmiMhNYCyDHhapIty4VW884rpdmY`); `hostKeys.acrux` and its `sshEdges` entries land in `lib/operator.nix` in the same change.
+- 2026-08-15 (record correction) — status bumped to Implemented. §Implementation's scope landed as the two-step pair §Decision anticipates: #575 ("step 1 of 2") reshaped `lib/operator.nix` into `hostKeys` + `sshEdges`, moved both platforms' `users.nix` onto the edge-derived `authorizedKeys`, and added the stance — behaviour-preserving, every edge still `[ neptune metis ]`; #576 ("step 2 of 2") then performed the deliberate narrowing as the data-only change promised, dropping metis's and neptune's self-edges and taking nixos-vm and saturn to keyless, and its body carries the per-host authorization delta and the words "This completes ADR-042's PR pair". alcyone (#631), alnair (#636) and electra (#637) came later and are enrolments *under* the already-narrowed shape, not part of the narrowing — none of those hosts existed when #576 landed — each attested in `lib/operator.nix`'s inline `sshEdges` comments; electra's pure-sink entry dates from its enrolment. #524, the issue both PRs reference, was closed `not_planned` on 2026-08-03, which is why the status cites the two PRs that executed rather than the issue.

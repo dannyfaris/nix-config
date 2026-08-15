@@ -1,6 +1,6 @@
 ---
 date: 2026-08-03
-status: Accepted, Implementation pending (wired in #435 PR B)
+status: Accepted, Implemented (#435 PR B, #738)
 ---
 
 # ADR-046: Markdown formatter — dprint with `textWrap:never`
