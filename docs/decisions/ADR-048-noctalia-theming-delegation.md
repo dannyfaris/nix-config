@@ -1,6 +1,6 @@
 ---
 date: 2026-08-13
-status: Proposed — accepted at the G5 witnessed pass (#819 Epic G, #824)
+status: Accepted, Implemented; operator-witnessed on alnair 2026-08-15 (#819 Epic G, #824 — alcyone activation pending, mechanism-identical)
 ---
 
 # ADR-048: Theming delegated to Noctalia's native engine (Linux)
