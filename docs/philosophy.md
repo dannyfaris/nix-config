@@ -59,6 +59,7 @@ But some state is genuinely *session* state rather than desired state — the co
 - `nixpkgs.config.allowUnfreePredicate` lists each unfree package by name. Adding a new unfree dependency requires a deliberate edit; nothing slips through.
 - Firewall rules are explicit; no "open everything internally" shortcuts.
 - Per-tool dependency adoption is reviewed; no "install a category of tools in case they're useful" patterns.
+- Scope is whitelisted too: an addition nobody asked for is a blanket allow on the diff. See [workflow.md](./workflow.md) §"Implement only what was asked" for the procedure.
 
 ## Single source of truth
 
@@ -85,6 +86,7 @@ But some state is genuinely *session* state rather than desired state — the co
 - `home/{shared,nixos}/` files don't expose `enable` flags. The day a host wants to disable, say, the editor, that's when the flag earns its place.
 - Module decomposition matches actual size and concern boundaries, not hypothetical future shape.
 - New tools are added when they earn their place, not pre-emptively because "we might want them".
+- A `modules/{nixos,darwin}` twin-pair collapses into one `lib/mk-*.nix` constructor only where the two bodies differ in platform-constant *values* — host-context and home-manager collapse this way, each taking explicit per-platform args stated at its two call sites, with no central platform record. A constructor spanning a *logic* difference is exactly the speculative abstraction the next divergence has to navigate around, so pairs differing in logic, option surface, or upstream module semantics (firewall, sshd, nix-daemon) stay two files. A third pattern sits between the two: a pure-logic *core* may be single-sourced without collapsing the shells — the stylix-palette twins share their selection semantics via `lib/palette-for.nix` yet stay two files, because their engine imports differ (`inputs.stylix.nixosModules.stylix` vs `.darwinModules.stylix`). See #541.
 - Enforcement machinery is sized to the severity it guards — the lightest mechanism that holds the guarantee (convention → `grep`-lint → bespoke parser), escalating only on repeated evidence. Building the gate before the evidence is itself a speculative abstraction. See [ADR-032](./decisions/ADR-032-proportionate-enforcement-and-rationale.md).
 
 ## Most-communicative term naming
@@ -108,3 +110,16 @@ But some state is genuinely *session* state rather than desired state — the co
 
 - Every ADR has a "Consequences" section with explicit ✗ items and ⚠ migration triggers.
 - "What this DOESN'T solve" is sometimes a more useful section than "what this solves".
+
+## Set is not enforced
+
+**Rule.** *Set* is what the configuration declares; *enforced* is what the running system actually does. The gap between the two — canonically written **set ≠ enforced** — is where a change is correct on paper and inert in production. A change asserting a runtime, security, or network-posture property is done when that behaviour has been observed on a host, not when it evaluates or merges. Where it is unclear which layer enforces a property, probe it empirically first.
+
+**Why.** [#336](https://github.com/dannyfaris/nix-config/issues/336) is the worked example: a firewall rule was removed that was never the gate — tailscale's `ts-input` pre-empts the NixOS firewall. Eval passed, and a two-reviewer adversarial pass missed it; a runtime probe caught it. Reasoning and review both read the declaration; only a probe reads the enforcement.
+
+**How it shows up.**
+
+- The design loop's de-risk rung is this principle applied to design: the load-bearing assumption is tested before the design is committed to, not after ([design-loop.md](./design/design-loop.md) §De-risk evidence).
+- [ADR-047](./decisions/ADR-047-macos-window-manager-yabai.md)'s yabai trial is the sharpest evidence yet — four diagnoses made during the trial were wrong, three of the four would have shipped as fixes, and every one was caught by running something on the box rather than by reasoning or review; the two conclusions held most confidently from source-reading were among those falsified.
+- The behavioural coverage this rule wants on the NixOS side — VM tests for the stances — is a standing gap, tracked in [#303](https://github.com/dannyfaris/nix-config/issues/303).
+- [workflow.md](./workflow.md) §"Runtime claims are probe-verified" is the choreography that discharges this rule: how a probe is designed before the change lands, run, and recorded.
