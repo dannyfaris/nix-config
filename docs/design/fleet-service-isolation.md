@@ -96,7 +96,7 @@ Each *built* tier is standing operational surface: the container tier adds image
 
 ## Prior art
 
-- **This repo:** ntfy is the native tier proven; `docker.nix` is dev-docker explicitly *not* a service substrate (so the container tier is genuinely new, not a rename); ADR-027 is the composition mechanism; ADR-032 the accrete discipline; ADR-034 the state boundary the stateful tier strikes; ADR-042 is the shape to emulate — a policy expressed as data, with an eval stance and a set≠enforced probe rung to follow.
+- **This repo:** ntfy is the native tier proven; `docker.nix` is dev-docker explicitly *not* a service substrate (so the container tier is genuinely new, not a rename); ADR-027 is the composition mechanism; ADR-032 the accrete discipline; ADR-034 the state boundary the stateful tier strikes; ADR-042 is the shape to emulate — a policy expressed as data, with an eval stance and a set ≠ enforced probe rung to follow.
 - **Industry:** the native-vs-OCI-vs-VM spectrum is the standard homelab decision; `virtualisation.oci-containers` is the idiomatic NixOS container-as-service, `microvm.nix`/`nixos-containers` the guest options (#555's territory). Home-Assistant-on-NixOS specifically is a well-known cadence-pain case — the native module chronically lags upstream and many run the container — which corroborates F4 and the cadence-promotion rule directly.
 
 ## Unresolved questions
@@ -110,5 +110,5 @@ Each *built* tier is standing operational surface: the container tier adds image
 ## Future possibilities
 
 - **The rule and its seams are the home for the deferred cluster:** #386 (first container-tier application), #555 (the guest seam's substrate), #563's fabric (which tier a remote builder / store server sits in), #565 charters (untrusted code → the guest seam). Where those services *run* is the sibling placement note's territory.
-- **An enforcement rung, ADR-042-shaped:** a stance asserting every hosted service declares its tier *and* the property that justifies it — a service silently at the wrong tier (a stateful one with no backup seam; untrusted code in a bare container) fails the check. The set≠enforced closure, once the model has real services to assert against.
+- **An enforcement rung, ADR-042-shaped:** a stance asserting every hosted service declares its tier *and* the property that justifies it — a service silently at the wrong tier (a stateful one with no backup seam; untrusted code in a bare container) fails the check. The set ≠ enforced closure, once the model has real services to assert against.
 - **The guest seam interacts with the former products question:** if #555 matures, a service the placement sibling would otherwise send toward its own box (short of hardware coupling) may instead land as a guest — but *where* anything in that former class runs is [fleet-service-placement.md](./fleet-service-placement.md)'s call (which dissolves the category, operator-endorsed 2026-08-11); the guest seam only changes *how isolated* a service is once placed.

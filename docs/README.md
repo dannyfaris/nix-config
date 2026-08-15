@@ -12,7 +12,7 @@ The companion to this directory is Claude Code's file-based auto-memory (`~/.cla
 
 - **[nix-config-prd.md](./nix-config-prd.md)** — the design document for the multi-host configuration: composition model (foundation + bundles + standalone modules), module organisation, the cross-platform contract, structural invariants, and bootstrap. The canonical specification of *what we're building and why*.
 
-- **[philosophy.md](./philosophy.md)** — the operating principles that shape every decision in this repo (tight from the start, declarative > imperative, whitelist > blanket, no premature abstraction, etc.) and the *why* behind each.
+- **[philosophy.md](./philosophy.md)** — the operating principles that shape every decision in this repo (tight from the start, declarative > imperative, whitelist > blanket, no premature abstraction, set ≠ enforced, etc.) and the *why* behind each.
 
 - **[workflow.md](./workflow.md)** — the process principles that shape how work moves through the repo (intent-first issue framing, doc-before-code for selections, peer-review staged diffs before commit, dependencies via linked issues, squash auto-merge, etc.) and the *why* behind each. Sibling to philosophy.md: philosophy is *what* we build; workflow is *how* we build it.
 

@@ -80,7 +80,7 @@ Each convention has a *why*: the constraint or experience that produced the rule
 
 ## Runtime claims are probe-verified
 
-**Rule.** A change asserting runtime, security, network-posture, or CI behaviour is done when that behaviour has been observed live, not when it merges. The probe is designed *before* the change lands: name in advance the observation that would falsify the claim, and the result that would abort rather than confirm it. The record then separates observation from projection, so an unverified assertion stays labelled as one, not promoted to fact. [CLAUDE.md](../CLAUDE.md) §"Claims about runtime behaviour need runtime verification" owns the rule and the set ≠ enforced gap it closes ([#303](https://github.com/dannyfaris/nix-config/issues/303)); this is the choreography that discharges it.
+**Rule.** A change asserting runtime, security, network-posture, or CI behaviour is done when that behaviour has been observed live, not when it merges. The probe is designed *before* the change lands: name in advance the observation that would falsify the claim, and the result that would abort rather than confirm it. The record then separates observation from projection, so an unverified assertion stays labelled as one, not promoted to fact. [philosophy.md](./philosophy.md) §"Set is not enforced" owns the rule and the set ≠ enforced gap it names ([#303](https://github.com/dannyfaris/nix-config/issues/303)); this is the choreography that discharges it.
 
 **Why.** Design review, implementation review, and adversarial verification all read the *declared* state; only a probe reads the enforced one. One CI campaign ran every change through all three; its probes still caught two defects all three had passed: a cheap-path pre-step that could not evaluate against its own cold store (#699), and a classifier whose diff basis froze at PR-creation time, so its short-circuit stopped firing once `main` advanced (#703). The same pass surfaced a third case — a documented per-run cache refresh that PR runs are structurally incapable of performing, so the declaration and the enforcement had to be re-scoped to match ([#702](https://github.com/dannyfaris/nix-config/issues/702)).
 
@@ -145,6 +145,18 @@ Each convention has a *why*: the constraint or experience that produced the rule
 - Peer-review verdicts (LAND vs FIX-THEN-LAND) are surfaced to the operator before the commit, not just included in the agent's summary.
 - Branch deletions with unique commits are paused for explicit confirmation even under "do a full cleanup" authorisation.
 - See also CLAUDE.md §"Deliberate stances" for the technical posture (no-mutable-users, key-only SSH, whitelist-not-blanket) that pairs with these process stances.
+
+## Implement only what was asked
+
+**Rule.** [CLAUDE.md](../CLAUDE.md) §"Scope discipline — implement only what was asked" states the rule and enumerates what does not ride along; this section is the procedure that holds a change to that bound.
+
+**Why.** Unrequested scope makes a diff unreviewable at its real boundary: the reviewer cannot tell the requested change from the drive-by, so the requested change gets diluted scrutiny and the drive-by gets none. See [philosophy.md](./philosophy.md) §"Whitelist over blanket" for the principle this applies.
+
+**How it shows up.**
+
+- "While I was in that module I added an `enable` flag — you'll want it eventually" → the flag comes back out of the diff and goes into prose as a proposal; it lands the day a host actually wants to disable something, on its own request.
+- Doc touches obey the same bound: a doc is edited because the change requires it, not because a nearby paragraph could be improved while passing through.
+- At review an unrequested addition is a FIX-THEN-LAND finding, not a bonus: the drive-by comes out and the requested change is re-read on its own, because a reviewer splitting attention across two changes gave neither a full read the first time.
 
 ## Propose order; don't multi-question
 
