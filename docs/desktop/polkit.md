@@ -50,7 +50,9 @@ The issue framed this as "nothing surfaces a graphical authentication prompt." T
 
 **No home-manager module for mate-polkit.** Unlike `services.polkit-gnome`, the unit is hand-rolled. The `services.polkit-gnome` module is the canonical pattern to copy for the `graphical-session.target` wiring.
 
-**Theme/font changes need an agent restart — wired via `X-Restart-Triggers`.** mate-polkit reads its GTK font and base16 colours only at startup, and a `gtk.font` or palette change rewrites the GTK config files (`gtk-3.0/settings.ini`, `gtk-3.0/gtk.css`) without touching the agent's unit — so `nh os switch` wouldn't restart it, leaving the auth dialog on its old font/colours until the next login. The unit therefore lists both rendered GTK config files as `X-Restart-Triggers`: a content change flips the unit hash, and sd-switch restarts the agent during activation. Restarting the stateless agent is cheap — same pattern as fnott (#350, `home/nixos/fnott.nix`).
+**Font changes need an agent restart — wired via `X-Restart-Triggers`.** mate-polkit reads its GTK font and colours only at startup, and a `gtk.font` change rewrites `gtk-3.0/settings.ini` without touching the agent's unit — so `nh os switch` wouldn't restart it, leaving the auth dialog on its old font until the next login. The unit therefore lists the rendered GTK config as `X-Restart-Triggers`: a content change flips the unit hash, and sd-switch restarts the agent during activation. Restarting the stateless agent is cheap — same pattern as fnott (#350, `home/nixos/fnott.nix`).
+
+The unit's second trigger, on `gtk-3.0/gtk.css`, is vestigial as of #874: home-manager no longer writes that path at all (Noctalia owns it — ADR-048 §History), so the entry still evaluates and still moves when the declared Stylix palette changes, but it no longer tracks anything that lands on disk. GTK colour staleness after a switch is governed by Noctalia's own resolve timing now, not by this restart — see `docs/desktop/noctalia.md` §Theming.
 
 ## References
 
