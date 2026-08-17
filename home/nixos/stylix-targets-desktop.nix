@@ -69,17 +69,15 @@ in
 
     # GTK colours come from Noctalia's own gtk3/gtk4 builtin templates now
     # (ADR-048, reversing ADR-044/#609's conductor-owned @import for Linux —
-    # #819 Epic G). No declared extraCss seam: gtk's apply.sh takes a
-    # different ownership path than foot/niri's pre-declared-include pattern
-    # — it detects this target's HM-owned read-only gtk.css symlink at
-    # activation and materializes it into a plain, writable file with its
-    # own @import appended, idempotently on every re-run (G3 spike,
-    # source-confirmed and on-metal-tested; docs/design/
-    # noctalia-theming-delegation.md §De-risk). The Stylix gtk target stays
-    # enabled for settings.ini (adw-gtk3 + font) only — its own @define-color
-    # write is a transient base until Noctalia's first theme resolve
-    # overwrites the file (see docs/desktop/noctalia.md §Sharp edges for the
-    # window between `nh os switch` and that first resolve).
+    # #819 Epic G); the target is retained for settings.ini (adw-gtk3 + font).
+  };
+
+  # The target has no per-file gate, so gtk.css is switched off here instead —
+  # Noctalia creates and owns it, and HM declaring it only bought a backup
+  # collision that wedged activation (#874, ADR-048 §History).
+  xdg.configFile = lib.mkIf desktopSession {
+    "gtk-3.0/gtk.css".enable = false;
+    "gtk-4.0/gtk.css".enable = false;
   };
 
   # GTK app-UI (the polkit prompt, file pickers, app dialogs) rides the `Sans`
