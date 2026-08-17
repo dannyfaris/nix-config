@@ -138,9 +138,15 @@ in
     # lib/display-profiles.nix.
     outputs."DP-1".scale = profile.scale;
 
-    # Noctalia Shell v5 — spawned at session start (ADR-036; #644). getExe
-    # pins the store path, so session start doesn't depend on PATH ordering.
-    spawn-at-startup = [ { command = [ (lib.getExe config.programs.noctalia.package) ]; } ];
+    # Noctalia Shell v5 — spawned at session start (ADR-036; #644) THROUGH
+    # the pre-spawn authoritative-key reconcile (home/nixos/noctalia.nix's
+    # noctalia.guardedLaunch — design note docs/design/
+    # noctalia-config-surface-overlap.md, ruling 2-bis): the wrapper corrects
+    # the sidecar before the process exists, then execs the shell. Never
+    # spawn the bare binary here, or the guard silently stops running.
+    # getExe pins the store path, so session start doesn't depend on PATH
+    # ordering.
+    spawn-at-startup = [ { command = [ (lib.getExe config.noctalia.guardedLaunch) ]; } ];
 
     # Input — pointer focus, plus compositor-layer keyboard + mouse ergonomics
     # (#107). Device-layer DPI/buttons/onboard profiles live on the G502
