@@ -221,161 +221,398 @@ let
       sleep 0.3
     '';
   };
+
+  # Authoritative-key manifest — single source for both guards (design note
+  # §Design, F6). Parsed here for the reconcile; read verbatim by
+  # scripts/noctalia-config-audit.sh.
+  authoritativeEntries =
+    let
+      lines = builtins.filter (l: l != "" && !lib.hasPrefix "#" l) (
+        lib.splitString "\n" (builtins.readFile ./noctalia-authoritative-keys.conf)
+      );
+      # Fail EVAL, not silently drop, on a malformed entry — the audit
+      # rejects the same line loudly at runtime, and the two consumers of
+      # the single source must agree on validity (stage-6 finding 11).
+      bad = builtins.filter (l: !(lib.hasPrefix "table " l || lib.hasPrefix "leaf " l)) lines;
+    in
+    if bad == [ ] then
+      lines
+    else
+      throw "noctalia-authoritative-keys.conf: unrecognised entry: ${builtins.head bad}";
+  authoritativeTables = map (l: builtins.elemAt (lib.splitString " " l) 1) (
+    builtins.filter (l: lib.hasPrefix "table " l) authoritativeEntries
+  );
+  authoritativeLeafs = map (
+    l:
+    let
+      parts = lib.splitString " " l;
+    in
+    "${builtins.elemAt parts 1}:${builtins.elemAt parts 2}"
+  ) (builtins.filter (l: lib.hasPrefix "leaf " l) authoritativeEntries);
+
+  # Pre-spawn reconcile — the authoritative-key guard (design note §Design,
+  # ruling 2-bis). Runs BEFORE the noctalia process exists, then execs it:
+  # ConfigService's constructor reads the corrected sidecar at startup, so
+  # there is no watcher, no hot-reload, and no echo-drain filter anywhere in
+  # the path (the hooks.started slot was disqualified on exactly those —
+  # design note §De-risk, gate i/iv). Failure direction is ALWAYS "the shell
+  # starts": every guard failure logs and falls through to exec. The
+  # structural post-check, not TOML parse validity, is the safety gate —
+  # parse-valid output can still have silently eaten an unrelated table
+  # (gate ii's trailing-comment counterexample); any removed line that is
+  # not a target header, a key line, or a blank aborts the swap and leaves
+  # the sidecar untouched. Self-logging is mandatory: nothing else reports
+  # for a pre-spawn wrapper (#303 — no silent success).
+  guardedLaunch = pkgs.writeShellApplication {
+    name = "noctalia-guarded-launch";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gawk
+      pkgs.gnugrep
+      pkgs.diffutils
+      noctaliaPkg
+    ];
+    text = ''
+      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/noctalia"
+      sidecar="$state_dir/settings.toml"
+      log_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/noctalia-reconcile"
+      mkdir -p "$log_dir" 2>/dev/null || true
+      # log must never be the thing that breaks session start (disk-full,
+      # read-only state dir): best-effort, swallowing its own failure.
+      log() { printf '%s %s\n' "$(date -Is)" "$1" >>"$log_dir/reconcile.log" 2>/dev/null || true; }
+
+      # The same awk pass detects (out=/dev/null) and rewrites. A region
+      # terminates at ANY line whose first non-space char is '[' — deliberately
+      # looser than an exact-header match, so a header carrying a trailing
+      # comment ends the region instead of being swallowed into it (the
+      # gate-ii failure mode). CR is stripped before matching so CRLF files
+      # cannot silently no-op.
+      # shellcheck disable=SC2016 # single quotes are the point: awk -v vars, no shell expansion
+      strip_awk='
+        BEGIN {
+          nt = split(tables, T, " ");
+          nl = split(leafs, L, " ");
+          for (i = 1; i <= nl; i++) { split(L[i], a, ":"); LP[a[1]] = a[2]; }
+        }
+        {
+          line = $0; sub(/\r$/, "", line);
+          t = line; gsub(/^[ \t]+/, "", t); gsub(/[ \t]+$/, "", t);
+          if (t ~ /^\[/) {
+            region = "";
+            for (i = 1; i <= nt; i++) if (t == "[" T[i] "]") region = "DROP";
+            for (p in LP) if (t == "[" p "]") region = "LEAF:" p;
+          }
+          if (region == "DROP") { print line >> removed; next }
+          if (region ~ /^LEAF:/) {
+            p = substr(region, 6);
+            if (t ~ "^" LP[p] "[ \t]*=") { print line >> removed; next }
+          }
+          print $0 >> out
+        }'
+
+      run_strip() { # $1=input $2=out $3=removed
+        : >"$2"
+        : >"$3"
+        awk -v tables=${lib.escapeShellArg (toString authoritativeTables)} \
+          -v leafs=${lib.escapeShellArg (toString authoritativeLeafs)} \
+          -v out="$2" -v removed="$3" "$strip_awk" "$1"
+      }
+
+      # The reconcile body NEVER execs and returns nonzero on any refusal.
+      # It is called as `reconcile || true` below so that errexit is
+      # suppressed inside it (bash: set -e is inert in a `||` context) and a
+      # failure ANYWHERE — guarded or not — still reaches the unconditional
+      # `exec noctalia` at the bottom. Failure direction is "the shell
+      # starts", always: this wrapper gates session start, and a broken
+      # guard must never mean a broken desktop. Because errexit is inert
+      # inside, every step that must stop the reconcile carries an explicit
+      # `|| return`.
+      reconcile() {
+        if [ ! -f "$sidecar" ]; then
+          log "clean: no sidecar"
+          return 0
+        fi
+
+        work="$(mktemp -d)" || {
+          log "FLAG: mktemp failed — sidecar untouched"
+          return 1
+        }
+
+        run_strip "$sidecar" "$work/candidate" "$work/removed" || {
+          log "FLAG: awk pass errored — sidecar untouched; run scripts/noctalia-config-audit.sh"
+          return 1
+        }
+
+        if [ ! -s "$work/removed" ]; then
+          log "clean: no authoritative keys in sidecar"
+          return 0
+        fi
+
+        # Structural post-check 1 — every removed line is a target-table
+        # header (checked against the manifest-derived list, never
+        # hardcoded), a plain key line, or blank. Any other shape (an
+        # unrelated table header swallowed into a region) refuses the swap.
+        target_tables=${lib.escapeShellArg (toString authoritativeTables)}
+        while IFS= read -r raw; do
+          t="''${raw#"''${raw%%[![:space:]]*}"}"
+          case "$t" in
+            "") continue ;;
+            "["*)
+              ok=0
+              for tt in $target_tables; do
+                [ "$t" = "[$tt]" ] && ok=1
+              done
+              if [ "$ok" -ne 1 ]; then
+                log "FLAG: post-check refused — removed line looks like a foreign header: $t"
+                return 1
+              fi
+              ;;
+            *"="*) continue ;;
+            *)
+              log "FLAG: post-check refused — unrecognised removed line: $t"
+              return 1
+              ;;
+          esac
+        done <"$work/removed"
+
+        # Structural post-check 2 — the rewrite added nothing. diff exits 1
+        # whenever the files differ (they always will here) — neutralised so
+        # the pipeline reports the count, not a failure.
+        additions="$( (diff "$sidecar" "$work/candidate" || true) | { grep -c '^>' || true; })"
+        if [ "$additions" -ne 0 ]; then
+          log "FLAG: post-check refused — rewrite added $additions line(s); sidecar untouched"
+          return 1
+        fi
+
+        # Structural post-check 3 — no target survives in the candidate.
+        run_strip "$work/candidate" /dev/null "$work/recheck" || true
+        if [ -s "$work/recheck" ]; then
+          log "FLAG: post-check refused — targets survive the rewrite; sidecar untouched"
+          return 1
+        fi
+
+        backup="$sidecar.pre-reconcile.$(date +%Y%m%dT%H%M%S)" || return 1
+        cp "$sidecar" "$backup" || {
+          log "FLAG: backup failed — sidecar untouched"
+          return 1
+        }
+        # Same-filesystem staging file so the final mv is an atomic
+        # rename(2), never a cross-device copy-then-unlink: a power cut
+        # mid-copy would leave a truncated sidecar, and a parse failure
+        # wipes ALL overrides at next load (stage-6 finding 3; upstream
+        # itself writes this file atomically). Non-.toml dotfile name —
+        # inert to the loader, which reads exactly settings.toml.
+        staged="$state_dir/.settings.reconcile-staged.$$"
+        cp "$work/candidate" "$staged" || {
+          log "FLAG: staging copy failed — sidecar untouched"
+          rm -f "$staged"
+          return 1
+        }
+        if mv "$staged" "$sidecar"; then
+          log "reconciled: removed $(wc -l <"$work/removed") line(s); backup at $backup"
+        else
+          log "FLAG: swap failed after backup — sidecar state uncertain, inspect $backup"
+          rm -f "$staged"
+          return 1
+        fi
+      }
+
+      # Residual-mention check — flag-only, never removes (stage-6
+      # finding 5): a hand-edited shape (e.g. a target header carrying a
+      # trailing comment) can evade the strip while remaining live in the
+      # merged config. grep -F per target table over the final state; a hit
+      # after reconcile means the guard could not enforce and someone
+      # should run the audit.
+      flag_residuals() {
+        [ -f "$sidecar" ] || return 0
+        # shellcheck disable=SC2043 # single-word today; the list is manifest-derived and grows with it
+        for tt in ${lib.escapeShellArg (toString authoritativeTables)}; do
+          if grep -qF "$tt" "$sidecar"; then
+            log "FLAG: residual mention of authoritative '$tt' survives in the sidecar (hand-edited shape?) — run scripts/noctalia-config-audit.sh"
+          fi
+        done
+      }
+
+      work=""
+      trap '[ -n "$work" ] && rm -rf "$work"' EXIT
+      reconcile || true
+      flag_residuals || true
+      # The EXIT trap does not survive a successful exec (stage-6
+      # finding 4) — clean up explicitly; the trap remains as the
+      # exec-failure backstop. if-form, not &&: a failing && list at top
+      # level would trip errexit and kill the wrapper before exec.
+      if [ -n "$work" ]; then rm -rf "$work" || true; fi
+      exec noctalia
+    '';
+  };
 in
 {
   imports = [ inputs.noctalia.homeModules.default ];
 
-  programs.noctalia = {
-    enable = true;
-    package = noctaliaPkg;
+  # Cross-module seam (same idiom as home/darwin/dark-mode-notify.nix):
+  # niri's spawn-at-startup launches the shell THROUGH the reconcile wrapper,
+  # store-pinned via getExe — never the bare binary, or the authoritative-key
+  # guard silently stops running.
+  options.noctalia.guardedLaunch = lib.mkOption {
+    type = lib.types.package;
+    readOnly = true;
+    description = "Pre-spawn reconcile wrapper around the noctalia binary (design note §Design).";
+  };
+  config = {
+    noctalia.guardedLaunch = guardedLaunch;
 
-    settings = {
-      # Skip the first-run wizard: its guided theme selection would persist
-      # theme.* overrides into settings.toml on day one — the exact shadowing
-      # channel the palette seam is designed to keep empty (probe C2).
-      shell.setup_wizard_enabled = false;
+    programs.noctalia = {
+      enable = true;
+      package = noctaliaPkg;
 
-      theme = {
-        # NO theme keys — no source, no custom_palette, no mode (ADR-048,
-        # reversing ADR-044's Linux authority; #819). Declaring any of these
-        # would keep a config.toml-vs-settings.toml two-writer seam alive;
-        # declaring nothing makes Noctalia's own runtime overrides the sole
-        # writer, by construction. A fresh host renders Noctalia's own
-        # defaults — the first runtime pick (builtin/community/wallpaper, in
-        # Noctalia's own UI) just works and persists.
-        templates = {
-          # Builtin template whitelist — EXACTLY these four ids, whitelist-
-          # form (never blanket, CLAUDE.md stance). starship and btop are
-          # deliberately excluded: the G3 spike's starship incident found
-          # both tools' builtin apply.sh run `sed -i` against the discovered
-          # config path with no read-only awareness, materializing a plain
-          # file over our HM-owned symlink (docs/design/
-          # noctalia-theming-delegation.md §De-risk, "the starship
-          # incident") — starship's constructive route is a future
-          # user-template with an explicit output_path, not this builtin;
-          # btop shares the hazard class. helix and the remaining community
-          # ids are deferred post-cutover (design note §Unresolved
-          # questions). Qt has no target on this desktop (#103) and stays
-          # out.
-          enable_builtin_templates = true;
-          builtin_ids = [
-            "foot"
-            "gtk3"
-            "gtk4"
-            "niri"
-          ];
+      settings = {
+        # Skip the first-run wizard: its guided theme selection would persist
+        # theme.* overrides into settings.toml on day one — the exact shadowing
+        # channel the palette seam is designed to keep empty (probe C2).
+        shell.setup_wizard_enabled = false;
 
-          # Community TEMPLATES stay off at cutover — a separate, unreviewed
-          # trust surface (arbitrary apply.sh via /bin/sh -lc, no
-          # sandboxing) staged for after cutover per-tool acceptance
-          # testing. Community PALETTES need no enablement here at all and
-          # are part of the UX regardless — they're picked in Noctalia's own
-          # UI, orthogonal to this template whitelist (design note §Design).
-          enable_community_templates = false;
-        };
-      };
+        theme = {
+          # NO theme keys — no source, no custom_palette, no mode (ADR-048,
+          # reversing ADR-044's Linux authority; #819). Declaring any of these
+          # would keep a config.toml-vs-settings.toml two-writer seam alive;
+          # declaring nothing makes Noctalia's own runtime overrides the sole
+          # writer, by construction. A fresh host renders Noctalia's own
+          # defaults — the first runtime pick (builtin/community/wallpaper, in
+          # Noctalia's own UI) just works and persists.
+          templates = {
+            # Builtin template whitelist — EXACTLY these four ids, whitelist-
+            # form (never blanket, CLAUDE.md stance). starship and btop are
+            # deliberately excluded: the G3 spike's starship incident found
+            # both tools' builtin apply.sh run `sed -i` against the discovered
+            # config path with no read-only awareness, materializing a plain
+            # file over our HM-owned symlink (docs/design/
+            # noctalia-theming-delegation.md §De-risk, "the starship
+            # incident") — starship's constructive route is a future
+            # user-template with an explicit output_path, not this builtin;
+            # btop shares the hazard class. helix and the remaining community
+            # ids are deferred post-cutover (design note §Unresolved
+            # questions). Qt has no target on this desktop (#103) and stays
+            # out.
+            enable_builtin_templates = true;
+            builtin_ids = [
+              "foot"
+              "gtk3"
+              "gtk4"
+              "niri"
+            ];
 
-      # `colors_changed` — fires after every template finishes writing; the
-      # sole remaining Nix-declared theming hook (the `started` polarity
-      # reconcile and the whole conductor it served are deleted). See
-      # repaintHook above.
-      hooks.colors_changed = lib.getExe repaintHook;
-
-      idle = {
-        # Nobody is at the desk when idle actions fire; the fade overlay
-        # countdown is noise.
-        pre_action_fade_seconds = 0;
-
-        behavior = {
-          lock = {
-            enabled = true;
-            timeout = 600;
-            action = "lock";
-          };
-          screen-off = {
-            enabled = true;
-            timeout = 660;
-            action = "screen_off";
-          };
-          # Guarded suspend (stance change, #644). Per-host flag: off by
-          # default fleet-wide, the desktop hosts opt in. `action` strings
-          # are NOT schema-validated (a typo silently becomes command mode)
-          # — keep these exact.
-          suspend = {
-            enabled = hostContext.idleSuspend;
-            timeout = 1800;
-            action = "command";
-            command = lib.getExe idleGuard;
+            # Community TEMPLATES stay off at cutover — a separate, unreviewed
+            # trust surface (arbitrary apply.sh via /bin/sh -lc, no
+            # sandboxing) staged for after cutover per-tool acceptance
+            # testing. Community PALETTES need no enablement here at all and
+            # are part of the UX regardless — they're picked in Noctalia's own
+            # UI, orthogonal to this template whitelist (design note §Design).
+            enable_community_templates = false;
           };
         };
+
+        # `colors_changed` — fires after every template finishes writing; the
+        # sole remaining Nix-declared theming hook (the `started` polarity
+        # reconcile and the whole conductor it served are deleted). See
+        # repaintHook above.
+        hooks.colors_changed = lib.getExe repaintHook;
+
+        idle = {
+          # Nobody is at the desk when idle actions fire; the fade overlay
+          # countdown is noise.
+          pre_action_fade_seconds = 0;
+
+          behavior = {
+            lock = {
+              enabled = true;
+              timeout = 600;
+              action = "lock";
+            };
+            screen-off = {
+              enabled = true;
+              timeout = 660;
+              action = "screen_off";
+            };
+            # Guarded suspend (stance change, #644). Per-host flag: off by
+            # default fleet-wide, the desktop hosts opt in. `action` strings
+            # are NOT schema-validated (a typo silently becomes command mode)
+            # — keep these exact.
+            suspend = {
+              enabled = hostContext.idleSuspend;
+              timeout = 1800;
+              action = "command";
+              command = lib.getExe idleGuard;
+            };
+          };
+        };
       };
     };
-  };
 
-  # Lock before ANY suspend path (idle-fired, `systemctl suspend`, future
-  # power-key) — the user-level half of the systemd-lock-handler bridge
-  # (modules/nixos/lock-before-sleep.nix). Restores the guarantee the v4
-  # gap relaxed, proven by probe S5's journal ordering.
-  systemd.user.services.noctalia-lock-on-sleep = {
-    Unit = {
-      Description = "Engage the Noctalia lock before suspend";
-      Before = [ "sleep.target" ];
+    # Lock before ANY suspend path (idle-fired, `systemctl suspend`, future
+    # power-key) — the user-level half of the systemd-lock-handler bridge
+    # (modules/nixos/lock-before-sleep.nix). Restores the guarantee the v4
+    # gap relaxed, proven by probe S5's journal ordering.
+    systemd.user.services.noctalia-lock-on-sleep = {
+      Unit = {
+        Description = "Engage the Noctalia lock before suspend";
+        Before = [ "sleep.target" ];
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = lib.getExe lockOnSleep;
+      };
+      Install.WantedBy = [ "sleep.target" ];
     };
-    Service = {
-      Type = "oneshot";
-      ExecStart = lib.getExe lockOnSleep;
-    };
-    Install.WantedBy = [ "sleep.target" ];
-  };
 
-  # notify-send (libnotify) — the CLI for emitting test notifications to
-  # Noctalia, which owns org.freedesktop.Notifications (v5 default; it
-  # throws if another daemon holds the name — fnott was decommissioned in
-  # #385, so the name is free).
-  #
-  # wl-clipboard (wl-copy/wl-paste) — CLI clipboard access on the session
-  # PATH. v5's clipboard is a native wlr-data-control implementation (no
-  # cliphist, no wl-clipboard in its tree), so this exists purely for
-  # non-OSC-52 CLI consumers that shell out to wl-copy (gh-dash's `y`,
-  # scripts). See docs/desktop/clipboard.md (#360).
-  home.packages = [
-    pkgs.libnotify
-    pkgs.wl-clipboard
-  ];
+    # notify-send (libnotify) — the CLI for emitting test notifications to
+    # Noctalia, which owns org.freedesktop.Notifications (v5 default; it
+    # throws if another daemon holds the name — fnott was decommissioned in
+    # #385, so the name is free).
+    #
+    # wl-clipboard (wl-copy/wl-paste) — CLI clipboard access on the session
+    # PATH. v5's clipboard is a native wlr-data-control implementation (no
+    # cliphist, no wl-clipboard in its tree), so this exists purely for
+    # non-OSC-52 CLI consumers that shell out to wl-copy (gh-dash's `y`,
+    # scripts). See docs/desktop/clipboard.md (#360).
+    home.packages = [
+      pkgs.libnotify
+      pkgs.wl-clipboard
+    ];
 
-  home.activation = {
-    # One-time cleanup of the retired ADR-044 conductor's consumer-side
-    # symlinks (#819 G5 cutover, home/nixos/theme-menu.nix deleted). Dangling
-    # once the conductor is gone — harmless if left, but confusing residue,
-    # and the palette-symlink path in particular sat where a GUI palette-save
-    # writer could otherwise collide with it (docs/research/
-    # noctalia-v5-palette-seam-review.md B2). Only ever removes a symlink,
-    # never a plain file — a plain file at one of these paths means something
-    # else has claimed it, and this must not touch it.
-    themeMenuResidueCleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      for f in \
-        "$HOME/.config/noctalia/palettes/theme-menu.json" \
-        "$HOME/.config/gtk-3.0/theme-menu.css" \
-        "$HOME/.config/gtk-4.0/theme-menu.css"
-      do
-        if [ -L "$f" ]; then
-          $DRY_RUN_CMD rm -f "$f"
+    home.activation = {
+      # One-time cleanup of the retired ADR-044 conductor's consumer-side
+      # symlinks (#819 G5 cutover, home/nixos/theme-menu.nix deleted). Dangling
+      # once the conductor is gone — harmless if left, but confusing residue,
+      # and the palette-symlink path in particular sat where a GUI palette-save
+      # writer could otherwise collide with it (docs/research/
+      # noctalia-v5-palette-seam-review.md B2). Only ever removes a symlink,
+      # never a plain file — a plain file at one of these paths means something
+      # else has claimed it, and this must not touch it.
+      themeMenuResidueCleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        for f in \
+          "$HOME/.config/noctalia/palettes/theme-menu.json" \
+          "$HOME/.config/gtk-3.0/theme-menu.css" \
+          "$HOME/.config/gtk-4.0/theme-menu.css"
+        do
+          if [ -L "$f" ]; then
+            $DRY_RUN_CMD rm -f "$f"
+          fi
+        done
+      '';
+
+      # Seed-if-absent: foot's include of the Noctalia-written theme file is
+      # fatal while the file doesn't exist (activation → first theme resolve),
+      # so new terminals would fail to launch in that window. An empty, writable
+      # placeholder closes it; Noctalia overwrites the plain file at first
+      # resolve. Seeds only when absent — a live theme file is never touched
+      # (operator ruling, #824).
+      noctaliaFootThemeSeed = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        footTheme="$HOME/.config/foot/themes/noctalia"
+        if [ ! -e "$footTheme" ] && [ ! -L "$footTheme" ]; then
+          $DRY_RUN_CMD mkdir -p "$(dirname "$footTheme")"
+          $DRY_RUN_CMD touch "$footTheme"
         fi
-      done
-    '';
-
-    # Seed-if-absent: foot's include of the Noctalia-written theme file is
-    # fatal while the file doesn't exist (activation → first theme resolve),
-    # so new terminals would fail to launch in that window. An empty, writable
-    # placeholder closes it; Noctalia overwrites the plain file at first
-    # resolve. Seeds only when absent — a live theme file is never touched
-    # (operator ruling, #824).
-    noctaliaFootThemeSeed = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      footTheme="$HOME/.config/foot/themes/noctalia"
-      if [ ! -e "$footTheme" ] && [ ! -L "$footTheme" ]; then
-        $DRY_RUN_CMD mkdir -p "$(dirname "$footTheme")"
-        $DRY_RUN_CMD touch "$footTheme"
-      fi
-    '';
+      '';
+    };
   };
 }
