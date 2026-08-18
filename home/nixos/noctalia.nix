@@ -377,8 +377,14 @@ let
 
         # Structural post-check 2 — the rewrite added nothing. diff exits 1
         # whenever the files differ (they always will here) — neutralised so
-        # the pipeline reports the count, not a failure.
-        additions="$( (diff "$sidecar" "$work/candidate" || true) | { grep -c '^>' || true; })"
+        # the pipeline reports the count, not a failure. Both sides are
+        # EOF-newline-normalised first (`awk 1` re-emits every line, adding
+        # a trailing newline only if missing): upstream's serializer ends
+        # the sidecar WITHOUT a trailing newline while the rewrite always
+        # emits one, so an unnormalised diff counts the final kept line as
+        # an addition and false-positive-refuses (design note §De-risk,
+        # first on-metal run).
+        additions="$( (diff <(awk 1 "$sidecar") <(awk 1 "$work/candidate") || true) | { grep -c '^>' || true; })"
         if [ "$additions" -ne 0 ]; then
           log "FLAG: post-check refused — rewrite added $additions line(s); sidecar untouched"
           return 1
