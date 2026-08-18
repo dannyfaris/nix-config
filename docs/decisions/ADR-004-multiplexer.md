@@ -11,6 +11,8 @@ status: Accepted
 
 > **Revision (2026-06-05):** stale module paths in this ADR were swept to the current flat layout (`home/core/…` → `home/…`, `modules/core/…` → `modules/…`) per [ADR-026](./ADR-026-drop-core-tier-prefix.md), which dropped the `core/` tier prefix. Navigability fix only — the decision recorded here is unchanged.
 
+> **Amendment (2026-08-18):** herdr 0.8.0 has landed fleet-wide as an installed tool ([#814](https://github.com/dannyfaris/nix-config/issues/814)), its UI on the ADR-041 terminal-ANSI bus; the Decision above (zellij is the multiplexer) is unchanged, and the live zellij-vs-herdr comparison is tracked in [#846](https://github.com/dannyfaris/nix-config/issues/846).
+
 ## Context
 
 A terminal multiplexer is non-optional for headless development over SSH. It provides:
