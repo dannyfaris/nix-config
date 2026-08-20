@@ -1,15 +1,14 @@
-# theme-families — the fleet-wide catalogue of named theme families, and
-# each host's boot default. Looked up through lib/palette-for.nix (#541);
-# an unknown host or an undeclared family/polarity fails loudly at eval.
+# theme-families — the catalogue of named theme families, and each
+# Stylix-carrying host's boot default. Looked up through lib/palette-for.nix
+# (#541); an unknown host or an undeclared family/polarity fails loudly at
+# eval. Darwin-only in practice since #885 — see `defaults` below.
 #
 # A family is a paired dark/light base16 scheme couplet from the same
 # upstream theme, plus optional per-polarity slot corrections. Both
-# polarities are mandatory: a first-class runtime gesture on Darwin (the
-# ADR-044 conductor) and the one-shot Stylix boot default on Linux
-# (ADR-048, #825) — kept paired so the catalogue stays platform-agnostic
-# either way. A family missing its light
-# half would break Darwin's flip while that theme is active. Downstream
-# pre-baking of both halves per entry fails the build loudly on any gap.
+# polarities are mandatory: the flip is a first-class runtime gesture on
+# Darwin (the ADR-044 conductor), so a family missing its light half would
+# break that flip while the theme is active. Downstream pre-baking of both
+# halves per entry fails the build loudly on any gap.
 #
 #   - schemes.dark / schemes.light — base16 yaml filenames under
 #     ${pkgs.base16-schemes}/share/themes/<name>.yaml.
@@ -21,12 +20,11 @@
 #     palette. See ADR-028 §History (2026-06-10, #331).
 #
 # Host-identity theming is retired (operator call, 2026-07-13): the
-# catalogue is global, every desktop host offers all of it at runtime,
+# catalogue is global, the ADR-044 conductor offers all of it at runtime,
 # and a host's `defaults` entry is a boot default only — what a fresh
 # build/reprovision renders before the user's first runtime selection
-# (the reproducibility force in both theming design notes). The fuller
-# rationale lands with #609's authority ADR. The catalogue grows
-# deliberately, whitelist-style, under #605/#609.
+# (the reproducibility force in both theming design notes). The catalogue
+# grows deliberately, whitelist-style, under #605/#609.
 #
 # Family attr keys are stable public identifiers (menu entries, wallpaper
 # association, future UI) — named for keeps.
@@ -96,29 +94,15 @@
   # dark/light signal (Stylix's third value "either" is intentionally
   # not used — leaving polarity unset is precisely the bug #123 fixed).
   #
-  # Post-#819 (ADR-048, Linux theming delegated to Noctalia's native
-  # engine): alcyone/alnair/electra's entries are Stylix BOOT-DEFAULT
-  # palette inputs ONLY — consumed solely via modules/nixos/stylix-palette.nix's
-  # `.select .polarity` (the base16Scheme a fresh build/reprovision renders
-  # before any runtime theme pick), never via the whole-catalogue `.menu`
-  # (lib/scheme-pair.nix), which is Darwin-only in practice now — no Linux
-  # consumer reads it. celaeno's entry remains fully load-bearing on both
-  # axes for the Darwin conductor (home/darwin/theme-menu.nix, unchanged).
+  # Darwin-only since #885: the NixOS hosts' entries were Stylix
+  # boot-default palette inputs, and with Stylix off the Linux side there
+  # is nothing left to feed — Linux colour is Noctalia's, at runtime, from
+  # its own catalogue (ADR-048). Re-declaring a Linux host here buys a host
+  # a lookup nothing performs; the loud missing-host throw in
+  # lib/palette-for.nix is the guard that says so.
   #
-  # New hosts get their boot-default entry here at bring-up.
+  # New *Darwin* hosts get their boot-default entry here at bring-up.
   defaults = {
-    alcyone = {
-      family = "tokyo-night";
-      polarity = "dark";
-    };
-    alnair = {
-      family = "solarized";
-      polarity = "dark";
-    };
-    electra = {
-      family = "catppuccin";
-      polarity = "dark";
-    };
     celaeno = {
       family = "gruvbox";
       polarity = "dark";

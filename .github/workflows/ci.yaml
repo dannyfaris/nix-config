@@ -138,8 +138,10 @@ jobs:
           run_checks() {
             if [ "$CODE" = "false" ]; then
               # No `nix flake check --no-build` pre-step: host eval reads a
-              # base16-schemes store path (Stylix's palette engine) that this
-              # cold-store leg must realise. See docs/ci.md §Docs-only.
+              # base16-schemes store path (Stylix's palette engine — Darwin-only
+              # since #885) that this cold-store leg must realise, and the
+              # pre-step would run on both matrix legs. See docs/ci.md
+              # §Docs-only.
               nix build --no-link --print-build-logs '.#checks-without-hosts'
             else
               nix flake check --print-build-logs

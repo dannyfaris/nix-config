@@ -1,9 +1,10 @@
 # palette-for — one host's theme-family selection semantics, single-sourced
-# for its consumers (#541): the stylix-palette twins read the ACTIVE
-# polarity's scheme + override; lib/scheme-pair.nix resolves the boot
+# for its consumers (#541): modules/darwin/stylix-palette.nix reads the
+# ACTIVE polarity's scheme + override; lib/scheme-pair.nix resolves the boot
 # default AND the whole catalogue (menu), pre-baked for runtime theme
 # switching; home/darwin/wallpapers.nix reads the default couplet's
-# scheme names to key its pools.
+# scheme names to key its pools. All Darwin since #885 dropped the NixOS
+# stylix-palette twin.
 #
 # The catalogue is global and hosts carry boot defaults only — this file
 # resolves defaults.<host>.family through families.<name> in
@@ -35,9 +36,9 @@ let
     };
 in
 {
-  # The host's boot-default polarity — selects the active scheme in the
-  # stylix-palette twins and passes through to stylix.polarity for the
-  # cross-app dark/light signal.
+  # The host's boot-default polarity — selects the active scheme in
+  # modules/darwin/stylix-palette.nix and passes through to stylix.polarity
+  # for the cross-app dark/light signal.
   inherit (default) polarity;
 
   # The boot-default family name — the menu entry consumers fall back to

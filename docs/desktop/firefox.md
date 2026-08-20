@@ -87,7 +87,7 @@ default text/html` returns `firefox.desktop`. The six entries above cover the UR
 ## References
 
 - [`home/nixos/firefox.nix`](../../home/nixos/firefox.nix) — the HM module enabling Firefox + `xdg.mimeApps` registration.
-- [`home/nixos/stylix-targets-desktop.nix`](../../home/nixos/stylix-targets-desktop.nix) — where the now-dropped `firefox` Stylix target used to live (G6, #825).
+- `home/nixos/stylix-targets-desktop.nix` — where the now-dropped `firefox` Stylix target used to live (G6, #825). The file itself was deleted with the rest of the NixOS Stylix wiring (#885, ADR-028 §History).
 - [`home/nixos/bundles/desktop-env.nix`](../../home/nixos/bundles/desktop-env.nix) — bundle import.
 - [fonts.md](./fonts.md) — the fontconfig conductor Firefox does not follow.
 - Firefox upstream — https://www.mozilla.org/firefox

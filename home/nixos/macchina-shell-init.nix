@@ -36,8 +36,8 @@ let
   # Two-tone from the terminal's ANSI palette: blue (slot 4) and cyan
   # (slot 6) are the bus positions of the base0D/base0C accents this file
   # previously baked as Stylix truecolor (ADR-041 / #411). Direct canonical
-  # literals, not token roles — base0C has no role, and reading
-  # theme-tokens would reintroduce the Stylix eval this drops.
+  # literals, not token roles — base0C has no role to read, and the roles
+  # that do exist carry `.ansi` only as an approximation of a slot.
   dark = "${esc}[34m"; # ANSI blue
   light = "${esc}[36m"; # ANSI cyan
   reset = "${esc}[0m";

@@ -51,12 +51,15 @@ let
   };
   paletteFor = import ../../lib/palette-for.nix hostContext.hostName;
   pools = import ../../lib/theme-wallpapers.nix;
-  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+  # Static half only — this module resolves its own hexes per selectable
+  # scheme (`colors` below), so it needs the roles' `.slot` aliases and the
+  # alpha stance, never the active palette's `.hex`.
+  tokens = import ../../lib/static-tokens.nix;
 
   dataDir = "${config.xdg.dataHome}/theme-menu";
   stateDir = "${config.xdg.stateHome}/theme-menu";
 
-  # borders argv per resolved scheme: alphas sourced from lib/theme-tokens.nix
+  # borders argv per resolved scheme: alphas sourced from lib/static-tokens.nix
   # (color.borderAlpha), the same single source modules/darwin/jankyborders.nix
   # reads (only the static `.slot` field is read, so no active-polarity coupling).
   bordersArgs =

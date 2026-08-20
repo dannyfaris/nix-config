@@ -1,6 +1,6 @@
 # Pointer & icon theme — Colloid + phinger
 
-**Selection:** Colloid icon theme (polarity pair `Colloid`/`Colloid-Dark`) via `stylix.icons`, and phinger cursors (`phinger-cursors-light`, static across polarity) via `stylix.cursor` + niri's `cursor` block. Discharges #110, on #762's critical path — a GUI file manager is the first surface where the unwired icon theme is visible (folder/MIME icons).
+**Selection:** Colloid icon theme (`Colloid-Dark`) via `gtk.iconTheme`, and phinger cursors (`phinger-cursors-light`, static across polarity) via `home.pointerCursor` + niri's `cursor` block. Discharges #110, on #762's critical path — a GUI file manager is the first surface where the unwired icon theme is visible (folder/MIME icons).
 
 ## Rationale
 
@@ -20,11 +20,13 @@
 
 ## Configuration
 
-`home/nixos/pointer-icons.nix`, imported by the home desktop-env bundle: `stylix.icons` (enable/package/light/dark — Stylix resolves the name by build-time polarity into `gtk.iconTheme`) and `stylix.cursor` (name/package/size → `home.pointerCursor` with GTK + X11 wiring), plus `programs.niri.settings.cursor` referencing the same values so the compositor layer and the toolkit layer cannot drift. Both option shapes verified in the pinned stylix and niri-flake sources.
+`home/nixos/pointer-icons.nix`, imported by the home desktop-env bundle: `gtk.iconTheme` (package + name) and `home.pointerCursor` (package/name/size, with `gtk.enable` and `x11.enable` both on — the latter writes the `Xcursor.*` entries in `~/.Xresources` that XWayland clients read), plus `programs.niri.settings.cursor`. The cursor's three values are a single `let` binding read by both the toolkit layer and the compositor layer, so they cannot drift.
+
+These were `stylix.icons` / `stylix.cursor` until #885 took Stylix off the NixOS side ([ADR-028](../decisions/ADR-028-stylix-foundation-and-desktop-env.md) §History); they are home-manager's own options, set directly, and the rendered artifacts (`.icons/`, `.local/share/icons/`, `.Xresources`, the GTK `settings.ini` files) are byte-identical across that change. One narrowing came with it: `stylix.icons` carried a light/dark pair and `gtk.iconTheme.name` takes one name, so the icon theme is now the single literal `Colloid-Dark`. Invisible today — every host is dark polarity — and a light-polarity host re-opens it.
 
 ## Sharp edges
 
-- **Icons follow build-time polarity, not the runtime flip.** Noctalia's own gtk builtin-template `apply.sh` ([ADR-048](../decisions/ADR-048-noctalia-theming-delegation.md), reversing ADR-044/#609 for Linux) switches GTK polarity live, but `gtk.iconTheme` is baked at build — after a runtime flip, icons keep the built variant until rebuild/re-login. Wiring an icon-theme swap into Noctalia's template/hook mechanism (and per-family Colloid scheme variants with it) is the recorded follow-up. The cursor is exempt by design (static variant).
+- **Icons don't follow the runtime flip.** Noctalia's own gtk builtin-template `apply.sh` ([ADR-048](../decisions/ADR-048-noctalia-theming-delegation.md), reversing ADR-044/#609 for Linux) switches GTK polarity live, but `gtk.iconTheme` is baked at build — after a runtime flip, icons keep the built variant until rebuild/re-login. Since #885 the built variant is a single dark literal, so this is now a fixed pick rather than a build-time polarity resolution. Wiring an icon-theme swap into Noctalia's template/hook mechanism (and per-family Colloid scheme variants with it) is the recorded follow-up. The cursor is exempt by design (static variant).
 - **Colloid's `index.theme` declares `Inherits=hicolor,breeze`.** breeze is deliberately absent; missing icons fall through the normal fallback chain (hicolor → Adwaita). Harmless, noted so nobody "fixes" it by installing breeze.
 - **First icon-theme change may need app restarts** to repopulate GTK icon caches.
 

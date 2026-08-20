@@ -11,7 +11,7 @@ Two consequences fall out, and both are deliberate goals (#390):
 1. **Runtime, user-space, persistent control.** The generic→face mapping lives in `~/.config/fontconfig/conf.d/`; new faces drop into `~/.local/share/fonts`. Editing either takes effect on the next surface launch — no rebuild — and persists across rebuilds, because Nix does not manage those paths. See §Runtime UX.
 2. **Consistency by construction.** Because every surface resolves the same generic, one mapping drives the terminal, GTK chrome, the web fallback, and Noctalia's own shell surfaces together.
 
-Stylix is no longer the font source of truth on the desktop. Its model is to hardcode a concrete face into each app's config and re-assert it on rebuild — which clobbers an imperative change and scatters faces instead of pointing at one mapping, incompatible with both goals. So the desktop's fonts moved off it (#390). Stylix stays the static colour table under E1 (ADR-036, §Refinement) and remains fully authoritative on every non-desktop host.
+Stylix is no longer the font source of truth on the desktop. Its model is to hardcode a concrete face into each app's config and re-assert it on rebuild — which clobbers an imperative change and scatters faces instead of pointing at one mapping, incompatible with both goals. So the desktop's fonts moved off it (#390), and the engine itself has since left the NixOS side entirely (#885, ADR-028 §History) — it survives only on celaeno (§Darwin).
 
 ## Selections
 
@@ -61,12 +61,12 @@ The per-surface font sizes are **display-calibration-driven**, not fixed literal
 At the settled **1.5×** the Nix-managed rendered sizes are:
 
 - **foot** (terminal) — `terminal` slot, **11**, read from the calibration directly in `home/nixos/foot.nix`.
-- **GTK dialogs** (the polkit prompt, file pickers, app dialogs) — `popups` slot, **12**, a `gtk.font` `lib.mkForce` in `home/nixos/stylix-targets-desktop.nix`.
+- **GTK dialogs** (the polkit prompt, file pickers, app dialogs) — `popups` slot, **12**, `gtk.font` in `home/nixos/gtk.nix`, read from the calibration directly.
 - **Firefox** — no Nix-managed size. Stylix's Firefox target (which used to derive `font.size.variable.x-western` from the `applications` slot) was dropped in the G6 Stylix-exit audit (#825, #819 Epic G) — zero decision weight, accepted collateral, no replacement wiring. Firefox renders its own stock font sizing.
 
 Noctalia sizes its *own* surfaces (its `fontScale` / per-widget settings); waybar / fuzzel are gone. This band is the on-vocab reference — foot 11 / dialog 12 — carried directly rather than derived by scaling.
 
-**Sizing philosophy: macOS-style restraint.** Close values in regular weights; hierarchy comes from layout, not a steep type scale. The size taxonomy still lives on `stylix.fonts.sizes.{terminal,popups}` (set from the active profile in `modules/nixos/desktop-fonts.nix`) — Stylix stays enabled under E1, and the surviving GTK target reads the `popups` slot (`terminal` is vestigial post-Firefox-drop, #825). A re-tune or a scale change is a one-line edit to `display-profiles.nix`.
+**Sizing philosophy: macOS-style restraint.** Close values in regular weights; hierarchy comes from layout, not a steep type scale. The size taxonomy lives on `lib/display-profiles.nix`'s `fonts.{terminal,popups}`, read directly by the two surfaces that consume it (#885 removed the `stylix.fonts.sizes` pass-through that used to sit in between). A re-tune or a scale change is a one-line edit to `display-profiles.nix`.
 
 **Why foot's size is a profile value, not a bare literal (the dpi-aware story).** foot pins `dpi-aware = no` (foot 1.15.0's default, written by Stylix's foot target; documented in `home/nixos/foot.nix`). Under `no`, `:size=N` is sized by the **output scale factor**, not the monitor's physical DPI — the same factor the Wayland apps scale by — so the profile's per-scale calibration (size ∝ 1/scale) lands a consistent apparent size across surfaces and scales. Pinning `no` is a deliberate *portability* choice: under foot's former `auto` an identical `:size=N` rendered at different apparent sizes across monitors of differing DPI/scale (foot issue #714); `no` makes it reproducible. (An earlier revision claimed a fixed `11` "compensated" for the 1.15.0 `auto → no` flip; that was unfounded — `auto` already used scale-factor sizing on any scaled output, so on metis the change was a no-op. The size is a deliberate legibility choice carried by the profile, not DPI compensation.)
 
@@ -75,8 +75,8 @@ Noctalia sizes its *own* surfaces (its `fontScale` / per-widget settings); wayba
 fontconfig does three jobs for the desktop's fonts; all three are wired explicitly in `modules/nixos/desktop-fonts.nix`, replacing what Stylix's fontconfig target used to do:
 
 1. **Install the faces.** `fonts.packages = [ Monaspace, Inter, Noto emoji ]` — an explicit list (only what's consumed), not `config.stylix.fonts.packages`.
-2. **Map the generics.** `fonts.fontconfig.defaultFonts.{monospace,sansSerif,emoji}` names the baseline faces; `stylix.targets.fontconfig.enable = false` so Stylix no longer writes a competing map. This system-level map (`/etc/fonts/conf.d`) is the baseline the user `99-local.conf` overrides (§Runtime UX).
-3. **Point surfaces at the generics.** `home/nixos/foot.nix` sets foot's font family to the `monospace` generic (`font = "monospace:size=…"`, replacing the prior concrete `stylix.fonts.monospace.name`); GTK's `gtk.font` name is `Sans`. Both resolve through the map (and thus through any user override).
+2. **Map the generics.** `fonts.fontconfig.defaultFonts.{monospace,sansSerif,emoji}` names the baseline faces. This system-level map (`/etc/fonts/conf.d`) is the baseline the user `99-local.conf` overrides (§Runtime UX). (The `stylix.targets.fontconfig.enable = false` line that used to keep the engine from writing a competing map went with the engine, #885.)
+3. **Point surfaces at the generics.** `home/nixos/foot.nix` sets foot's font family to the `monospace` generic (`font = "monospace:size=…"`, replacing the prior concrete `stylix.fonts.monospace.name`); GTK's `gtk.font` name is `Sans` (`home/nixos/gtk.nix`). Both resolve through the map (and thus through any user override).
 
 The font list stays **inline** in `desktop-fonts.nix` — the module is imported only by desktop hosts (via the `desktop-env` bundle), so it is already host-agnostic; a shared `lib/fonts.nix` waits until a second desktop host actually needs it.
 
@@ -112,7 +112,7 @@ Living document — same conventions as `keybinds.md`. Font changes are rare.
 - `modules/nixos/desktop-fonts.nix` — the fontconfig install + generic-map wiring for desktop NixOS hosts.
 - `modules/darwin/desktop-fonts.nix` — Darwin parallel: Monaspace-only install, Stylix-themed Ghostty, imported by Darwin foundation.
 - `home/nixos/foot.nix` — foot terminal config; uses the `monospace` generic.
-- `home/nixos/stylix-targets-desktop.nix` — the surviving GTK Stylix target (font `mkForce`); the Firefox target was dropped in the G6 Stylix-exit audit (#825).
+- `home/nixos/gtk.nix` — GTK toolkit appearance, including the `Sans` dialog font sized from the calibration.
 - `docs/desktop/noctalia.md` — Noctalia is colour-only and self-scoped for fonts; its surfaces follow the fontconfig generics.
 - `docs/desktop/visual-identity.md` — the typography north-star this implements; the IBM-Plex-Sans reversal lives there.
 - ADR-036 — Noctalia as desktop theming authority; the runtime-state posture this extends to fonts. #390 — the font conductor + severance work.

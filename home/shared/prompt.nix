@@ -5,15 +5,15 @@
 # rather than in a separate starship.toml file. Fish hook auto-wired by
 # programs.starship.enable.
 {
-  config,
   pkgs,
   lib,
   ...
 }:
 let
-  # Role→ANSI projection from the design tokens; only the static `.ansi`
-  # field is read (the config-forcing `.hex` is never touched).
-  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+  # Role→ANSI projection from the design tokens. The static half only: this
+  # module is cross-platform, and the `{ config }` half resolves hexes from
+  # Stylix, which no longer exists on the Linux hosts (#885).
+  tokens = import ../../lib/static-tokens.nix;
 
   # Glyphs decoded from codepoints via fromJSON `"\uXXXX"` escapes —
   # ASCII-safe in source (some editors strip raw PUA UTF-8 bytes) and
@@ -71,9 +71,9 @@ in
       # cyan, green, yellow, purple, red), which resolve through the
       # terminal's 16-colour palette. Terminal-following by construction:
       # the prompt repaints with the terminal on a polarity flip, and an
-      # SSH session renders in the local terminal's palette (the Stylix
-      # starship target that used to inject these as baked-hex palette
-      # aliases is dropped — see stylix-targets.nix).
+      # SSH session renders in the local terminal's palette (ADR-041 dropped
+      # the starship target that used to inject these as baked-hex palette
+      # aliases).
       directory.style = "blue";
       git_branch.style = "cyan";
 
@@ -90,7 +90,7 @@ in
       # host marker (purple) stays the only purple element on the line.
       # Styled via the tokens' ANSI projection — the 16-colour bus has no
       # orange slot, so this renders the nearest on-bus colour
-      # (bright-yellow; warm gold in gruvbox). See lib/theme-tokens.nix.
+      # (bright-yellow; warm gold in gruvbox). See lib/static-tokens.nix.
       git_status = {
         conflicted = " [!\${count}](red)";
         staged = " [+\${count}](green)";
