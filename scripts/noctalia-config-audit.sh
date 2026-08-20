@@ -104,12 +104,21 @@ if [ "$sidecar_present" -eq 1 ]; then
       esac
     done
     decl="$(awk -F '\t' -v p="$path" '$1 == p { print $2 }' "$tmp/declared")"
+    # Equality is string-level on the JSON encodings, plus a numeric branch:
+    # the GUI serialises numbers as floats (timeout = 660.0) where Nix
+    # declares ints (660), and gate (iii) on alnair showed the string
+    # compare mislabelling numerically-equal leaves DIVERGED.
+    values_equal() {
+      [ "$1" = "$2" ] && return 0
+      case "$1$2" in *[!0-9.-]*) return 1 ;; esac
+      awk -v a="$1" -v b="$2" 'BEGIN { exit !(a + 0 == b + 0) }'
+    }
     if [ -n "$hit" ]; then
       forbidden=$((forbidden + 1))
       printf 'FORBIDDEN  %s = %s (authoritative under "%s")\n' "$path" "$value" "$hit" >>"$tmp/report"
     elif [ -z "$decl" ]; then
       gui_only=$((gui_only + 1))
-    elif [ "$decl" = "$value" ]; then
+    elif values_equal "$decl" "$value"; then
       redundant=$((redundant + 1))
       printf 'REDUNDANT  %s = %s (equals declared — clear it or it blocks future flake changes)\n' "$path" "$value" >>"$tmp/report"
     else
