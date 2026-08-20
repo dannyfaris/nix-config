@@ -28,7 +28,10 @@
   ...
 }:
 let
-  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+  # Static half of the design tokens only — geometry/layout carry no colour,
+  # and importing the `{ config }` half would force a Stylix eval this
+  # platform no longer has (#885). See lib/static-tokens.nix.
+  tokens = import ../../lib/static-tokens.nix;
   profile = import ../../lib/display-profiles.nix; # display calibration — output scale
   caps = import ../../lib/capabilities.nix { inherit lib; }; # single-source keybind registry (#384)
 
@@ -208,7 +211,7 @@ in
       # both via its niri target; re-asserted here now that Noctalia's niri
       # template owns the colour via the noctalia.kdl include above). Border
       # width from the geometry token (Carbon spacing-01; crisp on 4K/2× —
-      # rationale in theme-tokens.nix and docs/desktop/niri.md §Window
+      # rationale in static-tokens.nix and docs/desktop/niri.md §Window
       # decorations); the active/inactive colours come from noctalia.kdl.
       border.enable = true;
       border.width = tokens.geometry.borderWidth;
@@ -216,7 +219,7 @@ in
 
       # Inter-window gap — explicit token (= Carbon spacing-05) rather than
       # niri's implicit default 16, so the value lives in one place. See
-      # theme-tokens.nix and docs/desktop/visual-identity.md §Spacing.
+      # static-tokens.nix and docs/desktop/visual-identity.md §Spacing.
       gaps = tokens.layout.gap;
     };
 

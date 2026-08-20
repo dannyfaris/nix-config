@@ -10,7 +10,7 @@
 # The 1.0 / 2.0 profiles and the `active` knob that selected between them were
 # dropped in #715: no rider wanted a different scale, so the ladder had no user.
 # The trigger to reintroduce a per-host seam is the first host that wants a scale
-# its siblings don't — #715 records the plumbing shape (theme-tokens.nix imports
+# its siblings don't — #715 records the plumbing shape (static-tokens.nix imports
 # this as pure lib with no hostContext access, which is the hard part).
 #
 # Faces are not scale-dependent and live elsewhere: mono (Monaspace Argon) backs

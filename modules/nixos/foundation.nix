@@ -9,8 +9,10 @@
 #
 # Contents: identity (users, sops), administration (nix-daemon, locale,
 # baseline system packages), security posture (firewall), the
-# home-manager NixOS-module wiring, default editor for system-mediated
-# tools, and Stylix theming (per-host palette, via stylix-palette.nix).
+# home-manager NixOS-module wiring, and the default editor for
+# system-mediated tools. No theming: the per-host Stylix palette lived
+# here from ADR-028 until #885 took Stylix off the NixOS side entirely
+# (see ADR-028 §History) — colour on Linux is Noctalia's, at runtime.
 # Reserved for things that aren't opt-in capabilities. A capability —
 # even one every current host happens to want — belongs in a capability
 # bundle, not here. See ADR-027 and PRD §3.2.
@@ -29,10 +31,5 @@
     ../shared/ssh-known-hosts.nix
     ./host-context.nix
     ./home-manager.nix
-    # Stylix theming: the stylix module + per-host base16 palette. Its own
-    # module so foundation stays a pure imports list (the bundle-purity
-    # assumption); the palette was inline here from ADR-028 until factored
-    # out under #54. See ADR-027 §History.
-    ./stylix-palette.nix
   ];
 }

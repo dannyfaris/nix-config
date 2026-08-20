@@ -40,8 +40,10 @@
 #   - file-manager.nix — trash purge timer + inode/directory handler for
 #     Nautilus (system-side package + gvfs in modules/nixos/file-manager.nix).
 #     See docs/desktop/file-manager.md (#771).
-#   - pointer-icons.nix — Colloid icons + phinger cursor (stylix.icons /
-#     stylix.cursor + niri cursor block). See docs/desktop/pointer-icons.md (#110).
+#   - pointer-icons.nix — Colloid icons + phinger cursor (home.pointerCursor
+#     + gtk.iconTheme + niri cursor block). See docs/desktop/pointer-icons.md (#110).
+#   - gtk.nix — GTK toolkit appearance: adw-gtk3 theme, the Sans dialog
+#     font, and the two gtk.css paths Noctalia owns. See docs/desktop/fonts.md.
 #
 # First occupant of home/nixos/bundles/. The desktop stack is
 # Linux-only (niri, greetd-launched Foot + the Noctalia shell
@@ -82,9 +84,6 @@
     ../screen-capture.nix
     ../file-manager.nix
     ../pointer-icons.nix
-    # Desktop-only Stylix targets — co-located with the bundle that
-    # enables them, so desktop hosts pick them up transitively. The
-    # cross-platform TUI targets stay in `home/shared/stylix-targets.nix`.
-    ../stylix-targets-desktop.nix
+    ../gtk.nix
   ];
 }

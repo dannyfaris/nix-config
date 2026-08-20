@@ -8,8 +8,8 @@
 # variant pre-baked at build time (docs/design/macos-live-theme-switching.md
 # §Design; docs/design/colour-conductor.md §Design item 2), so this helper
 # runs the same machinery — selection semantics from lib/palette-for.nix
-# (#541), the same base16.nix mkSchemeAttrs + override merge the
-# stylix-palette twins feed — once per variant. Single-sourced here because
+# (#541), the same base16.nix mkSchemeAttrs + override merge
+# modules/darwin/stylix-palette.nix feeds — once per variant. Single-sourced because
 # every consumer needs the identical derivation: Ghostty dual themes and
 # the JankyBorders hook pair read the default couplet today; the
 # per-entry artefact sets of #605 stage 2 and #609 build on `menu`.

@@ -5,12 +5,15 @@
 # border niri draws (home/nixos/niri.nix).
 #
 # Active/inactive colours source from the shared design-token roles
-# (lib/theme-tokens.nix): active = the focus role (base0D), inactive = muted
+# (lib/theme-tokens.nix — the `{ config }` half, since this is the one
+# consumer that needs a role's resolved `.hex`; the roles themselves are
+# declared in lib/static-tokens.nix): active = the focus role (base0D), inactive = muted
 # (base03) — so the border speaks the repo's colour vocabulary
 # (visual-identity.md §Colour). (This is role-parity, not wire-parity with niri:
 # niri's border colour is Noctalia-driven at runtime, not token-sourced.)
 # JankyBorders wants 0xAARRGGBB; the alpha stance is defined once at
-# lib/theme-tokens.nix (color.borderAlpha).
+# lib/static-tokens.nix (color.borderAlpha) and re-exported through
+# theme-tokens.nix.
 #
 # This is a nix-darwin *system* service (launchd user agent, KeepAlive), not a
 # home-manager module — hence it lives here and is imported in the host's

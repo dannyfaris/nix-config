@@ -40,9 +40,9 @@ _: {
 
     # Terminal title — surfaces SSH context in the emulator's tab/window
     # chrome (Ghostty etc.). Lives above the shell layer; complements the
-    # starship host segment (always-on, glyph-swap) and the per-host
-    # Stylix palette. See GH #6. Silent inside zellij, which owns the outer
-    # title there — see ADR-004 §Session naming.
+    # starship host segment (always-on, glyph-swap). See GH #6. Silent
+    # inside zellij, which owns the outer title there — see ADR-004
+    # §Session naming.
     functions.fish_title = ''
       if set -q ZELLIJ
         return

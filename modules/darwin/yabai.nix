@@ -18,9 +18,10 @@
 # Needs an Accessibility grant, keyed to the store path (ad-hoc signed, no Team
 # Identifier), so it is lost on every version bump. Bootstrap steps are in
 # docs/runbooks/darwin-bootstrap.md.
-{ config, lib, ... }:
+{ lib, ... }:
 let
-  tokens = import ../../lib/theme-tokens.nix { inherit config; };
+  # Static half only — the one token read here is a spacing scale value.
+  tokens = import ../../lib/static-tokens.nix;
   operator = import ../../lib/operator.nix;
 in
 {

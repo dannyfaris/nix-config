@@ -1,7 +1,6 @@
 # stylix-palette — per-host base16 palette + the Stylix engine for
-# Darwin. Mirrors modules/nixos/stylix-palette.nix; differs only in
-# importing `inputs.stylix.darwinModules.stylix` (the Darwin half of
-# upstream Stylix's flake outputs) instead of the NixOS module.
+# Darwin. No longer a twin: the NixOS half was deleted by #885 (ADR-028
+# §History), so this is the only Stylix entry point in the repo.
 #
 # This is the *system half* of the repo's theming wiring on Darwin.
 # Since ADR-041 the TUI surface follows the terminal palette (the
@@ -33,8 +32,8 @@
 let
   # Selection semantics (scheme + slot-overrides per polarity, loud failure
   # on an undeclared family or host) are single-sourced in
-  # lib/palette-for.nix (#541) — shared with the NixOS twin,
-  # lib/scheme-pair.nix, and home/darwin/wallpapers.nix.
+  # lib/palette-for.nix (#541) — shared with lib/scheme-pair.nix and
+  # home/darwin/wallpapers.nix.
   paletteFor = import ../../lib/palette-for.nix hostContext.hostName;
   active = paletteFor.select paletteFor.polarity;
 in

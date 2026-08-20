@@ -39,12 +39,14 @@
     ./home-manager.nix
     # Stylix theming: the stylix module + per-host base16 palette. Its
     # own module so foundation stays a pure imports list (bundle-purity
-    # rule). Mirrors modules/nixos/stylix-palette.nix.
+    # rule). Darwin-only since #885 retired the NixOS half — see
+    # ADR-028 §History.
     ./stylix-palette.nix
     # Install the Stylix font faces system-wide (/Library/Fonts). On
     # NixOS the parallel lives in the desktop-env bundle (gated for
     # headless hosts); every Darwin host is GUI, so it belongs in
-    # foundation. Mirrors modules/nixos/desktop-fonts.nix.
+    # foundation. Placement parallel only — modules/nixos/desktop-fonts.nix
+    # stopped being Stylix-sourced at #885.
     ./desktop-fonts.nix
   ];
 }

@@ -10,7 +10,7 @@
 #   - greetd.nix           — display manager (tuigreet on tty1).
 #   - audio.nix            — PipeWire sound server + rtkit realtime scheduling. See docs/desktop/audio.md (#96).
 #   - bluetooth.nix        — BlueZ for Bluetooth peripherals; the pairing UI rides the shell (#636, #773).
-#   - desktop-fonts.nix    — Stylix font selections (mono/sans/emoji) + install wiring.
+#   - desktop-fonts.nix    — font faces (mono/sans/emoji) + the fontconfig generic→face map.
 #   - electron-wayland.nix — NIXOS_OZONE_WL=1 so Electron apps render native Wayland.
 #   - xdg-portal.nix       — routes the portal FileChooser (and Access/Notification) to the gtk backend niri-flake omits, so file dialogs work without Nautilus.
 #   - lock-before-sleep.nix — systemd-lock-handler: logind sleep delay-inhibitor + user-level lock/sleep targets, so the Noctalia lock provably engages before any suspend (#644).

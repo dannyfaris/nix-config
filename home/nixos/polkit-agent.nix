@@ -7,11 +7,11 @@
 # mirrors how upstream `services.polkit-gnome` builds its unit.
 #
 # The KDE agent niri-flake otherwise runs (`niri-flake-polkit`) is disabled
-# at the system layer (modules/nixos/niri.nix), and the now-vestigial Stylix
-# `qt` target is dropped (home/nixos/stylix-targets-desktop.nix). Rationale —
-# styling (mate-polkit themes via the gtk base16 target; the KDE/Kirigami
-# agent renders off-theme stock Breeze for want of kdeglobals) plus the
-# 573 MiB Qt-stack removal — lives in docs/desktop/polkit.md.
+# at the system layer (modules/nixos/niri.nix). Rationale — styling
+# (mate-polkit is GTK, so it picks up the toolkit theme in
+# home/nixos/gtk.nix and Noctalia's gtk3 colours; the KDE/Kirigami agent
+# renders off-theme stock Breeze for want of kdeglobals) plus the 573 MiB
+# Qt-stack removal — lives in docs/desktop/polkit.md.
 #
 # Per #103.
 { config, pkgs, ... }:
@@ -24,13 +24,11 @@
       After = [ "graphical-session.target" ];
       # Restart the agent when its GTK font config changes — it reads it
       # only at startup, so without this an `nh os switch` leaves the
-      # dialog on a stale font until relogin. The gtk.css leg is vestigial
-      # since #874 (HM no longer writes that path; Noctalia owns it). See
+      # dialog on a stale font until relogin. gtk.css is deliberately NOT a
+      # trigger (resolves #876): home-manager doesn't write that path —
+      # Noctalia owns it (#874) — so the attr has no value to read. See
       # docs/desktop/polkit.md §Sharp edges (same pattern as fnott #350).
-      X-Restart-Triggers = [
-        config.xdg.configFile."gtk-3.0/settings.ini".source
-        config.xdg.configFile."gtk-3.0/gtk.css".source
-      ];
+      X-Restart-Triggers = [ config.xdg.configFile."gtk-3.0/settings.ini".source ];
     };
     Service = {
       Type = "simple";
