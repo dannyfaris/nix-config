@@ -11,23 +11,24 @@
 # (TTYReset/TTYVHangup/TTYVTDisallocate); without it, kernel/systemd
 # messages can paint over the tuigreet UI during cold boot.
 #
-# tuigreet discovers wayland-sessions through XDG_DATA_DIRS — no --sessions
-# flag needed. The entry comes from `services.displayManager.sessionPackages`,
-# which NixOS collects into the `desktops` derivation XDG_DATA_DIRS points at;
-# the niri package declares itself there via `passthru.providedSessions`.
-# NOT from system-path: `environment.pathsToLink` carries no wayland-sessions
-# entry, so /run/current-system/sw/share/wayland-sessions does not exist — the
-# comment here asserted otherwise until #763 checked the built system. This is
-# what an operator reads from a TTY when greetd offers no session.
+# --sessions is passed explicitly: tuigreet since 0.11 scans only hardcoded
+# /usr/share/wayland-sessions, which no NixOS host has, and no longer consults
+# XDG_DATA_DIRS. The niri entry lives in the `desktops` derivation NixOS
+# collects from `services.displayManager.sessionPackages` (niri declares itself
+# there via `passthru.providedSessions`). Without the flag the greeter offers
+# no session and rejects every login with "no command configured".
 #
 # Per ADR-028.
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   services.greetd = {
     enable = true;
     useTextGreeter = true;
     settings.default_session = {
-      command = "${pkgs.tuigreet}/bin/tuigreet" + " --time --remember --remember-session --asterisks";
+      command =
+        "${pkgs.tuigreet}/bin/tuigreet"
+        + " --time --remember --remember-session --asterisks"
+        + " --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
       user = "greeter";
     };
   };
